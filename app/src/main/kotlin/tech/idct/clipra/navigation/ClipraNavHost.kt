@@ -10,6 +10,7 @@ import tech.idct.clipra.BuildConfig
 import tech.idct.clipra.core.designsystem.gallery.DesignSystemGallery
 import tech.idct.clipra.core.designsystem.placeholder.Board
 import tech.idct.clipra.core.designsystem.placeholder.BoardPlaceholder
+import tech.idct.clipra.core.model.Layout
 import tech.idct.clipra.feature.audio.audioScreens
 import tech.idct.clipra.feature.captions.CaptionsSetupRoute
 import tech.idct.clipra.feature.captions.captionsScreens
@@ -18,6 +19,7 @@ import tech.idct.clipra.feature.editor.editorScreens
 import tech.idct.clipra.feature.effects.effectsScreens
 import tech.idct.clipra.feature.export.exportScreens
 import tech.idct.clipra.feature.home.HomeActions
+import tech.idct.clipra.feature.home.NewProjectActions
 import tech.idct.clipra.feature.home.NewProjectRoute
 import tech.idct.clipra.feature.home.homeScreens
 import tech.idct.clipra.feature.models.ModelsBoards
@@ -50,15 +52,14 @@ fun ClipraNavHost(navController: NavHostController = rememberNavController()) {
     }
     NavHost(navController = navController, startDestination = OnboardingRoute) {
         homeScreens(
-            screen,
             HomeActions(
-                onNewProject = { navController.navigate(NewProjectRoute) },
-                // The editor opens the project once it is built (#13).
-                onOpenProject = { navController.navigate(EditorRoute) },
+                onNewProject = { navController.navigate(NewProjectRoute()) },
+                onOpenProject = { navController.navigate(EditorRoute(it)) },
                 onAutoCaptions = { navController.navigate(CaptionsSetupRoute) },
                 onTextCard = { navController.navigate(TextRoute) },
-                // New project with a mosaic layout preselected comes with #17.
-                onMosaic = { navController.navigate(NewProjectRoute) },
+                onMosaic = {
+                    navController.navigate(NewProjectRoute(layout = Layout.Grid2x2.name))
+                },
                 onModels = { navController.navigate(ModelsRoute) },
                 onSettings = { navController.navigate(SettingsRoute) },
                 onPro = { navController.navigate(ProRoute) },
@@ -66,6 +67,15 @@ fun ClipraNavHost(navController: NavHostController = rememberNavController()) {
                     { navController.navigate(BoardIndexRoute) }
                 } else {
                     null
+                },
+            ),
+            NewProjectActions(
+                onBack = { navController.popBackStack() },
+                // Back from the editor returns to Home, not to New project.
+                onCreated = { id ->
+                    navController.navigate(EditorRoute(id)) {
+                        popUpTo<NewProjectRoute> { inclusive = true }
+                    }
                 },
             ),
         )

@@ -6,8 +6,9 @@ import androidx.navigation.compose.composable
 import kotlinx.serialization.Serializable
 import tech.idct.clipra.core.designsystem.placeholder.Board
 
+/** The editor for [projectId]; null opens the placeholder board (debug screen index). */
 @Serializable
-data object EditorRoute
+data class EditorRoute(val projectId: String? = null)
 
 @Serializable
 data object LayersRoute
@@ -16,7 +17,7 @@ data object LayersRoute
  * The boards this module builds, from design/README.md ("Start and edit").
  */
 object EditorBoards {
-    val editor = Board(id = "Editor", title = R.string.editor_title_editor, route = EditorRoute)
+    val editor = Board(id = "Editor", title = R.string.editor_title_editor, route = EditorRoute())
     val layers = Board(id = "Layers", title = R.string.editor_title_layers, route = LayersRoute)
 
     val all = listOf(editor, layers)
