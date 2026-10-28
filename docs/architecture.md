@@ -26,7 +26,7 @@ core:engine              Media3 composition building, preview player, export, GL
 core:audio               Loudness, gates, ducking, beat detection, waveform extraction
 ml:whisper               whisper.cpp JNI, model files, transcription pipeline
 ml:voice                 DeepFilterNet 3 (ONNX Runtime), RNNoise (JNI)
-ml:vision                MediaPipe face detector, selfie segmenter, subject tracking
+ml:vision                MediaPipe face detector, selfie segmenter, subject tracking; motion tracking for Stabilize (OpenCV)
 ml:translate             ML Kit on-device translation
 feature:home             Home, new project
 feature:editor           Timeline, preview, tools, inspector (phone and tablet)
@@ -49,7 +49,8 @@ Layer(id, index /* 1 = bottom */, hidden, muted, locked, clips: List<Clip>)
 Clip(id, type: Video|Photo|TextCard|Text|Caption|Audio|Adjustment, start, duration,
      source?: MediaRef(uri, inPoint, outPoint), speed: Speed, transform: Keyframed<Transform>,
      opacity: Keyframed<Float>, blend: BlendMode, effects: List<Effect>, mask: Mask?,
-     color: ColorGrade?, audio: AudioSettings?, text: TextSpec?, animation: Animation?)
+     color: ColorGrade?, audio: AudioSettings?, text: TextSpec?, animation: Animation?,
+     stabilize: Stabilization?)
 Transition(id, layerId, cutTime, type, duration, easing)
 LinkGroup(id, clipIds)       // caption <-> source clip, detached audio <-> video
 Transcript(clipId, words: List<Word(text, start, end, confidence, kind: Word|Filler|Pause)>)
@@ -91,7 +92,7 @@ Transcript(clipId, words: List<Word(text, start, end, confidence, kind: Word|Fil
 | Person cutout | MediaPipe image segmenter, selfie model (about 33 ms per frame on a Pixel 6 per Google's docs) | Temporal smoothing, edge refine |
 | Subject follow | MediaPipe object detector plus a simple tracker | Fallback to face, then centre |
 | Translation | ML Kit on-device translation (Google terms) | Language packs downloaded on demand; non-English pairs pivot through English |
-| Stabilization | Not decided | Research in M7; may slip past v1 |
+| Stabilization | No model: corner tracking (pyramidal Lucas-Kanade) and per-frame camera motion with RANSAC, using OpenCV (Apache-2.0, trimmed build) | Analysed on the proxy in the background and cached per media hash; the smoothed path is rendered by a per-frame matrix effect with one zoom per clip, in preview and export. No gyro data or learned model in v1 |
 
 Models are downloaded by WorkManager with a Wi-Fi-only constraint by default, verified by SHA-256, stored in app-specific storage, and listed on the AI models screen with their size. Built-in models (RNNoise, MediaPipe) ship in the APK or as an install-time asset pack.
 

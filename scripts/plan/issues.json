@@ -44,7 +44,7 @@
   {
    "id": "M7",
    "title": "M7 · Vision tools",
-   "description": "Person cutout, chroma key, face-following masks and auto-reframe, all on the device."
+   "description": "Person cutout, chroma key, face-following masks, auto-reframe and video stabilization, all on the device."
   },
   {
    "id": "M8",
@@ -2215,11 +2215,12 @@
     "Chroma key",
     "Face-following masks",
     "Auto-reframe",
-    "Stabilization research"
+    "Video stabilization"
    ],
    "acceptance": [
     "Person cutout on a 1080p clip at interactive preview speed on a mid-range phone",
-    "A 16:9 project reframed to 9:16 keeps the speaker in frame"
+    "A 16:9 project reframed to 9:16 keeps the speaker in frame",
+    "Stabilize steadies handheld test clips without black edges"
    ],
    "notes": [
     "Segmentation quality on hair and fast motion"
@@ -2388,36 +2389,59 @@
   },
   {
    "key": "M7-stabilize",
-   "kind": "spike",
+   "kind": "task",
    "milestone": "M7",
-   "title": "Research: video stabilization",
-   "goal": "Decide whether Stabilize ships in v1.",
+   "title": "Video stabilization",
+   "goal": "Smooth out handheld shake in a clip on the device, cropping as little as possible.",
    "design": [
     {
-     "path": "design/screens/states/Editor--no-clip-selected.png",
-     "cap": "Stabilize tool",
+     "path": "design/screens/phone/Editor.png",
+     "cap": "Clip tools (Stabilize is further along)",
      "w": 240
+    },
+    {
+     "path": "design/screens/tablet/TabletEditor.png",
+     "cap": "Tablet toolbar",
+     "w": 420
     }
    ],
    "scope": [
-    "Evaluate options (gyro metadata where available, feature-based stabilization) for speed, quality and license",
-    "Prototype on two clips"
+    "Motion analysis on the device: track corners between frames of the proxy at reduced size (Shi-Tomasi corners, pyramidal Lucas-Kanade) and estimate each frame's camera motion with RANSAC (shift, rotation, scale), so moving subjects don't count",
+    "Smooth the camera path and move each frame onto it, with one zoom for the whole clip, just large enough that no edge shows",
+    "Strength 0 to 100 (default 50) trades smoothness against crop; the crop is shown",
+    "Background analysis (WorkManager) with progress and cancel, cached per media hash; the clip plays unstabilized until it is ready",
+    "Rendering through a per-frame matrix effect in the clip's Media3 effect chain, the same in preview and export",
+    "`stabilize` setting on the clip in the project model; Stabilize in the phone clip tools and the tablet toolbar"
    ],
    "acceptance": [
-    "Written recommendation; follow-up issue if it ships"
+    "Handheld test clips (walk, slow pan, static shot with a person walking through) come out clearly steadier, and intended pans are kept",
+    "No black edges at any strength",
+    "Analysis of a 42 s 1080p clip takes under 15 s on a mid-range phone (to confirm)",
+    "Export matches preview",
+    "Unit tests: a still image moved along a known shake path is recovered within 1 px at proxy size; the zoom always covers the frame",
+    "OpenCV adds under 5 MB to the arm64 download (to confirm)"
    ],
-   "notes": [],
+   "notes": [
+    "Classical method, no model: the standard way editors stabilize imported clips, with nothing to download, and it runs on any phone. Not used: gyro data (most phone videos carry none, and Gyroflow is GPL-3.0) and learned stabilizers (StabNet, DUT, NNDVS are research code without official mobile builds). Revisit a model only if one ships with a permissive license and an official on-device version",
+    "OpenCV (Apache-2.0) for corners, optical flow and RANSAC: build only core, imgproc, video and calib3d (with what they need) for arm64-v8a; the full official package is far too large",
+    "Store the path in normalized units keyed by timestamp (phone video is often variable frame rate), so it fits the proxy and the original and survives trims, speed changes and reverse",
+    "Cutout masks and face tracks are computed on source frames, so they go through the same transform; the user's transform, crop and masks apply after it. Share path smoothing with face follow and reframe",
+    "No board for the Stabilize sheet yet: build it from the design system like the other clip tool sheets",
+    "Not in v1: rolling-shutter (wobble) correction and full-frame stabilization without crop"
+   ],
    "refs": [
+    "docs/product/spec.md section 3",
     "docs/architecture.md section 6"
    ],
    "labels": [
-    "type:spike",
+    "type:task",
     "area:ai",
-    "priority:p2"
+    "priority:p1"
    ],
    "parent": "E7",
    "depends": [
-    "M0-spike-engine"
+    "M0-spike-engine",
+    "M2-transform"
    ]
   },
   {

@@ -15,7 +15,7 @@ Each milestone has one epic issue with goals, screens, exit criteria and risks, 
 | M4 · Text | Text cards and titles with 12 effects, animations and templates. | Text: cards, titles, effects and animations | 4 |
 | M5 · Audio | Per-clip volume, fades and loudness, noise reduction, on-device AI voice cleanup, ducking, beat markers and voiceover recording. | Audio: per-clip loudness, cleanup and music tools | 6 |
 | M6 · Captions and edit by text | Whisper captions on the device with styles, editing, .srt and offline translation, plus editing the video by deleting words and pauses. | Captions and edit by text with on-device Whisper | 6 |
-| M7 · Vision tools | Person cutout, chroma key, face-following masks and auto-reframe, all on the device. | Vision tools: cutout, chroma key, face follow and reframe | 5 |
+| M7 · Vision tools | Person cutout, chroma key, face-following masks, auto-reframe and video stabilization, all on the device. | Vision tools: cutout, chroma key, face follow and reframe | 5 |
 | M8 · Export | Export in HD to 4K with H.264, HEVC or AV1 from original media, in the background, with extras (.srt, .jpg, .m4a, .otio) and a Saved screen. | Export: from originals, in the background, with extras | 5 |
 | M9 · Ads and Clipra Pro | Two compliant interstitial ads per export for free users, consent where required, and a 10 PLN one-time Clipra Pro purchase that removes them. | Monetization: two export ads and Clipra Pro (10 PLN) | 5 |
 | M10 · Tablet | A landscape three-pane tablet experience for every feature. | Tablet: landscape three-pane layout | 4 |
@@ -114,14 +114,14 @@ Whisper captions on the device with styles, editing, .srt and offline translatio
 
 ## M7 · Vision tools
 
-Person cutout, chroma key, face-following masks and auto-reframe, all on the device.
+Person cutout, chroma key, face-following masks, auto-reframe and video stabilization, all on the device.
 
 - **Epic** `E7` Vision tools: cutout, chroma key, face follow and reframe
 - **Task** `M7-cutout` Person cutout (remove background) (P1) - depends on M0-spike-engine
 - **Task** `M7-chroma` Chroma key (P1) - depends on M3-filters
 - **Task** `M7-face-follow` Face-following masks (P1) - depends on M3-masks
 - **Task** `M7-reframe` Auto-reframe to 9:16, 1:1 and 4:5 (P2) - depends on M7-face-follow, M1-model
-- **Spike** `M7-stabilize` Research: video stabilization (P2) - depends on M0-spike-engine
+- **Task** `M7-stabilize` Video stabilization (P1) - depends on M0-spike-engine, M2-transform
 
 ## M8 · Export
 

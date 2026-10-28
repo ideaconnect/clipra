@@ -14,6 +14,7 @@ Keep this list in sync with the build. Every entry needs a license that is compa
 | RNNoise | Lite noise suppression | BSD-3-Clause |
 | libebur128 (if used) | Loudness measurement | MIT |
 | MediaPipe Tasks Vision and models | Face detection, segmentation, object detection | Apache-2.0 |
+| OpenCV (core, imgproc, video, calib3d only) | Motion tracking for Stabilize | Apache-2.0 (4.5.0 and later) |
 | ML Kit Translation | Offline translation | Google APIs Terms of Service |
 | Google Mobile Ads Next-Gen SDK | Interstitial ads | Google terms |
 | Google User Messaging Platform SDK | Ad consent | Google terms |

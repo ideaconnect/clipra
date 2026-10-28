@@ -34,6 +34,7 @@ Screens: `Editor`, `Editor--no-clip-selected`, `Editor--after-split`, `TabletEdi
 - Main tools (nothing selected): Edit, Audio, Text, Layers, Filters, Transitions, Captions, Transcript, Color, Cutout, Reframe, Masks, Format.
 - Clip tools (clip selected): Split, Speed, Audio, Filters, Mask, Layer, Color, Cutout, Stabilize, Linked, Duplicate, Delete, Crop, Freeze, Reverse, Extract, Replace.
 - Tablet toolbar: Split, Delete, Duplicate, Speed, Freeze, Stabilize, Detach audio, Linked, Add layer, Snap, Ripple, zoom.
+- Stabilize (clip tool): smooths out handheld shake on the device. Clipra tracks the camera motion, smooths it and moves each frame onto the smooth path, zooming in just enough that no edge shows. Strength 0 to 100 (default 50) trades smoothness against crop, and the crop is shown. The analysis runs in the background; the clip plays unstabilized until it is ready.
 - Editing rules: snapping on by default; ripple delete on by default; split at playhead; trim with handles; drag between layers; drop above the top layer creates a new layer.
 - Linked clips: a caption or a sound can be linked to a source clip so they move and get cut together. Linked partners of the selected clip are outlined.
 - Undo and redo for every edit.
