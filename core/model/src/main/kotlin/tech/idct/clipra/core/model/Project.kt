@@ -1,6 +1,7 @@
 package tech.idct.clipra.core.model
 
 import kotlinx.serialization.Serializable
+import tech.idct.clipra.core.model.export.ExportSettings
 
 /**
  * A Clipra project: a versioned JSON document (docs/architecture.md, section 3). All times are
@@ -19,6 +20,8 @@ data class Project(
     val transitions: List<Transition> = emptyList(),
     val links: List<LinkGroup> = emptyList(),
     val transcripts: List<Transcript> = emptyList(),
+    /** The options of the last export, offered again next time. */
+    val exportSettings: ExportSettings? = null,
     val createdAtMillis: Long = 0,
     val version: Int = ProjectJson.SCHEMA_VERSION,
 ) {
