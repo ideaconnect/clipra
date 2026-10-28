@@ -19,7 +19,7 @@ Screens: `Main`, `NewProject`, `TabletHome`.
 - Home shows: New project, quick actions (Auto captions, Text card, Mosaic layout, tablet adds Import from Gallery), on-device AI status with a link to AI models, recent projects with format badge, duration and last edited, and the crown "Pro" entry.
 - Aspect ratios: 9:16 (Reels), 16:9 (YouTube), 1:1 (Square), 4:5 (Feed), 4:3 (Classic), 21:9 (Cinema).
 - Layouts ("mosaic" = split screen): Single, Split 2, Split 3, 2×2, 3×3. Each cell is a region clips can be dropped into.
-- Resolution: HD 720p, FHD 1080p, 2K 1440p, 4K 2160p (short side for portrait, long side for landscape). Output size is shown live (for example 9:16 FHD = 1080 × 1920).
+- Resolution: HD 720p, FHD 1080p, 2K 1440p, 4K 2160p. The number is the short side in every ratio; the long side follows the ratio, rounded to an even number. Output size is shown live (for example 9:16 FHD = 1080 × 1920, 16:9 4K = 3840 × 2160, 21:9 FHD = 2520 × 1080).
 - Frame rate: 24, 25, 30, 50, 60.
 - Background: Black, White, Yellow, Blur. Fills empty space and is the default colour of text cards.
 - Projects autosave continuously. The project format must be versioned.

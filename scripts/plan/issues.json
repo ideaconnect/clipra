@@ -600,7 +600,8 @@
     "Created project opens in the editor with the chosen format"
    ],
    "notes": [
-    "Logic reference: `design/canvas/NewProject.dc.html` renderVals()"
+    "Logic reference: `design/canvas/NewProject.dc.html` renderVals()",
+    "Resolution p is the short side in every ratio: landscape H = p and W = p × w / h, portrait W = p and H = p × h / w, the computed side rounded to the nearest even number; square p × p (16:9 4K = 3840 × 2160, 21:9 FHD = 2520 × 1080)"
    ],
    "refs": [
     "docs/product/spec.md section 2"
