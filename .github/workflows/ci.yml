@@ -61,7 +61,7 @@ jobs:
 
       - name: Run unit tests
         if: ${{ !cancelled() && steps.assemble.outcome == 'success' }}
-        run: ./gradlew testDebugUnitTest :core:model:test
+        run: ./gradlew testDebugUnitTest :core:model:test -Proborazzi.test.verify=true
 
       - name: Run Android lint
         if: ${{ !cancelled() && steps.assemble.outcome == 'success' }}

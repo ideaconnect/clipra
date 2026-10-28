@@ -19,6 +19,9 @@ data object SettingsRoute
 @Serializable
 data object BoardIndexRoute
 
+@Serializable
+data object DesignSystemRoute
+
 /** Destinations of the app module itself. */
 internal object AppBoards {
     /** Settings has no board in the design yet (M11-settings). */
@@ -33,6 +36,13 @@ internal object AppBoards {
         id = "BoardIndex",
         title = R.string.app_title_board_index,
         route = BoardIndexRoute,
+    )
+
+    /** Debug builds only: the design system gallery (#5). */
+    val designSystem = Board(
+        id = "DesignSystem",
+        title = R.string.app_title_design_system,
+        route = DesignSystemRoute,
     )
 }
 

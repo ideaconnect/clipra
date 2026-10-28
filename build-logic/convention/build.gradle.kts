@@ -21,6 +21,7 @@ dependencies {
     compileOnly(libs.android.gradlePlugin)
     compileOnly(libs.kotlin.gradlePlugin)
     compileOnly(libs.room.gradlePlugin)
+    compileOnly(libs.roborazzi.gradlePlugin)
 }
 
 gradlePlugin {
@@ -44,6 +45,10 @@ gradlePlugin {
         register("androidRoom") {
             id = "clipra.android.room"
             implementationClass = "tech.idct.clipra.buildlogic.AndroidRoomConventionPlugin"
+        }
+        register("androidScreenshots") {
+            id = "clipra.android.screenshots"
+            implementationClass = "tech.idct.clipra.buildlogic.AndroidScreenshotsConventionPlugin"
         }
         register("hilt") {
             id = "clipra.hilt"

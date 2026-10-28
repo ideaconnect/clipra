@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="designsystem_back">Wstecz</string>
+    <string name="designsystem_close">Zamknij</string>
+    <string name="designsystem_close_tools">Zamknij narzędzia klipu</string>
+    <string name="designsystem_gallery_title">System projektu</string>
     <string name="designsystem_placeholder_note">To ekran zastępczy. Powstanie w dalszej części planu.</string>
 </resources>
