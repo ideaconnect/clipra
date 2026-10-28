@@ -2,4 +2,50 @@
 <resources>
     <string name="home_title_main">Projects</string>
     <string name="home_title_new_project">New project</string>
+    <string name="home_brand" translatable="false">Clipra</string>
+    <string name="home_tagline">No account · no upload · no watermark</string>
+    <string name="home_pro">Pro</string>
+    <string name="home_new_project_formats">9:16, 16:9, 1:1, mosaic - up to 4K</string>
+    <string name="home_quick_captions">Auto captions</string>
+    <string name="home_quick_text">Text card</string>
+    <string name="home_quick_mosaic">Mosaic layout</string>
+    <string name="home_ai_ready">On-device AI ready</string>
+    <string name="home_ai_title">On-device AI</string>
+    <string name="home_ai_setup">Captions and voice cleanup</string>
+    <string name="home_recent">Recent</string>
+    <plurals name="home_recent_count">
+        <item quantity="one">%d project</item>
+        <item quantity="other">%d projects</item>
+    </plurals>
+    <string name="home_recent_empty">No projects yet. Start one with New project.</string>
+    <string name="home_nav_projects">Projects</string>
+    <string name="home_nav_models">Models</string>
+    <string name="home_nav_settings">Settings</string>
+    <string name="home_screen_index">All screens</string>
+    <string name="home_badge">%1$s · %2$s</string>
+    <string name="home_badge_mosaic">Mosaic %1$s · %2$s</string>
+    <string name="home_layout_single">Single</string>
+    <string name="home_layout_split2">Split 2</string>
+    <string name="home_layout_split3">Split 3</string>
+    <string name="home_layout_grid2x2" translatable="false">2×2</string>
+    <string name="home_layout_grid3x3" translatable="false">3×3</string>
+    <string name="home_edited_just_now">Edited just now</string>
+    <string name="home_edited_minutes">Edited %1$d min ago</string>
+    <string name="home_edited_hours">Edited %1$d h ago</string>
+    <string name="home_edited_yesterday">Edited yesterday</string>
+    <plurals name="home_edited_days">
+        <item quantity="one">Edited %d day ago</item>
+        <item quantity="other">Edited %d days ago</item>
+    </plurals>
+    <string name="home_edited_last_week">Edited last week</string>
+    <string name="home_edited_on">Edited %1$s</string>
+    <string name="home_menu_rename">Rename</string>
+    <string name="home_menu_duplicate">Duplicate</string>
+    <string name="home_menu_delete">Delete</string>
+    <string name="home_rename_title">Rename project</string>
+    <string name="home_rename_label">Name</string>
+    <string name="home_delete_title">Delete \"%1$s\"?</string>
+    <string name="home_delete_body">This can\'t be undone. Your photos and videos in the Gallery stay where they are.</string>
+    <string name="home_cancel">Cancel</string>
+    <string name="home_copy_name">%1$s copy</string>
 </resources>

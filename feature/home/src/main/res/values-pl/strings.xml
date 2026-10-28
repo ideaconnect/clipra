@@ -2,4 +2,51 @@
 <resources>
     <string name="home_title_main">Projekty</string>
     <string name="home_title_new_project">Nowy projekt</string>
+    <string name="home_tagline">Bez konta · bez wysyłania · bez znaku wodnego</string>
+    <string name="home_pro">Pro</string>
+    <string name="home_new_project_formats">9:16, 16:9, 1:1, mozaika - do 4K</string>
+    <string name="home_quick_captions">Automatyczne napisy</string>
+    <string name="home_quick_text">Karta tekstowa</string>
+    <string name="home_quick_mosaic">Układ mozaiki</string>
+    <string name="home_ai_ready">AI na urządzeniu gotowe</string>
+    <string name="home_ai_title">AI na urządzeniu</string>
+    <string name="home_ai_setup">Napisy i czyszczenie głosu</string>
+    <string name="home_recent">Ostatnie</string>
+    <plurals name="home_recent_count">
+        <item quantity="one">%d projekt</item>
+        <item quantity="few">%d projekty</item>
+        <item quantity="many">%d projektów</item>
+        <item quantity="other">%d projektu</item>
+    </plurals>
+    <string name="home_recent_empty">Nie masz jeszcze projektów. Zacznij od przycisku Nowy projekt.</string>
+    <string name="home_nav_projects">Projekty</string>
+    <string name="home_nav_models">Modele</string>
+    <string name="home_nav_settings">Ustawienia</string>
+    <string name="home_screen_index">Wszystkie ekrany</string>
+    <string name="home_badge">%1$s · %2$s</string>
+    <string name="home_badge_mosaic">Mozaika %1$s · %2$s</string>
+    <string name="home_layout_single">Pojedynczy</string>
+    <string name="home_layout_split2">Podział 2</string>
+    <string name="home_layout_split3">Podział 3</string>
+    <string name="home_edited_just_now">Edytowano przed chwilą</string>
+    <string name="home_edited_minutes">Edytowano %1$d min temu</string>
+    <string name="home_edited_hours">Edytowano %1$d godz. temu</string>
+    <string name="home_edited_yesterday">Edytowano wczoraj</string>
+    <plurals name="home_edited_days">
+        <item quantity="one">Edytowano %d dzień temu</item>
+        <item quantity="few">Edytowano %d dni temu</item>
+        <item quantity="many">Edytowano %d dni temu</item>
+        <item quantity="other">Edytowano %d dnia temu</item>
+    </plurals>
+    <string name="home_edited_last_week">Edytowano w zeszłym tygodniu</string>
+    <string name="home_edited_on">Edytowano %1$s</string>
+    <string name="home_menu_rename">Zmień nazwę</string>
+    <string name="home_menu_duplicate">Duplikuj</string>
+    <string name="home_menu_delete">Usuń</string>
+    <string name="home_rename_title">Zmień nazwę projektu</string>
+    <string name="home_rename_label">Nazwa</string>
+    <string name="home_delete_title">Usunąć „%1$s”?</string>
+    <string name="home_delete_body">Tego nie można cofnąć. Twoje zdjęcia i filmy w Galerii zostaną na miejscu.</string>
+    <string name="home_cancel">Anuluj</string>
+    <string name="home_copy_name">%1$s - kopia</string>
 </resources>

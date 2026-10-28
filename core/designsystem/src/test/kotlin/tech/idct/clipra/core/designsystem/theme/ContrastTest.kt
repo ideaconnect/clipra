@@ -38,6 +38,7 @@ class ContrastTest {
     @Test
     fun accentAndSelection() {
         assertContrast("onAccent on accent", c.onAccent, c.accent)
+        assertContrast("onAccentMuted on accent", c.onAccentMuted, c.accent)
         assertContrast("onAccent on textPrimary (tabs)", c.onAccent, c.textPrimary)
         assertContrast(
             "textPrimary on accentSelectedBackground",
