@@ -51,4 +51,9 @@
     <string name="export_notification_paused">Export paused</string>
     <string name="export_notification_done">Saved to Gallery</string>
     <string name="export_notification_failed">The export didn\'t finish</string>
+    <string name="export_share">Share</string>
+    <string name="export_open_gallery">Open Gallery</string>
+    <string name="export_pro_title">Export without ads next time</string>
+    <string name="export_pro_subtitle">Clipra Pro · one payment</string>
+    <string name="export_play">Play</string>
 </resources>
