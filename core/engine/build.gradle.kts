@@ -1,5 +1,6 @@
 plugins {
     id("clipra.android.library")
+    id("clipra.hilt")
 }
 
 android {
@@ -12,6 +13,9 @@ dependencies {
     api(libs.androidx.media3.effect)
     api(libs.androidx.media3.exoplayer)
     api(libs.androidx.media3.transformer)
+    implementation(libs.androidx.work.runtime)
+    implementation(libs.androidx.hilt.work)
+    ksp(libs.androidx.hilt.compiler)
 
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.runner)
