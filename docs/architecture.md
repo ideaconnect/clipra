@@ -12,8 +12,10 @@ Status: proposed. Decisions marked **(spike)** must be confirmed by the spikes i
 | DI | Hilt |
 | Persistence | Room (project index, media cache index), project documents as versioned JSON (kotlinx.serialization), DataStore for settings and the Pro entitlement |
 | Background work | WorkManager (proxies, model downloads); a foreground service for export |
-| Min / target SDK | minSdk 26 proposed (GMA Next-Gen needs 24, MediaPipe needs 24); target the latest SDK Play requires. Revisit minSdk with device data before launch |
-| ABIs | arm64-v8a first (whisper.cpp, ONNX Runtime and MediaPipe are fastest there); armeabi-v7a only if device data asks for it |
+| Min / target SDK | minSdk 29: Android 10 and later, so hardware encoding and the on-device AI runtimes are dependable (decided 2026-10-28). targetSdk 36, which Play requires since 31 Aug 2026; compileSdk 37 |
+| ABIs | arm64-v8a in release builds (whisper.cpp, ONNX Runtime and MediaPipe are fastest there); debug builds add x86_64 so native code also runs on the emulators. Native code must support 16 KB memory pages, as Play requires. armeabi-v7a only if device data asks for it |
+| App id | `tech.idct.clipra`, which can never change once the app is on Google Play |
+| Build | Gradle with the Kotlin DSL, the version catalog `gradle/libs.versions.toml` and convention plugins in `build-logic/`; Android Gradle Plugin 9 with its built-in Kotlin support; KSP for Room and Hilt |
 
 ## 2. Modules
 
@@ -132,6 +134,7 @@ Downloads run in WorkManager with a Wi-Fi-only constraint by default, resume aft
 - Golden-image tests for GL effects (render a frame, compare with tolerance).
 - Instrumented tests for export on at least three device tiers; performance budgets tracked in CI where possible.
 - Screenshot tests for key Compose screens against the design PNGs.
+- Development starts on the emulators (phone and tablet). Emulators show whether things work, not how fast a phone is: real phones join in a later phase, and every speed number (spikes, budgets) is confirmed there.
 
 ## 11. Performance budgets (initial)
 
