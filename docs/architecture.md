@@ -77,7 +77,7 @@ Transcript(clipId, words: List<Word(text, start, end, confidence, kind: Word|Fil
 - Mixing: Media3 audio processing for preview and export, all layers summed, muted layers skipped.
 - Loudness: integrated loudness (EBU R128 / ITU-R BS.1770) measured per clip, gain to target (−14, −16, −23 LUFS), true-peak limiter at −1 dBTP. Use a permissively licensed implementation (for example libebur128, MIT) or our own.
 - Noise reduction: spectral gate (our own implementation).
-- AI voice cleanup: DeepFilterNet 3 exported to ONNX (about 8 MB) on ONNX Runtime Mobile; RNNoise as the lite option. Processed offline per clip into a cached file, not in real time.
+- AI voice cleanup: DeepFilterNet 3 exported to ONNX (an 8.0 MB download, 8.6 MB unpacked) on ONNX Runtime Mobile; RNNoise as the lite option. Processed offline per clip into a cached file, not in real time.
 - Ducking: speech activity from the transcript or a voice activity detector drives a gain envelope on other clips.
 - Beat detection: onset detection (spectral flux) on music clips, cached per media hash.
 
@@ -85,7 +85,7 @@ Transcript(clipId, words: List<Word(text, start, end, confidence, kind: Word|Fil
 
 | Feature | Runtime and model | Notes |
 |---|---|---|
-| Captions, transcript | whisper.cpp (MIT) via JNI; Whisper ggml models (MIT): tiny 75 MB, base 142 MB, small 466 MB, large-v3-turbo q5 547 MB | Word timestamps, language detection, translate-to-English task. Long audio is chunked; progress and cancel supported **(spike: real-time factor on mid-range devices)** |
+| Captions, transcript | whisper.cpp (MIT) via JNI; Whisper ggml models (MIT): tiny 78 MB, base 148 MB, small 488 MB, large-v3-turbo q5_0 574 MB | Word timestamps, language detection, translate-to-English task. Long audio is chunked; progress and cancel supported **(spike: real-time factor on mid-range devices)** |
 | Filler and pause detection | Rules on Whisper word output | Filler list per language, pause threshold from the UI |
 | Voice cleanup | DeepFilterNet 3 (MIT or Apache-2.0) on ONNX Runtime (MIT); RNNoise (BSD-3) | See audio |
 | Face follow, reframe | MediaPipe Tasks Vision face detector (Apache-2.0) | Smoothed track, keyframes written into the clip |
@@ -104,7 +104,7 @@ Every model runs on the phone and comes from its official source. Clipra never h
 | RNNoise | Weights compiled in from the official xiph/rnnoise source | Built in |
 | ML Kit translation packs | Google, through ML Kit | Managed by ML Kit |
 
-Downloads run in WorkManager with a Wi-Fi-only constraint by default, resume after interruptions, are verified by SHA-256 before use, are stored in app-specific storage, and are listed on the AI models screen with their size. If a source moves or a file changes, the download fails with a clear message; the fix ships in an app update, never through another host.
+Downloads run in WorkManager with a Wi-Fi-only constraint by default, resume after interruptions, are verified by SHA-256 before use, are stored in app-specific storage, and are listed on the AI models screen with their size. If a source moves or a file changes, the download fails with a clear message; the fix ships in an app update, never through another host. Every size the app shows is real: the manifest's byte count before download, the bytes on disk after, formatted with `Formatter.formatShortFileSize` (decimal units from Android 8 on, like the system's storage screens).
 
 ## 7. Export
 

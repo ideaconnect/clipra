@@ -416,7 +416,7 @@
     "Recommendation for the default model and chunking strategy"
    ],
    "notes": [
-    "Model sizes: tiny 75 MB, base 142 MB, small 466 MB, large-v3-turbo q5 547 MB"
+    "Model sizes (official files, decimal MB): tiny 78, base 148, small 488, large-v3-turbo q5_0 574"
    ],
    "refs": [
     "docs/architecture.md",
@@ -1950,11 +1950,12 @@
     "Interrupted downloads resume",
     "Corrupt downloads are rejected",
     "Storage maths matches the files on disk",
-    "Every manifest URL is an official source pinned to a revision (unit tested)"
+    "Every manifest URL is an official source pinned to a revision (unit tested)",
+    "Every size shown matches the real files (Whisper base shows 148 MB)"
    ],
    "notes": [
     "Download straight from the official sources; never host or mirror model files, and never bundle large models in the APK",
-    "The design's sizes (75, 142, 466, 547 MB) are the official files in binary megabytes (MiB); Android's size formatter shows decimal MB (78, 148, 488, 574). Use one convention for every size and the storage total"
+    "Show real sizes in decimal units: the manifest's bytes before download, the files on disk after (DeepFilterNet 3 is an 8.0 MB download and 8.6 MB unpacked), formatted with Formatter.formatShortFileSize. The design's 75, 142, 466, 547, 8 and 150 MB are placeholders"
    ],
    "refs": [
     "docs/product/spec.md section 18",
@@ -2430,7 +2431,7 @@
     "OpenCV (Apache-2.0) for corners, optical flow and RANSAC: build only core, imgproc, video and calib3d (with what they need) for arm64-v8a; the full official package is far too large",
     "Store the path in normalized units keyed by timestamp (phone video is often variable frame rate), so it fits the proxy and the original and survives trims, speed changes and reverse",
     "Cutout masks and face tracks are computed on source frames, so they go through the same transform; the user's transform, crop and masks apply after it. Share path smoothing with face follow and reframe",
-    "No board for the Stabilize sheet yet: build it from the design system like the other clip tool sheets",
+    "No board, by decision: build the sheet from the design system like the other clip tool sheets, with the strength slider and the crop readout",
     "Not in v1: rolling-shutter (wobble) correction and full-frame stabilization without crop"
    ],
    "refs": [
@@ -3251,7 +3252,9 @@
     "First run completes offline (downloads deferred)",
     "Total size updates as models are toggled"
    ],
-   "notes": [],
+   "notes": [
+    "The preselected total is real: 156 MB for Whisper base and DeepFilterNet 3 (the design shows 150 MB)"
+   ],
    "refs": [
     "docs/product/spec.md section 19"
    ],
