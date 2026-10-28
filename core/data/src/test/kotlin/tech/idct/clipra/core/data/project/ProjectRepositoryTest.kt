@@ -27,6 +27,10 @@ import tech.idct.clipra.core.model.Format
 import tech.idct.clipra.core.model.Layer
 import tech.idct.clipra.core.model.Layout
 import tech.idct.clipra.core.model.Resolution
+import tech.idct.clipra.core.model.edit.AddClip
+import tech.idct.clipra.core.model.edit.EditRejected
+import tech.idct.clipra.core.model.edit.LayerTarget
+import tech.idct.clipra.core.model.edit.SetLayerLocked
 import java.io.File
 
 @RunWith(AndroidJUnit4::class)
@@ -115,14 +119,32 @@ class ProjectRepositoryTest {
     }
 
     @Test
-    fun aSessionAutosavesEdits() = runTest {
+    fun aSessionAutosavesEditsUndoAndRedo() = runTest {
         val project = repository.create("Lisbon weekend", Format())
         val session = repository.open(project.id, backgroundScope)!!
+        assertFalse(session.state.value.canUndo)
 
-        session.update { it.copy(name = "Lisbon, day one") }
+        assertNull(session.edit { it.copy(name = "Lisbon, day one") })
+        assertTrue(session.state.value.canUndo)
+        assertFalse(session.state.value.canRedo)
         session.flush()
-
         assertEquals("Lisbon, day one", repository.load(project.id)!!.name)
         assertTrue(repository.observeRecent().first().any { it.name == "Lisbon, day one" })
+
+        session.undo()
+        assertTrue(session.state.value.canRedo)
+        session.flush()
+        assertEquals("Lisbon weekend", repository.load(project.id)!!.name)
+    }
+
+    @Test
+    fun aRefusedEditIsReported() = runTest {
+        val project = repository.create("Locked", Format())
+        val session = repository.open(project.id, backgroundScope)!!
+        session.edit(SetLayerLocked("L1", true))
+        val refused = session.edit(
+            AddClip(Clip("c", ClipType.Photo, 0, 1_000_000), LayerTarget.Existing("L1")),
+        )
+        assertEquals(EditRejected.Reason.LayerLocked, refused?.reason)
     }
 }

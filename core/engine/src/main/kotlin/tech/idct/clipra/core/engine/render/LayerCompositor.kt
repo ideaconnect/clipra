@@ -209,7 +209,7 @@ private class LayerCompositorProgram(
         val video = videoSources.getOrPut(clip.id) {
             VideoFrameSource(context, source.path, callbackHandler)
         }
-        val sourceTimeUs = source.inPointUs + (timeUs - clip.startUs)
+        val sourceTimeUs = source.inPointUs + ((timeUs - clip.startUs) * clip.rate).toLong()
         if (!video.frameAt(sourceTimeUs, frameToleranceUs)) return null
         return ClipFrame(video.textureId, video.textureMatrix, video.width, video.height, true)
     }
