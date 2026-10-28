@@ -1,0 +1,608 @@
+package tech.idct.clipra.feature.editor.timeline
+
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.rememberScrollableState
+import androidx.compose.foundation.gestures.rememberTransformableState
+import androidx.compose.foundation.gestures.scrollable
+import androidx.compose.foundation.gestures.transformable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.dp
+import tech.idct.clipra.core.designsystem.ClipraTheme
+import tech.idct.clipra.core.designsystem.component.ClipraIcon
+import tech.idct.clipra.core.designsystem.icon.ClipraIcons
+import tech.idct.clipra.core.model.Clip
+import tech.idct.clipra.core.model.ClipType
+import tech.idct.clipra.core.model.Project
+import tech.idct.clipra.core.model.edit.Edge
+import tech.idct.clipra.core.model.edit.LayerTarget
+import tech.idct.clipra.core.model.edit.Snapping
+import tech.idct.clipra.core.model.edit.linkedPartners
+import tech.idct.clipra.core.model.edit.randomId
+import tech.idct.clipra.feature.editor.R
+import kotlin.math.roundToInt
+
+/** What the timeline asks the editor to do. */
+class TimelineActions(
+    val onSeek: (Long) -> Unit,
+    val onZoom: (Float) -> Unit,
+    val onSelect: (String?) -> Unit,
+    val onMove: (clipId: String, startUs: Long, target: LayerTarget) -> Unit,
+    val onTrim: (clipId: String, edge: Edge, toUs: Long) -> Unit,
+    val onAddMedia: () -> Unit,
+)
+
+/**
+ * The phone timeline (Editor board): a ruler, one lane per layer with the highest on top and an
+ * L-chip gutter, the playhead fixed in the middle. Drag to scrub, pinch to zoom, tap a clip to
+ * select it, long-press and drag to move it (to another layer too), drag a selected clip's
+ * handles to trim. Moves and trims snap to the playhead and cuts.
+ */
+@Composable
+fun Timeline(
+    project: Project,
+    playheadUs: Long,
+    dpPerSecond: Float,
+    selectedClipId: String?,
+    missingMedia: Set<String>,
+    actions: TimelineActions,
+    modifier: Modifier = Modifier,
+    filmstrip: @Composable (clip: Clip, widthDp: Float, heightDp: Float) -> Unit = { _, _, _ -> },
+) {
+    val colors = ClipraTheme.colors
+    val density = LocalDensity.current
+    val currentPlayhead by rememberUpdatedState(playheadUs)
+    val currentDps by rememberUpdatedState(dpPerSecond)
+    val scrub = rememberScrollableState { deltaPx ->
+        val deltaDp = with(density) { deltaPx.toDp().value }
+        actions.onSeek(currentPlayhead - (deltaDp / currentDps * 1_000_000).toLong())
+        deltaPx
+    }
+    val zoom = rememberTransformableState { zoomChange, _, _ -> actions.onZoom(zoomChange) }
+    // Highest layer first, as on the board.
+    val lanes = project.layers.withIndex().reversed()
+
+    BoxWithConstraints(
+        modifier = modifier
+            .background(colors.timelineBackground)
+            .testTag("timeline"),
+    ) {
+        val viewWidth = maxWidth.value
+        val lanesWidth = viewWidth - TimelineGeometry.GUTTER
+        val geometry = TimelineGeometry(
+            dpPerSecond,
+            playheadX = viewWidth / 2 - TimelineGeometry.GUTTER,
+            playheadUs,
+        )
+        Row(modifier = Modifier.fillMaxSize()) {
+            Gutter(
+                lanes.map { it.index to it.value },
+                modifier = Modifier.width(TimelineGeometry.GUTTER.dp),
+            )
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .clipToBounds()
+                    .scrollable(scrub, Orientation.Horizontal, reverseDirection = false)
+                    .transformable(zoom, canPan = { false })
+                    .pointerInput(Unit) { detectTapGestures { actions.onSelect(null) } },
+            ) {
+                Ruler(geometry, lanesWidth)
+                Column(
+                    modifier = Modifier
+                        .padding(top = TimelineGeometry.RULER.dp)
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState()),
+                ) {
+                    val partners = selectedClipId?.let { project.linkedPartners(it) }.orEmpty()
+                    lanes.forEach { (index, layer) ->
+                        val laneHeight = TimelineGeometry.laneHeight(layer)
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height((laneHeight + TimelineGeometry.LANE_GAP).dp)
+                                .padding(vertical = (TimelineGeometry.LANE_GAP / 2).dp),
+                        ) {
+                            layer.clips.forEach { clip ->
+                                ClipBlock(
+                                    project = project,
+                                    clip = clip,
+                                    layerNumber = index + 1,
+                                    geometry = geometry,
+                                    laneHeight = laneHeight,
+                                    selected = clip.id == selectedClipId,
+                                    linked = clip.id in partners,
+                                    missing = clip.source?.mediaId in missingMedia,
+                                    locked = layer.locked,
+                                    actions = actions,
+                                    filmstrip = filmstrip,
+                                )
+                            }
+                            if (index == 0) {
+                                AddMediaButton(
+                                    x = geometry.x(layer.clips.maxOfOrNull { it.endUs } ?: 0) + 6,
+                                    height = laneHeight,
+                                    onClick = actions.onAddMedia,
+                                )
+                            }
+                        }
+                    }
+                }
+                Playhead(geometry.playheadX)
+            }
+        }
+    }
+}
+
+@Composable
+private fun Gutter(lanes: List<Pair<Int, tech.idct.clipra.core.model.Layer>>, modifier: Modifier) {
+    val colors = ClipraTheme.colors
+    Column(
+        modifier = modifier
+            .fillMaxHeight()
+            .background(colors.timelineBackground)
+            .padding(top = TimelineGeometry.RULER.dp),
+    ) {
+        lanes.forEach { (index, layer) ->
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height((TimelineGeometry.laneHeight(layer) + TimelineGeometry.LANE_GAP).dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = "L${index + 1}",
+                    style = ClipraTheme.typography.clipLabel,
+                    color = if (layer.hidden) colors.textDisabled else colors.textPrimary,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(colors.surfaceRaised)
+                        .padding(horizontal = 5.dp, vertical = 3.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun Ruler(geometry: TimelineGeometry, width: Float) {
+    val colors = ClipraTheme.colors
+    Box(modifier = Modifier.fillMaxWidth().height(TimelineGeometry.RULER.dp)) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            geometry.ticks(width).forEach { tick ->
+                val x = tick.x.dp.toPx()
+                val length = if (tick.long) 8.dp.toPx() else 4.dp.toPx()
+                drawLine(
+                    colors.borderStrong,
+                    Offset(x, 0f),
+                    Offset(x, length),
+                    strokeWidth = 1.dp.toPx(),
+                )
+            }
+        }
+        geometry.ticks(width).filter { it.labelled && it.x in -20f..width }.forEach { tick ->
+            Text(
+                text = formatRulerLabel(tick.timeUs),
+                style = ClipraTheme.typography.clipLabel,
+                color = colors.textTertiary,
+                modifier = Modifier.offset(x = (tick.x - 14).dp, y = 7.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun Playhead(x: Float) {
+    val accent = ClipraTheme.colors.accent
+    Canvas(modifier = Modifier.fillMaxSize()) {
+        val px = x.dp.toPx()
+        drawLine(accent, Offset(px, 0f), Offset(px, size.height), strokeWidth = 2.dp.toPx())
+        drawCircle(accent, radius = 5.dp.toPx(), center = Offset(px, 5.dp.toPx()))
+    }
+}
+
+@Composable
+private fun AddMediaButton(x: Float, height: Float, onClick: () -> Unit) {
+    val colors = ClipraTheme.colors
+    Surface(
+        onClick = onClick,
+        modifier = Modifier
+            .offset(x = x.dp)
+            .size(width = 44.dp, height = maxOf(height, 44f).dp)
+            .semantics { role = Role.Button }
+            .testTag("add-media"),
+        shape = RoundedCornerShape(10.dp),
+        color = colors.textPrimary,
+        contentColor = colors.background,
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            ClipraIcon(
+                icon = ClipraIcons.Add,
+                contentDescription = stringResource(R.string.editor_add_media),
+            )
+        }
+    }
+}
+
+@Composable
+private fun ClipBlock(
+    project: Project,
+    clip: Clip,
+    layerNumber: Int,
+    geometry: TimelineGeometry,
+    laneHeight: Float,
+    selected: Boolean,
+    linked: Boolean,
+    missing: Boolean,
+    locked: Boolean,
+    actions: TimelineActions,
+    filmstrip: @Composable (Clip, Float, Float) -> Unit,
+) {
+    val colors = ClipraTheme.colors
+    val density = LocalDensity.current
+    var dragX by remember { mutableFloatStateOf(0f) }
+    var dragY by remember { mutableFloatStateOf(0f) }
+    var trimStart by remember { mutableFloatStateOf(0f) }
+    var trimEnd by remember { mutableFloatStateOf(0f) }
+    var dragging by remember { mutableStateOf(false) }
+    val currentClip by rememberUpdatedState(clip)
+    val currentGeometry by rememberUpdatedState(geometry)
+
+    val x = geometry.x(clip.startUs) + dragX + trimStart
+    val width = (geometry.width(clip.durationUs) - trimStart + trimEnd).coerceAtLeast(8f)
+    val fill = clipColor(clip.type)
+    val shape = RoundedCornerShape(7.dp)
+    val description = clipDescription(project, clip, layerNumber, selected, linked, missing)
+    val thresholdUs = geometry.duration(8f)
+
+    Box(
+        modifier = Modifier
+            .offset { IntOffset(x.dp.roundToPx(), dragY.roundToInt()) }
+            // Clips can be much wider than the view.
+            .wrapContentSize(Alignment.TopStart, unbounded = true)
+            .size(width.dp, laneHeight.dp)
+            .clip(shape)
+            .background(fill)
+            .then(if (selected) Modifier.border(2.dp, colors.accent, shape) else Modifier)
+            .then(if (linked) Modifier.dashedOutline(colors.accent) else Modifier)
+            .semantics(mergeDescendants = true) {
+                contentDescription = description
+                this.selected = selected
+                onClick {
+                    actions.onSelect(clip.id)
+                    true
+                }
+            }
+            .pointerInput(clip.id, locked) {
+                detectTapGestures { actions.onSelect(currentClip.id) }
+            }
+            .pointerInput(clip.id, locked) {
+                if (locked) return@pointerInput
+                detectDragGesturesAfterLongPress(
+                    onDragStart = {
+                        dragging = true
+                        actions.onSelect(currentClip.id)
+                    },
+                    onDrag = { change, amount ->
+                        change.consume()
+                        dragX += with(density) { amount.x.toDp().value }
+                        dragY += amount.y
+                    },
+                    onDragEnd = {
+                        val g = currentGeometry
+                        val wanted = currentClip.startUs + g.duration(dragX)
+                        val targets = Snapping.targets(project, g.playheadUs, currentClip.id)
+                        val start = Snapping.snapMove(
+                            wanted,
+                            currentClip.durationUs,
+                            targets,
+                            thresholdUs,
+                        )
+                            .coerceAtLeast(0)
+                        val lanePx = with(density) {
+                            (laneHeight + TimelineGeometry.LANE_GAP).dp.toPx()
+                        }
+                        val lanesMoved = -(dragY / lanePx)
+                            .roundToInt()
+                        val toIndex = layerNumber - 1 + lanesMoved
+                        val target = when {
+                            lanesMoved == 0 -> null
+
+                            toIndex >= project.layers.size -> LayerTarget.NewOnTop(randomId())
+
+                            else -> project.layers.getOrNull(toIndex)?.let {
+                                LayerTarget.Existing(it.id)
+                            }
+                        }
+                        val layerId = project.layers[layerNumber - 1].id
+                        actions.onMove(
+                            currentClip.id,
+                            start,
+                            target ?: LayerTarget.Existing(layerId),
+                        )
+                        dragX = 0f
+                        dragY = 0f
+                        dragging = false
+                    },
+                    onDragCancel = {
+                        dragX = 0f
+                        dragY = 0f
+                        dragging = false
+                    },
+                )
+            }
+            .testTag("clip:${clip.id}"),
+    ) {
+        if (clip.type == ClipType.Video && !missing) {
+            filmstrip(clip, width, laneHeight - TimelineGeometry.AUDIO_STRIP)
+        }
+        if (clip.type == ClipType.Video) {
+            AudioStrip(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .fillMaxWidth()
+                    .height(TimelineGeometry.AUDIO_STRIP.dp),
+                muted = clip.audio.volume == 0f,
+            )
+        }
+        if (clip.type == ClipType.Audio) {
+            AudioStrip(
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .fillMaxWidth()
+                    .height((laneHeight * 0.55f).dp),
+                muted = clip.audio.volume == 0f,
+            )
+        }
+        // The label and the duration badge stick to the visible left edge.
+        val inset = (-x).coerceIn(0f, (width - 60f).coerceAtLeast(0f))
+        ClipLabel(
+            clip,
+            project,
+            missing,
+            modifier = Modifier.padding(start = (inset + 5).dp, top = 4.dp),
+        )
+        if (selected) {
+            Text(
+                text = formatClipDuration(clip.durationUs + geometry.duration(trimEnd - trimStart)),
+                style = ClipraTheme.typography.clipLabel,
+                color = colors.onAccent,
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(
+                        start = (inset + 14).dp,
+                        bottom = (TimelineGeometry.AUDIO_STRIP + 3).dp,
+                    )
+                    .clip(RoundedCornerShape(5.dp))
+                    .background(colors.accent)
+                    .padding(horizontal = 5.dp, vertical = 2.dp),
+            )
+        }
+    }
+    if (selected && !locked && !dragging) {
+        TrimHandle(x, laneHeight, start = true) { amount, done ->
+            trimStart += amount
+            if (done) {
+                val to = Snapping.snap(
+                    clip.startUs + geometry.duration(trimStart),
+                    Snapping.targets(project, geometry.playheadUs, clip.id),
+                    thresholdUs,
+                )
+                trimStart = 0f
+                actions.onTrim(clip.id, Edge.Start, to)
+            }
+        }
+        TrimHandle(x + width - HANDLE_WIDTH, laneHeight, start = false) { amount, done ->
+            trimEnd += amount
+            if (done) {
+                val to = Snapping.snap(
+                    clip.endUs + geometry.duration(trimEnd),
+                    Snapping.targets(project, geometry.playheadUs, clip.id),
+                    thresholdUs,
+                )
+                trimEnd = 0f
+                actions.onTrim(clip.id, Edge.End, to)
+            }
+        }
+    }
+}
+
+private const val HANDLE_WIDTH = 12f
+
+@Composable
+private fun TrimHandle(
+    x: Float,
+    height: Float,
+    start: Boolean,
+    onDrag: (amountDp: Float, done: Boolean) -> Unit,
+) {
+    val colors = ClipraTheme.colors
+    val density = LocalDensity.current
+    val label = stringResource(if (start) R.string.editor_trim_start else R.string.editor_trim_end)
+    Box(
+        modifier = Modifier
+            .offset(x = x.dp)
+            .size(HANDLE_WIDTH.dp, height.dp)
+            .clip(
+                RoundedCornerShape(
+                    if (start) 7.dp else 0.dp,
+                    if (start) 0.dp else 7.dp,
+                    if (start) 0.dp else 7.dp,
+                    if (start) 7.dp else 0.dp,
+                ),
+            )
+            .background(colors.accent)
+            .semantics { contentDescription = label }
+            .pointerInput(start) {
+                detectDragGestures(
+                    onDrag = { change, amount ->
+                        change.consume()
+                        onDrag(with(density) { amount.x.toDp().value }, false)
+                    },
+                    onDragEnd = { onDrag(0f, true) },
+                )
+            }
+            .testTag(if (start) "trim-start" else "trim-end"),
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(modifier = Modifier.size(2.dp, 14.dp).background(colors.onAccent))
+    }
+}
+
+@Composable
+private fun AudioStrip(modifier: Modifier, muted: Boolean) {
+    val colors = ClipraTheme.colors
+    val wave = if (muted) colors.textDisabled else colors.clip.musicWave
+    Canvas(modifier = modifier.background(colors.background.copy(alpha = 0.62f))) {
+        val step = 4.dp.toPx()
+        var x = 0f
+        while (x < size.width) {
+            drawLine(
+                wave,
+                Offset(x, size.height * 0.25f),
+                Offset(x, size.height * 0.75f),
+                strokeWidth = 2.dp.toPx(),
+            )
+            x += step
+        }
+    }
+}
+
+@Composable
+private fun ClipLabel(clip: Clip, project: Project, missing: Boolean, modifier: Modifier) {
+    val colors = ClipraTheme.colors
+    val name = if (missing) {
+        stringResource(
+            R.string.editor_missing_media,
+        )
+    } else {
+        clipName(project, clip)
+    }
+    if (name.isEmpty()) return
+    Text(
+        text = name,
+        style = ClipraTheme.typography.clipLabel,
+        color = if (missing) colors.danger else colors.textPrimary,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        modifier = modifier
+            .clip(RoundedCornerShape(5.dp))
+            .background(colors.background.copy(alpha = 0.8f))
+            .padding(horizontal = 5.dp, vertical = 1.dp),
+    )
+}
+
+@Composable
+private fun clipColor(type: ClipType): Color {
+    val clip = ClipraTheme.colors.clip
+    return when (type) {
+        ClipType.Video -> ClipraTheme.colors.surfaceRaised
+        ClipType.Photo -> clip.photo
+        ClipType.TextCard, ClipType.Text -> clip.text
+        ClipType.Caption -> clip.caption
+        ClipType.Audio -> clip.music
+        ClipType.Adjustment -> clip.adjustmentStripeA
+    }
+}
+
+/** TalkBack: type, name, duration and layer, plus selected or linked (#13). */
+@Composable
+private fun clipDescription(
+    project: Project,
+    clip: Clip,
+    layerNumber: Int,
+    selected: Boolean,
+    linked: Boolean,
+    missing: Boolean,
+): String {
+    val type = stringResource(
+        when (clip.type) {
+            ClipType.Video -> R.string.editor_clip_video
+            ClipType.Photo -> R.string.editor_clip_photo
+            ClipType.TextCard, ClipType.Text -> R.string.editor_clip_text
+            ClipType.Caption -> R.string.editor_clip_caption
+            ClipType.Audio -> R.string.editor_clip_audio
+            ClipType.Adjustment -> R.string.editor_clip_adjustment
+        },
+    )
+    val name = clipName(project, clip)
+    val parts = mutableListOf(
+        stringResource(
+            R.string.editor_clip_description,
+            type,
+            name,
+            formatClipDuration(clip.durationUs),
+            layerNumber,
+        ),
+    )
+    if (selected) parts += stringResource(R.string.editor_clip_selected)
+    if (linked) parts += stringResource(R.string.editor_clip_linked)
+    if (missing) parts += stringResource(R.string.editor_missing_media)
+    return parts.joinToString(", ")
+}
+
+private fun Modifier.dashedOutline(color: Color): Modifier = drawBehind {
+    drawRoundRect(
+        color = color,
+        style = Stroke(
+            width = 1.5.dp.toPx(),
+            pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 4f)),
+        ),
+        cornerRadius = androidx.compose.ui.geometry.CornerRadius(7.dp.toPx()),
+    )
+}
+
+/** A text clip's words, or the media's file name. */
+private fun clipName(project: Project, clip: Clip): String =
+    clip.text?.text ?: clip.source?.let { project.asset(it.mediaId)?.displayName }.orEmpty()

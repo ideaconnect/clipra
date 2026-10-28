@@ -55,6 +55,9 @@ class ProjectSession(
     /** Saves any unsaved change now, for example when the app goes to the background. */
     suspend fun flush() = autosaver.flush()
 
+    /** Saves what is left and stops autosaving; the editor calls it when it closes. */
+    suspend fun close() = autosaver.close()
+
     private fun publish() {
         val next = SessionState(history.project, history.canUndo, history.canRedo)
         if (next.project != mutableState.value.project) autosaver.submit(next.project)
