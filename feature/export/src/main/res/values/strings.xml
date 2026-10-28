@@ -27,4 +27,28 @@
         <item quantity="one">%d layer</item>
         <item quantity="other">%d layers</item>
     </plurals>
+    <string name="export_progress_title">Exporting</string>
+    <string name="export_keep_editing">Keep editing</string>
+    <string name="export_pause">Pause</string>
+    <string name="export_resume">Resume</string>
+    <string name="export_cancel">Cancel export</string>
+    <string name="export_back_to_editing">Back to editing</string>
+    <string name="export_frames">Frame %1$d of %2$d</string>
+    <string name="export_seconds_left">About %1$d s left</string>
+    <string name="export_paused">Paused</string>
+    <string name="export_starting">Starting</string>
+    <string name="export_settings_line">%1$s · %2$d×%3$d · %4$d fps · from originals</string>
+    <string name="export_leave_title">You can leave Clipra</string>
+    <string name="export_leave_body">Export keeps going in the background. You\'ll get a notification when the video is in your Gallery.</string>
+    <string name="export_saving">Saving</string>
+    <string name="export_failed_title">The export didn\'t finish</string>
+    <string name="export_failed_unsupported">This phone can\'t encode that format. Try H.264 or a lower resolution.</string>
+    <string name="export_failed_media">A clip\'s photo or video can\'t be read any more. Check the clips marked as missing.</string>
+    <string name="export_failed_storage">There is not enough space to save the video. Free some space and try again.</string>
+    <string name="export_failed_other">Something went wrong while exporting. Try again.</string>
+    <string name="export_notification_channel">Exports</string>
+    <string name="export_notification_running">Exporting your video</string>
+    <string name="export_notification_paused">Export paused</string>
+    <string name="export_notification_done">Saved to Gallery</string>
+    <string name="export_notification_failed">The export didn\'t finish</string>
 </resources>

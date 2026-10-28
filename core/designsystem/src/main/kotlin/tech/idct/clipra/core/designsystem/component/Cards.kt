@@ -1,5 +1,6 @@
 package tech.idct.clipra.core.designsystem.component
 
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -57,6 +58,7 @@ fun OnDeviceCard(
     subtitle: String,
     modifier: Modifier = Modifier,
     subtitleMaxLines: Int = 2,
+    @DrawableRes icon: Int = ClipraIcons.OnDevice,
     onClick: (() -> Unit)? = null,
     action: (@Composable () -> Unit)? = null,
 ) {
@@ -77,7 +79,7 @@ fun OnDeviceCard(
                     contentAlignment = Alignment.Center,
                 ) {
                     ClipraIcon(
-                        icon = ClipraIcons.OnDevice,
+                        icon = icon,
                         contentDescription = null,
                         tint = colors.onDeviceText,
                         size = 20.dp,
