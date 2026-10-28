@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Clipra - Editor</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0;background:#0D0D0F}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+a{color:#FFD23F;text-decoration:none}a:hover{color:#FFE27A}
+.hscroll::-webkit-scrollbar{display:none}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; padding-top: 36px; background: #0D0D0F; color: #F4F3EF; font-family: 'Geist', system-ui, sans-serif; display: flex; flex-direction: column; overflow: hidden">
+
+  <header style="height: 48px; padding: 0 14px 0 6px; display: flex; align-items: center; gap: 6px">
+    <a href="Main.dc.html" aria-label="Close project" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #F4F3EF; border-radius: 12px">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+    </a>
+    <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px">
+      <span style="font-size: 15px; font-weight: 600">Lisbon weekend</span>
+      <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; color: #A6A5AD; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">9:16 · FHD · 30 fps · proxies</span>
+    </span>
+    <a href="Export.dc.html" style="height: 40px; padding: 0 14px 0 12px; border-radius: 12px; background: #FFD23F; color: #141210; font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 6px">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4M7 9l5-5 5 5M5 20h14"></path></svg>
+      Export
+    </a>
+  </header>
+
+  <div style="height: 360px; background: #000000; display: flex; align-items: center; justify-content: center">
+    <div role="img" aria-label="Preview at 00:07.12: sunset.mp4 on L3, alfama.mp4 picture-in-picture on L4, Day one title on L5, caption on L6" style="position: relative; width: 202px; height: 360px; overflow: hidden">
+      <div style="position: absolute; inset: 0; background: linear-gradient(180deg, #23305C 0%, #6B4D7A 36%, #D9785A 66%, #F3B064 100%)"></div>
+      <div style="position: absolute; left: 62%; top: 30%; width: 24%; aspect-ratio: 1; border-radius: 50%; background: #FFE6A8"></div>
+      <div style="position: absolute; left: -30%; right: 35%; top: 64%; height: 50%; border-radius: 50%; background: #4A3355"></div>
+      <div style="position: absolute; left: 25%; right: -40%; top: 72%; height: 50%; border-radius: 50%; background: #22192E"></div>
+      <div style="position: absolute; left: 21%; right: 21%; top: 74%; bottom: -6%; border-radius: 48% 48% 0 0; background: #2F4A7A"></div>
+      <div style="position: absolute; left: 45%; width: 10%; top: 66%; height: 10%; background: #B97A5B"></div>
+      <div style="position: absolute; left: 37%; width: 26%; top: 50%; height: 18%; border-radius: 50%; background: #C98B6B"></div>
+      <div style="position: absolute; left: 36%; width: 28%; top: 48.5%; height: 8.5%; border-radius: 50% 50% 30% 30%; background: #2B1E1A"></div>
+
+      <div style="position: absolute; right: 7%; top: 7%; width: 70px; height: 96px; border: 2px solid #F4F3EF; border-radius: 6px; box-sizing: border-box; box-shadow: 0 6px 14px rgba(0,0,0,0.35); background: linear-gradient(180deg, #8DB9DA 0 34%, transparent 34%), linear-gradient(180deg, transparent 34%, #C4643C 34% 44%, transparent 44%), radial-gradient(rgba(70,45,30,0.55) 1px, transparent 1.5px) 0 0 / 8px 7px, repeating-linear-gradient(90deg, #F3E9D8 0 12px, #E9B98C 12px 21px, #F6F0E6 21px 30px, #D9A07A 30px 38px)"></div>
+
+      <div style="position: absolute; left: 8%; top: 8%; display: flex; flex-direction: column; gap: 2px">
+        <span style="font-family: 'Bricolage Grotesque', 'Geist', sans-serif; font-weight: 800; font-size: 30px; line-height: 0.95; color: #FFFFFF; letter-spacing: -0.01em; text-shadow: 0 2px 12px rgba(0,0,0,0.4)">DAY<br>ONE</span>
+        <span style="font-size: 11px; font-weight: 600; color: #FFFFFF; text-shadow: 0 1px 6px rgba(0,0,0,0.5)">Lisbon, PT</span>
+      </div>
+
+      <div style="position: absolute; left: 6%; right: 6%; bottom: 7%; display: flex; justify-content: center">
+        <span style="padding: 4px 8px; border-radius: 6px; background: rgba(0,0,0,0.62); font-size: 12px; font-weight: 700; color: #FFFFFF; text-align: center">We finally made it to Lisbon</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="height: 48px; padding: 0 8px 0 16px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center">
+    <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 13px; display: flex; gap: 6px">
+      <span style="color: #F4F3EF">00:07.12</span>
+      <span style="color: #8C8B94">/ 00:42.00</span>
+    </span>
+    <button aria-label="Play" style="width: 44px; height: 44px; border-radius: 22px; background: #F4F3EF; color: #0D0D0F; display: flex; align-items: center; justify-content: center">
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"></path></svg>
+    </button>
+    <span style="display: flex; justify-content: flex-end; gap: 0">
+      <button onClick="{{undo}}" aria-label="Undo" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: {{undoColor}}">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14L4 9l5-5"></path><path d="M4 9h10a6 6 0 0 1 0 12h-3"></path></svg>
+      </button>
+      <button aria-label="Redo" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #5E5D66">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 14l5-5-5-5"></path><path d="M20 9H10a6 6 0 0 0 0 12h3"></path></svg>
+      </button>
+      <button aria-label="Add keyframe" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #F4F3EF">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l8.5 8.5-8.5 8.5L3.5 12z"></path></svg>
+      </button>
+    </span>
+  </div>
+
+  <div style="position: relative; height: 236px; background: #111114; overflow: hidden; border-top: 1px solid #1F1F23">
+    <sc-for list="{{ticks}}" as="t" hint-placeholder-count="20">
+      <span style="position: absolute; left: {{t.x}}px; top: 0; width: 1px; height: {{t.h}}px; background: #4A4A52; display: block"></span>
+    </sc-for>
+    <sc-for list="{{labels}}" as="t" hint-placeholder-count="5">
+      <span style="position: absolute; left: {{t.x}}px; top: 7px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 10px; color: #8C8B94">{{t.text}}</span>
+    </sc-for>
+
+    <a href="Layers.dc.html" aria-label="Photo stamp.png on layer L4" style="position: absolute; top: 76px; left: -9px; width: 113px; height: 28px; border-radius: 7px; background: #5B45C4; color: #FFFFFF; display: flex; align-items: center; gap: 5px; padding: 0 8px 0 50px; box-sizing: border-box; overflow: hidden">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="9" cy="10" r="2"></circle><path d="M21 16l-5-5-9 9"></path></svg>
+      <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 10px; white-space: nowrap">stamp.png</span>
+    </a>
+    <a href="Layers.dc.html" aria-label="Video alfama.mp4 on layer L4, above sunset.mp4 on L3" style="position: absolute; top: 76px; left: 119px; width: 113px; height: 28px; border-radius: 7px; background: linear-gradient(90deg, rgba(13,13,15,0.55) 0 1px, transparent 1px) 0 0 / 36px 100%, linear-gradient(180deg, #8DB9DA 0 34%, #C4643C 34% 44%, #F3E9D8 44% 60%, #E9B98C 60% 76%, #D9A07A 76%); color: #F4F3EF; overflow: hidden; display: block">
+      <span style="position: absolute; left: 5px; top: 4px; padding: 1px 5px; border-radius: 5px; background: rgba(13,13,15,0.8); font-family: 'Geist Mono', ui-monospace, monospace; font-size: 10px; white-space: nowrap">alfama.mp4</span>
+    </a>
+
+    <a href="Text.dc.html" aria-label="Text Day one on layer L5" style="position: absolute; top: 50px; left: 150px; width: 95px; height: 22px; border-radius: 7px; background: #A8431A; color: #FFFFFF; display: flex; align-items: center; gap: 5px; padding: 0 8px; box-sizing: border-box; overflow: hidden">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 7V4h14v3M12 4v16M9 20h6"></path></svg>
+      <span style="font-size: 11px; font-weight: 600; white-space: nowrap">Day one</span>
+    </a>
+    <a href="Audio.dc.html" aria-label="Sound effect whoosh.wav on layer L5" style="position: absolute; top: 50px; left: 247px; width: 24px; height: 22px; border-radius: 6px; background: repeating-linear-gradient(90deg, #5EE0C8 0 2px, transparent 2px 4px) 0 50% / 100% 55% no-repeat, #0E4F49; display: block"></a>
+    <a href="Color.dc.html" aria-label="Adjustment clip Warm look on layer L5, grades every layer below it" style="position: absolute; top: 50px; left: 42px; width: 100px; height: 22px; border-radius: 6px; background: repeating-linear-gradient(135deg, #3A3552 0 5px, #2E2A40 5px 10px); border: 1px solid #6E5FA8; box-sizing: border-box; color: #E6E0FF; display: flex; align-items: center; padding: 0 6px; font-size: 10px; font-weight: 600; white-space: nowrap; overflow: hidden">fx Warm look</a>
+
+    <sc-for list="{{main}}" as="c" hint-placeholder-count="3">
+      <button onClick="{{c.pick}}" aria-label="{{c.aria}}" aria-pressed="{{c.pressed}}" style="position: absolute; top: 108px; left: {{c.left}}px; width: {{c.width}}px; height: 50px; border-radius: 8px; background: {{c.bg}}; box-shadow: inset 0 0 0 {{c.bw}}px {{c.bd}}; overflow: hidden">
+        <sc-if value="{{c.strip}}" hint-placeholder-val="{{true}}">
+          <span aria-hidden="true" style="position: absolute; left: 0; right: 0; bottom: 0; height: 11px; background: repeating-linear-gradient(90deg, #5EE0C8 0 2px, transparent 2px 4px) 0 50% / 100% 55% no-repeat, rgba(13,13,15,0.62); display: block"></span>
+        </sc-if>
+        <span style="position: absolute; left: {{c.lo}}px; top: 5px; padding: 2px 5px; border-radius: 5px; background: rgba(13,13,15,0.8); font-family: 'Geist Mono', ui-monospace, monospace; font-size: 10px; color: #F4F3EF; white-space: nowrap">{{c.label}}</span>
+        <sc-if value="{{c.handles}}" hint-placeholder-val="{{false}}">
+          <span style="position: absolute; left: {{c.lo}}px; bottom: 14px; padding: 2px 5px; border-radius: 5px; background: #FFD23F; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 10px; font-weight: 600; color: #141210">{{c.dur}}</span>
+          <span style="position: absolute; left: 0; top: 0; bottom: 0; width: 12px; background: #FFD23F; display: flex; align-items: center; justify-content: center; gap: 2px">
+            <span style="width: 2px; height: 16px; border-radius: 1px; background: #141210; display: block"></span>
+          </span>
+          <span style="position: absolute; right: 0; top: 0; bottom: 0; width: 12px; background: #FFD23F; display: flex; align-items: center; justify-content: center; gap: 2px">
+            <span style="width: 2px; height: 16px; border-radius: 1px; background: #141210; display: block"></span>
+          </span>
+        </sc-if>
+      </button>
+    </sc-for>
+
+    <sc-if value="{{showTransition}}" hint-placeholder-val="{{true}}">
+      <a href="Transitions.dc.html" aria-label="Transition between sunset.mp4 and tram.mp4: Whip pan" style="position: absolute; top: 121px; left: 242px; width: 24px; height: 24px; border-radius: 6px; background: #F4F3EF; color: #141210; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.5); z-index: 2">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4 5l8 7-8 7zM20 5l-8 7 8 7z"></path></svg>
+      </a>
+    </sc-if>
+
+    <a href="Audio.dc.html" aria-label="Voiceover voiceover.m4a on layer L2" style="position: absolute; top: 162px; left: 343px; width: 300px; height: 24px; border-radius: 7px; background: repeating-linear-gradient(90deg, #FF9CC2 0 2px, transparent 2px 4px) 0 50% / 100% 55% no-repeat, #5A2238; overflow: hidden; display: block">
+      <span style="position: absolute; left: 4px; top: 3px; padding: 1px 5px; border-radius: 4px; background: rgba(13,13,15,0.8); font-family: 'Geist Mono', ui-monospace, monospace; font-size: 10px; color: #F4F3EF; white-space: nowrap">voiceover.m4a</span>
+    </a>
+    <a href="Audio.dc.html" aria-label="Music lisbon-guitar.mp3 on layer L1" style="position: absolute; top: 190px; left: -41px; width: 470px; height: 24px; border-radius: 7px; background: repeating-linear-gradient(90deg, rgba(255,210,63,0.95) 0 2px, transparent 2px 20px) 9px 0 / 100% 4px no-repeat, #0E4F49; overflow: hidden; display: block">
+      <span style="position: absolute; left: 4px; right: 0; top: 0; bottom: 0; display: flex; align-items: center; gap: 1px">
+        <sc-for list="{{wave}}" as="w" hint-placeholder-count="60">
+          <span style="width: 3px; height: {{w.h}}px; border-radius: 1px; background: #5EE0C8; flex-shrink: 0; display: block"></span>
+        </sc-for>
+      </span>
+      <span style="position: absolute; left: 84px; top: 3px; padding: 1px 5px; border-radius: 4px; background: rgba(13,13,15,0.8); font-family: 'Geist Mono', ui-monospace, monospace; font-size: 10px; color: #F4F3EF">lisbon-guitar.mp3</span>
+    </a>
+
+    <sc-for list="{{caps}}" as="k" hint-placeholder-count="3">
+      <a href="CaptionsEdit.dc.html" style="position: absolute; top: 26px; left: {{k.left}}px; width: {{k.width}}px; height: 20px; border-radius: 6px; background: #1F4FC2; outline: {{k.ol}}; outline-offset: -1px; color: #FFFFFF; padding: 0 6px; box-sizing: border-box; display: flex; align-items: center; overflow: hidden">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true" style="flex-shrink: 0; margin-right: 3px"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"></path><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"></path></svg>
+        <span style="font-size: 10px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{k.text}}</span>
+      </a>
+    </sc-for>
+
+    <div style="position: absolute; left: 0; top: 0; bottom: 0; width: 34px; background: #111114; border-right: 1px solid #222227; z-index: 3">
+      <span title="Layer L6" style="position: absolute; top: 29px; left: 4px; width: 26px; padding: 1px 0; border-radius: 4px; background: #2A2A30; color: #F4F3EF; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 10px; font-weight: 600; text-align: center; display: block">L6</span>
+      <span title="Layer L5" style="position: absolute; top: 54px; left: 4px; width: 26px; padding: 1px 0; border-radius: 4px; background: #2A2A30; color: #F4F3EF; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 10px; font-weight: 600; text-align: center; display: block">L5</span>
+      <span title="Layer L4" style="position: absolute; top: 83px; left: 4px; width: 26px; padding: 1px 0; border-radius: 4px; background: #2A2A30; color: #F4F3EF; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 10px; font-weight: 600; text-align: center; display: block">L4</span>
+      <span title="Layer L3" style="position: absolute; top: 126px; left: 4px; width: 26px; padding: 1px 0; border-radius: 4px; background: #2A2A30; color: #F4F3EF; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 10px; font-weight: 600; text-align: center; display: block">L3</span>
+      <span title="Layer L2" style="position: absolute; top: 167px; left: 4px; width: 26px; padding: 1px 0; border-radius: 4px; background: #2A2A30; color: #F4F3EF; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 10px; font-weight: 600; text-align: center; display: block">L2</span>
+      <span title="Layer L1" style="position: absolute; top: 195px; left: 4px; width: 26px; padding: 1px 0; border-radius: 4px; background: #2A2A30; color: #F4F3EF; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 10px; font-weight: 600; text-align: center; display: block">L1</span>
+    </div>
+
+    <button aria-label="Add media" style="position: absolute; top: 115px; right: 8px; width: 36px; height: 36px; border-radius: 10px; background: #F4F3EF; color: #141210; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.55); z-index: 4">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+    </button>
+
+    <div aria-hidden="true" style="position: absolute; left: 194px; top: 0; bottom: 0; width: 2px; background: #FFD23F; z-index: 5"></div>
+    <div aria-hidden="true" style="position: absolute; left: 189px; top: 0; width: 12px; height: 10px; border-radius: 0 0 6px 6px; background: #FFD23F; z-index: 5"></div>
+  </div>
+
+  <div class="hscroll" style="height: 76px; border-top: 1px solid #1F1F23; display: flex; align-items: center; overflow-x: auto; scrollbar-width: none; padding: 0 4px">
+    <sc-if value="{{selected}}" hint-placeholder-val="{{true}}">
+      <button onClick="{{deselect}}" aria-label="Close clip tools" style="width: 44px; height: 60px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: #F4F3EF; border-right: 1px solid #2A2A30; margin-right: 4px">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg>
+      </button>
+      <button onClick="{{split}}" style="width: 60px; height: 60px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #F4F3EF">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="6" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M20 4L8.1 15.9M14.5 14.5L20 20M8.1 8.1L12 12"></path></svg>
+        <span style="font-size: 11px; color: #B4B3BB">Split</span>
+      </button>
+      <button style="width: 60px; height: 60px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #F4F3EF">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 16a8 8 0 1 1 16 0"></path><path d="M12 16l4-5"></path></svg>
+        <span style="font-size: 11px; color: #B4B3BB">Speed</span>
+      </button>
+      <a href="Audio.dc.html" style="width: 60px; height: 60px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #F4F3EF">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10v4h4l5 4V6L8 10z"></path><path d="M16.5 9a4 4 0 0 1 0 6M19 6.5a8 8 0 0 1 0 11"></path></svg>
+        <span style="font-size: 11px; color: #B4B3BB">Audio</span>
+      </a>
+      <a href="Filters.dc.html" style="width: 60px; height: 60px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #F4F3EF">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="9" cy="9" r="5"></circle><circle cx="15" cy="9" r="5"></circle><circle cx="12" cy="15" r="5"></circle></svg>
+        <span style="font-size: 11px; color: #B4B3BB">Filters</span>
+      </a>
+      <a href="Masks.dc.html" style="width: 60px; height: 60px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #F4F3EF">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="3"></rect><ellipse cx="12" cy="12" rx="4.5" ry="5.5"></ellipse></svg>
+        <span style="font-size: 11px; color: #B4B3BB">Mask</span>
+      </a>
+      <a href="Layers.dc.html" style="width: 60px; height: 60px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #F4F3EF">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9 5-9 5-9-5z"></path><path d="M3 13l9 5 9-5"></path></svg>
+        <span style="font-size: 11px; color: #B4B3BB">Layer</span>
+      </a>
+      <a href="Color.dc.html" style="width: 60px; height: 60px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #F4F3EF">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"></path></svg>
+        <span style="font-size: 11px; color: #B4B3BB">Color</span>
+      </a>
+      <a href="Cutout.dc.html" style="width: 60px; height: 60px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #F4F3EF">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M3 9V5a2 2 0 0 1 2-2h4M15 3h4a2 2 0 0 1 2 2v4M21 15v4a2 2 0 0 1-2 2h-4M9 21H5a2 2 0 0 1-2-2v-4"></path><circle cx="12" cy="10" r="3"></circle><path d="M7 18a5 5 0 0 1 10 0"></path></svg>
+        <span style="font-size: 11px; color: #B4B3BB">Cutout</span>
+      </a>
+      <button style="width: 60px; height: 60px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #F4F3EF">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v4M12 18v4M2 12h4M18 12h4"></path></svg>
+        <span style="font-size: 11px; color: #B4B3BB">Stabilize</span>
+      </button>
+      <button style="width: 60px; height: 60px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #F4F3EF">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"></path><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"></path></svg>
+        <span style="font-size: 11px; color: #B4B3BB">Linked</span>
+      </button>
+      <button style="width: 60px; height: 60px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #F4F3EF">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"></rect><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"></path></svg>
+        <span style="font-size: 11px; color: #B4B3BB">Duplicate</span>
+      </button>
+      <button style="width: 60px; height: 60px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #F4F3EF">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"></path></svg>
+        <span style="font-size: 11px; color: #B4B3BB">Delete</span>
+      </button>
+      <button style="width: 60px; height: 60px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #F4F3EF">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 2v14a2 2 0 0 0 2 2h14"></path><path d="M2 6h14a2 2 0 0 1 2 2v14"></path></svg>
+        <span style="font-size: 11px; color: #B4B3BB">Crop</span>
+      </button>
+      <button style="width: 60px; height: 60px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #F4F3EF">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9"></path></svg>
+        <span style="font-size: 11px; color: #B4B3BB">Freeze</span>
+      </button>
+      <button style="width: 60px; height: 60px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #F4F3EF">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7H8l3-3M8 7l3 3"></path><path d="M4 17h12l-3-3M16 17l-3 3"></path></svg>
+        <span style="font-size: 11px; color: #B4B3BB">Reverse</span>
+      </button>
+      <button style="width: 60px; height: 60px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #F4F3EF">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M9 18V6l10-2v12"></path><circle cx="6.5" cy="18" r="2.5"></circle><circle cx="16.5" cy="16" r="2.5"></circle></svg>
+        <span style="font-size: 11px; color: #B4B3BB">Extract</span>
+      </button>
+      <button style="width: 60px; height: 60px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #F4F3EF">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h12l-3-3M20 16H8l3 3"></path></svg>
+        <span style="font-size: 11px; color: #B4B3BB">Replace</span>
+      </button>
+    </sc-if>
+    <sc-if value="{{notSelected}}" hint-placeholder-val="{{false}}">
+      <button onClick="{{select}}" style="width: 60px; height: 60px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #F4F3EF">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="6" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M20 4L8.1 15.9M14.5 14.5L20 20M8.1 8.1L12 12"></path></svg>
+        <span style="font-size: 11px; color: #B4B3BB">Edit</span>
+      </button>
+      <a href="Audio.dc.html" style="width: 60px; height: 60px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #F4F3EF">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M9 18V6l10-2v12"></path><circle cx="6.5" cy="18" r="2.5"></circle><circle cx="16.5" cy="16" r="2.5"></circle></svg>
+        <span style="font-size: 11px; color: #B4B3BB">Audio</span>
+      </a>
+      <a href="Text.dc.html" style="width: 60px; height: 60px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #F4F3EF">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M5 7V4h14v3M12 4v16M9 20h6"></path></svg>
+        <span style="font-size: 11px; color: #B4B3BB">Text</span>
+      </a>
+      <a href="Layers.dc.html" style="width: 60px; height: 60px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #F4F3EF">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9 5-9 5-9-5z"></path><path d="M3 13l9 5 9-5"></path></svg>
+        <span style="font-size: 11px; color: #B4B3BB">Layers</span>
+      </a>
+      <a href="Filters.dc.html" style="width: 60px; height: 60px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #F4F3EF">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="9" cy="9" r="5"></circle><circle cx="15" cy="9" r="5"></circle><circle cx="12" cy="15" r="5"></circle></svg>
+        <span style="font-size: 11px; color: #B4B3BB">Filters</span>
+      </a>
+      <a href="Transitions.dc.html" style="width: 60px; height: 60px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #F4F3EF">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M4 5l8 7-8 7zM20 5l-8 7 8 7z"></path></svg>
+        <span style="font-size: 11px; color: #B4B3BB">Transitions</span>
+      </a>
+      <a href="CaptionsSetup.dc.html" style="width: 60px; height: 60px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #F4F3EF">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"></rect><path d="M10.5 10.2a2.2 2.2 0 1 0 0 3.6M16.5 10.2a2.2 2.2 0 1 0 0 3.6"></path></svg>
+        <span style="font-size: 11px; color: #B4B3BB">Captions</span>
+      </a>
+      <a href="Transcript.dc.html" style="width: 60px; height: 60px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #F4F3EF">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 11h10M4 16h7"></path><path d="M15 15l5 5M20 15l-5 5"></path></svg>
+        <span style="font-size: 11px; color: #B4B3BB">Transcript</span>
+      </a>
+      <a href="Color.dc.html" style="width: 60px; height: 60px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #F4F3EF">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 3.5v17" ></path><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"></path></svg>
+        <span style="font-size: 11px; color: #B4B3BB">Color</span>
+      </a>
+      <a href="Cutout.dc.html" style="width: 60px; height: 60px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #F4F3EF">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M3 9V5a2 2 0 0 1 2-2h4M15 3h4a2 2 0 0 1 2 2v4M21 15v4a2 2 0 0 1-2 2h-4M9 21H5a2 2 0 0 1-2-2v-4"></path><circle cx="12" cy="10" r="3"></circle><path d="M7 18a5 5 0 0 1 10 0"></path></svg>
+        <span style="font-size: 11px; color: #B4B3BB">Cutout</span>
+      </a>
+      <a href="Reframe.dc.html" style="width: 60px; height: 60px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #F4F3EF">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="2.5" y="6" width="19" height="12" rx="2"></rect><rect x="9" y="6" width="6" height="12" fill="currentColor" stroke="none" opacity="0.45"></rect></svg>
+        <span style="font-size: 11px; color: #B4B3BB">Reframe</span>
+      </a>
+      <a href="Masks.dc.html" style="width: 60px; height: 60px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #F4F3EF">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="3"></rect><ellipse cx="12" cy="12" rx="4.5" ry="5.5"></ellipse></svg>
+        <span style="font-size: 11px; color: #B4B3BB">Masks</span>
+      </a>
+      <a href="NewProject.dc.html" style="width: 60px; height: 60px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #F4F3EF">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 9V5h4M20 9V5h-4M4 15v4h4M20 15v4h-4"></path></svg>
+        <span style="font-size: 11px; color: #B4B3BB">Format</span>
+      </a>
+    </sc-if>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { selected: true, split: false };
+  }
+  renderVals() {
+    const s = this.state || {};
+    const PX = 32, PH = 195, T0 = 7.4;
+    const x = (t) => Math.round((PH + (t - T0) * PX) * 10) / 10;
+    const frames = 'linear-gradient(90deg, rgba(13,13,15,0.55) 0 1px, transparent 1px) 0 0 / 36px 100%, ';
+    const sunset = frames + 'linear-gradient(180deg, #2C3566 0%, #8A5878 42%, #E08A5C 72%, #3A2645 73%, #22192E 100%)';
+    const tram = frames + 'linear-gradient(180deg, #16324F 0%, #2F6FA8 46%, #F2B705 46%, #F2B705 74%, #1A1A1A 74%)';
+    const mk = (id, t1, t2, label, bg, card) => ({ id, t1, t2, label, bg, card });
+    const list = s.split
+      ? [mk('a', 0, 7.4, 'sunset.mp4', sunset), mk('b', 7.4, 9.2, 'sunset.mp4', sunset), mk('c', 9.2, 11, 'tram.mp4', tram), mk('d', 11, 14, 'T  Day two', '#000000', true)]
+      : [mk('a', 0, 9.2, 'sunset.mp4', sunset), mk('c', 9.2, 11, 'tram.mp4', tram), mk('d', 11, 14, 'T  Day two', '#000000', true)];
+    const selId = s.selected ? (s.split ? 'b' : 'a') : null;
+    const main = list.map((c) => {
+      const left = x(c.t1) + 1;
+      const width = Math.round((x(c.t2) - x(c.t1) - 2) * 10) / 10;
+      const on = c.id === selId;
+      return {
+        ...c, left, width,
+        lo: Math.max(16, Math.round(46 - left)),
+        bd: on ? '#FFD23F' : (c.card ? '#3A3A40' : 'transparent'),
+        bw: on ? 2 : 1,
+        handles: on,
+        strip: !c.card,
+        pressed: on ? 'true' : 'false',
+        dur: (c.t2 - c.t1).toFixed(1) + 's',
+        aria: c.label.trim().replace(/^T\s+/, 'Text card ') + ', ' + (c.t2 - c.t1).toFixed(1) + ' seconds' + (on ? ', selected' : ''),
+        pick: () => this.setState({ selected: !(on) })
+      };
+    });
+    const ticks = [];
+    const labels = [];
+    for (let t = 2.5; t <= 13.5; t += 0.5) {
+      const px = x(t);
+      const major = Math.abs(t - Math.round(t)) < 0.01;
+      ticks.push({ x: px, h: major ? 8 : 4 });
+      if (major && Math.round(t) % 2 === 0) labels.push({ x: px + 3, text: '00:' + String(Math.round(t)).padStart(2, '0') });
+    }
+    const wave = [];
+    for (let i = 0; i < 116; i++) {
+      const v = Math.abs(Math.sin(i * 0.37) * Math.cos(i * 0.113) + 0.35 * Math.sin(i * 1.7));
+      wave.push({ h: Math.max(3, Math.round(4 + v * 20)) });
+    }
+    const cap = (t1, t2, text) => ({ left: x(t1), width: Math.round((x(t2) - x(t1)) * 10) / 10, text, ol: t1 === 6.0 && s.selected && !s.split ? '1.5px dashed #FFD23F' : 'none' });
+    return {
+      main, ticks, labels, wave,
+      caps: [cap(6.0, 8.8, 'We finally made it to Lisbon'), cap(9.4, 11.6, 'The light here is unreal'), cap(12.1, 15.0, 'Tomorrow we’re taking the tram')],
+      selected: !!s.selected,
+      notSelected: !s.selected,
+      showTransition: true,
+      undoColor: s.split ? '#F4F3EF' : '#5E5D66',
+      split: () => this.setState({ split: true, selected: true }),
+      undo: () => this.setState({ split: false }),
+      deselect: () => this.setState({ selected: false }),
+      select: () => this.setState({ selected: true })
+    };
+  }
+}
+</script>
+</body>
+</html>

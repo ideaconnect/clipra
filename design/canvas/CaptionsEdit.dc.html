@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Clipra - Edit captions</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0;background:#0D0D0F}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+a{color:#FFD23F;text-decoration:none}a:hover{color:#FFE27A}
+.hscroll::-webkit-scrollbar{display:none}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; padding-top: 36px; background: #0D0D0F; color: #F4F3EF; font-family: 'Geist', system-ui, sans-serif; display: flex; flex-direction: column; overflow: hidden">
+
+  <header style="height: 48px; padding: 0 12px 0 6px; display: flex; align-items: center; gap: 6px">
+    <a href="CaptionsSetup.dc.html" aria-label="Back to caption settings" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #F4F3EF; border-radius: 12px">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"></path></svg>
+    </a>
+    <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px">
+      <span style="font-size: 15px; font-weight: 600">Captions</span>
+      <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; color: #A6A5AD; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Whisper Base · English (detected)</span>
+    </span>
+    <a href="Editor.dc.html" style="height: 40px; padding: 0 14px; border-radius: 12px; background: #FFD23F; color: #141210; font-size: 14px; font-weight: 700; display: flex; align-items: center">Done</a>
+  </header>
+
+  <div style="position: relative; height: 280px; background: #000000; display: flex; align-items: center; justify-content: center">
+    <div role="img" aria-label="Preview at 00:08.30 with caption: We finally made it to Lisbon, current word Lisbon highlighted" style="position: relative; width: 158px; height: 280px; overflow: hidden">
+      <div style="position: absolute; inset: 0; background: linear-gradient(180deg, #23305C 0%, #6B4D7A 36%, #D9785A 66%, #F3B064 100%)"></div>
+      <div style="position: absolute; left: 62%; top: 30%; width: 24%; aspect-ratio: 1; border-radius: 50%; background: #FFE6A8"></div>
+      <div style="position: absolute; left: -30%; right: 35%; top: 64%; height: 50%; border-radius: 50%; background: #4A3355"></div>
+      <div style="position: absolute; left: 25%; right: -40%; top: 72%; height: 50%; border-radius: 50%; background: #22192E"></div>
+      <div style="position: absolute; left: 21%; right: 21%; top: 74%; bottom: -6%; border-radius: 48% 48% 0 0; background: #2F4A7A"></div>
+      <div style="position: absolute; left: 45%; width: 10%; top: 66%; height: 10%; background: #B97A5B"></div>
+      <div style="position: absolute; left: 37%; width: 26%; top: 50%; height: 18%; border-radius: 50%; background: #C98B6B"></div>
+      <div style="position: absolute; left: 36%; width: 28%; top: 48.5%; height: 8.5%; border-radius: 50% 50% 30% 30%; background: #2B1E1A"></div>
+
+      <div style="position: absolute; left: 8px; right: 8px; bottom: 26px; display: flex; justify-content: center">
+        <span style="max-width: 142px; text-align: center; padding: {{st.boxPad}}; border-radius: 6px; background: {{st.boxBg}}; font-family: {{st.font}}; font-size: {{st.size}}px; font-weight: {{st.weight}}; text-transform: {{st.case}}; line-height: 1.35; color: #FFFFFF; text-shadow: {{st.shadow}}">
+          <sc-for list="{{words}}" as="w" hint-placeholder-count="6">
+            <span style="display: inline-block; margin: 0 0.12em; padding: {{w.pad}}; border-radius: 4px; background: {{w.bg}}; color: {{w.color}}; opacity: {{w.op}}; text-decoration: {{w.deco}}; text-underline-offset: 3px; text-shadow: {{w.shadow}}">{{w.t}}</span>
+          </sc-for>
+        </span>
+      </div>
+    </div>
+    <span style="position: absolute; left: 16px; bottom: 14px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; color: #F4F3EF">00:08.30</span>
+    <button aria-label="Play" style="position: absolute; right: 12px; bottom: 8px; width: 44px; height: 44px; border-radius: 22px; background: #1F1F23; display: flex; align-items: center; justify-content: center; color: #F4F3EF">
+      <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"></path></svg>
+    </button>
+  </div>
+
+  <div class="hscroll" style="padding: 12px 16px 0; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none">
+    <sc-for list="{{styles}}" as="x" hint-placeholder-count="5">
+      <button onClick="{{x.pick}}" aria-pressed="{{x.pressed}}" style="height: 40px; padding: 0 12px; border-radius: 20px; border: 1.5px solid {{x.bd}}; background: {{x.bg}}; color: {{x.fg}}; box-sizing: border-box; font-size: 13px; font-weight: 600; white-space: nowrap; flex-shrink: 0">{{x.label}}</button>
+    </sc-for>
+  </div>
+
+  <div style="padding: 14px 16px 6px; display: flex; align-items: center; gap: 8px">
+    <h2 style="margin: 0; font-size: 13px; font-weight: 600; color: #A6A5AD">5 captions</h2>
+    <a href="Transcript.dc.html" style="font-size: 12px; font-weight: 600; margin: -14px 0 -14px 4px; padding: 14px 0; display: inline-block">Edit by text</a>
+    <span style="flex: 1"></span>
+    <span style="font-size: 12px; color: #F4F3EF; display: flex; align-items: center; gap: 6px">
+      <span style="text-decoration: underline dotted #FF9A6B; text-underline-offset: 3px; font-weight: 600">2 words</span>
+      <span style="color: #A6A5AD">to check</span>
+    </span>
+  </div>
+
+  <div style="flex: 1; min-height: 0; padding: 0 16px; display: flex; flex-direction: column; gap: 4px; overflow: hidden">
+    <sc-for list="{{segs}}" as="g" hint-placeholder-count="5">
+      <button style="min-height: 54px; border-radius: 12px; background: {{g.bg}}; padding: 8px 12px; box-sizing: border-box; display: flex; flex-direction: column; gap: 3px; text-align: left">
+        <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; color: {{g.tc}}">{{g.time}}</span>
+        <span style="font-size: 14px; line-height: 1.35">
+          <sc-for list="{{g.words}}" as="w" hint-placeholder-count="5">
+            <span style="margin-right: 0.25em; text-decoration: {{w.deco}}; text-underline-offset: 3px">{{w.t}}</span>
+          </sc-for>
+        </span>
+      </button>
+    </sc-for>
+  </div>
+
+  <div style="padding: 10px 16px 26px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; border-top: 1px solid #1F1F23">
+    <button style="height: 48px; border-radius: 14px; background: #1F1F23; font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"></path></svg>
+      Save .srt
+    </button>
+    <button style="height: 48px; border-radius: 14px; background: #1F1F23; font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"></path></svg>
+      Translate offline
+    </button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { style: 'pop' };
+  }
+  renderVals() {
+    const s = this.state || {};
+    const STYLES = {
+      clean: { label: 'Clean', font: "'Geist', system-ui, sans-serif", size: 12, weight: 700, case: 'none', boxBg: 'transparent', boxPad: '0', shadow: '0 1px 4px rgba(0,0,0,0.85)' },
+      pop: { label: 'Bold pop', font: "'Bricolage Grotesque', 'Geist', sans-serif", size: 15, weight: 800, case: 'uppercase', boxBg: 'transparent', boxPad: '0', shadow: '0 2px 0 rgba(0,0,0,0.6), 0 0 10px rgba(0,0,0,0.5)' },
+      boxed: { label: 'Boxed', font: "'Geist', system-ui, sans-serif", size: 12, weight: 600, case: 'none', boxBg: 'rgba(0,0,0,0.72)', boxPad: '4px 6px', shadow: 'none' },
+      karaoke: { label: 'Karaoke', font: "'Geist', system-ui, sans-serif", size: 13, weight: 800, case: 'none', boxBg: 'transparent', boxPad: '0', shadow: '0 1px 6px rgba(0,0,0,0.9)' },
+      minimal: { label: 'Minimal', font: "'Geist', system-ui, sans-serif", size: 11, weight: 500, case: 'none', boxBg: 'transparent', boxPad: '0', shadow: '0 1px 3px rgba(0,0,0,0.9)' }
+    };
+    const st = STYLES[s.style] || STYLES.pop;
+    const line = ['We', 'finally', 'made', 'it', 'to', 'Lisbon'];
+    const cur = 5;
+    const words = line.map((t, i) => {
+      const w = { t, pad: '0', bg: 'transparent', color: '#FFFFFF', op: '1', deco: 'none', shadow: 'inherit' };
+      if (s.style === 'pop' && i === cur) Object.assign(w, { bg: '#FFD23F', color: '#141210', pad: '0 3px', shadow: 'none' });
+      if (s.style === 'clean' && i === cur) Object.assign(w, { color: '#FFD23F' });
+      if (s.style === 'boxed' && i === cur) Object.assign(w, { deco: 'underline 2px #FFD23F' });
+      if (s.style === 'karaoke') Object.assign(w, i === cur ? { color: '#FFD23F' } : (i > cur ? { op: '0.5' } : {}));
+      return w;
+    });
+    const seg = (time, text, low, active) => ({
+      time, bg: active ? '#221F12' : '#17171A', tc: active ? '#FFD23F' : '#A6A5AD',
+      words: text.split(' ').map((t) => ({ t, deco: low.includes(t) ? 'underline dotted #FF9A6B' : 'none' }))
+    });
+    return {
+      st, words,
+      styles: Object.keys(STYLES).map((id) => {
+        const on = id === s.style;
+        return { label: STYLES[id].label, bd: on ? '#FFD23F' : '#2A2A30', bg: on ? '#221F12' : '#17171A', fg: on ? '#FFD23F' : '#F4F3EF', pressed: on ? 'true' : 'false', pick: () => this.setState({ style: id }) };
+      }),
+      segs: [
+        seg('00:06.0 → 00:08.8', 'We finally made it to Lisbon', [], true),
+        seg('00:09.4 → 00:11.6', 'The light here is unreal', [], false),
+        seg('00:12.1 → 00:15.0', 'Tomorrow we’re taking the tram up to Alfama', ['Alfama'], false),
+        seg('00:15.6 → 00:18.2', 'and then the train out to Sintra', ['Sintra'], false),
+        seg('00:18.9 → 00:21.0', 'if the weather holds', [], false)
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

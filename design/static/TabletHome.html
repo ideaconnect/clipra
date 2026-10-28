@@ -1,0 +1,494 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clipra tablet - Home (static snapshot)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap">
+<style>
+
+    .sc-placeholder{background:color-mix(in srgb,currentColor 8%,transparent);
+      border:1px solid color-mix(in srgb,currentColor 50%,transparent);
+      border-radius:2px;box-sizing:border-box;overflow:hidden}
+    @keyframes sc-shine{0%{background-position:100% 50%}100%{background-position:0% 50%}}
+    html.sc-dc-streaming .sc-placeholder,
+    html.sc-dc-streaming .sc-interp.sc-missing{position:relative;
+      background:color-mix(in srgb,currentColor 5%,transparent);
+      border-color:transparent}
+    html.sc-dc-streaming .sc-placeholder::before,
+    html.sc-dc-streaming .sc-interp.sc-missing::before{content:'';
+      position:absolute;inset:0;pointer-events:none;
+      background:linear-gradient(90deg,rgba(217,119,87,0) 25%,rgba(247,225,211,.95) 37%,rgba(217,119,87,0) 63%);
+      background-size:400% 100%;animation:sc-shine 1.4s ease infinite}
+    html.sc-dc-streaming .sc-placeholder:nth-child(n+9 of .sc-placeholder)::before,
+    html.sc-dc-streaming .sc-interp.sc-missing:nth-child(n+9 of .sc-interp.sc-missing)::before{animation:none;
+      background:color-mix(in srgb,currentColor 8%,transparent)}
+    .sc-placeholder-error{padding:4px 8px;font:11px/1.4 ui-monospace,monospace;
+      color:color-mix(in srgb,currentColor 70%,transparent);word-break:break-word}
+    .sc-interp.sc-missing{display:inline-block;width:2em;height:1em;overflow:hidden;
+      vertical-align:text-bottom;background:rgba(255,255,255,.3);border:1px solid rgba(0,0,0,.5);
+      border-radius:2px;box-sizing:border-box;color:transparent;
+      user-select:none}
+    .sc-interp.sc-unresolved{font-family:ui-monospace,monospace;font-size:.85em;
+      color:color-mix(in srgb,currentColor 50%,transparent);
+      background:color-mix(in srgb,currentColor 10%,transparent);border-radius:3px;
+      padding:0 3px}
+    .sc-host.sc-has-error{position:relative}
+    .sc-logic-error{position:absolute;top:8px;left:8px;z-index:2147483647;max-width:60ch;
+      padding:6px 10px;background:#b00020;color:#fff;font:12px/1.4 ui-monospace,monospace;
+      border-radius:4px;white-space:pre-wrap;pointer-events:none}
+    /* Mirrors PRINT_BASELINE_CSS in apps/web deck-stage-export.ts — keep both
+       in sync until dc-runtime regains a build step. */
+    @media print {
+      @page { margin: 0.5cm; }
+      figure, table { break-inside: avoid; }
+      #dc-root, #dc-root > .sc-host { height: auto; }
+      *, *::before, *::after {
+        print-color-adjust: exact; -webkit-print-color-adjust: exact;
+        backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+        animation-delay: -99s !important; animation-duration: .001s !important;
+        animation-iteration-count: 1 !important; animation-fill-mode: both !important;
+        animation-play-state: running !important; transition-duration: 0s !important;
+      }
+    }
+  
+x-dc{display:none!important}
+
+body{margin:0;background:#0D0D0F}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+input{font:inherit}
+a{color:#FFD23F;text-decoration:none}a:hover{color:#FFE27A}
+
+</style>
+</head>
+<body>
+<div id="dc-root"><div class="sc-host" data-sc-name="TabletHome"><div data-dc-tpl="3" style="width: 1280px; height: 800px; box-sizing: border-box; padding-top: 28px; background: rgb(13, 13, 15); color: rgb(244, 243, 239); font-family: Geist, system-ui, sans-serif; display: flex; flex-direction: column; overflow: hidden;">
+
+  <header data-dc-tpl="4" style="height: 64px; padding: 0px 20px 0px 24px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgb(31, 31, 35); box-sizing: border-box;">
+    <svg data-dc-tpl="5" width="32" height="32" viewBox="0 0 30 30" aria-hidden="true"><rect data-dc-tpl="6" width="30" height="30" rx="8" fill="#FFD23F"></rect><path data-dc-tpl="7" d="M10.5 8.5v13l11-6.5z" fill="#141210"></path><path data-dc-tpl="8" d="M7 23.5L23.5 7" stroke="#FFD23F" stroke-width="2.6" stroke-linecap="round"></path></svg>
+    <span data-dc-tpl="9" style="font-family: &quot;Bricolage Grotesque&quot;, Geist, sans-serif; font-weight: 800; font-size: 28px; letter-spacing: -0.02em;">Clipra</span>
+    <span data-dc-tpl="10" style="flex: 1 1 0%;"></span>
+    <label data-dc-tpl="11" style="width: 320px; height: 44px; border-radius: 12px; background: rgb(23, 23, 26); border: 1px solid rgb(42, 42, 48); box-sizing: border-box; padding: 0px 12px; display: flex; align-items: center; gap: 8px;">
+      <svg data-dc-tpl="12" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A6A5AD" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle data-dc-tpl="13" cx="11" cy="11" r="6.5"></circle><path data-dc-tpl="14" d="M20 20l-4.2-4.2"></path></svg>
+      <span data-dc-tpl="15" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0px, 0px, 0px, 0px);">Search projects</span>
+      <input data-dc-tpl="16" type="search" placeholder="Search projects" style="flex: 1 1 0%; min-width: 0px; background: transparent; border: 0px; outline: none; color: rgb(244, 243, 239); font-size: 14px;">
+    </label>
+    <a data-dc-tpl="17" href="TabletPro.html" aria-label="Clipra Pro: remove ads for 10 PLN" style="height: 44px; padding: 0px 14px 0px 12px; border-radius: 12px; background: rgb(43, 39, 22); color: rgb(255, 210, 63); display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700;">
+      <svg data-dc-tpl="18" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path data-dc-tpl="19" d="M3 8.5l4.5 3.7L12 5l4.5 7.2L21 8.5l-1.8 9H4.8z" fill="currentColor"></path><rect data-dc-tpl="20" x="4.8" y="19" width="14.4" height="2" rx="1" fill="currentColor"></rect></svg>
+      Go Pro · 10 PLN
+    </a>
+    <button data-dc-tpl="21" style="height: 44px; padding: 0px 14px; border-radius: 12px; background: rgb(23, 23, 26); display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600;">
+      <svg data-dc-tpl="22" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8FE388" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect data-dc-tpl="23" x="7" y="7" width="10" height="10" rx="2"></rect><path data-dc-tpl="24" d="M10 3v4M14 3v4M10 17v4M14 17v4M3 10h4M3 14h4M17 10h4M17 14h4"></path></svg>
+      AI models
+    </button>
+    <button data-dc-tpl="25" aria-label="Settings" style="width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: rgb(180, 179, 187);">
+      <svg data-dc-tpl="26" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path data-dc-tpl="27" d="M4 7h10M18 7h2M4 17h4M12 17h8"></path><circle data-dc-tpl="28" cx="16" cy="7" r="2"></circle><circle data-dc-tpl="29" cx="10" cy="17" r="2"></circle></svg>
+    </button>
+  </header>
+
+  <div data-dc-tpl="30" style="flex: 1 1 0%; min-height: 0px; display: flex;">
+    <section data-dc-tpl="31" aria-label="Projects" style="flex: 1 1 0%; min-width: 0px; padding: 20px 24px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px;">
+      <div data-dc-tpl="32" style="display: grid; grid-template-columns: repeat(4, minmax(0px, 1fr)); gap: 12px;">
+        <a data-dc-tpl="33" href="TabletCaptions.html" style="height: 84px; border-radius: 16px; background: rgb(23, 23, 26); border: 1px solid rgb(42, 42, 48); color: rgb(244, 243, 239); padding: 14px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between;">
+          <svg data-dc-tpl="34" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7FA6FF" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect data-dc-tpl="35" x="3" y="5" width="18" height="14" rx="3"></rect><path data-dc-tpl="36" d="M10.5 10.2a2.2 2.2 0 1 0 0 3.6M16.5 10.2a2.2 2.2 0 1 0 0 3.6"></path></svg>
+          <span data-dc-tpl="37" style="font-size: 14px; font-weight: 600;">Auto captions</span>
+        </a>
+        <a data-dc-tpl="38" href="TabletText.html" style="height: 84px; border-radius: 16px; background: rgb(23, 23, 26); border: 1px solid rgb(42, 42, 48); color: rgb(244, 243, 239); padding: 14px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between;">
+          <svg data-dc-tpl="39" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FF9A6B" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path data-dc-tpl="40" d="M5 7V4h14v3M12 4v16M9 20h6"></path></svg>
+          <span data-dc-tpl="41" style="font-size: 14px; font-weight: 600;">Text card</span>
+        </a>
+        <button data-dc-tpl="42" style="height: 84px; border-radius: 16px; background: rgb(23, 23, 26); border: 1px solid rgb(42, 42, 48); padding: 14px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start;">
+          <svg data-dc-tpl="43" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#B9A6FF" stroke-width="1.8" aria-hidden="true"><rect data-dc-tpl="44" x="4" y="4" width="7" height="7" rx="1.5"></rect><rect data-dc-tpl="45" x="13" y="4" width="7" height="7" rx="1.5"></rect><rect data-dc-tpl="46" x="4" y="13" width="7" height="7" rx="1.5"></rect><rect data-dc-tpl="47" x="13" y="13" width="7" height="7" rx="1.5"></rect></svg>
+          <span data-dc-tpl="48" style="font-size: 14px; font-weight: 600;">Mosaic layout</span>
+        </button>
+        <button data-dc-tpl="49" style="height: 84px; border-radius: 16px; background: rgb(23, 23, 26); border: 1px solid rgb(42, 42, 48); padding: 14px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start;">
+          <svg data-dc-tpl="50" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5EE0C8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect data-dc-tpl="51" x="3" y="4" width="18" height="16" rx="2"></rect><circle data-dc-tpl="52" cx="9" cy="10" r="2"></circle><path data-dc-tpl="53" d="M21 16l-5-5-9 9"></path></svg>
+          <span data-dc-tpl="54" style="font-size: 14px; font-weight: 600;">Import from Gallery</span>
+        </button>
+      </div>
+
+      <div data-dc-tpl="55" style="height: 56px; border-radius: 16px; background: rgb(19, 19, 22); border: 1px solid rgb(36, 36, 42); padding: 0px 8px 0px 14px; display: flex; align-items: center; gap: 12px;">
+        <span data-dc-tpl="56" style="width: 32px; height: 32px; border-radius: 9px; background: rgb(31, 42, 31); color: rgb(143, 227, 136); display: flex; align-items: center; justify-content: center;">
+          <svg data-dc-tpl="57" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect data-dc-tpl="58" x="7" y="7" width="10" height="10" rx="2"></rect><path data-dc-tpl="59" d="M10 3v4M14 3v4M10 17v4M14 17v4M3 10h4M3 14h4M17 10h4M17 14h4"></path></svg>
+        </span>
+        <span data-dc-tpl="60" style="font-size: 14px; font-weight: 600;">On-device AI ready</span>
+        <span data-dc-tpl="61" style="font-size: 13px; color: rgb(166, 165, 173);">Whisper Small, DeepFilterNet 3, RNNoise · works offline</span>
+        <span data-dc-tpl="62" style="flex: 1 1 0%;"></span>
+        <button data-dc-tpl="63" style="height: 44px; padding: 0px 12px; color: rgb(255, 210, 63); font-size: 13px; font-weight: 600;">Manage models</button>
+      </div>
+
+      <div data-dc-tpl="64" style="display: flex; align-items: baseline; gap: 8px;">
+        <h2 data-dc-tpl="65" style="margin: 0px; font-size: 17px; font-weight: 700;">Recent</h2>
+        <span data-dc-tpl="66" style="font-size: 13px; color: rgb(140, 139, 148);">8 projects</span>
+        <span data-dc-tpl="67" style="flex: 1 1 0%;"></span>
+        <button data-dc-tpl="68" style="height: 32px; padding: 0px 4px; font-size: 13px; color: rgb(180, 179, 187); display: flex; align-items: center; gap: 4px;">
+          Last edited
+          <svg data-dc-tpl="69" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path data-dc-tpl="70" d="M6 9l6 6 6-6"></path></svg>
+        </button>
+      </div>
+
+      <div data-dc-tpl="71" style="display: grid; grid-template-columns: repeat(4, minmax(0px, 1fr)); gap: 16px 14px;">
+        
+          <a data-dc-tpl="73" href="TabletEditor.html" style="color: rgb(244, 243, 239); display: flex; flex-direction: column; gap: 8px; min-width: 0px;">
+            <span data-dc-tpl="74" style="position: relative; height: 126px; border-radius: 14px; background: rgb(23, 23, 26); display: flex; align-items: center; justify-content: center; overflow: hidden;">
+              <span data-dc-tpl="75" style="width: 160px; height: 90px; border-radius: 4px; overflow: hidden; display: grid; grid-template-columns: 1fr; grid-auto-rows: 1fr; gap: 2px; background: linear-gradient(rgb(35, 48, 92) 0%, rgb(107, 77, 122) 36%, rgb(217, 120, 90) 66%, rgb(243, 176, 100) 76%, rgb(74, 51, 85) 77%, rgb(34, 25, 46) 100%);">
+                
+              </span>
+              <span data-dc-tpl="78" style="position: absolute; left: 8px; top: 8px; padding: 3px 6px; border-radius: 6px; background: rgba(13, 13, 15, 0.82); font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 11px;"><span class="sc-interp">16:9 · 4K</span></span>
+              <span data-dc-tpl="79" style="position: absolute; right: 8px; bottom: 8px; padding: 3px 6px; border-radius: 6px; background: rgba(13, 13, 15, 0.82); font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 11px;"><span class="sc-interp">0:42</span></span>
+            </span>
+            <span data-dc-tpl="80" style="display: flex; flex-direction: column; gap: 2px;">
+              <span data-dc-tpl="81" style="font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><span class="sc-interp">Lisbon weekend</span></span>
+              <span data-dc-tpl="82" style="font-size: 12px; color: rgb(140, 139, 148);"><span class="sc-interp">Edited 2 h ago</span></span>
+            </span>
+          </a>
+        
+          <a data-dc-tpl="73" href="Editor.html" style="color: rgb(244, 243, 239); display: flex; flex-direction: column; gap: 8px; min-width: 0px;">
+            <span data-dc-tpl="74" style="position: relative; height: 126px; border-radius: 14px; background: rgb(23, 23, 26); display: flex; align-items: center; justify-content: center; overflow: hidden;">
+              <span data-dc-tpl="75" style="width: 60px; height: 106px; border-radius: 4px; overflow: hidden; display: grid; grid-template-columns: 1fr; grid-auto-rows: 1fr; gap: 2px; background: linear-gradient(rgb(35, 48, 92) 0%, rgb(107, 77, 122) 36%, rgb(217, 120, 90) 66%, rgb(243, 176, 100) 76%, rgb(74, 51, 85) 77%, rgb(34, 25, 46) 100%);">
+                
+              </span>
+              <span data-dc-tpl="78" style="position: absolute; left: 8px; top: 8px; padding: 3px 6px; border-radius: 6px; background: rgba(13, 13, 15, 0.82); font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 11px;"><span class="sc-interp">9:16 · FHD</span></span>
+              <span data-dc-tpl="79" style="position: absolute; right: 8px; bottom: 8px; padding: 3px 6px; border-radius: 6px; background: rgba(13, 13, 15, 0.82); font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 11px;"><span class="sc-interp">0:42</span></span>
+            </span>
+            <span data-dc-tpl="80" style="display: flex; flex-direction: column; gap: 2px;">
+              <span data-dc-tpl="81" style="font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><span class="sc-interp">Lisbon weekend · Shorts</span></span>
+              <span data-dc-tpl="82" style="font-size: 12px; color: rgb(140, 139, 148);"><span class="sc-interp">Edited 3 h ago</span></span>
+            </span>
+          </a>
+        
+          <a data-dc-tpl="73" href="TabletEditor.html" style="color: rgb(244, 243, 239); display: flex; flex-direction: column; gap: 8px; min-width: 0px;">
+            <span data-dc-tpl="74" style="position: relative; height: 126px; border-radius: 14px; background: rgb(23, 23, 26); display: flex; align-items: center; justify-content: center; overflow: hidden;">
+              <span data-dc-tpl="75" style="width: 160px; height: 90px; border-radius: 4px; overflow: hidden; display: grid; grid-template-columns: 1fr; grid-auto-rows: 1fr; gap: 2px; background: radial-gradient(circle at 50% 55%, rgb(232, 228, 218) 0px, rgb(232, 228, 218) 14%, rgb(58, 107, 115) 15%, rgb(15, 30, 36) 72%);">
+                
+              </span>
+              <span data-dc-tpl="78" style="position: absolute; left: 8px; top: 8px; padding: 3px 6px; border-radius: 6px; background: rgba(13, 13, 15, 0.82); font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 11px;"><span class="sc-interp">16:9 · 4K</span></span>
+              <span data-dc-tpl="79" style="position: absolute; right: 8px; bottom: 8px; padding: 3px 6px; border-radius: 6px; background: rgba(13, 13, 15, 0.82); font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 11px;"><span class="sc-interp">1:18</span></span>
+            </span>
+            <span data-dc-tpl="80" style="display: flex; flex-direction: column; gap: 2px;">
+              <span data-dc-tpl="81" style="font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><span class="sc-interp">Product teaser</span></span>
+              <span data-dc-tpl="82" style="font-size: 12px; color: rgb(140, 139, 148);"><span class="sc-interp">Edited yesterday</span></span>
+            </span>
+          </a>
+        
+          <a data-dc-tpl="73" href="TabletEditor.html" style="color: rgb(244, 243, 239); display: flex; flex-direction: column; gap: 8px; min-width: 0px;">
+            <span data-dc-tpl="74" style="position: relative; height: 126px; border-radius: 14px; background: rgb(23, 23, 26); display: flex; align-items: center; justify-content: center; overflow: hidden;">
+              <span data-dc-tpl="75" style="width: 160px; height: 106px; border-radius: 4px; overflow: hidden; display: grid; grid-template-columns: 1fr; grid-auto-rows: 1fr; gap: 2px; background: linear-gradient(rgb(156, 201, 232) 0%, rgb(232, 216, 176) 58%, rgb(92, 138, 78) 58%, rgb(62, 106, 54) 100%);">
+                
+              </span>
+              <span data-dc-tpl="78" style="position: absolute; left: 8px; top: 8px; padding: 3px 6px; border-radius: 6px; background: rgba(13, 13, 15, 0.82); font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 11px;"><span class="sc-interp">1:1 · HD</span></span>
+              <span data-dc-tpl="79" style="position: absolute; right: 8px; bottom: 8px; padding: 3px 6px; border-radius: 6px; background: rgba(13, 13, 15, 0.82); font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 11px;"><span class="sc-interp">0:25</span></span>
+            </span>
+            <span data-dc-tpl="80" style="display: flex; flex-direction: column; gap: 2px;">
+              <span data-dc-tpl="81" style="font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><span class="sc-interp">Morning run</span></span>
+              <span data-dc-tpl="82" style="font-size: 12px; color: rgb(140, 139, 148);"><span class="sc-interp">Edited 3 days ago</span></span>
+            </span>
+          </a>
+        
+          <a data-dc-tpl="73" href="TabletEditor.html" style="color: rgb(244, 243, 239); display: flex; flex-direction: column; gap: 8px; min-width: 0px;">
+            <span data-dc-tpl="74" style="position: relative; height: 126px; border-radius: 14px; background: rgb(23, 23, 26); display: flex; align-items: center; justify-content: center; overflow: hidden;">
+              <span data-dc-tpl="75" style="width: 160px; height: 90px; border-radius: 4px; overflow: hidden; display: grid; grid-template-columns: repeat(2, minmax(0px, 1fr)); grid-auto-rows: 1fr; gap: 2px; background: rgb(13, 13, 15);">
+                
+                  <span data-dc-tpl="77" style="background: linear-gradient(135deg, rgb(200, 162, 122), rgb(122, 85, 54)); display: block;"></span>
+                
+                  <span data-dc-tpl="77" style="background: linear-gradient(135deg, rgb(62, 124, 177), rgb(22, 50, 79)); display: block;"></span>
+                
+                  <span data-dc-tpl="77" style="background: linear-gradient(135deg, rgb(217, 120, 90), rgb(107, 77, 122)); display: block;"></span>
+                
+                  <span data-dc-tpl="77" style="background: linear-gradient(135deg, rgb(143, 191, 122), rgb(62, 106, 54)); display: block;"></span>
+                
+              </span>
+              <span data-dc-tpl="78" style="position: absolute; left: 8px; top: 8px; padding: 3px 6px; border-radius: 6px; background: rgba(13, 13, 15, 0.82); font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 11px;"><span class="sc-interp">Mosaic 2×2 · 2K</span></span>
+              <span data-dc-tpl="79" style="position: absolute; right: 8px; bottom: 8px; padding: 3px 6px; border-radius: 6px; background: rgba(13, 13, 15, 0.82); font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 11px;"><span class="sc-interp">2:05</span></span>
+            </span>
+            <span data-dc-tpl="80" style="display: flex; flex-direction: column; gap: 2px;">
+              <span data-dc-tpl="81" style="font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><span class="sc-interp">Unboxing split-screen</span></span>
+              <span data-dc-tpl="82" style="font-size: 12px; color: rgb(140, 139, 148);"><span class="sc-interp">Edited last week</span></span>
+            </span>
+          </a>
+        
+          <a data-dc-tpl="73" href="TabletEditor.html" style="color: rgb(244, 243, 239); display: flex; flex-direction: column; gap: 8px; min-width: 0px;">
+            <span data-dc-tpl="74" style="position: relative; height: 126px; border-radius: 14px; background: rgb(23, 23, 26); display: flex; align-items: center; justify-content: center; overflow: hidden;">
+              <span data-dc-tpl="75" style="width: 85px; height: 106px; border-radius: 4px; overflow: hidden; display: grid; grid-template-columns: 1fr; grid-auto-rows: 1fr; gap: 2px; background: repeating-linear-gradient(90deg, rgb(185, 166, 255) 0px, rgb(185, 166, 255) 3px, transparent 3px, transparent 7px) 0px 45% / 100% 18% no-repeat, rgb(42, 31, 74);">
+                
+              </span>
+              <span data-dc-tpl="78" style="position: absolute; left: 8px; top: 8px; padding: 3px 6px; border-radius: 6px; background: rgba(13, 13, 15, 0.82); font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 11px;"><span class="sc-interp">4:5 · FHD</span></span>
+              <span data-dc-tpl="79" style="position: absolute; right: 8px; bottom: 8px; padding: 3px 6px; border-radius: 6px; background: rgba(13, 13, 15, 0.82); font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 11px;"><span class="sc-interp">0:58</span></span>
+            </span>
+            <span data-dc-tpl="80" style="display: flex; flex-direction: column; gap: 2px;">
+              <span data-dc-tpl="81" style="font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><span class="sc-interp">Podcast clip</span></span>
+              <span data-dc-tpl="82" style="font-size: 12px; color: rgb(140, 139, 148);"><span class="sc-interp">Edited last week</span></span>
+            </span>
+          </a>
+        
+          <a data-dc-tpl="73" href="TabletEditor.html" style="color: rgb(244, 243, 239); display: flex; flex-direction: column; gap: 8px; min-width: 0px;">
+            <span data-dc-tpl="74" style="position: relative; height: 126px; border-radius: 14px; background: rgb(23, 23, 26); display: flex; align-items: center; justify-content: center; overflow: hidden;">
+              <span data-dc-tpl="75" style="width: 160px; height: 69px; border-radius: 4px; overflow: hidden; display: grid; grid-template-columns: 1fr; grid-auto-rows: 1fr; gap: 2px; background: linear-gradient(rgb(127, 176, 216) 0%, rgb(185, 211, 230) 40%, rgb(62, 106, 54) 40%, rgb(44, 79, 39) 100%);">
+                
+              </span>
+              <span data-dc-tpl="78" style="position: absolute; left: 8px; top: 8px; padding: 3px 6px; border-radius: 6px; background: rgba(13, 13, 15, 0.82); font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 11px;"><span class="sc-interp">21:9 · 4K</span></span>
+              <span data-dc-tpl="79" style="position: absolute; right: 8px; bottom: 8px; padding: 3px 6px; border-radius: 6px; background: rgba(13, 13, 15, 0.82); font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 11px;"><span class="sc-interp">1:32</span></span>
+            </span>
+            <span data-dc-tpl="80" style="display: flex; flex-direction: column; gap: 2px;">
+              <span data-dc-tpl="81" style="font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><span class="sc-interp">Sintra from above</span></span>
+              <span data-dc-tpl="82" style="font-size: 12px; color: rgb(140, 139, 148);"><span class="sc-interp">Edited 2 weeks ago</span></span>
+            </span>
+          </a>
+        
+          <a data-dc-tpl="73" href="Editor.html" style="color: rgb(244, 243, 239); display: flex; flex-direction: column; gap: 8px; min-width: 0px;">
+            <span data-dc-tpl="74" style="position: relative; height: 126px; border-radius: 14px; background: rgb(23, 23, 26); display: flex; align-items: center; justify-content: center; overflow: hidden;">
+              <span data-dc-tpl="75" style="width: 60px; height: 106px; border-radius: 4px; overflow: hidden; display: grid; grid-template-columns: 1fr; grid-auto-rows: 1fr; gap: 2px; background: radial-gradient(circle at 50% 55%, rgb(242, 196, 106) 0px, rgb(242, 196, 106) 22%, rgb(201, 139, 58) 23%, rgb(201, 139, 58) 30%, rgb(239, 230, 214) 31%);">
+                
+              </span>
+              <span data-dc-tpl="78" style="position: absolute; left: 8px; top: 8px; padding: 3px 6px; border-radius: 6px; background: rgba(13, 13, 15, 0.82); font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 11px;"><span class="sc-interp">9:16 · FHD</span></span>
+              <span data-dc-tpl="79" style="position: absolute; right: 8px; bottom: 8px; padding: 3px 6px; border-radius: 6px; background: rgba(13, 13, 15, 0.82); font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 11px;"><span class="sc-interp">0:33</span></span>
+            </span>
+            <span data-dc-tpl="80" style="display: flex; flex-direction: column; gap: 2px;">
+              <span data-dc-tpl="81" style="font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><span class="sc-interp">Pastel de nata reel</span></span>
+              <span data-dc-tpl="82" style="font-size: 12px; color: rgb(140, 139, 148);"><span class="sc-interp">Edited 3 weeks ago</span></span>
+            </span>
+          </a>
+        
+      </div>
+    </section>
+
+    <aside data-dc-tpl="83" aria-label="New project" style="width: 440px; flex-shrink: 0; border-left: 1px solid rgb(31, 31, 35); background: rgb(17, 17, 20); padding: 20px 24px 24px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px;">
+      <h2 data-dc-tpl="84" style="margin: 0px; font-family: &quot;Bricolage Grotesque&quot;, Geist, sans-serif; font-weight: 800; font-size: 24px; letter-spacing: -0.01em;">New project</h2>
+
+      <section data-dc-tpl="85" style="display: flex; flex-direction: column; gap: 6px;">
+        <h3 data-dc-tpl="86" style="margin: 0px; font-size: 13px; font-weight: 600; color: rgb(166, 165, 173);">Aspect ratio</h3>
+        <div data-dc-tpl="87" style="display: grid; grid-template-columns: repeat(3, minmax(0px, 1fr)); gap: 8px;">
+          
+            <button data-dc-tpl="89" aria-pressed="false" style="height: 62px; border-radius: 14px; border: 1.5px solid rgb(42, 42, 48); background: rgb(23, 23, 26); box-sizing: border-box; padding: 0px 10px; display: flex; align-items: center; gap: 10px; text-align: left;">
+              <span data-dc-tpl="90" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <span data-dc-tpl="91" style="width: 16px; height: 28px; border: 2px solid rgb(180, 179, 187); border-radius: 4px; box-sizing: border-box; display: block;"></span>
+              </span>
+              <span data-dc-tpl="92" style="display: flex; flex-direction: column; gap: 1px; min-width: 0px;">
+                <span data-dc-tpl="93" style="font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 15px; font-weight: 600;"><span class="sc-interp">9:16</span></span>
+                <span data-dc-tpl="94" style="font-size: 11px; color: rgb(166, 165, 173); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><span class="sc-interp">Reels</span></span>
+              </span>
+            </button>
+          
+            <button data-dc-tpl="89" aria-pressed="true" style="height: 62px; border-radius: 14px; border: 1.5px solid rgb(255, 210, 63); background: rgb(34, 31, 18); box-sizing: border-box; padding: 0px 10px; display: flex; align-items: center; gap: 10px; text-align: left;">
+              <span data-dc-tpl="90" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <span data-dc-tpl="91" style="width: 28px; height: 16px; border: 2px solid rgb(255, 210, 63); border-radius: 4px; box-sizing: border-box; display: block;"></span>
+              </span>
+              <span data-dc-tpl="92" style="display: flex; flex-direction: column; gap: 1px; min-width: 0px;">
+                <span data-dc-tpl="93" style="font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 15px; font-weight: 600;"><span class="sc-interp">16:9</span></span>
+                <span data-dc-tpl="94" style="font-size: 11px; color: rgb(166, 165, 173); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><span class="sc-interp">YouTube</span></span>
+              </span>
+            </button>
+          
+            <button data-dc-tpl="89" aria-pressed="false" style="height: 62px; border-radius: 14px; border: 1.5px solid rgb(42, 42, 48); background: rgb(23, 23, 26); box-sizing: border-box; padding: 0px 10px; display: flex; align-items: center; gap: 10px; text-align: left;">
+              <span data-dc-tpl="90" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <span data-dc-tpl="91" style="width: 28px; height: 28px; border: 2px solid rgb(180, 179, 187); border-radius: 4px; box-sizing: border-box; display: block;"></span>
+              </span>
+              <span data-dc-tpl="92" style="display: flex; flex-direction: column; gap: 1px; min-width: 0px;">
+                <span data-dc-tpl="93" style="font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 15px; font-weight: 600;"><span class="sc-interp">1:1</span></span>
+                <span data-dc-tpl="94" style="font-size: 11px; color: rgb(166, 165, 173); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><span class="sc-interp">Square</span></span>
+              </span>
+            </button>
+          
+            <button data-dc-tpl="89" aria-pressed="false" style="height: 62px; border-radius: 14px; border: 1.5px solid rgb(42, 42, 48); background: rgb(23, 23, 26); box-sizing: border-box; padding: 0px 10px; display: flex; align-items: center; gap: 10px; text-align: left;">
+              <span data-dc-tpl="90" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <span data-dc-tpl="91" style="width: 22px; height: 28px; border: 2px solid rgb(180, 179, 187); border-radius: 4px; box-sizing: border-box; display: block;"></span>
+              </span>
+              <span data-dc-tpl="92" style="display: flex; flex-direction: column; gap: 1px; min-width: 0px;">
+                <span data-dc-tpl="93" style="font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 15px; font-weight: 600;"><span class="sc-interp">4:5</span></span>
+                <span data-dc-tpl="94" style="font-size: 11px; color: rgb(166, 165, 173); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><span class="sc-interp">Feed</span></span>
+              </span>
+            </button>
+          
+            <button data-dc-tpl="89" aria-pressed="false" style="height: 62px; border-radius: 14px; border: 1.5px solid rgb(42, 42, 48); background: rgb(23, 23, 26); box-sizing: border-box; padding: 0px 10px; display: flex; align-items: center; gap: 10px; text-align: left;">
+              <span data-dc-tpl="90" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <span data-dc-tpl="91" style="width: 28px; height: 21px; border: 2px solid rgb(180, 179, 187); border-radius: 4px; box-sizing: border-box; display: block;"></span>
+              </span>
+              <span data-dc-tpl="92" style="display: flex; flex-direction: column; gap: 1px; min-width: 0px;">
+                <span data-dc-tpl="93" style="font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 15px; font-weight: 600;"><span class="sc-interp">4:3</span></span>
+                <span data-dc-tpl="94" style="font-size: 11px; color: rgb(166, 165, 173); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><span class="sc-interp">Classic</span></span>
+              </span>
+            </button>
+          
+            <button data-dc-tpl="89" aria-pressed="false" style="height: 62px; border-radius: 14px; border: 1.5px solid rgb(42, 42, 48); background: rgb(23, 23, 26); box-sizing: border-box; padding: 0px 10px; display: flex; align-items: center; gap: 10px; text-align: left;">
+              <span data-dc-tpl="90" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <span data-dc-tpl="91" style="width: 28px; height: 12px; border: 2px solid rgb(180, 179, 187); border-radius: 4px; box-sizing: border-box; display: block;"></span>
+              </span>
+              <span data-dc-tpl="92" style="display: flex; flex-direction: column; gap: 1px; min-width: 0px;">
+                <span data-dc-tpl="93" style="font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 15px; font-weight: 600;"><span class="sc-interp">21:9</span></span>
+                <span data-dc-tpl="94" style="font-size: 11px; color: rgb(166, 165, 173); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><span class="sc-interp">Cinema</span></span>
+              </span>
+            </button>
+          
+        </div>
+      </section>
+
+      <section data-dc-tpl="95" style="display: flex; flex-direction: column; gap: 6px;">
+        <h3 data-dc-tpl="96" style="margin: 0px; font-size: 13px; font-weight: 600; color: rgb(166, 165, 173);">Layout <span data-dc-tpl="97" style="font-weight: 400; color: rgb(140, 139, 148);">- mosaic splits the frame into cells</span></h3>
+        <div data-dc-tpl="98" style="display: grid; grid-template-columns: repeat(5, minmax(0px, 1fr)); gap: 8px;">
+          
+            <button data-dc-tpl="100" aria-pressed="true" style="height: 62px; border-radius: 14px; border: 1.5px solid rgb(255, 210, 63); background: rgb(34, 31, 18); box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;">
+              <span data-dc-tpl="101" style="width: 28px; height: 16px; display: grid; grid-template-columns: repeat(1, minmax(0px, 1fr)); grid-template-rows: repeat(1, minmax(0px, 1fr)); gap: 2px;">
+                
+                  <span data-dc-tpl="103" style="background: rgb(255, 210, 63); border-radius: 2px; display: block;"></span>
+                
+              </span>
+              <span data-dc-tpl="104" style="font-size: 11px; font-weight: 500;"><span class="sc-interp">Single</span></span>
+            </button>
+          
+            <button data-dc-tpl="100" aria-pressed="false" style="height: 62px; border-radius: 14px; border: 1.5px solid rgb(42, 42, 48); background: rgb(23, 23, 26); box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;">
+              <span data-dc-tpl="101" style="width: 28px; height: 16px; display: grid; grid-template-columns: repeat(2, minmax(0px, 1fr)); grid-template-rows: repeat(1, minmax(0px, 1fr)); gap: 2px;">
+                
+                  <span data-dc-tpl="103" style="background: rgb(180, 179, 187); border-radius: 2px; display: block;"></span>
+                
+                  <span data-dc-tpl="103" style="background: rgb(180, 179, 187); border-radius: 2px; display: block;"></span>
+                
+              </span>
+              <span data-dc-tpl="104" style="font-size: 11px; font-weight: 500;"><span class="sc-interp">Split 2</span></span>
+            </button>
+          
+            <button data-dc-tpl="100" aria-pressed="false" style="height: 62px; border-radius: 14px; border: 1.5px solid rgb(42, 42, 48); background: rgb(23, 23, 26); box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;">
+              <span data-dc-tpl="101" style="width: 28px; height: 16px; display: grid; grid-template-columns: repeat(3, minmax(0px, 1fr)); grid-template-rows: repeat(1, minmax(0px, 1fr)); gap: 2px;">
+                
+                  <span data-dc-tpl="103" style="background: rgb(180, 179, 187); border-radius: 2px; display: block;"></span>
+                
+                  <span data-dc-tpl="103" style="background: rgb(180, 179, 187); border-radius: 2px; display: block;"></span>
+                
+                  <span data-dc-tpl="103" style="background: rgb(180, 179, 187); border-radius: 2px; display: block;"></span>
+                
+              </span>
+              <span data-dc-tpl="104" style="font-size: 11px; font-weight: 500;"><span class="sc-interp">Split 3</span></span>
+            </button>
+          
+            <button data-dc-tpl="100" aria-pressed="false" style="height: 62px; border-radius: 14px; border: 1.5px solid rgb(42, 42, 48); background: rgb(23, 23, 26); box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;">
+              <span data-dc-tpl="101" style="width: 28px; height: 16px; display: grid; grid-template-columns: repeat(2, minmax(0px, 1fr)); grid-template-rows: repeat(2, minmax(0px, 1fr)); gap: 2px;">
+                
+                  <span data-dc-tpl="103" style="background: rgb(180, 179, 187); border-radius: 2px; display: block;"></span>
+                
+                  <span data-dc-tpl="103" style="background: rgb(180, 179, 187); border-radius: 2px; display: block;"></span>
+                
+                  <span data-dc-tpl="103" style="background: rgb(180, 179, 187); border-radius: 2px; display: block;"></span>
+                
+                  <span data-dc-tpl="103" style="background: rgb(180, 179, 187); border-radius: 2px; display: block;"></span>
+                
+              </span>
+              <span data-dc-tpl="104" style="font-size: 11px; font-weight: 500;"><span class="sc-interp">2×2</span></span>
+            </button>
+          
+            <button data-dc-tpl="100" aria-pressed="false" style="height: 62px; border-radius: 14px; border: 1.5px solid rgb(42, 42, 48); background: rgb(23, 23, 26); box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;">
+              <span data-dc-tpl="101" style="width: 28px; height: 16px; display: grid; grid-template-columns: repeat(3, minmax(0px, 1fr)); grid-template-rows: repeat(3, minmax(0px, 1fr)); gap: 2px;">
+                
+                  <span data-dc-tpl="103" style="background: rgb(180, 179, 187); border-radius: 2px; display: block;"></span>
+                
+                  <span data-dc-tpl="103" style="background: rgb(180, 179, 187); border-radius: 2px; display: block;"></span>
+                
+                  <span data-dc-tpl="103" style="background: rgb(180, 179, 187); border-radius: 2px; display: block;"></span>
+                
+                  <span data-dc-tpl="103" style="background: rgb(180, 179, 187); border-radius: 2px; display: block;"></span>
+                
+                  <span data-dc-tpl="103" style="background: rgb(180, 179, 187); border-radius: 2px; display: block;"></span>
+                
+                  <span data-dc-tpl="103" style="background: rgb(180, 179, 187); border-radius: 2px; display: block;"></span>
+                
+                  <span data-dc-tpl="103" style="background: rgb(180, 179, 187); border-radius: 2px; display: block;"></span>
+                
+                  <span data-dc-tpl="103" style="background: rgb(180, 179, 187); border-radius: 2px; display: block;"></span>
+                
+                  <span data-dc-tpl="103" style="background: rgb(180, 179, 187); border-radius: 2px; display: block;"></span>
+                
+              </span>
+              <span data-dc-tpl="104" style="font-size: 11px; font-weight: 500;"><span class="sc-interp">3×3</span></span>
+            </button>
+          
+        </div>
+      </section>
+
+      <section data-dc-tpl="105" style="display: flex; flex-direction: column; gap: 6px;">
+        <h3 data-dc-tpl="106" style="margin: 0px; font-size: 13px; font-weight: 600; color: rgb(166, 165, 173);">Resolution</h3>
+        <div data-dc-tpl="107" style="display: grid; grid-template-columns: repeat(4, minmax(0px, 1fr)); gap: 4px; padding: 4px; border-radius: 16px; background: rgb(26, 26, 30);">
+          
+            <button data-dc-tpl="109" aria-pressed="false" style="height: 50px; border-radius: 12px; background: transparent; color: rgb(244, 243, 239); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;">
+              <span data-dc-tpl="110" style="font-size: 15px; font-weight: 700;"><span class="sc-interp">HD</span></span>
+              <span data-dc-tpl="111" style="font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 11px; color: rgb(166, 165, 173);"><span class="sc-interp">720</span>p</span>
+            </button>
+          
+            <button data-dc-tpl="109" aria-pressed="false" style="height: 50px; border-radius: 12px; background: transparent; color: rgb(244, 243, 239); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;">
+              <span data-dc-tpl="110" style="font-size: 15px; font-weight: 700;"><span class="sc-interp">FHD</span></span>
+              <span data-dc-tpl="111" style="font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 11px; color: rgb(166, 165, 173);"><span class="sc-interp">1080</span>p</span>
+            </button>
+          
+            <button data-dc-tpl="109" aria-pressed="false" style="height: 50px; border-radius: 12px; background: transparent; color: rgb(244, 243, 239); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;">
+              <span data-dc-tpl="110" style="font-size: 15px; font-weight: 700;"><span class="sc-interp">2K</span></span>
+              <span data-dc-tpl="111" style="font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 11px; color: rgb(166, 165, 173);"><span class="sc-interp">1440</span>p</span>
+            </button>
+          
+            <button data-dc-tpl="109" aria-pressed="true" style="height: 50px; border-radius: 12px; background: rgb(255, 210, 63); color: rgb(20, 18, 16); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;">
+              <span data-dc-tpl="110" style="font-size: 15px; font-weight: 700;"><span class="sc-interp">4K</span></span>
+              <span data-dc-tpl="111" style="font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 11px; color: rgb(59, 52, 24);"><span class="sc-interp">2160</span>p</span>
+            </button>
+          
+        </div>
+      </section>
+
+      <div data-dc-tpl="112" style="display: flex; gap: 14px;">
+        <section data-dc-tpl="113" style="flex: 1 1 0%; display: flex; flex-direction: column; gap: 6px;">
+          <h3 data-dc-tpl="114" style="margin: 0px; font-size: 13px; font-weight: 600; color: rgb(166, 165, 173);">Frame rate</h3>
+          <div data-dc-tpl="115" style="display: grid; grid-template-columns: repeat(5, minmax(0px, 1fr)); gap: 2px; padding: 3px; border-radius: 12px; background: rgb(26, 26, 30);">
+            
+              <button data-dc-tpl="117" aria-pressed="false" style="height: 40px; border-radius: 9px; background: transparent; color: rgb(244, 243, 239); font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 13px; font-weight: 600;"><span class="sc-interp">24</span></button>
+            
+              <button data-dc-tpl="117" aria-pressed="false" style="height: 40px; border-radius: 9px; background: transparent; color: rgb(244, 243, 239); font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 13px; font-weight: 600;"><span class="sc-interp">25</span></button>
+            
+              <button data-dc-tpl="117" aria-pressed="true" style="height: 40px; border-radius: 9px; background: rgb(255, 210, 63); color: rgb(20, 18, 16); font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 13px; font-weight: 600;"><span class="sc-interp">30</span></button>
+            
+              <button data-dc-tpl="117" aria-pressed="false" style="height: 40px; border-radius: 9px; background: transparent; color: rgb(244, 243, 239); font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 13px; font-weight: 600;"><span class="sc-interp">50</span></button>
+            
+              <button data-dc-tpl="117" aria-pressed="false" style="height: 40px; border-radius: 9px; background: transparent; color: rgb(244, 243, 239); font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 13px; font-weight: 600;"><span class="sc-interp">60</span></button>
+            
+          </div>
+        </section>
+        <section data-dc-tpl="118" style="display: flex; flex-direction: column; gap: 6px;">
+          <h3 data-dc-tpl="119" style="margin: 0px; font-size: 13px; font-weight: 600; color: rgb(166, 165, 173);">Background</h3>
+          <div data-dc-tpl="120" style="display: flex; gap: 2px;">
+            
+              <button data-dc-tpl="122" aria-label="Black background" aria-pressed="true" style="width: 44px; height: 46px; border-radius: 23px; display: flex; align-items: center; justify-content: center; box-shadow: rgb(255, 210, 63) 0px 0px 0px 2px inset;">
+                <span data-dc-tpl="123" style="width: 30px; height: 30px; border-radius: 15px; background: rgb(0, 0, 0); border: 1px solid rgb(58, 58, 64); box-sizing: border-box; display: block;"></span>
+              </button>
+            
+              <button data-dc-tpl="122" aria-label="White background" aria-pressed="false" style="width: 44px; height: 46px; border-radius: 23px; display: flex; align-items: center; justify-content: center; box-shadow: transparent 0px 0px 0px 2px inset;">
+                <span data-dc-tpl="123" style="width: 30px; height: 30px; border-radius: 15px; background: rgb(255, 255, 255); border: 1px solid rgb(58, 58, 64); box-sizing: border-box; display: block;"></span>
+              </button>
+            
+              <button data-dc-tpl="122" aria-label="Yellow background" aria-pressed="false" style="width: 44px; height: 46px; border-radius: 23px; display: flex; align-items: center; justify-content: center; box-shadow: transparent 0px 0px 0px 2px inset;">
+                <span data-dc-tpl="123" style="width: 30px; height: 30px; border-radius: 15px; background: rgb(255, 210, 63); border: 1px solid rgb(58, 58, 64); box-sizing: border-box; display: block;"></span>
+              </button>
+            
+              <button data-dc-tpl="122" aria-label="Blurred fill" aria-pressed="false" style="width: 44px; height: 46px; border-radius: 23px; display: flex; align-items: center; justify-content: center; box-shadow: transparent 0px 0px 0px 2px inset;">
+                <span data-dc-tpl="123" style="width: 30px; height: 30px; border-radius: 15px; background: linear-gradient(135deg, rgb(107, 77, 122), rgb(217, 120, 90)); border: 1px solid rgb(58, 58, 64); box-sizing: border-box; display: block;"></span>
+              </button>
+            
+          </div>
+        </section>
+      </div>
+
+      <div data-dc-tpl="124" style="flex: 1 1 0%;"></div>
+      <div data-dc-tpl="125" style="display: flex; align-items: center; gap: 14px;">
+        <span data-dc-tpl="126" style="width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <span data-dc-tpl="127" style="width: 52px; height: 29px; padding: 2px; box-sizing: border-box; border-radius: 4px; background: rgb(106, 106, 114); display: grid; grid-template-columns: repeat(1, minmax(0px, 1fr)); grid-template-rows: repeat(1, minmax(0px, 1fr)); gap: 2px;">
+            
+              <span data-dc-tpl="129" style="background: rgb(0, 0, 0); border-radius: 1px; display: block;"></span>
+            
+          </span>
+        </span>
+        <span data-dc-tpl="130" style="display: flex; flex-direction: column; gap: 2px;">
+          <span data-dc-tpl="131" style="font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 22px; font-weight: 600;"><span class="sc-interp">3840 × 2160</span></span>
+          <span data-dc-tpl="132" style="font-size: 13px; color: rgb(166, 165, 173);"><span class="sc-interp">16:9 · 4K · 30 fps · Single</span></span>
+        </span>
+      </div>
+      <a data-dc-tpl="133" href="TabletEditor.html" style="height: 56px; border-radius: 16px; background: rgb(255, 210, 63); color: rgb(20, 18, 16); font-size: 16px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px;">
+        Create project
+        <svg data-dc-tpl="134" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path data-dc-tpl="135" d="M5 12h14M13 6l6 6-6 6"></path></svg>
+      </a>
+    </aside>
+  </div></div></div></div>
+</body>
+</html>

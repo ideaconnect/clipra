@@ -1,0 +1,3407 @@
+{
+ "repo": "ideaconnect/clipra",
+ "project": {
+  "owner": "ideaconnect",
+  "number": 6,
+  "title": "ClipraPlan"
+ },
+ "milestones": [
+  {
+   "id": "M0",
+   "title": "M0 · Foundations",
+   "description": "A buildable app skeleton with CI, the Clipra theme, and the three risky technical bets (layered compositing, whisper.cpp, export speed) proven on real devices."
+  },
+  {
+   "id": "M1",
+   "title": "M1 · Projects and timeline",
+   "description": "Create a project in any format, import media, arrange it on generic layers, preview it on proxies and edit it with split, trim, move, undo and redo."
+  },
+  {
+   "id": "M2",
+   "title": "M2 · Compositing",
+   "description": "Clips on higher layers can be moved, scaled, rotated, blended with 16 modes, keyframed, sped up or slowed down, and graded by adjustment clips."
+  },
+  {
+   "id": "M3",
+   "title": "M3 · Effects",
+   "description": "All 24 filters (Mosaic included), 24 transitions, rectangle and oval masks, and color grading with LUTs work in preview and export."
+  },
+  {
+   "id": "M4",
+   "title": "M4 · Text",
+   "description": "Text cards and titles with 12 effects, animations and templates."
+  },
+  {
+   "id": "M5",
+   "title": "M5 · Audio",
+   "description": "Per-clip volume, fades and loudness, noise reduction, on-device AI voice cleanup, ducking, beat markers and voiceover recording."
+  },
+  {
+   "id": "M6",
+   "title": "M6 · Captions and edit by text",
+   "description": "Whisper captions on the device with styles, editing, .srt and offline translation, plus editing the video by deleting words and pauses."
+  },
+  {
+   "id": "M7",
+   "title": "M7 · Vision tools",
+   "description": "Person cutout, chroma key, face-following masks and auto-reframe, all on the device."
+  },
+  {
+   "id": "M8",
+   "title": "M8 · Export",
+   "description": "Export in HD to 4K with H.264, HEVC or AV1 from original media, in the background, with extras (.srt, .jpg, .m4a, .otio) and a Saved screen."
+  },
+  {
+   "id": "M9",
+   "title": "M9 · Ads and Clipra Pro",
+   "description": "Two compliant interstitial ads per export for free users, consent where required, and a 10 PLN one-time Clipra Pro purchase that removes them."
+  },
+  {
+   "id": "M10",
+   "title": "M10 · Tablet",
+   "description": "A landscape three-pane tablet experience for every feature."
+  },
+  {
+   "id": "M11",
+   "title": "M11 · Launch",
+   "description": "Onboarding, settings, accessibility, Polish and English, performance on real devices, and a Google Play release."
+  }
+ ],
+ "labels": [
+  {
+   "name": "type:epic",
+   "color": "5319E7",
+   "description": "A milestone-sized goal with sub-issues"
+  },
+  {
+   "name": "type:task",
+   "color": "1D76DB",
+   "description": "A unit of implementation work"
+  },
+  {
+   "name": "type:spike",
+   "color": "FBCA04",
+   "description": "Time-boxed research that ends in a decision"
+  },
+  {
+   "name": "priority:p0",
+   "color": "B60205",
+   "description": "Must have for v1"
+  },
+  {
+   "name": "priority:p1",
+   "color": "D93F0B",
+   "description": "Should have for v1"
+  },
+  {
+   "name": "priority:p2",
+   "color": "C5DEF5",
+   "description": "Nice to have, may slip after v1"
+  },
+  {
+   "name": "area:infra",
+   "color": "BFDADC",
+   "description": "Area: infra"
+  },
+  {
+   "name": "area:ux",
+   "color": "F9D0C4",
+   "description": "Area: ux"
+  },
+  {
+   "name": "area:core",
+   "color": "C2E0C6",
+   "description": "Area: core"
+  },
+  {
+   "name": "area:timeline",
+   "color": "C2E0C6",
+   "description": "Area: timeline"
+  },
+  {
+   "name": "area:engine",
+   "color": "C2E0C6",
+   "description": "Area: engine"
+  },
+  {
+   "name": "area:effects",
+   "color": "D4C5F9",
+   "description": "Area: effects"
+  },
+  {
+   "name": "area:text",
+   "color": "D4C5F9",
+   "description": "Area: text"
+  },
+  {
+   "name": "area:audio",
+   "color": "FEF2C0",
+   "description": "Area: audio"
+  },
+  {
+   "name": "area:ai",
+   "color": "BFD4F2",
+   "description": "Area: ai"
+  },
+  {
+   "name": "area:export",
+   "color": "FAD8C7",
+   "description": "Area: export"
+  },
+  {
+   "name": "area:monetization",
+   "color": "FFD23F",
+   "description": "Area: monetization"
+  },
+  {
+   "name": "area:tablet",
+   "color": "E99695",
+   "description": "Area: tablet"
+  },
+  {
+   "name": "area:release",
+   "color": "BFDADC",
+   "description": "Area: release"
+  }
+ ],
+ "issues": [
+  {
+   "key": "E0",
+   "kind": "epic",
+   "milestone": "M0",
+   "title": "Foundations: skeleton, CI, theme and technical spikes",
+   "goal": "Set up the Android project so every later milestone can start in parallel, and remove the biggest technical unknowns early. The spikes decide whether Media3 can do layered compositing with custom blend modes and transitions, how fast whisper.cpp is on real phones, and how fast 1080p export is. Their results update `docs/architecture.md` before M1 starts.",
+   "design": [
+    {
+     "path": "design/screens/phone/Main.png",
+     "cap": "Home",
+     "w": 240
+    },
+    {
+     "path": "design/screens/phone/Editor.png",
+     "cap": "Editor",
+     "w": 240
+    },
+    {
+     "path": "design/screens/tablet/TabletEditor.png",
+     "cap": "Tablet editor",
+     "w": 420
+    }
+   ],
+   "scope": [
+    "Gradle multi-module project as in the architecture doc",
+    "CI on GitHub Actions",
+    "Compose theme and shared components from `design/tokens.json`",
+    "Spikes: layered compositing, whisper.cpp, export performance",
+    "Dependency license policy and third-party list"
+   ],
+   "acceptance": [
+    "`./gradlew build` passes on CI for every pull request",
+    "The app launches to a themed Home placeholder on a phone and a tablet emulator",
+    "Spike reports are committed under `docs/spikes/` and architecture decisions are updated",
+    "No dependency outside the license policy"
+   ],
+   "notes": [
+    "If Media3 cannot blend layers with custom modes, plan a custom GL compositor (adds about two weeks to M2)",
+    "If whisper base is too slow on mid-range phones, default to tiny and offer base as an option"
+   ],
+   "refs": [
+    "docs/architecture.md",
+    "design/design-system.md",
+    "design/tokens.json"
+   ],
+   "labels": [
+    "type:epic",
+    "area:infra"
+   ],
+   "parent": null,
+   "depends": []
+  },
+  {
+   "key": "M0-skeleton",
+   "kind": "task",
+   "milestone": "M0",
+   "title": "Create the Android project skeleton and module structure",
+   "goal": "A clean multi-module Kotlin and Compose project that matches `docs/architecture.md`, ready for feature work.",
+   "design": [],
+   "scope": [
+    "Gradle version catalog, Kotlin 2.x, Compose, Hilt, kotlinx.serialization, Room, DataStore, WorkManager",
+    "Modules: app, core:designsystem, core:model, core:data, core:engine, core:audio, ml:whisper, ml:voice, ml:vision, ml:translate, feature:* (empty), monetization",
+    "minSdk 26 (proposed), latest targetSdk required by Play, arm64-v8a first",
+    "App id `tech.idct.clipra` (confirm), debug and release build types, R8 for release",
+    "Navigation shell with placeholder destinations for every board in `design/README.md`"
+   ],
+   "acceptance": [
+    "Project builds and installs on a device",
+    "Each module compiles independently and has one example unit test",
+    "Navigation reaches a placeholder for every phone board"
+   ],
+   "notes": [
+    "Keep feature modules independent of each other; share through core modules"
+   ],
+   "refs": [
+    "docs/architecture.md"
+   ],
+   "labels": [
+    "type:task",
+    "area:infra",
+    "priority:p0"
+   ],
+   "parent": "E0",
+   "depends": []
+  },
+  {
+   "key": "M0-ci",
+   "kind": "task",
+   "milestone": "M0",
+   "title": "Set up CI: build, lint, tests and debug APK artifact",
+   "goal": "Every pull request is built, linted and tested automatically.",
+   "design": [],
+   "scope": [
+    "GitHub Actions workflow: assembleDebug, unit tests, Android lint, ktlint or detekt",
+    "Gradle and dependency caching",
+    "Upload the debug APK as a workflow artifact",
+    "Branch protection recommendation in the README"
+   ],
+   "acceptance": [
+    "Workflow runs on pull requests and main",
+    "A failing test or lint error fails the check",
+    "Debug APK downloadable from the run"
+   ],
+   "notes": [
+    "Instrumented tests run later on a device farm or emulator matrix (M11)"
+   ],
+   "refs": [
+    "docs/architecture.md"
+   ],
+   "labels": [
+    "type:task",
+    "area:infra",
+    "priority:p0"
+   ],
+   "parent": "E0",
+   "depends": [
+    "M0-skeleton"
+   ]
+  },
+  {
+   "key": "M0-theme",
+   "kind": "task",
+   "milestone": "M0",
+   "title": "Build the Clipra design system in Compose",
+   "goal": "One theme and a set of shared components so screens are built from the design system, never from raw hex values.",
+   "design": [
+    {
+     "path": "design/screens/phone/Main.png",
+     "cap": "Home",
+     "w": 240
+    },
+    {
+     "path": "design/screens/phone/NewProject.png",
+     "cap": "Choice cards and segments",
+     "w": 240
+    },
+    {
+     "path": "design/screens/phone/Audio.png",
+     "cap": "Switches, sliders, cards",
+     "w": 240
+    }
+   ],
+   "scope": [
+    "ClipraTheme: colours, typography and shapes from `design/tokens.json`",
+    "Bundle Bricolage Grotesque, Geist and Geist Mono (OFL)",
+    "Components: primary and secondary buttons, segmented control, choice card, chip (44 dp touch area), switch, labelled slider, card, on-device card, Pro card, header with back or close, bottom nav, tablet tool rail, phone tool strip",
+    "Icon set as vector drawables (stroke style, crown for Pro)",
+    "Preview gallery screen in debug builds"
+   ],
+   "acceptance": [
+    "All components have Compose previews and screenshot tests",
+    "Touch targets are at least 44 dp",
+    "Text contrast is at least 4.5:1 for every token pair used",
+    "Home placeholder uses only theme components"
+   ],
+   "notes": [
+    "See `design/design-system.md` for sizes and states"
+   ],
+   "refs": [
+    "design/design-system.md",
+    "design/tokens.json"
+   ],
+   "labels": [
+    "type:task",
+    "area:ux",
+    "priority:p0"
+   ],
+   "parent": "E0",
+   "depends": [
+    "M0-skeleton"
+   ]
+  },
+  {
+   "key": "M0-spike-engine",
+   "kind": "spike",
+   "milestone": "M0",
+   "title": "Spike: layered compositing, blend modes and transitions on Media3",
+   "goal": "Prove that Media3 (Transformer and CompositionPlayer) can render the Clipra layer model, or decide on a custom GL compositor.",
+   "design": [
+    {
+     "path": "design/screens/phone/Editor.png",
+     "cap": "Six layers",
+     "w": 240
+    },
+    {
+     "path": "design/screens/phone/Layers.png",
+     "cap": "Blend modes",
+     "w": 240
+    },
+    {
+     "path": "design/screens/phone/Transitions.png",
+     "cap": "Transitions",
+     "w": 240
+    }
+   ],
+   "scope": [
+    "Build a composition with 3 overlapping video layers, one photo and one text overlay, with gaps between clips on a layer",
+    "Implement Screen and Multiply blend modes as custom shaders",
+    "Implement one transition (Dissolve) across a cut",
+    "Preview with CompositionPlayer and export 1080p30 with Transformer",
+    "Measure preview frame rate and export time on a mid-range and a low-end phone"
+   ],
+   "acceptance": [
+    "Written report in `docs/spikes/engine.md` with numbers, code sample and decision",
+    "Decision on layer ordering, gaps, compositor and transitions recorded in `docs/architecture.md`"
+   ],
+   "notes": [
+    "Media3 docs state that cross-fading video is not supported yet; transitions likely need a custom effect"
+   ],
+   "refs": [
+    "docs/architecture.md"
+   ],
+   "labels": [
+    "type:spike",
+    "area:engine",
+    "priority:p0"
+   ],
+   "parent": "E0",
+   "depends": [
+    "M0-skeleton"
+   ]
+  },
+  {
+   "key": "M0-spike-whisper",
+   "kind": "spike",
+   "milestone": "M0",
+   "title": "Spike: whisper.cpp on Android with word timestamps",
+   "goal": "Know how fast and accurate on-device captions are before building the captions feature.",
+   "design": [
+    {
+     "path": "design/screens/phone/CaptionsSetup.png",
+     "cap": "Model choice",
+     "w": 240
+    },
+    {
+     "path": "design/screens/phone/CaptionsEdit.png",
+     "cap": "Result",
+     "w": 240
+    }
+   ],
+   "scope": [
+    "Build whisper.cpp for arm64-v8a with JNI",
+    "Transcribe a 42 s English and a 42 s Polish clip with tiny, base and small models",
+    "Get word-level timestamps and confidence",
+    "Measure time, memory and battery on two devices"
+   ],
+   "acceptance": [
+    "Report in `docs/spikes/whisper.md` with real-time factors and word error impressions",
+    "Recommendation for the default model and chunking strategy"
+   ],
+   "notes": [
+    "Model sizes: tiny 75 MB, base 142 MB, small 466 MB, large-v3-turbo q5 547 MB"
+   ],
+   "refs": [
+    "docs/architecture.md",
+    "docs/product/spec.md section 12"
+   ],
+   "labels": [
+    "type:spike",
+    "area:ai",
+    "priority:p0"
+   ],
+   "parent": "E0",
+   "depends": [
+    "M0-skeleton"
+   ]
+  },
+  {
+   "key": "M0-adr",
+   "kind": "task",
+   "milestone": "M0",
+   "title": "Record architecture decisions and the dependency license policy",
+   "goal": "Write down the decisions so every contributor (and Claude) follows the same rules.",
+   "design": [],
+   "scope": [
+    "ADRs in `docs/adr/`: media engine, project format, AI runtimes, ads and billing SDKs, minSdk, license policy",
+    "Keep `docs/third-party.md` up to date",
+    "Open-source licenses screen plan (generated from Gradle)"
+   ],
+   "acceptance": [
+    "ADRs merged and linked from `CLAUDE.md`",
+    "License policy enforced in code review checklist"
+   ],
+   "notes": [
+    "The repo is Apache-2.0; no GPL or AGPL dependencies"
+   ],
+   "refs": [
+    "docs/architecture.md",
+    "docs/third-party.md"
+   ],
+   "labels": [
+    "type:task",
+    "area:infra",
+    "priority:p1"
+   ],
+   "parent": "E0",
+   "depends": [
+    "M0-spike-engine",
+    "M0-spike-whisper"
+   ]
+  },
+  {
+   "key": "E1",
+   "kind": "epic",
+   "milestone": "M1",
+   "title": "Projects, formats and the layered timeline",
+   "goal": "Users can create a project in any supported format, import media, place anything on any layer, preview on proxies and edit with the core tools. This milestone produces the first usable editor.",
+   "design": [
+    {
+     "path": "design/screens/flows/first-run.png",
+     "cap": "First run to editor",
+     "w": 760
+    },
+    {
+     "path": "design/screens/states/Editor--no-clip-selected.png",
+     "cap": "Main tools",
+     "w": 240
+    },
+    {
+     "path": "design/screens/phone/NewProject.png",
+     "cap": "New project",
+     "w": 240
+    }
+   ],
+   "scope": [
+    "Project model and persistence",
+    "New project flow",
+    "Generic layers",
+    "Phone timeline UI",
+    "Preview player",
+    "Edit commands with undo and redo",
+    "Media import and proxies",
+    "Mosaic layouts"
+   ],
+   "acceptance": [
+    "Create a 9:16 FHD project, import 3 clips and a photo, arrange them on 3 layers, split and trim, undo and redo, close and reopen the app with everything restored",
+    "Timeline scrolls at 60 fps with 6 layers on a mid-range phone"
+   ],
+   "notes": [
+    "Timeline gestures on small screens are hard to get right; budget time for usability testing"
+   ],
+   "refs": [
+    "docs/product/spec.md sections 2 to 4",
+    "docs/architecture.md section 3"
+   ],
+   "labels": [
+    "type:epic",
+    "area:timeline"
+   ],
+   "parent": null,
+   "depends": []
+  },
+  {
+   "key": "M1-model",
+   "kind": "task",
+   "milestone": "M1",
+   "title": "Project model, persistence and autosave",
+   "goal": "A versioned project document with layers and clips that saves automatically and lists recent projects on Home.",
+   "design": [
+    {
+     "path": "design/screens/phone/Main.png",
+     "cap": "Recent projects",
+     "w": 240
+    },
+    {
+     "path": "design/screens/tablet/TabletHome.png",
+     "cap": "Tablet home",
+     "w": 420
+    }
+   ],
+   "scope": [
+    "`core:model` types from `docs/architecture.md` section 3",
+    "JSON serialization with a schema version and migrations",
+    "Room index for recent projects with thumbnail, format badge, duration, last edited",
+    "Debounced autosave after every committed edit",
+    "Delete, duplicate and rename projects"
+   ],
+   "acceptance": [
+    "Killing the app mid-edit loses at most the last second of edits",
+    "Recent list matches the design (format badge, duration, \"Edited 2 h ago\")",
+    "Unit tests cover serialization round trips and a migration"
+   ],
+   "notes": [
+    "Times in microseconds; no absolute cache paths in the document"
+   ],
+   "refs": [
+    "docs/architecture.md section 3",
+    "docs/product/spec.md section 2"
+   ],
+   "labels": [
+    "type:task",
+    "area:core",
+    "priority:p0"
+   ],
+   "parent": "E1",
+   "depends": [
+    "M0-skeleton"
+   ]
+  },
+  {
+   "key": "M1-newproject",
+   "kind": "task",
+   "milestone": "M1",
+   "title": "New project flow: ratio, layout, resolution, frame rate, background",
+   "goal": "Pick the format of a new project and see the output size before creating it.",
+   "design": [
+    {
+     "path": "design/screens/phone/NewProject.png",
+     "cap": "New project",
+     "w": 240
+    },
+    {
+     "path": "design/screens/states/NewProject--16x9-2x2-4k.png",
+     "cap": "16:9, 2×2, 4K",
+     "w": 240
+    },
+    {
+     "path": "design/screens/tablet/TabletHome.png",
+     "cap": "Tablet inline panel",
+     "w": 420
+    }
+   ],
+   "scope": [
+    "Ratios 9:16, 16:9, 1:1, 4:5, 4:3, 21:9",
+    "Layouts Single, Split 2, Split 3, 2×2, 3×3",
+    "Resolutions HD, FHD, 2K, 4K with live output size",
+    "Frame rates 24, 25, 30, 50, 60",
+    "Backgrounds Black, White, Yellow, Blur",
+    "4K note: needs a 2160p hardware encoder, checked before export"
+   ],
+   "acceptance": [
+    "Output size is correct for every ratio and resolution (unit tested)",
+    "Created project opens in the editor with the chosen format"
+   ],
+   "notes": [
+    "Logic reference: `design/canvas/NewProject.dc.html` renderVals()"
+   ],
+   "refs": [
+    "docs/product/spec.md section 2"
+   ],
+   "labels": [
+    "type:task",
+    "area:core",
+    "priority:p0"
+   ],
+   "parent": "E1",
+   "depends": [
+    "M1-model",
+    "M0-theme"
+   ]
+  },
+  {
+   "key": "M1-layers",
+   "kind": "task",
+   "milestone": "M1",
+   "title": "Generic layer model: anything on any layer, hide, mute, lock",
+   "goal": "Layers carry no content type. Order decides what covers what; every layer plays sound.",
+   "design": [
+    {
+     "path": "design/screens/states/Layers--layer-list.png",
+     "cap": "Layer list",
+     "w": 240
+    },
+    {
+     "path": "design/screens/phone/Editor.png",
+     "cap": "L1 to L6 on the timeline",
+     "w": 240
+    }
+   ],
+   "scope": [
+    "Layers numbered from the bottom (L1) to the top",
+    "Add a layer above the top one (also by dropping a clip above the top layer)",
+    "Reorder layers",
+    "Hide (visual), mute (audio), lock (no edits) per layer",
+    "No per-layer audio or visual settings; those are per clip"
+   ],
+   "acceptance": [
+    "Moving a clip to a higher layer makes it cover lower layers in preview and export",
+    "Muted layer is silent, hidden layer invisible, locked layer rejects edits"
+   ],
+   "notes": [],
+   "refs": [
+    "docs/product/spec.md sections 1 and 4"
+   ],
+   "labels": [
+    "type:task",
+    "area:timeline",
+    "priority:p0"
+   ],
+   "parent": "E1",
+   "depends": [
+    "M1-model"
+   ]
+  },
+  {
+   "key": "M1-timeline",
+   "kind": "task",
+   "milestone": "M1",
+   "title": "Phone timeline UI",
+   "goal": "The phone timeline from the design: ruler, centred playhead, layer headers and clip anatomy.",
+   "design": [
+    {
+     "path": "design/screens/phone/Editor.png",
+     "cap": "Editor",
+     "w": 240
+    },
+    {
+     "path": "design/screens/states/Editor--no-clip-selected.png",
+     "cap": "Main tools",
+     "w": 240
+    },
+    {
+     "path": "design/screens/states/Editor--after-split.png",
+     "cap": "After split",
+     "w": 240
+    }
+   ],
+   "scope": [
+    "32 px per second, pinch to zoom, playhead fixed at the centre",
+    "Layer gutter with L-chips",
+    "Clip types with colours from the design system; video clips with filmstrip and audio strip; captions lane; transition markers on cuts",
+    "Selection with trim handles and duration badge",
+    "Main tools strip and clip tools strip (swap on selection)",
+    "Add media button on the main layer"
+   ],
+   "acceptance": [
+    "Matches the Editor board within a few dp",
+    "Scroll and scrub at 60 fps with 6 layers on a mid-range phone",
+    "TalkBack announces type, name, duration and layer for each clip"
+   ],
+   "notes": [
+    "Geometry reference: `design/canvas/Editor.dc.html`"
+   ],
+   "refs": [
+    "design/design-system.md (Timeline)",
+    "docs/product/spec.md section 3"
+   ],
+   "labels": [
+    "type:task",
+    "area:timeline",
+    "priority:p0"
+   ],
+   "parent": "E1",
+   "depends": [
+    "M1-layers",
+    "M0-theme"
+   ]
+  },
+  {
+   "key": "M1-preview",
+   "kind": "task",
+   "milestone": "M1",
+   "title": "Preview player on proxies",
+   "goal": "Smooth preview of the whole layered project with play, pause, scrubbing and frame stepping.",
+   "design": [
+    {
+     "path": "design/screens/phone/Editor.png",
+     "cap": "Preview and transport",
+     "w": 240
+    }
+   ],
+   "scope": [
+    "Build the Media3 composition from the project (per spike decision)",
+    "CompositionPlayer playback on proxies",
+    "Timecode display, play and pause, previous and next frame, fit and zoom on tablet",
+    "Selected clip handles drawn over the preview"
+   ],
+   "acceptance": [
+    "Real-time playback at 1080p with 3 video layers on a mid-range phone",
+    "Scrubbing shows the right frame within 100 ms"
+   ],
+   "notes": [],
+   "refs": [
+    "docs/architecture.md section 4"
+   ],
+   "labels": [
+    "type:task",
+    "area:engine",
+    "priority:p0"
+   ],
+   "parent": "E1",
+   "depends": [
+    "M0-spike-engine",
+    "M1-media"
+   ]
+  },
+  {
+   "key": "M1-edit",
+   "kind": "task",
+   "milestone": "M1",
+   "title": "Edit commands, snapping, ripple, linked clips, undo and redo",
+   "goal": "The core editing operations work on every layer and can always be undone.",
+   "design": [
+    {
+     "path": "design/screens/states/Editor--after-split.png",
+     "cap": "Split",
+     "w": 240
+    },
+    {
+     "path": "design/screens/tablet/TabletEditor.png",
+     "cap": "Tablet toolbar",
+     "w": 420
+    }
+   ],
+   "scope": [
+    "Commands: split at playhead, delete, duplicate, trim, move (time and layer), freeze frame, extract audio, replace media",
+    "Snapping to playhead, cuts and beats (on by default)",
+    "Ripple delete (on by default)",
+    "Link groups: linked clips move and cut together; selecting a clip outlines its partners",
+    "Undo and redo stack with unlimited steps per session"
+   ],
+   "acceptance": [
+    "Every command has an inverse and unit tests",
+    "Undo and redo buttons reflect availability",
+    "Linked caption follows its source clip when moved or cut"
+   ],
+   "notes": [],
+   "refs": [
+    "docs/product/spec.md section 3"
+   ],
+   "labels": [
+    "type:task",
+    "area:timeline",
+    "priority:p0"
+   ],
+   "parent": "E1",
+   "depends": [
+    "M1-layers"
+   ]
+  },
+  {
+   "key": "M1-media",
+   "kind": "task",
+   "milestone": "M1",
+   "title": "Media import, media bin and proxy generation",
+   "goal": "Bring photos, videos and audio in without broad storage permissions, and generate proxies in the background.",
+   "design": [
+    {
+     "path": "design/screens/tablet/TabletEditor.png",
+     "cap": "Media bin",
+     "w": 420
+    },
+    {
+     "path": "design/screens/phone/Editor.png",
+     "cap": "Add media",
+     "w": 240
+    }
+   ],
+   "scope": [
+    "Android Photo Picker for photos and videos; system file picker for audio",
+    "Media bin with \"This project\" and Gallery tabs (tablet)",
+    "Proxy generation (720p H.264) with WorkManager, keyed by media hash",
+    "Thumbnails and filmstrips cached on disk",
+    "Handle missing media (moved or deleted) gracefully"
+   ],
+   "acceptance": [
+    "Importing a 4K clip creates a proxy in the background and the clip is editable immediately",
+    "No READ_EXTERNAL_STORAGE or READ_MEDIA_* permission needed for import"
+   ],
+   "notes": [],
+   "refs": [
+    "docs/architecture.md section 4"
+   ],
+   "labels": [
+    "type:task",
+    "area:engine",
+    "priority:p0"
+   ],
+   "parent": "E1",
+   "depends": [
+    "M1-model"
+   ]
+  },
+  {
+   "key": "M1-mosaic",
+   "kind": "task",
+   "milestone": "M1",
+   "title": "Mosaic (split-screen) layouts",
+   "goal": "Projects with Split 2, Split 3, 2×2 or 3×3 layouts place clips into cells.",
+   "design": [
+    {
+     "path": "design/screens/states/NewProject--16x9-2x2-4k.png",
+     "cap": "2×2 layout",
+     "w": 240
+    },
+    {
+     "path": "design/screens/phone/Main.png",
+     "cap": "Unboxing split-screen project",
+     "w": 240
+    }
+   ],
+   "scope": [
+    "Cell regions derived from the layout",
+    "Drop a clip into a cell; clip fills the cell with crop",
+    "Change layout later keeps clips where possible"
+   ],
+   "acceptance": [
+    "A 2×2 project with four clips previews and exports with four cells"
+   ],
+   "notes": [
+    "Implement as transforms on layers or cell masks, per engine spike"
+   ],
+   "refs": [
+    "docs/product/spec.md section 2"
+   ],
+   "labels": [
+    "type:task",
+    "area:engine",
+    "priority:p1"
+   ],
+   "parent": "E1",
+   "depends": [
+    "M1-preview",
+    "M2-transform"
+   ]
+  },
+  {
+   "key": "E2",
+   "kind": "epic",
+   "milestone": "M2",
+   "title": "Compositing: transform, blend modes, keyframes and speed",
+   "goal": "Any clip on a higher layer can be positioned, blended and animated over the layers below it, which is what makes picture-in-picture, overlays and titles possible.",
+   "design": [
+    {
+     "path": "design/screens/phone/Layers.png",
+     "cap": "Blend and opacity",
+     "w": 240
+    },
+    {
+     "path": "design/screens/states/Layers--transform.png",
+     "cap": "Transform",
+     "w": 240
+    },
+    {
+     "path": "design/screens/states/TabletEditor--speed-tab.png",
+     "cap": "Speed",
+     "w": 420
+    }
+   ],
+   "scope": [
+    "Transform with on-preview handles",
+    "16 blend modes and opacity",
+    "Keyframes and easing",
+    "Speed and ramps",
+    "Adjustment clips"
+   ],
+   "acceptance": [
+    "A picture-in-picture clip on L4 with Screen blend at 85% opacity looks the same in preview and export",
+    "Keyframed position animates smoothly at 60 fps in preview"
+   ],
+   "notes": [
+    "Blend modes depend on the compositor decision from the engine spike"
+   ],
+   "refs": [
+    "docs/product/spec.md sections 4 and 5"
+   ],
+   "labels": [
+    "type:epic",
+    "area:engine"
+   ],
+   "parent": null,
+   "depends": []
+  },
+  {
+   "key": "M2-transform",
+   "kind": "task",
+   "milestone": "M2",
+   "title": "Transform: position, scale, rotation, crop, flip, fit",
+   "goal": "Move and resize a clip directly on the preview or with exact values.",
+   "design": [
+    {
+     "path": "design/screens/states/Layers--transform.png",
+     "cap": "Transform tab",
+     "w": 240
+    },
+    {
+     "path": "design/screens/phone/Layers.png",
+     "cap": "Handles on preview",
+     "w": 240
+    }
+   ],
+   "scope": [
+    "Drag, pinch and rotate gestures on the preview with handles",
+    "Numeric fields for X, Y, scale, rotation (tablet inspector)",
+    "Crop, flip horizontally, fit and fill, reset"
+   ],
+   "acceptance": [
+    "Transforms render identically in preview and export (golden test)"
+   ],
+   "notes": [],
+   "refs": [
+    "docs/product/spec.md section 4"
+   ],
+   "labels": [
+    "type:task",
+    "area:engine",
+    "priority:p0"
+   ],
+   "parent": "E2",
+   "depends": [
+    "M1-preview"
+   ]
+  },
+  {
+   "key": "M2-blend",
+   "kind": "task",
+   "milestone": "M2",
+   "title": "Blend modes (16) and opacity",
+   "goal": "Every clip can blend with the layers below it.",
+   "design": [
+    {
+     "path": "design/screens/phone/Layers.png",
+     "cap": "Blend modes",
+     "w": 240
+    }
+   ],
+   "scope": [
+    "Normal, Multiply, Screen, Overlay, Soft light, Hard light, Darken, Lighten, Dodge, Burn, Add, Difference, Exclusion, Hue, Color, Luminosity",
+    "Opacity 0 to 100%",
+    "Chip on preview shows mode and opacity"
+   ],
+   "acceptance": [
+    "Golden-image tests for all 16 modes",
+    "Preview and export match"
+   ],
+   "notes": [
+    "Hue, Color and Luminosity need HSL conversion in the shader"
+   ],
+   "refs": [
+    "docs/product/spec.md section 4"
+   ],
+   "labels": [
+    "type:task",
+    "area:engine",
+    "priority:p0"
+   ],
+   "parent": "E2",
+   "depends": [
+    "M0-spike-engine",
+    "M2-transform"
+   ]
+  },
+  {
+   "key": "M2-keyframes",
+   "kind": "task",
+   "milestone": "M2",
+   "title": "Keyframes and easing for transform, opacity and masks",
+   "goal": "Animate properties over time.",
+   "design": [
+    {
+     "path": "design/screens/states/Layers--transform.png",
+     "cap": "Add keyframe",
+     "w": 240
+    },
+    {
+     "path": "design/screens/phone/Masks.png",
+     "cap": "Mask keyframe",
+     "w": 240
+    }
+   ],
+   "scope": [
+    "Add, move and delete keyframes at the playhead",
+    "Linear and ease in-out interpolation",
+    "Keyframe markers on the selected clip"
+   ],
+   "acceptance": [
+    "Keyframed values interpolate identically in preview and export"
+   ],
+   "notes": [],
+   "refs": [
+    "docs/product/spec.md section 4"
+   ],
+   "labels": [
+    "type:task",
+    "area:engine",
+    "priority:p1"
+   ],
+   "parent": "E2",
+   "depends": [
+    "M2-transform"
+   ]
+  },
+  {
+   "key": "M2-speed",
+   "kind": "task",
+   "milestone": "M2",
+   "title": "Speed, ramps, freeze frame and reverse",
+   "goal": "Change clip speed with pitch kept, apply ramps, freeze or reverse.",
+   "design": [
+    {
+     "path": "design/screens/states/TabletEditor--speed-tab.png",
+     "cap": "Speed tab",
+     "w": 420
+    }
+   ],
+   "scope": [
+    "Constant 0.25×, 0.5×, 1×, 1.5×, 2×, 4× with pitch preserved",
+    "Ramps: Montage, Hero, Bullet, Flash in, Flash out, Custom",
+    "Freeze frame, reverse"
+   ],
+   "acceptance": [
+    "Audio pitch unchanged at 2×",
+    "Timeline duration updates and ripple shifts later clips"
+   ],
+   "notes": [
+    "Media3 supports speed changes in Transformer; use the max output frame rate option when speeding up"
+   ],
+   "refs": [
+    "docs/product/spec.md section 5"
+   ],
+   "labels": [
+    "type:task",
+    "area:engine",
+    "priority:p1"
+   ],
+   "parent": "E2",
+   "depends": [
+    "M1-edit"
+   ]
+  },
+  {
+   "key": "M2-adjustment",
+   "kind": "task",
+   "milestone": "M2",
+   "title": "Adjustment clips",
+   "goal": "A clip that applies its colour grade and effects to every layer below it for its duration.",
+   "design": [
+    {
+     "path": "design/screens/phone/Editor.png",
+     "cap": "fx Warm look on L5",
+     "w": 240
+    },
+    {
+     "path": "design/screens/states/TabletEditor--color-tab.png",
+     "cap": "Color tab",
+     "w": 420
+    }
+   ],
+   "scope": [
+    "Adjustment clip type with hatch style on the timeline",
+    "Applies effects to the composite of layers below"
+   ],
+   "acceptance": [
+    "An adjustment clip on L5 grades L1 to L4 but not L6"
+   ],
+   "notes": [],
+   "refs": [
+    "docs/product/spec.md section 9"
+   ],
+   "labels": [
+    "type:task",
+    "area:engine",
+    "priority:p2"
+   ],
+   "parent": "E2",
+   "depends": [
+    "M2-blend",
+    "M3-color"
+   ]
+  },
+  {
+   "key": "E3",
+   "kind": "epic",
+   "milestone": "M3",
+   "title": "Effects: filters, transitions, masks and color",
+   "goal": "The creative toolbox: 24 filters including Mosaic, 24 transitions, masks to limit effects, and full colour grading.",
+   "design": [
+    {
+     "path": "design/screens/flows/effects.png",
+     "cap": "Effects flow",
+     "w": 760
+    },
+    {
+     "path": "design/screens/phone/Filters.png",
+     "cap": "Filters",
+     "w": 240
+    },
+    {
+     "path": "design/screens/phone/Transitions.png",
+     "cap": "Transitions",
+     "w": 240
+    }
+   ],
+   "scope": [
+    "Filter pipeline and 24 filters",
+    "24 transitions",
+    "Masks",
+    "Color: adjust, HSL, LUT",
+    "Effect stack and apply to all"
+   ],
+   "acceptance": [
+    "Every filter and transition has a golden-image test",
+    "Mosaic inside an oval mask over a face works in preview and export"
+   ],
+   "notes": [
+    "Transitions need overlapping clips; see engine spike"
+   ],
+   "refs": [
+    "docs/product/spec.md sections 6 to 9"
+   ],
+   "labels": [
+    "type:epic",
+    "area:effects"
+   ],
+   "parent": null,
+   "depends": []
+  },
+  {
+   "key": "M3-filters",
+   "kind": "task",
+   "milestone": "M3",
+   "title": "Filter pipeline and 24 filters with strength",
+   "goal": "Apply a look or stylized filter to a clip with adjustable strength.",
+   "design": [
+    {
+     "path": "design/screens/phone/Filters.png",
+     "cap": "Filters",
+     "w": 240
+    },
+    {
+     "path": "design/screens/states/Filters--looks.png",
+     "cap": "Looks",
+     "w": 240
+    },
+    {
+     "path": "design/screens/tablet/TabletEffects.png",
+     "cap": "Tablet library",
+     "w": 420
+    }
+   ],
+   "scope": [
+    "Looks: Vivid, Warm, Cool, Cinematic, Matte, Mono, Noir, Sepia, Vintage, Film, Night, Neon, Pastel",
+    "Stylized: Mosaic, Blur, Glitch, VHS, Grain, Vignette, RGB split, Light leak, Halftone, Duotone, Soft glow",
+    "Strength 0 to 100 (default 80), hold to compare, apply to all clips",
+    "Live thumbnails of the current frame"
+   ],
+   "acceptance": [
+    "All 24 filters match their thumbnails in the design in spirit and have golden tests",
+    "Mosaic block size adjustable (Masks screen)"
+   ],
+   "notes": [],
+   "refs": [
+    "docs/product/spec.md section 6"
+   ],
+   "labels": [
+    "type:task",
+    "area:effects",
+    "priority:p0"
+   ],
+   "parent": "E3",
+   "depends": [
+    "M1-preview"
+   ]
+  },
+  {
+   "key": "M3-transitions",
+   "kind": "task",
+   "milestone": "M3",
+   "title": "Transitions (24) with duration and easing",
+   "goal": "Smooth or stylized changes between clips on a layer.",
+   "design": [
+    {
+     "path": "design/screens/phone/Transitions.png",
+     "cap": "Transitions",
+     "w": 240
+    },
+    {
+     "path": "design/screens/states/Transitions--motion.png",
+     "cap": "Motion",
+     "w": 240
+    },
+    {
+     "path": "design/screens/states/TabletEffects--transitions.png",
+     "cap": "Tablet",
+     "w": 420
+    }
+   ],
+   "scope": [
+    "Basic: Dissolve, Fade black, Fade white, Wipe left, Wipe down, Clock, Iris, Split",
+    "Motion: Slide left, Slide up, Push, Zoom in, Zoom out, Whip pan, Spin, Shake, Cube",
+    "Stylized: Glitch, Flash, Blur, Pixelate, Light leak, Film burn, Ink",
+    "Duration 0.1 to 2.0 s (default 0.6), easing, apply to all cuts, remove"
+   ],
+   "acceptance": [
+    "Every transition renders in preview and export with golden tests at 25, 50 and 75%"
+   ],
+   "notes": [
+    "Implement as a GL effect over the overlap of two clips"
+   ],
+   "refs": [
+    "docs/product/spec.md section 7"
+   ],
+   "labels": [
+    "type:task",
+    "area:effects",
+    "priority:p0"
+   ],
+   "parent": "E3",
+   "depends": [
+    "M0-spike-engine",
+    "M1-edit"
+   ]
+  },
+  {
+   "key": "M3-masks",
+   "kind": "task",
+   "milestone": "M3",
+   "title": "Masks: rectangle and oval with invert, feather, radius and keyframes",
+   "goal": "Limit an effect (for example Mosaic) to a region of the frame.",
+   "design": [
+    {
+     "path": "design/screens/phone/Masks.png",
+     "cap": "Masks",
+     "w": 240
+    },
+    {
+     "path": "design/screens/states/Masks--rectangle-inverted.png",
+     "cap": "Rectangle, inverted",
+     "w": 240
+    }
+   ],
+   "scope": [
+    "None, Rectangle, Oval",
+    "Invert, feather 0 to 40 px, corner radius",
+    "Handles on the preview",
+    "Applies to a chosen effect",
+    "Manual keyframes (face following is in M7)"
+   ],
+   "acceptance": [
+    "Mosaic inside a feathered oval mask matches the design"
+   ],
+   "notes": [],
+   "refs": [
+    "docs/product/spec.md section 8"
+   ],
+   "labels": [
+    "type:task",
+    "area:effects",
+    "priority:p0"
+   ],
+   "parent": "E3",
+   "depends": [
+    "M3-filters",
+    "M2-keyframes"
+   ]
+  },
+  {
+   "key": "M3-color",
+   "kind": "task",
+   "milestone": "M3",
+   "title": "Color: adjust, HSL, LUT import, paste to clips",
+   "goal": "Full colour grading per clip.",
+   "design": [
+    {
+     "path": "design/screens/phone/Color.png",
+     "cap": "Adjust",
+     "w": 240
+    },
+    {
+     "path": "design/screens/states/Color--hsl.png",
+     "cap": "HSL",
+     "w": 240
+    },
+    {
+     "path": "design/screens/states/Color--lut.png",
+     "cap": "LUT",
+     "w": 240
+    }
+   ],
+   "scope": [
+    "Exposure, Contrast, Saturation, Temperature, Tint, Vignette (−100 to +100)",
+    "HSL for 8 hue ranges",
+    "Built-in LUTs and `.cube` import (3D LUT shader) with strength",
+    "Before and after split, Auto, Reset, Paste to other clips"
+   ],
+   "acceptance": [
+    "A standard 33-point .cube file imports and renders correctly",
+    "Tablet Color tab uses the same scale and values"
+   ],
+   "notes": [],
+   "refs": [
+    "docs/product/spec.md section 9"
+   ],
+   "labels": [
+    "type:task",
+    "area:effects",
+    "priority:p1"
+   ],
+   "parent": "E3",
+   "depends": [
+    "M3-filters"
+   ]
+  },
+  {
+   "key": "M3-stack",
+   "kind": "task",
+   "milestone": "M3",
+   "title": "Effect stack per clip",
+   "goal": "Several effects on one clip, in order, each with its own settings.",
+   "design": [
+    {
+     "path": "design/screens/tablet/TabletEffects.png",
+     "cap": "Effect stack",
+     "w": 420
+    }
+   ],
+   "scope": [
+    "Add, reorder, disable and remove effects",
+    "FX count badge on the clip",
+    "Copy and paste effects between clips"
+   ],
+   "acceptance": [
+    "Order of effects changes the result as expected"
+   ],
+   "notes": [],
+   "refs": [
+    "docs/product/spec.md section 6"
+   ],
+   "labels": [
+    "type:task",
+    "area:effects",
+    "priority:p1"
+   ],
+   "parent": "E3",
+   "depends": [
+    "M3-filters",
+    "M3-masks"
+   ]
+  },
+  {
+   "key": "E4",
+   "kind": "epic",
+   "milestone": "M4",
+   "title": "Text: cards, titles, effects and animations",
+   "goal": "Typography for titles, text cards and lower thirds, rendered sharply at every resolution.",
+   "design": [
+    {
+     "path": "design/screens/phone/Text.png",
+     "cap": "Text card",
+     "w": 240
+    },
+    {
+     "path": "design/screens/tablet/TabletText.png",
+     "cap": "Tablet text",
+     "w": 420
+    }
+   ],
+   "scope": [
+    "Text card clip and text renderer",
+    "12 text effects",
+    "Animations",
+    "Templates"
+   ],
+   "acceptance": [
+    "Text renders crisply in 4K export",
+    "All effects and animations have golden tests"
+   ],
+   "notes": [
+    "Text rendering on GL textures needs care with emoji and Polish diacritics"
+   ],
+   "refs": [
+    "docs/product/spec.md section 10"
+   ],
+   "labels": [
+    "type:epic",
+    "area:text"
+   ],
+   "parent": null,
+   "depends": []
+  },
+  {
+   "key": "M4-card",
+   "kind": "task",
+   "milestone": "M4",
+   "title": "Text card clip and text rendering",
+   "goal": "A full-frame card with a background colour and text, and text overlays on any layer.",
+   "design": [
+    {
+     "path": "design/screens/phone/Text.png",
+     "cap": "Text card",
+     "w": 240
+    },
+    {
+     "path": "design/screens/tablet/TabletText.png",
+     "cap": "Inspector",
+     "w": 420
+    }
+   ],
+   "scope": [
+    "Card colours Black, White, Yellow, Red, Blue, Green, custom",
+    "Font, weight, size, alignment, safe area guides",
+    "Edit text inline",
+    "Render to texture at export resolution"
+   ],
+   "acceptance": [
+    "Polish characters (ą, ę, ł, ż) render correctly",
+    "Text is sharp at 4K"
+   ],
+   "notes": [],
+   "refs": [
+    "docs/product/spec.md section 10"
+   ],
+   "labels": [
+    "type:task",
+    "area:text",
+    "priority:p0"
+   ],
+   "parent": "E4",
+   "depends": [
+    "M1-edit"
+   ]
+  },
+  {
+   "key": "M4-effects",
+   "kind": "task",
+   "milestone": "M4",
+   "title": "Text effects (12)",
+   "goal": "Stylize text.",
+   "design": [
+    {
+     "path": "design/screens/phone/Text.png",
+     "cap": "Effects grid",
+     "w": 240
+    }
+   ],
+   "scope": [
+    "None, Outline, Shadow, Glow, Neon, Box, Gradient, Extrude, Glitch, Hollow, Retro, Marker"
+   ],
+   "acceptance": [
+    "Each effect matches its tile in the design and has a golden test"
+   ],
+   "notes": [],
+   "refs": [
+    "docs/product/spec.md section 10"
+   ],
+   "labels": [
+    "type:task",
+    "area:text",
+    "priority:p1"
+   ],
+   "parent": "E4",
+   "depends": [
+    "M4-card"
+   ]
+  },
+  {
+   "key": "M4-animations",
+   "kind": "task",
+   "milestone": "M4",
+   "title": "Text and clip animations",
+   "goal": "Animate text in and out, and clips in, out and in a loop.",
+   "design": [
+    {
+     "path": "design/screens/phone/Text.png",
+     "cap": "Animation in",
+     "w": 240
+    },
+    {
+     "path": "design/screens/states/TabletEditor--animate-tab.png",
+     "cap": "Animate tab",
+     "w": 420
+    }
+   ],
+   "scope": [
+    "Text in: None, Typewriter, Fade up, Pop, Slide, Bounce, Wave, Glitch in; text out",
+    "Clip in: Fade, Zoom in, Slide up, Spin; out: None, Fade, Zoom out, Slide down; loop: Ken Burns, Shake, Pulse"
+   ],
+   "acceptance": [
+    "Animations play identically in preview and export"
+   ],
+   "notes": [],
+   "refs": [
+    "docs/product/spec.md sections 5 and 10"
+   ],
+   "labels": [
+    "type:task",
+    "area:text",
+    "priority:p1"
+   ],
+   "parent": "E4",
+   "depends": [
+    "M4-card",
+    "M2-keyframes"
+   ]
+  },
+  {
+   "key": "M4-templates",
+   "kind": "task",
+   "milestone": "M4",
+   "title": "Text templates and save as template",
+   "goal": "Start from a template and save your own.",
+   "design": [
+    {
+     "path": "design/screens/tablet/TabletText.png",
+     "cap": "Templates",
+     "w": 420
+    }
+   ],
+   "scope": [
+    "Text card, Title, Lower third, Subtitle, Callout, End credits",
+    "Save the selected text as a template"
+   ],
+   "acceptance": [
+    "Templates apply with one tap and stay editable"
+   ],
+   "notes": [],
+   "refs": [
+    "docs/product/spec.md section 10"
+   ],
+   "labels": [
+    "type:task",
+    "area:text",
+    "priority:p2"
+   ],
+   "parent": "E4",
+   "depends": [
+    "M4-effects",
+    "M4-animations"
+   ]
+  },
+  {
+   "key": "E5",
+   "kind": "epic",
+   "milestone": "M5",
+   "title": "Audio: per-clip loudness, cleanup and music tools",
+   "goal": "Good sound with no audio skills needed: each clip can be normalized and cleaned on the device, music ducks under speech, and cuts can follow the beat.",
+   "design": [
+    {
+     "path": "design/screens/phone/Audio.png",
+     "cap": "Audio",
+     "w": 240
+    },
+    {
+     "path": "design/screens/states/Audio--before.png",
+     "cap": "Before",
+     "w": 240
+    },
+    {
+     "path": "design/screens/states/TabletAudio--music-selected.png",
+     "cap": "Music tools",
+     "w": 420
+    }
+   ],
+   "scope": [
+    "Audio graph and waveforms",
+    "Loudness normalization",
+    "Noise reduction",
+    "AI voice cleanup",
+    "Ducking and beat markers",
+    "Voiceover and detach audio"
+   ],
+   "acceptance": [
+    "A windy voice clip normalized to −14 LUFS and cleaned with DeepFilterNet sounds clear in export",
+    "Music ducks by the chosen amount under the voiceover"
+   ],
+   "notes": [
+    "DeepFilterNet speed on low-end devices; RNNoise is the fallback"
+   ],
+   "refs": [
+    "docs/product/spec.md section 11",
+    "docs/architecture.md section 5"
+   ],
+   "labels": [
+    "type:epic",
+    "area:audio"
+   ],
+   "parent": null,
+   "depends": []
+  },
+  {
+   "key": "M5-graph",
+   "kind": "task",
+   "milestone": "M5",
+   "title": "Audio mixing, per-clip volume and fades, waveforms",
+   "goal": "All layers mix correctly with per-clip volume and fades.",
+   "design": [
+    {
+     "path": "design/screens/phone/Audio.png",
+     "cap": "Volume and fades",
+     "w": 240
+    },
+    {
+     "path": "design/screens/phone/Editor.png",
+     "cap": "Waveforms on the timeline",
+     "w": 240
+    }
+   ],
+   "scope": [
+    "Mix all layers; skip muted layers",
+    "Per-clip volume 0 to 200%, fade in, fade out",
+    "Waveform extraction and caching for timeline and Audio screen"
+   ],
+   "acceptance": [
+    "Volume changes are audible in preview and export",
+    "Waveforms appear within 2 s for a 1-minute clip"
+   ],
+   "notes": [],
+   "refs": [
+    "docs/product/spec.md section 11"
+   ],
+   "labels": [
+    "type:task",
+    "area:audio",
+    "priority:p0"
+   ],
+   "parent": "E5",
+   "depends": [
+    "M1-preview"
+   ]
+  },
+  {
+   "key": "M5-loudness",
+   "kind": "task",
+   "milestone": "M5",
+   "title": "Loudness normalization per clip",
+   "goal": "Make clips equally loud for the target platform.",
+   "design": [
+    {
+     "path": "design/screens/phone/Audio.png",
+     "cap": "Normalize loudness",
+     "w": 240
+    }
+   ],
+   "scope": [
+    "Measure integrated loudness (BS.1770 / EBU R128)",
+    "Targets −14 LUFS (Social, YouTube), −16 LUFS (Podcast), −23 LUFS (Broadcast)",
+    "True-peak limiter at −1 dBTP",
+    "Readout of LUFS and peak before and after"
+   ],
+   "acceptance": [
+    "Measured output loudness within ±1 LU of the target on test clips"
+   ],
+   "notes": [
+    "Use a permissive implementation (for example libebur128, MIT) or our own"
+   ],
+   "refs": [
+    "docs/product/spec.md section 11"
+   ],
+   "labels": [
+    "type:task",
+    "area:audio",
+    "priority:p0"
+   ],
+   "parent": "E5",
+   "depends": [
+    "M5-graph"
+   ]
+  },
+  {
+   "key": "M5-nr",
+   "kind": "task",
+   "milestone": "M5",
+   "title": "Noise reduction (spectral gate)",
+   "goal": "Remove steady hum and hiss.",
+   "design": [
+    {
+     "path": "design/screens/phone/Audio.png",
+     "cap": "Noise reduction",
+     "w": 240
+    }
+   ],
+   "scope": [
+    "Spectral gate with strength",
+    "Processed offline per clip and cached"
+   ],
+   "acceptance": [
+    "Hum at 50 Hz and broadband hiss reduced on test clips without obvious artifacts at default strength"
+   ],
+   "notes": [],
+   "refs": [
+    "docs/product/spec.md section 11"
+   ],
+   "labels": [
+    "type:task",
+    "area:audio",
+    "priority:p1"
+   ],
+   "parent": "E5",
+   "depends": [
+    "M5-graph"
+   ]
+  },
+  {
+   "key": "M5-ai-cleanup",
+   "kind": "task",
+   "milestone": "M5",
+   "title": "AI voice cleanup with DeepFilterNet 3 and RNNoise",
+   "goal": "Remove wind, traffic and room noise from speech on the device.",
+   "design": [
+    {
+     "path": "design/screens/phone/Audio.png",
+     "cap": "AI voice cleanup",
+     "w": 240
+    },
+    {
+     "path": "design/screens/tablet/TabletAudio.png",
+     "cap": "Tablet",
+     "w": 420
+    }
+   ],
+   "scope": [
+    "DeepFilterNet 3 ONNX model (about 8 MB) on ONNX Runtime Mobile",
+    "RNNoise as the lite engine",
+    "Strength control, before and after compare",
+    "\"Apply to all clips with speech\"",
+    "Model download through the AI models manager"
+   ],
+   "acceptance": [
+    "A 42 s clip is processed in under 15 s on a mid-range phone (to confirm)",
+    "Clear improvement on a wind and traffic test set"
+   ],
+   "notes": [],
+   "refs": [
+    "docs/product/spec.md section 11",
+    "docs/architecture.md section 6"
+   ],
+   "labels": [
+    "type:task",
+    "area:ai",
+    "priority:p0"
+   ],
+   "parent": "E5",
+   "depends": [
+    "M5-graph",
+    "M6-models"
+   ]
+  },
+  {
+   "key": "M5-duck-beats",
+   "kind": "task",
+   "milestone": "M5",
+   "title": "Ducking under speech and beat markers",
+   "goal": "Music gets out of the way of voices, and cuts can follow the beat.",
+   "design": [
+    {
+     "path": "design/screens/states/TabletAudio--music-selected.png",
+     "cap": "Auto-duck and beats",
+     "w": 420
+    },
+    {
+     "path": "design/screens/phone/Audio.png",
+     "cap": "Duck toggle",
+     "w": 240
+    }
+   ],
+   "scope": [
+    "Auto-duck other clips under speech, −3 to −24 dB (default −12 dB)",
+    "Beat detection (onset based) with markers on music clips",
+    "Snap cuts to beats"
+   ],
+   "acceptance": [
+    "Ducking follows speech within 100 ms",
+    "Beat markers align with audible beats on test tracks"
+   ],
+   "notes": [],
+   "refs": [
+    "docs/product/spec.md section 11"
+   ],
+   "labels": [
+    "type:task",
+    "area:audio",
+    "priority:p1"
+   ],
+   "parent": "E5",
+   "depends": [
+    "M5-graph"
+   ]
+  },
+  {
+   "key": "M5-voiceover",
+   "kind": "task",
+   "milestone": "M5",
+   "title": "Voiceover recording and detach audio",
+   "goal": "Record narration and separate audio from video.",
+   "design": [
+    {
+     "path": "design/screens/tablet/TabletAudio.png",
+     "cap": "Record voiceover",
+     "w": 420
+    }
+   ],
+   "scope": [
+    "Record onto the first free layer at the playhead with level meter",
+    "Microphone permission only when recording",
+    "Detach audio from a video clip to a free layer (linked)"
+   ],
+   "acceptance": [
+    "Recorded voiceover is placed and linked correctly",
+    "Detached audio stays in sync after edits"
+   ],
+   "notes": [],
+   "refs": [
+    "docs/product/spec.md section 11"
+   ],
+   "labels": [
+    "type:task",
+    "area:audio",
+    "priority:p1"
+   ],
+   "parent": "E5",
+   "depends": [
+    "M5-graph",
+    "M1-edit"
+   ]
+  },
+  {
+   "key": "E6",
+   "kind": "epic",
+   "milestone": "M6",
+   "title": "Captions and edit by text with on-device Whisper",
+   "goal": "Auto captions are the feature users expect most. Clipra does them fully offline with Whisper, then lets users edit the video by deleting words and pauses.",
+   "design": [
+    {
+     "path": "design/screens/flows/captions.png",
+     "cap": "Captions flow",
+     "w": 760
+    },
+    {
+     "path": "design/screens/phone/Models.png",
+     "cap": "AI models",
+     "w": 240
+    }
+   ],
+   "scope": [
+    "Model manager",
+    "Transcription pipeline",
+    "Caption clips and styles",
+    "Caption editing and .srt",
+    "Offline translation",
+    "Edit by text"
+   ],
+   "acceptance": [
+    "Captions for a 42 s clip generated offline with Whisper Base, styled, edited and exported burned in and as .srt",
+    "Cutting fillers and pauses shortens the video and keeps all layers in sync"
+   ],
+   "notes": [
+    "Whisper speed on mid-range phones (see spike)",
+    "Filler detection quality outside English"
+   ],
+   "refs": [
+    "docs/product/spec.md sections 12, 13 and 18",
+    "docs/architecture.md section 6"
+   ],
+   "labels": [
+    "type:epic",
+    "area:ai"
+   ],
+   "parent": null,
+   "depends": []
+  },
+  {
+   "key": "M6-models",
+   "kind": "task",
+   "milestone": "M6",
+   "title": "AI models manager",
+   "goal": "Download, verify, list and remove on-device models.",
+   "design": [
+    {
+     "path": "design/screens/phone/Models.png",
+     "cap": "AI models",
+     "w": 240
+    },
+    {
+     "path": "design/screens/states/Models--tiny-downloaded.png",
+     "cap": "After download",
+     "w": 240
+    },
+    {
+     "path": "design/screens/phone/Onboarding.png",
+     "cap": "First-run choice",
+     "w": 240
+    }
+   ],
+   "scope": [
+    "Catalogue: Whisper tiny, base (default), small, large-v3-turbo; DeepFilterNet 3; RNNoise built in; translation pairs",
+    "WorkManager downloads with Wi-Fi-only constraint (default on) and SHA-256 verification",
+    "Storage total and per-model size; remove model",
+    "Toggle to use NPU or GPU when available"
+   ],
+   "acceptance": [
+    "Interrupted downloads resume",
+    "Corrupt downloads are rejected",
+    "Storage maths matches the files on disk"
+   ],
+   "notes": [
+    "Host model files on a reliable source with checksums; never bundle large models in the APK"
+   ],
+   "refs": [
+    "docs/product/spec.md section 18"
+   ],
+   "labels": [
+    "type:task",
+    "area:ai",
+    "priority:p0"
+   ],
+   "parent": "E6",
+   "depends": [
+    "M0-skeleton"
+   ]
+  },
+  {
+   "key": "M6-transcribe",
+   "kind": "task",
+   "milestone": "M6",
+   "title": "Transcription pipeline with whisper.cpp",
+   "goal": "Turn speech on chosen layers into timed words, on the device.",
+   "design": [
+    {
+     "path": "design/screens/phone/CaptionsSetup.png",
+     "cap": "Setup",
+     "w": 240
+    },
+    {
+     "path": "design/screens/states/CaptionsSetup--small-model.png",
+     "cap": "Model not installed",
+     "w": 240
+    },
+    {
+     "path": "design/screens/states/TabletCaptions--transcribe-tab.png",
+     "cap": "Tablet",
+     "w": 420
+    }
+   ],
+   "scope": [
+    "Sources: main clips, voiceover, all tracks",
+    "Language auto-detect or chosen; translate to English option",
+    "Chunking for long audio, word timestamps and confidence",
+    "Progress and cancel; background-safe",
+    "Remove filler words option; captions on a new top layer option"
+   ],
+   "acceptance": [
+    "42 s of speech transcribed with Base within the spike budget",
+    "Word timings within 100 ms on test clips"
+   ],
+   "notes": [],
+   "refs": [
+    "docs/product/spec.md section 12"
+   ],
+   "labels": [
+    "type:task",
+    "area:ai",
+    "priority:p0"
+   ],
+   "parent": "E6",
+   "depends": [
+    "M0-spike-whisper",
+    "M6-models"
+   ]
+  },
+  {
+   "key": "M6-caption-clips",
+   "kind": "task",
+   "milestone": "M6",
+   "title": "Caption clips, styles and word highlight",
+   "goal": "Captions are clips on a layer, linked to their source, with five styles.",
+   "design": [
+    {
+     "path": "design/screens/phone/CaptionsEdit.png",
+     "cap": "Bold pop",
+     "w": 240
+    },
+    {
+     "path": "design/screens/states/CaptionsEdit--karaoke.png",
+     "cap": "Karaoke",
+     "w": 240
+    },
+    {
+     "path": "design/screens/tablet/TabletCaptions.png",
+     "cap": "Tablet",
+     "w": 420
+    }
+   ],
+   "scope": [
+    "Caption segments as clips on a layer, linked to source clips",
+    "Styles: Clean, Bold pop, Boxed, Karaoke, Minimal",
+    "Position top, middle, bottom; size; max 2 lines",
+    "Highlight the current word"
+   ],
+   "acceptance": [
+    "Captions move with their source clip",
+    "Styles match the design in preview and export"
+   ],
+   "notes": [],
+   "refs": [
+    "docs/product/spec.md section 12"
+   ],
+   "labels": [
+    "type:task",
+    "area:ai",
+    "priority:p0"
+   ],
+   "parent": "E6",
+   "depends": [
+    "M6-transcribe",
+    "M4-card"
+   ]
+  },
+  {
+   "key": "M6-caption-edit",
+   "kind": "task",
+   "milestone": "M6",
+   "title": "Caption editing, words to check, search and replace, .srt",
+   "goal": "Fix captions quickly.",
+   "design": [
+    {
+     "path": "design/screens/phone/CaptionsEdit.png",
+     "cap": "Segments and words to check",
+     "w": 240
+    },
+    {
+     "path": "design/screens/tablet/TabletCaptions.png",
+     "cap": "Transcript panel",
+     "w": 420
+    }
+   ],
+   "scope": [
+    "Tap a word to edit; split caption; merge with next",
+    "Low-confidence words underlined (\"2 words to check\")",
+    "Search and replace",
+    "Import and export .srt"
+   ],
+   "acceptance": [
+    "Edited captions export correctly to .srt and burned in"
+   ],
+   "notes": [],
+   "refs": [
+    "docs/product/spec.md section 12"
+   ],
+   "labels": [
+    "type:task",
+    "area:ai",
+    "priority:p1"
+   ],
+   "parent": "E6",
+   "depends": [
+    "M6-caption-clips"
+   ]
+  },
+  {
+   "key": "M6-translate",
+   "kind": "task",
+   "milestone": "M6",
+   "title": "Offline caption translation",
+   "goal": "Add caption languages without sending text anywhere.",
+   "design": [
+    {
+     "path": "design/screens/phone/CaptionsEdit.png",
+     "cap": "Translate offline",
+     "w": 240
+    },
+    {
+     "path": "design/screens/tablet/TabletCaptions.png",
+     "cap": "Language chips",
+     "w": 420
+    }
+   ],
+   "scope": [
+    "ML Kit on-device translation with downloadable language pairs",
+    "Language chips per project (original plus translations)",
+    "Export the chosen language"
+   ],
+   "acceptance": [
+    "EN to PL translation works in flight mode after the pair is downloaded"
+   ],
+   "notes": [
+    "Non-English pairs pivot through English"
+   ],
+   "refs": [
+    "docs/product/spec.md section 12"
+   ],
+   "labels": [
+    "type:task",
+    "area:ai",
+    "priority:p2"
+   ],
+   "parent": "E6",
+   "depends": [
+    "M6-caption-clips",
+    "M6-models"
+   ]
+  },
+  {
+   "key": "M6-edit-by-text",
+   "kind": "task",
+   "milestone": "M6",
+   "title": "Edit by text: cut fillers, pauses and words",
+   "goal": "Edit the video by deleting words and pauses in the transcript.",
+   "design": [
+    {
+     "path": "design/screens/phone/Transcript.png",
+     "cap": "Edit by text",
+     "w": 240
+    },
+    {
+     "path": "design/screens/states/Transcript--fillers-kept.png",
+     "cap": "Fillers kept",
+     "w": 240
+    },
+    {
+     "path": "design/screens/tablet/TabletTranscript.png",
+     "cap": "Tablet with cut bands",
+     "w": 420
+    }
+   ],
+   "scope": [
+    "Transcript view per source with time and layer",
+    "Cut filler words (count shown), cut pauses over a threshold (0.3 to 2.0 s, default 0.5 s)",
+    "Tap words or pauses to cut or restore",
+    "Cuts ripple across every layer",
+    "New length, cut count and time saved; \"No cuts yet\" when nothing is cut",
+    "Restore all, undo"
+   ],
+   "acceptance": [
+    "After cutting, captions, music and overlays after each cut stay in sync",
+    "Logic matches `design/canvas/Transcript.dc.html`"
+   ],
+   "notes": [],
+   "refs": [
+    "docs/product/spec.md section 13"
+   ],
+   "labels": [
+    "type:task",
+    "area:ai",
+    "priority:p0"
+   ],
+   "parent": "E6",
+   "depends": [
+    "M6-transcribe",
+    "M1-edit"
+   ]
+  },
+  {
+   "key": "E7",
+   "kind": "epic",
+   "milestone": "M7",
+   "title": "Vision tools: cutout, chroma key, face follow and reframe",
+   "goal": "Computer vision on the device for the effects people now expect from CapCut-class editors.",
+   "design": [
+    {
+     "path": "design/screens/flows/ai-tools.png",
+     "cap": "AI tools",
+     "w": 760
+    }
+   ],
+   "scope": [
+    "Person cutout",
+    "Chroma key",
+    "Face-following masks",
+    "Auto-reframe",
+    "Stabilization research"
+   ],
+   "acceptance": [
+    "Person cutout on a 1080p clip at interactive preview speed on a mid-range phone",
+    "A 16:9 project reframed to 9:16 keeps the speaker in frame"
+   ],
+   "notes": [
+    "Segmentation quality on hair and fast motion"
+   ],
+   "refs": [
+    "docs/product/spec.md sections 14 and 15",
+    "docs/architecture.md section 6"
+   ],
+   "labels": [
+    "type:epic",
+    "area:ai"
+   ],
+   "parent": null,
+   "depends": []
+  },
+  {
+   "key": "M7-cutout",
+   "kind": "task",
+   "milestone": "M7",
+   "title": "Person cutout (remove background)",
+   "goal": "Remove the background behind people without a green screen.",
+   "design": [
+    {
+     "path": "design/screens/phone/Cutout.png",
+     "cap": "Cutout",
+     "w": 240
+    }
+   ],
+   "scope": [
+    "MediaPipe image segmenter (selfie model), temporal smoothing",
+    "Edge refine, hair detail",
+    "Behind the subject: layer below, blur, clear, colour",
+    "Cache masks per clip"
+   ],
+   "acceptance": [
+    "Stable edges without flicker on test clips",
+    "Export matches preview"
+   ],
+   "notes": [],
+   "refs": [
+    "docs/product/spec.md section 14"
+   ],
+   "labels": [
+    "type:task",
+    "area:ai",
+    "priority:p1"
+   ],
+   "parent": "E7",
+   "depends": [
+    "M0-spike-engine"
+   ]
+  },
+  {
+   "key": "M7-chroma",
+   "kind": "task",
+   "milestone": "M7",
+   "title": "Chroma key",
+   "goal": "Key out a coloured background.",
+   "design": [
+    {
+     "path": "design/screens/states/Cutout--chroma-key.png",
+     "cap": "Chroma key",
+     "w": 240
+    }
+   ],
+   "scope": [
+    "Key colour with eyedropper",
+    "Similarity, smoothness, spill removal",
+    "Shader-based, real time"
+   ],
+   "acceptance": [
+    "Green and blue screen test clips key cleanly"
+   ],
+   "notes": [],
+   "refs": [
+    "docs/product/spec.md section 14"
+   ],
+   "labels": [
+    "type:task",
+    "area:effects",
+    "priority:p1"
+   ],
+   "parent": "E7",
+   "depends": [
+    "M3-filters"
+   ]
+  },
+  {
+   "key": "M7-face-follow",
+   "kind": "task",
+   "milestone": "M7",
+   "title": "Face-following masks",
+   "goal": "Masks that track a face automatically.",
+   "design": [
+    {
+     "path": "design/screens/phone/Masks.png",
+     "cap": "Follow face",
+     "w": 240
+    }
+   ],
+   "scope": [
+    "MediaPipe face detector over the clip, smoothed track",
+    "Writes keyframes into the mask (editable)",
+    "Progress for long clips"
+   ],
+   "acceptance": [
+    "Mosaic stays on the face through head movement on test clips"
+   ],
+   "notes": [],
+   "refs": [
+    "docs/product/spec.md section 8"
+   ],
+   "labels": [
+    "type:task",
+    "area:ai",
+    "priority:p1"
+   ],
+   "parent": "E7",
+   "depends": [
+    "M3-masks"
+   ]
+  },
+  {
+   "key": "M7-reframe",
+   "kind": "task",
+   "milestone": "M7",
+   "title": "Auto-reframe to 9:16, 1:1 and 4:5",
+   "goal": "Create a copy of a project in another ratio with a crop that follows the subject.",
+   "design": [
+    {
+     "path": "design/screens/phone/Reframe.png",
+     "cap": "Reframe",
+     "w": 240
+    },
+    {
+     "path": "design/screens/states/Reframe--square-face.png",
+     "cap": "1:1, face",
+     "w": 240
+    }
+   ],
+   "scope": [
+    "Follow subject, face or fixed",
+    "Camera motion smoothing",
+    "Keep titles and captions inside the frame",
+    "Creates a new project (\"Lisbon weekend · Shorts\"); crop path editable as keyframes"
+   ],
+   "acceptance": [
+    "Reframed copy keeps the subject in frame in test clips"
+   ],
+   "notes": [
+    "Product decision pending: on phone, a 9:16 project should reframe to 1:1 or 4:5, or Reframe should act on a 16:9 source clip"
+   ],
+   "refs": [
+    "docs/product/spec.md section 15"
+   ],
+   "labels": [
+    "type:task",
+    "area:ai",
+    "priority:p2"
+   ],
+   "parent": "E7",
+   "depends": [
+    "M7-face-follow",
+    "M1-model"
+   ]
+  },
+  {
+   "key": "M7-stabilize",
+   "kind": "spike",
+   "milestone": "M7",
+   "title": "Research: video stabilization",
+   "goal": "Decide whether Stabilize ships in v1.",
+   "design": [
+    {
+     "path": "design/screens/states/Editor--no-clip-selected.png",
+     "cap": "Stabilize tool",
+     "w": 240
+    }
+   ],
+   "scope": [
+    "Evaluate options (gyro metadata where available, feature-based stabilization) for speed, quality and license",
+    "Prototype on two clips"
+   ],
+   "acceptance": [
+    "Written recommendation; follow-up issue if it ships"
+   ],
+   "notes": [],
+   "refs": [
+    "docs/architecture.md section 6"
+   ],
+   "labels": [
+    "type:spike",
+    "area:ai",
+    "priority:p2"
+   ],
+   "parent": "E7",
+   "depends": [
+    "M0-spike-engine"
+   ]
+  },
+  {
+   "key": "E8",
+   "kind": "epic",
+   "milestone": "M8",
+   "title": "Export: from originals, in the background, with extras",
+   "goal": "A reliable export that respects the device: correct codecs and sizes, renders from the original media, keeps going in the background, and ends on a clear Saved screen.",
+   "design": [
+    {
+     "path": "design/screens/flows/export-with-ads.png",
+     "cap": "Export flow with ads",
+     "w": 760
+    },
+    {
+     "path": "design/screens/phone/Export.png",
+     "cap": "Export settings",
+     "w": 240
+    }
+   ],
+   "scope": [
+    "Export settings and estimate",
+    "Render pipeline from originals",
+    "Background export and progress",
+    "Extras",
+    "Saved screen"
+   ],
+   "acceptance": [
+    "A 42 s, 6-layer 1080p30 project exports in under 60 s on a mid-range phone",
+    "Export continues with the app in the background and survives screen off"
+   ],
+   "notes": [
+    "Thermal throttling on long 4K exports"
+   ],
+   "refs": [
+    "docs/product/spec.md section 16",
+    "docs/architecture.md section 7"
+   ],
+   "labels": [
+    "type:epic",
+    "area:export"
+   ],
+   "parent": null,
+   "depends": []
+  },
+  {
+   "key": "M8-settings",
+   "kind": "task",
+   "milestone": "M8",
+   "title": "Export settings, codec availability and size estimate",
+   "goal": "Choose output settings and see the expected size.",
+   "design": [
+    {
+     "path": "design/screens/phone/Export.png",
+     "cap": "Export",
+     "w": 240
+    },
+    {
+     "path": "design/screens/states/Export--4k-hevc-high.png",
+     "cap": "4K HEVC High",
+     "w": 240
+    },
+    {
+     "path": "design/screens/tablet/TabletExport.png",
+     "cap": "Tablet",
+     "w": 420
+    }
+   ],
+   "scope": [
+    "Resolution, frame rate, codec (H.264, HEVC, AV1), quality, captions (burn in, .srt, off)",
+    "Encoder capability check: AV1 and 2160p shown disabled with a reason when unsupported",
+    "Size estimate with the formula from the spec"
+   ],
+   "acceptance": [
+    "Estimate within 15% of the real file size on test exports",
+    "Unsupported codecs are disabled and announced as unavailable"
+   ],
+   "notes": [
+    "Formula reference: `design/canvas/Export.dc.html`"
+   ],
+   "refs": [
+    "docs/product/spec.md section 16"
+   ],
+   "labels": [
+    "type:task",
+    "area:export",
+    "priority:p0"
+   ],
+   "parent": "E8",
+   "depends": [
+    "M1-model"
+   ]
+  },
+  {
+   "key": "M8-render",
+   "kind": "task",
+   "milestone": "M8",
+   "title": "Render pipeline from original media",
+   "goal": "Export the full composition at full quality.",
+   "design": [
+    {
+     "path": "design/screens/phone/ExportProgress.png",
+     "cap": "Rendering",
+     "w": 240
+    }
+   ],
+   "scope": [
+    "Transformer export of the composition with originals (not proxies)",
+    "Write to MediaStore Movies/Clipra",
+    "Burned-in captions",
+    "Error handling with readable messages"
+   ],
+   "acceptance": [
+    "Preview and export are visually identical apart from resolution",
+    "Output plays in the system gallery and common social apps"
+   ],
+   "notes": [],
+   "refs": [
+    "docs/architecture.md section 7"
+   ],
+   "labels": [
+    "type:task",
+    "area:export",
+    "priority:p0"
+   ],
+   "parent": "E8",
+   "depends": [
+    "M1-preview",
+    "M8-settings"
+   ]
+  },
+  {
+   "key": "M8-background",
+   "kind": "task",
+   "milestone": "M8",
+   "title": "Background export with progress, pause and cancel",
+   "goal": "Users can leave the app while it exports.",
+   "design": [
+    {
+     "path": "design/screens/phone/ExportProgress.png",
+     "cap": "Progress",
+     "w": 240
+    },
+    {
+     "path": "design/screens/states/ExportProgress--paused.png",
+     "cap": "Paused",
+     "w": 240
+    },
+    {
+     "path": "design/screens/states/ExportProgress--finished.png",
+     "cap": "Finished",
+     "w": 240
+    }
+   ],
+   "scope": [
+    "Foreground service with progress notification",
+    "Progress screen: frame count, time left, files being saved",
+    "Pause, resume, cancel; Keep editing",
+    "Notify the ad gate about start, finish and screen visibility"
+   ],
+   "acceptance": [
+    "Export survives app backgrounding and screen off",
+    "Notification opens the Saved screen"
+   ],
+   "notes": [],
+   "refs": [
+    "docs/architecture.md section 7",
+    "docs/product/monetization.md"
+   ],
+   "labels": [
+    "type:task",
+    "area:export",
+    "priority:p0"
+   ],
+   "parent": "E8",
+   "depends": [
+    "M8-render"
+   ]
+  },
+  {
+   "key": "M8-extras",
+   "kind": "task",
+   "milestone": "M8",
+   "title": "Export extras: .srt, cover .jpg, audio .m4a, project .otio",
+   "goal": "Save the files creators need next to the video.",
+   "design": [
+    {
+     "path": "design/screens/phone/Export.png",
+     "cap": "Also save",
+     "w": 240
+    },
+    {
+     "path": "design/screens/tablet/TabletExport.png",
+     "cap": "Tablet extras",
+     "w": 420
+    }
+   ],
+   "scope": [
+    "Separate .srt",
+    "Cover .jpg (frame at playhead)",
+    "Audio-only .m4a",
+    "Project .otio (OpenTimelineIO JSON)"
+   ],
+   "acceptance": [
+    ".otio opens in an OTIO-compatible tool with correct clip timings"
+   ],
+   "notes": [],
+   "refs": [
+    "docs/product/spec.md section 16"
+   ],
+   "labels": [
+    "type:task",
+    "area:export",
+    "priority:p2"
+   ],
+   "parent": "E8",
+   "depends": [
+    "M8-render",
+    "M6-caption-edit"
+   ]
+  },
+  {
+   "key": "M8-saved",
+   "kind": "task",
+   "milestone": "M8",
+   "title": "Saved to Gallery screen",
+   "goal": "A clear end to the export with the next actions.",
+   "design": [
+    {
+     "path": "design/screens/phone/ExportDone.png",
+     "cap": "Saved",
+     "w": 240
+    }
+   ],
+   "scope": [
+    "Video preview with play, file details, extra files saved",
+    "Share, Open Gallery, Back to editing",
+    "Pro upsell card for free users only"
+   ],
+   "acceptance": [
+    "Share opens the system share sheet with the video"
+   ],
+   "notes": [],
+   "refs": [
+    "docs/product/spec.md section 16"
+   ],
+   "labels": [
+    "type:task",
+    "area:export",
+    "priority:p0"
+   ],
+   "parent": "E8",
+   "depends": [
+    "M8-background"
+   ]
+  },
+  {
+   "key": "E9",
+   "kind": "epic",
+   "milestone": "M9",
+   "title": "Monetization: two export ads and Clipra Pro (10 PLN)",
+   "goal": "Make Clipra sustainable without paywalls: free users see two fullscreen ads per export (one when it starts, one when it finishes); a single 10 PLN purchase removes them forever. All rules follow AdMob and Google Play policies and are written down in `docs/product/monetization.md`.",
+   "design": [
+    {
+     "path": "design/screens/flows/export-with-ads.png",
+     "cap": "Export with two ads",
+     "w": 760
+    },
+    {
+     "path": "design/screens/flows/clipra-pro.png",
+     "cap": "Clipra Pro",
+     "w": 760
+    }
+   ],
+   "scope": [
+    "Consent (UMP)",
+    "Ad gate and interstitials",
+    "Play Billing for clipra_pro",
+    "Pro entry points and ad-free state",
+    "Play Console setup"
+   ],
+   "acceptance": [
+    "Free user: exactly two ads per successful export when online, never back to back, never during editing",
+    "Pro user: no ad requests at all, also offline after the first purchase check",
+    "Purchase, pending, restore and refund paths tested with license testers"
+   ],
+   "notes": [
+    "Ad policy violations can suspend ads or the app; keep the rules in code tested",
+    "Without a backend, purchase verification is on the device only"
+   ],
+   "refs": [
+    "docs/product/monetization.md"
+   ],
+   "labels": [
+    "type:epic",
+    "area:monetization"
+   ],
+   "parent": null,
+   "depends": []
+  },
+  {
+   "key": "M9-consent",
+   "kind": "task",
+   "milestone": "M9",
+   "title": "Ad consent with the UMP SDK and \"Ad privacy choices\"",
+   "goal": "Ask for consent where the law requires it before any ad request, and let users change it later.",
+   "design": [
+    {
+     "path": "design/screens/phone/Pro.png",
+     "cap": "Ad privacy choices link",
+     "w": 240
+    },
+    {
+     "path": "design/screens/tablet/TabletPro.png",
+     "cap": "Tablet",
+     "w": 420
+    }
+   ],
+   "scope": [
+    "Request consent info update on start (free users only)",
+    "Show the consent form after onboarding when required",
+    "Only request ads when the SDK allows it",
+    "\"Ad privacy choices\" on the Pro screen and in settings opens the privacy options form"
+   ],
+   "acceptance": [
+    "EEA test device sees the form before the first ad",
+    "Changing consent takes effect on the next ad request"
+   ],
+   "notes": [
+    "Use Google-certified CMP (UMP)"
+   ],
+   "refs": [
+    "docs/product/monetization.md sections 1 and 3"
+   ],
+   "labels": [
+    "type:task",
+    "area:monetization",
+    "priority:p0"
+   ],
+   "parent": "E9",
+   "depends": [
+    "M0-skeleton"
+   ]
+  },
+  {
+   "key": "M9-ads",
+   "kind": "task",
+   "milestone": "M9",
+   "title": "Ad gate and the two export interstitials",
+   "goal": "Show Ad 1 when export starts and Ad 2 when it finishes, following every rule in the monetization doc.",
+   "design": [
+    {
+     "path": "design/screens/phone/AdStart.png",
+     "cap": "Ad 1 at start",
+     "w": 240
+    },
+    {
+     "path": "design/screens/states/ExportProgress--finished.png",
+     "cap": "Finished",
+     "w": 240
+    },
+    {
+     "path": "design/screens/phone/AdFinish.png",
+     "cap": "Ad 2 at finish",
+     "w": 240
+    }
+   ],
+   "scope": [
+    "GMA Next-Gen SDK with interstitial preloading; test ad units in debug",
+    "AdGate decides show or skip: Pro, consent, online, loaded within 2 s, Ad 2 only if the progress screen is visible, the export succeeded and at least 30 s passed since Ad 1 closed",
+    "Ad 1 shown after the render starts (render never waits)",
+    "Ad 2 closes into the Saved screen",
+    "Tablet uses the same rules (landscape creatives)"
+   ],
+   "acceptance": [
+    "Unit tests cover every AdGate rule",
+    "No ad shows from the background service or while editing",
+    "Export never waits for an ad"
+   ],
+   "notes": [
+    "AdMob: no interstitial immediately after another; Play: interstitials closable within 15 s, no unexpected interstitials"
+   ],
+   "refs": [
+    "docs/product/monetization.md"
+   ],
+   "labels": [
+    "type:task",
+    "area:monetization",
+    "priority:p0"
+   ],
+   "parent": "E9",
+   "depends": [
+    "M8-background",
+    "M9-consent",
+    "M9-billing"
+   ]
+  },
+  {
+   "key": "M9-billing",
+   "kind": "task",
+   "milestone": "M9",
+   "title": "Play Billing: clipra_pro one-time purchase, restore and entitlement",
+   "goal": "Sell Clipra Pro for 10 PLN once and keep the entitlement reliable.",
+   "design": [
+    {
+     "path": "design/screens/phone/Pro.png",
+     "cap": "Pro",
+     "w": 240
+    },
+    {
+     "path": "design/screens/states/Pro--owned.png",
+     "cap": "Owned",
+     "w": 240
+    },
+    {
+     "path": "design/screens/tablet/TabletPro.png",
+     "cap": "Tablet",
+     "w": 420
+    }
+   ],
+   "scope": [
+    "Play Billing Library 9.x with auto service reconnection",
+    "Non-consumable product `clipra_pro`; show the formatted Play price",
+    "Purchase flow, pending purchases, acknowledge within 3 days",
+    "Restore on demand and on every start; revoke when the purchase disappears (refund)",
+    "Entitlement cached in DataStore and exposed as a Flow",
+    "Signature verification on the device"
+   ],
+   "acceptance": [
+    "License-tester purchase grants Pro immediately and survives reinstall via restore",
+    "Refunded purchase removes Pro on next start",
+    "No crash when Play is unavailable"
+   ],
+   "notes": [
+    "Billing Library 8+ is required for app updates from 31 August 2026"
+   ],
+   "refs": [
+    "docs/product/monetization.md section 2"
+   ],
+   "labels": [
+    "type:task",
+    "area:monetization",
+    "priority:p0"
+   ],
+   "parent": "E9",
+   "depends": [
+    "M0-skeleton"
+   ]
+  },
+  {
+   "key": "M9-entry",
+   "kind": "task",
+   "milestone": "M9",
+   "title": "Pro entry points and the ad-free state",
+   "goal": "Make Pro easy to find without nagging, and remove every ad-related element for Pro users.",
+   "design": [
+    {
+     "path": "design/screens/phone/Main.png",
+     "cap": "Crown on Home",
+     "w": 240
+    },
+    {
+     "path": "design/screens/phone/Export.png",
+     "cap": "Notice under Export",
+     "w": 240
+    },
+    {
+     "path": "design/screens/phone/ExportDone.png",
+     "cap": "Saved card",
+     "w": 240
+    }
+   ],
+   "scope": [
+    "Crown \"Pro\" on phone Home, \"Go Pro · 10 PLN\" on tablet Home",
+    "Notice under Export: \"Two short ads play while it exports. Remove for 10 PLN\"",
+    "Finish hint and Saved card for free users",
+    "Pro users: hide all of the above, show \"You're Pro\" on the Pro screen"
+   ],
+   "acceptance": [
+    "Pro users see no ad copy anywhere",
+    "All entry points open the Pro screen"
+   ],
+   "notes": [],
+   "refs": [
+    "docs/product/monetization.md section 1"
+   ],
+   "labels": [
+    "type:task",
+    "area:monetization",
+    "priority:p1"
+   ],
+   "parent": "E9",
+   "depends": [
+    "M9-billing",
+    "M0-theme"
+   ]
+  },
+  {
+   "key": "M9-console",
+   "kind": "task",
+   "milestone": "M9",
+   "title": "Play Console: product, prices, ads declaration and data safety",
+   "goal": "Everything Google Play needs before monetized builds can ship.",
+   "design": [],
+   "scope": [
+    "Create and activate `clipra_pro` at 10.00 PLN; decide prices for other countries",
+    "Ads declaration, data safety form (ads SDK data), content rating, target audience (not children)",
+    "AdMob app and two interstitial ad units; app-ads.txt on idct.tech",
+    "License testers"
+   ],
+   "acceptance": [
+    "Internal test track build can buy Pro with a license tester and shows test ads"
+   ],
+   "notes": [],
+   "refs": [
+    "docs/product/monetization.md section 4"
+   ],
+   "labels": [
+    "type:task",
+    "area:release",
+    "priority:p0"
+   ],
+   "parent": "E9",
+   "depends": [
+    "M9-billing",
+    "M9-ads"
+   ]
+  },
+  {
+   "key": "E10",
+   "kind": "epic",
+   "milestone": "M10",
+   "title": "Tablet: landscape three-pane layout",
+   "goal": "Tablets get a layout made for landscape: tool rail, library, large preview, inspector and a full timeline. Same features, more room.",
+   "design": [
+    {
+     "path": "design/screens/tablet/TabletEditor.png",
+     "cap": "Tablet editor",
+     "w": 520
+    },
+    {
+     "path": "design/screens/tablet/TabletHome.png",
+     "cap": "Tablet home",
+     "w": 520
+    }
+   ],
+   "scope": [
+    "Adaptive layout infrastructure",
+    "Tablet editor and inspector",
+    "Tablet feature screens",
+    "Tablet home"
+   ],
+   "acceptance": [
+    "Every tablet board in `design/README.md` has an implemented screen",
+    "Switching between portrait and landscape keeps state"
+   ],
+   "notes": [
+    "Touch targets on tablet are partly 32 to 36 dp in the design; aim for 48 dp where possible"
+   ],
+   "refs": [
+    "docs/product/spec.md section 20",
+    "design/design-system.md"
+   ],
+   "labels": [
+    "type:epic",
+    "area:tablet"
+   ],
+   "parent": null,
+   "depends": []
+  },
+  {
+   "key": "M10-adaptive",
+   "kind": "task",
+   "milestone": "M10",
+   "title": "Adaptive layout infrastructure",
+   "goal": "Choose phone or tablet layouts by window size class.",
+   "design": [
+    {
+     "path": "design/screens/tablet/TabletEditor.png",
+     "cap": "Rail and panels",
+     "w": 420
+    }
+   ],
+   "scope": [
+    "Window size classes; tablet layout in expanded landscape",
+    "Tool rail navigation (Media, Audio, Text, Effects, Transitions, Captions)",
+    "Shared view models between phone and tablet screens"
+   ],
+   "acceptance": [
+    "Resizing a window (foldables, split screen) switches layouts without losing state"
+   ],
+   "notes": [],
+   "refs": [
+    "docs/product/spec.md section 20"
+   ],
+   "labels": [
+    "type:task",
+    "area:tablet",
+    "priority:p1"
+   ],
+   "parent": "E10",
+   "depends": [
+    "M0-theme"
+   ]
+  },
+  {
+   "key": "M10-editor",
+   "kind": "task",
+   "milestone": "M10",
+   "title": "Tablet editor with inspector tabs",
+   "goal": "The three-pane editor with Clip, Color, Audio, Speed and Animate tabs.",
+   "design": [
+    {
+     "path": "design/screens/tablet/TabletEditor.png",
+     "cap": "Editor",
+     "w": 420
+    },
+    {
+     "path": "design/screens/states/TabletEditor--color-tab.png",
+     "cap": "Color tab",
+     "w": 420
+    },
+    {
+     "path": "design/screens/states/TabletEditor--audio-tab.png",
+     "cap": "Audio tab",
+     "w": 420
+    }
+   ],
+   "scope": [
+    "Media bin, preview, inspector, full-width timeline with layer headers",
+    "Inspector tabs",
+    "Tablet toolbar"
+   ],
+   "acceptance": [
+    "Matches the TabletEditor board and its states"
+   ],
+   "notes": [],
+   "refs": [
+    "docs/product/spec.md section 20"
+   ],
+   "labels": [
+    "type:task",
+    "area:tablet",
+    "priority:p1"
+   ],
+   "parent": "E10",
+   "depends": [
+    "M10-adaptive",
+    "M1-timeline"
+   ]
+  },
+  {
+   "key": "M10-screens",
+   "kind": "task",
+   "milestone": "M10",
+   "title": "Tablet effects, text, captions, audio, edit by text and export screens",
+   "goal": "Every feature screen in its tablet form.",
+   "design": [
+    {
+     "path": "design/screens/tablet/TabletEffects.png",
+     "cap": "Effects",
+     "w": 420
+    },
+    {
+     "path": "design/screens/tablet/TabletCaptions.png",
+     "cap": "Captions",
+     "w": 420
+    },
+    {
+     "path": "design/screens/tablet/TabletExport.png",
+     "cap": "Export",
+     "w": 420
+    }
+   ],
+   "scope": [
+    "TabletEffects, TabletText, TabletCaptions, TabletAudio, TabletTranscript, TabletExport, TabletAd, TabletPro"
+   ],
+   "acceptance": [
+    "Each matches its board"
+   ],
+   "notes": [],
+   "refs": [
+    "docs/product/spec.md section 20"
+   ],
+   "labels": [
+    "type:task",
+    "area:tablet",
+    "priority:p1"
+   ],
+   "parent": "E10",
+   "depends": [
+    "M10-editor"
+   ]
+  },
+  {
+   "key": "M10-home",
+   "kind": "task",
+   "milestone": "M10",
+   "title": "Tablet home with inline new project and Pro",
+   "goal": "Projects and project creation side by side.",
+   "design": [
+    {
+     "path": "design/screens/tablet/TabletHome.png",
+     "cap": "Home",
+     "w": 420
+    },
+    {
+     "path": "design/screens/states/TabletHome--9x16-split3.png",
+     "cap": "9:16 Split 3",
+     "w": 420
+    }
+   ],
+   "scope": [
+    "Project grid, quick actions, search, AI status",
+    "Inline New project panel",
+    "\"Go Pro · 10 PLN\" and AI models in the header"
+   ],
+   "acceptance": [
+    "Matches the TabletHome board"
+   ],
+   "notes": [],
+   "refs": [
+    "docs/product/spec.md sections 2 and 20"
+   ],
+   "labels": [
+    "type:task",
+    "area:tablet",
+    "priority:p1"
+   ],
+   "parent": "E10",
+   "depends": [
+    "M10-adaptive",
+    "M1-newproject"
+   ]
+  },
+  {
+   "key": "E11",
+   "kind": "epic",
+   "milestone": "M11",
+   "title": "Launch: onboarding, settings, accessibility, localization and release",
+   "goal": "Everything between a working app and a public Google Play release.",
+   "design": [
+    {
+     "path": "design/screens/phone/Onboarding.png",
+     "cap": "Onboarding",
+     "w": 240
+    },
+    {
+     "path": "design/screens/phone/Main.png",
+     "cap": "Home",
+     "w": 240
+    }
+   ],
+   "scope": [
+    "Onboarding and permissions",
+    "Settings",
+    "Accessibility",
+    "Localization EN and PL",
+    "Performance and device testing",
+    "Release pipeline"
+   ],
+   "acceptance": [
+    "Public release on Google Play with ads, Pro and all v1 features",
+    "Crash-free sessions above 99.5% in closed testing"
+   ],
+   "notes": [
+    "Device fragmentation in codecs and GPU drivers"
+   ],
+   "refs": [
+    "docs/product/spec.md sections 19 and 21"
+   ],
+   "labels": [
+    "type:epic",
+    "area:release"
+   ],
+   "parent": null,
+   "depends": []
+  },
+  {
+   "key": "M11-onboarding",
+   "kind": "task",
+   "milestone": "M11",
+   "title": "Onboarding and permissions",
+   "goal": "A first run that sets expectations and downloads the right models.",
+   "design": [
+    {
+     "path": "design/screens/phone/Onboarding.png",
+     "cap": "Onboarding",
+     "w": 240
+    },
+    {
+     "path": "design/screens/states/Onboarding--small-checked.png",
+     "cap": "Small selected",
+     "w": 240
+    }
+   ],
+   "scope": [
+    "Promise screen, three highlights, choose downloads with total size, skip",
+    "Ask notification permission when the first export starts, microphone when recording",
+    "Ad consent after onboarding (M9)"
+   ],
+   "acceptance": [
+    "First run completes offline (downloads deferred)",
+    "Total size updates as models are toggled"
+   ],
+   "notes": [],
+   "refs": [
+    "docs/product/spec.md section 19"
+   ],
+   "labels": [
+    "type:task",
+    "area:ux",
+    "priority:p0"
+   ],
+   "parent": "E11",
+   "depends": [
+    "M6-models",
+    "M0-theme"
+   ]
+  },
+  {
+   "key": "M11-settings",
+   "kind": "task",
+   "milestone": "M11",
+   "title": "Settings",
+   "goal": "One place for storage, models, privacy and about.",
+   "design": [
+    {
+     "path": "design/screens/phone/Main.png",
+     "cap": "Settings entry",
+     "w": 240
+    }
+   ],
+   "scope": [
+    "Storage (proxies and caches, clear), AI models link, Ad privacy choices, Restore purchase, open-source licenses, about and version",
+    "Export defaults"
+   ],
+   "acceptance": [
+    "Clearing caches never deletes projects or exported videos"
+   ],
+   "notes": [
+    "Settings has no design board yet; follow the design system"
+   ],
+   "refs": [
+    "design/design-system.md"
+   ],
+   "labels": [
+    "type:task",
+    "area:ux",
+    "priority:p1"
+   ],
+   "parent": "E11",
+   "depends": [
+    "M9-consent",
+    "M9-billing"
+   ]
+  },
+  {
+   "key": "M11-a11y",
+   "kind": "task",
+   "milestone": "M11",
+   "title": "Accessibility pass",
+   "goal": "Usable with TalkBack, large fonts and switch access.",
+   "design": [],
+   "scope": [
+    "Content descriptions everywhere, timeline clip announcements",
+    "Touch targets at least 48 dp on phone and tablet where possible",
+    "Font scaling to 200% without clipping key actions",
+    "Contrast checks in screenshot tests"
+   ],
+   "acceptance": [
+    "Accessibility Scanner shows no critical issues on the main flows"
+   ],
+   "notes": [],
+   "refs": [
+    "design/design-system.md (Accessibility)"
+   ],
+   "labels": [
+    "type:task",
+    "area:ux",
+    "priority:p1"
+   ],
+   "parent": "E11",
+   "depends": [
+    "M10-screens"
+   ]
+  },
+  {
+   "key": "M11-l10n",
+   "kind": "task",
+   "milestone": "M11",
+   "title": "Localization: English and Polish",
+   "goal": "Ship in English and Polish.",
+   "design": [],
+   "scope": [
+    "All strings in resources with plurals",
+    "Polish translation",
+    "Prices always from Play Billing (for example \"10,00 zł\")",
+    "Filler word lists for English and Polish"
+   ],
+   "acceptance": [
+    "No hardcoded user-visible strings",
+    "Polish UI fits in every component"
+   ],
+   "notes": [],
+   "refs": [
+    "docs/product/spec.md"
+   ],
+   "labels": [
+    "type:task",
+    "area:ux",
+    "priority:p1"
+   ],
+   "parent": "E11",
+   "depends": [
+    "M11-onboarding"
+   ]
+  },
+  {
+   "key": "M11-perf",
+   "kind": "task",
+   "milestone": "M11",
+   "title": "Performance budgets and device matrix testing",
+   "goal": "Meet the budgets on real devices from low to high end.",
+   "design": [],
+   "scope": [
+    "Device matrix: at least one low-end, two mid-range, one flagship phone and one tablet",
+    "Measure startup, timeline fps, preview, export time, Whisper and DeepFilterNet speed, memory, thermals",
+    "Fix regressions; track in CI where possible"
+   ],
+   "acceptance": [
+    "Budgets in `docs/architecture.md` section 11 met on mid-range devices"
+   ],
+   "notes": [],
+   "refs": [
+    "docs/architecture.md section 11"
+   ],
+   "labels": [
+    "type:task",
+    "area:infra",
+    "priority:p0"
+   ],
+   "parent": "E11",
+   "depends": [
+    "M8-render",
+    "M6-transcribe"
+   ]
+  },
+  {
+   "key": "M11-release",
+   "kind": "task",
+   "milestone": "M11",
+   "title": "Release pipeline and Google Play listing",
+   "goal": "Signed builds to internal, closed and production tracks.",
+   "design": [
+    {
+     "path": "design/screens/flows/first-run.png",
+     "cap": "Store screenshots source",
+     "w": 760
+    }
+   ],
+   "scope": [
+    "App signing, AAB, version codes, release notes",
+    "Internal, closed and production tracks",
+    "Store listing (EN, PL) with screenshots based on the design",
+    "Privacy policy on idct.tech"
+   ],
+   "acceptance": [
+    "Production release published"
+   ],
+   "notes": [],
+   "refs": [
+    "docs/product/monetization.md section 4"
+   ],
+   "labels": [
+    "type:task",
+    "area:release",
+    "priority:p0"
+   ],
+   "parent": "E11",
+   "depends": [
+    "M9-console",
+    "M11-perf",
+    "M11-l10n"
+   ]
+  }
+ ]
+}

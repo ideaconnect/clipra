@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Clipra - Auto captions setup</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0;background:#0D0D0F}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+a{color:#FFD23F;text-decoration:none}a:hover{color:#FFE27A}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; padding-top: 36px; background: #0D0D0F; color: #F4F3EF; font-family: 'Geist', system-ui, sans-serif; display: flex; flex-direction: column; overflow: hidden">
+
+  <header style="height: 52px; padding: 0 20px 0 6px; display: flex; align-items: center; gap: 4px">
+    <a href="Editor.dc.html" aria-label="Back to timeline" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #F4F3EF; border-radius: 12px">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"></path></svg>
+    </a>
+    <h1 style="margin: 0; font-family: 'Bricolage Grotesque', 'Geist', sans-serif; font-weight: 700; font-size: 22px; letter-spacing: -0.01em">Auto captions</h1>
+  </header>
+
+  <div style="flex: 1; min-height: 0; overflow: hidden; padding: 4px 16px 0; display: flex; flex-direction: column; gap: 10px">
+    <div style="border-radius: 16px; background: #131A13; border: 1px solid #22331F; padding: 12px; display: flex; align-items: center; gap: 12px">
+      <span style="width: 36px; height: 36px; border-radius: 10px; background: #1F2A1F; color: #8FE388; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="2"></rect><path d="M10 3v4M14 3v4M10 17v4M14 17v4M3 10h4M3 14h4M17 10h4M17 14h4"></path></svg>
+      </span>
+      <span style="display: flex; flex-direction: column; gap: 2px">
+        <span style="font-size: 14px; font-weight: 600">Runs on this phone</span>
+        <span style="font-size: 12px; color: #B4C4B0; line-height: 1.35">Whisper transcribes on-device. Your audio never leaves the phone and works offline.</span>
+      </span>
+    </div>
+
+    <section style="display: flex; flex-direction: column; gap: 6px">
+      <h2 style="margin: 0; font-size: 13px; font-weight: 600; color: #A6A5AD">Listen to</h2>
+      <div style="display: flex; gap: 6px">
+        <sc-for list="{{sources}}" as="x" hint-placeholder-count="3">
+          <button onClick="{{x.pick}}" aria-pressed="{{x.pressed}}" style="height: 40px; padding: 0 14px; border-radius: 20px; background: {{x.bg}}; color: {{x.fg}}; font-size: 13px; font-weight: 600">{{x.label}}</button>
+        </sc-for>
+      </div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 6px">
+      <h2 style="margin: 0; font-size: 13px; font-weight: 600; color: #A6A5AD">Spoken language</h2>
+      <div style="display: flex; gap: 8px; align-items: center">
+        <button style="flex: 1; height: 48px; border-radius: 12px; background: #17171A; border: 1.5px solid #2A2A30; box-sizing: border-box; padding: 0 12px; display: flex; align-items: center; gap: 10px; text-align: left">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A6A5AD" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"></path></svg>
+          <span style="flex: 1; font-size: 14px; font-weight: 600">Auto-detect</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A6A5AD" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+        </button>
+        <button role="switch" aria-checked="{{tr.pressed}}" onClick="{{tr.toggle}}" style="height: 48px; display: flex; align-items: center; gap: 8px">
+          <span style="font-size: 13px; font-weight: 600; text-align: right; line-height: 1.2">Translate<br>to English</span>
+          <span style="width: 48px; height: 28px; border-radius: 14px; background: {{tr.track}}; position: relative; display: block">
+            <span style="position: absolute; top: 3px; left: {{tr.knob}}px; width: 22px; height: 22px; border-radius: 11px; background: {{tr.knobColor}}; display: block"></span>
+          </span>
+        </button>
+      </div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 6px">
+      <h2 style="margin: 0; font-size: 13px; font-weight: 600; color: #A6A5AD">Whisper model</h2>
+      <div role="radiogroup" aria-label="Whisper model" style="display: flex; flex-direction: column; gap: 6px">
+        <sc-for list="{{models}}" as="m" hint-placeholder-count="4">
+          <button role="radio" aria-checked="{{m.pressed}}" onClick="{{m.pick}}" style="height: 54px; border-radius: 14px; border: 1.5px solid {{m.bd}}; background: {{m.bg}}; box-sizing: border-box; padding: 0 12px; display: flex; align-items: center; gap: 12px; text-align: left">
+            <span style="width: 20px; height: 20px; border-radius: 10px; border: 2px solid {{m.radio}}; box-sizing: border-box; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+              <span style="width: 10px; height: 10px; border-radius: 5px; background: {{m.dot}}; display: block"></span>
+            </span>
+            <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+              <span style="display: flex; align-items: center; gap: 8px">
+                <span style="font-size: 14px; font-weight: 600">{{m.name}}</span>
+                <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; color: #A6A5AD">{{m.size}}</span>
+                <sc-if value="{{m.rec}}" hint-placeholder-val="{{false}}">
+                  <span style="padding: 1px 6px; border-radius: 5px; background: #2B2716; color: #FFD23F; font-size: 10px; font-weight: 700">Recommended</span>
+                </sc-if>
+              </span>
+              <span style="font-size: 12px; color: #A6A5AD; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{m.note}}</span>
+            </span>
+            <span style="font-size: 12px; font-weight: 600; color: {{m.stColor}}; display: flex; align-items: center; gap: 4px">
+              <sc-if value="{{m.installed}}" hint-placeholder-val="{{true}}">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>
+              </sc-if>
+              <sc-if value="{{m.notInstalled}}" hint-placeholder-val="{{false}}">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"></path></svg>
+              </sc-if>
+              {{m.status}}
+            </span>
+          </button>
+        </sc-for>
+      </div>
+    </section>
+
+    <section style="display: flex; flex-direction: column">
+      <sc-for list="{{opts}}" as="o" hint-placeholder-count="2">
+        <button role="switch" aria-checked="{{o.pressed}}" onClick="{{o.toggle}}" style="height: 44px; display: flex; align-items: center; gap: 12px; text-align: left">
+          <span style="flex: 1; font-size: 14px; font-weight: 500">{{o.label}}</span>
+          <span style="width: 48px; height: 28px; border-radius: 14px; background: {{o.track}}; position: relative; display: block; flex-shrink: 0">
+            <span style="position: absolute; top: 3px; left: {{o.knob}}px; width: 22px; height: 22px; border-radius: 11px; background: {{o.knobColor}}; display: block"></span>
+          </span>
+        </button>
+      </sc-for>
+    </section>
+  </div>
+
+  <div style="padding: 12px 16px 26px; border-top: 1px solid #1F1F23">
+    <a href="CaptionsEdit.dc.html" style="height: 56px; border-radius: 16px; background: #FFD23F; color: #141210; font-size: 16px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"></rect><path d="M10.5 10.2a2.2 2.2 0 1 0 0 3.6M16.5 10.2a2.2 2.2 0 1 0 0 3.6"></path></svg>
+      {{cta}}
+    </a>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { source: 'main', model: 'base', translate: false, words: true, filler: false, newLayer: true };
+  }
+  renderVals() {
+    const s = this.state || {};
+    const sw = (on) => ({ pressed: on ? 'true' : 'false', track: on ? '#FFD23F' : '#2A2A30', knob: on ? 23 : 3, knobColor: on ? '#141210' : '#B4B3BB' });
+    const MODELS = [
+      { id: 'tiny', name: 'Tiny', size: '75 MB', note: 'Fastest, rough on accents and noise', installed: false },
+      { id: 'base', name: 'Base', size: '142 MB', note: 'Good balance for most phones', installed: true, rec: true },
+      { id: 'small', name: 'Small', size: '466 MB', note: 'More accurate, a few times slower', installed: false },
+      { id: 'turbo', name: 'Large v3 Turbo', size: '547 MB', note: 'Quantized. Most accurate, flagship phones', installed: false }
+    ];
+    const cur = MODELS.find((m) => m.id === s.model) || MODELS[1];
+    const SOURCES = [['main', 'Main clips'], ['voice', 'Voiceover'], ['all', 'All tracks']];
+    return {
+      sources: SOURCES.map(([id, label]) => {
+        const on = id === s.source;
+        return { label, bg: on ? '#F4F3EF' : '#17171A', fg: on ? '#0D0D0F' : '#F4F3EF', pressed: on ? 'true' : 'false', pick: () => this.setState({ source: id }) };
+      }),
+      tr: { ...sw(s.translate), toggle: () => this.setState({ translate: !s.translate }) },
+      models: MODELS.map((m) => {
+        const on = m.id === cur.id;
+        return {
+          ...m, rec: !!m.rec, notInstalled: !m.installed,
+          bd: on ? '#FFD23F' : '#2A2A30', bg: on ? '#221F12' : '#17171A',
+          radio: on ? '#FFD23F' : '#6E6D76', dot: on ? '#FFD23F' : 'transparent',
+          status: m.installed ? 'Installed' : 'Get',
+          stColor: m.installed ? '#8FE388' : '#FFD23F',
+          pressed: on ? 'true' : 'false',
+          pick: () => this.setState({ model: m.id })
+        };
+      }),
+      opts: [
+        { label: 'Highlight each word as it is spoken', ...sw(s.words), toggle: () => this.setState({ words: !s.words }) },
+        { label: 'Remove filler words (um, uh)', ...sw(s.filler), toggle: () => this.setState({ filler: !s.filler }) },
+        { label: 'Put captions on a new top layer', ...sw(s.newLayer), toggle: () => this.setState({ newLayer: !s.newLayer }) }
+      ],
+      cta: cur.installed ? 'Generate captions' : 'Download ' + cur.size + ' and generate'
+    };
+  }
+}
+</script>
+</body>
+</html>

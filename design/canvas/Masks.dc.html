@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Clipra - Masks</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0;background:#0D0D0F}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+a{color:#FFD23F;text-decoration:none}a:hover{color:#FFE27A}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; padding-top: 36px; background: #0D0D0F; color: #F4F3EF; font-family: 'Geist', system-ui, sans-serif; display: flex; flex-direction: column; overflow: hidden">
+
+  <header style="height: 48px; padding: 0 12px 0 6px; display: flex; align-items: center; gap: 6px">
+    <a href="Editor.dc.html" aria-label="Back to timeline" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #F4F3EF; border-radius: 12px">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"></path></svg>
+    </a>
+    <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px">
+      <span style="font-size: 15px; font-weight: 600">Mask</span>
+      <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; color: #A6A5AD">Mosaic effect · sunset.mp4</span>
+    </span>
+    <a href="Editor.dc.html" style="height: 40px; padding: 0 14px; border-radius: 12px; background: #FFD23F; color: #141210; font-size: 14px; font-weight: 700; display: flex; align-items: center">Done</a>
+  </header>
+
+  <div style="height: 330px; background: #000000; display: flex; align-items: center; justify-content: center">
+    <div role="img" aria-label="{{previewLabel}}" style="position: relative; width: 186px; height: 330px; overflow: hidden">
+      <div style="position: absolute; inset: 0; background: linear-gradient(180deg, #23305C 0%, #6B4D7A 36%, #D9785A 66%, #F3B064 100%)"></div>
+      <div style="position: absolute; left: 62%; top: 30%; width: 24%; aspect-ratio: 1; border-radius: 50%; background: #FFE6A8"></div>
+      <div style="position: absolute; left: -30%; right: 35%; top: 64%; height: 50%; border-radius: 50%; background: #4A3355"></div>
+      <div style="position: absolute; left: 25%; right: -40%; top: 72%; height: 50%; border-radius: 50%; background: #22192E"></div>
+      <div style="position: absolute; left: 21%; right: 21%; top: 74%; bottom: -6%; border-radius: 48% 48% 0 0; background: #2F4A7A"></div>
+      <div style="position: absolute; left: 45%; width: 10%; top: 66%; height: 10%; background: #B97A5B"></div>
+      <div style="position: absolute; left: 37%; width: 26%; top: 50%; height: 18%; border-radius: 50%; background: #C98B6B"></div>
+      <div style="position: absolute; left: 36%; width: 28%; top: 48.5%; height: 8.5%; border-radius: 50% 50% 30% 30%; background: #2B1E1A"></div>
+
+      <div style="position: absolute; inset: 0; display: grid; grid-template-columns: {{gtc}}; grid-template-rows: {{gtr}}; clip-path: {{clip}}">
+        <sc-for list="{{cells}}" as="m" hint-placeholder-count="312">
+          <span style="background: {{m.c}}; display: block"></span>
+        </sc-for>
+      </div>
+
+      <sc-if value="{{hasShape}}" hint-placeholder-val="{{true}}">
+        <div aria-hidden="true" style="position: absolute; left: {{fx}}px; top: {{fy}}px; width: {{fw}}px; height: {{fh}}px; border: 1px dashed rgba(255,210,63,0.55); border-radius: {{fr}}; box-sizing: border-box"></div>
+        <div aria-hidden="true" style="position: absolute; left: 59px; top: 144px; width: 68px; height: 88px; border: 1.5px solid #FFD23F; border-radius: {{mr}}; box-sizing: border-box"></div>
+        <div aria-hidden="true" style="position: absolute; left: 88px; top: 139px; width: 10px; height: 10px; border-radius: 5px; background: #FFFFFF; border: 1.5px solid #FFD23F; box-sizing: border-box"></div>
+        <div aria-hidden="true" style="position: absolute; left: 88px; top: 227px; width: 10px; height: 10px; border-radius: 5px; background: #FFFFFF; border: 1.5px solid #FFD23F; box-sizing: border-box"></div>
+        <div aria-hidden="true" style="position: absolute; left: 54px; top: 183px; width: 10px; height: 10px; border-radius: 5px; background: #FFFFFF; border: 1.5px solid #FFD23F; box-sizing: border-box"></div>
+        <div aria-hidden="true" style="position: absolute; left: 122px; top: 183px; width: 10px; height: 10px; border-radius: 5px; background: #FFFFFF; border: 1.5px solid #FFD23F; box-sizing: border-box"></div>
+        <div aria-hidden="true" style="position: absolute; left: 86px; top: 112px; width: 14px; height: 14px; border-radius: 7px; background: #FFD23F; display: flex; align-items: center; justify-content: center">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#141210" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-3-6.2M20 4v5h-5"></path></svg>
+        </div>
+        <div aria-hidden="true" style="position: absolute; left: 92px; top: 126px; width: 1.5px; height: 13px; background: #FFD23F"></div>
+        <span style="position: absolute; left: 50%; transform: translateX(-50%); top: 248px; padding: 2px 6px; border-radius: 5px; background: rgba(13,13,15,0.85); font-family: 'Geist Mono', ui-monospace, monospace; font-size: 10px; color: #FFD23F; white-space: nowrap">{{chip}}</span>
+      </sc-if>
+    </div>
+  </div>
+
+  <div style="flex: 1; min-height: 0; padding: 12px 16px 0; display: flex; flex-direction: column; gap: 12px">
+    <div role="radiogroup" aria-label="Mask shape" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+      <button role="radio" aria-checked="{{shNone.pressed}}" onClick="{{shNone.pick}}" style="height: 56px; border-radius: 14px; border: 1.5px solid {{shNone.bd}}; background: {{shNone.bg}}; color: {{shNone.fg}}; box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; font-weight: 600">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="3"></rect><path d="M6 18L18 6"></path></svg>
+        None
+      </button>
+      <button role="radio" aria-checked="{{shRect.pressed}}" onClick="{{shRect.pick}}" style="height: 56px; border-radius: 14px; border: 1.5px solid {{shRect.bd}}; background: {{shRect.bg}}; color: {{shRect.fg}}; box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; font-weight: 600">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="4" y="6" width="16" height="12" rx="2.5"></rect></svg>
+        Rectangle
+      </button>
+      <button role="radio" aria-checked="{{shOval.pressed}}" onClick="{{shOval.pick}}" style="height: 56px; border-radius: 14px; border: 1.5px solid {{shOval.bd}}; background: {{shOval.bg}}; color: {{shOval.fg}}; box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; font-weight: 600">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><ellipse cx="12" cy="12" rx="7" ry="8.5"></ellipse></svg>
+        Oval
+      </button>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 10px">
+      <button style="flex: 1; height: 48px; border-radius: 12px; background: #17171A; border: 1.5px solid #2A2A30; box-sizing: border-box; padding: 0 12px; display: flex; align-items: center; gap: 10px; text-align: left">
+        <span style="font-size: 12px; color: #A6A5AD">Applies to</span>
+        <span style="flex: 1; font-size: 14px; font-weight: 600">Mosaic effect</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A6A5AD" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+      </button>
+      <button role="switch" aria-checked="{{invPressed}}" onClick="{{toggleInvert}}" style="height: 48px; padding: 0 4px 0 2px; display: flex; align-items: center; gap: 10px">
+        <span style="font-size: 14px; font-weight: 600">Invert</span>
+        <span style="width: 48px; height: 28px; border-radius: 14px; background: {{invTrack}}; position: relative; display: block">
+          <span style="position: absolute; top: 3px; left: {{invKnob}}px; width: 22px; height: 22px; border-radius: 11px; background: {{invKnobColor}}; display: block"></span>
+        </span>
+      </button>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 4px">
+      <div style="height: 44px; display: flex; align-items: center; gap: 12px">
+        <label for="block" style="font-size: 13px; font-weight: 600; width: 92px">Block size</label>
+        <input id="block" type="range" min="6" max="30" value="{{block}}" onChange="{{setBlock}}" style="flex: 1; accent-color: #FFD23F; height: 28px">
+        <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 13px; width: 44px; text-align: right">{{block}} px</span>
+      </div>
+      <div style="height: 44px; display: flex; align-items: center; gap: 12px">
+        <label for="feather" style="font-size: 13px; font-weight: 600; width: 92px">Feather</label>
+        <input id="feather" type="range" min="0" max="40" value="{{feather}}" onChange="{{setFeather}}" style="flex: 1; accent-color: #FFD23F; height: 28px">
+        <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 13px; width: 44px; text-align: right">{{feather}} px</span>
+      </div>
+      <sc-if value="{{isRect}}" hint-placeholder-val="{{false}}">
+        <div style="height: 44px; display: flex; align-items: center; gap: 12px">
+          <label for="radius" style="font-size: 13px; font-weight: 600; width: 92px">Corner radius</label>
+          <input id="radius" type="range" min="0" max="34" value="{{radius}}" onChange="{{setRadius}}" style="flex: 1; accent-color: #FFD23F; height: 28px">
+          <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 13px; width: 44px; text-align: right">{{radius}} px</span>
+        </div>
+      </sc-if>
+    </div>
+
+    <div style="display: flex; gap: 8px; align-items: center">
+      <button role="switch" aria-checked="{{followPressed}}" onClick="{{toggleFollow}}" style="flex: 1; height: 48px; border-radius: 12px; background: #17171A; padding: 0 12px; display: flex; align-items: center; gap: 10px; text-align: left">
+        <span style="flex: 1; display: flex; flex-direction: column; gap: 1px">
+          <span style="font-size: 14px; font-weight: 600">Follow face</span>
+          <span style="font-size: 11px; color: #A6A5AD">Tracked on the phone, frame by frame</span>
+        </span>
+        <span style="width: 44px; height: 26px; border-radius: 13px; background: {{followTrack}}; position: relative; display: block">
+          <span style="position: absolute; top: 3px; left: {{followKnob}}px; width: 20px; height: 20px; border-radius: 10px; background: {{followKnobColor}}; display: block"></span>
+        </span>
+      </button>
+      <button aria-label="Add mask keyframe at 00:07.12" style="width: 48px; height: 48px; border-radius: 12px; border: 1.5px solid #FFD23F; color: #FFD23F; display: flex; align-items: center; justify-content: center; box-sizing: border-box">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l8.5 8.5-8.5 8.5L3.5 12z"></path></svg>
+      </button>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { shape: 'oval', invert: false, block: 14, feather: 12, radius: 12, follow: true };
+  }
+  sample(W, H, cols, rows) {
+    const hex = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+    const toHex = (c) => '#' + c.map((v) => Math.round(v).toString(16).padStart(2, '0')).join('');
+    const stops = [[0, hex('#23305C')], [0.36, hex('#6B4D7A')], [0.66, hex('#D9785A')], [1, hex('#F3B064')]];
+    const sky = (t) => {
+      for (let i = 1; i < stops.length; i++) {
+        if (t <= stops[i][0]) {
+          const a = stops[i - 1], b = stops[i];
+          const k = (t - a[0]) / (b[0] - a[0]);
+          return toHex(a[1].map((v, j) => v + (b[1][j] - v) * k));
+        }
+      }
+      return toHex(stops[stops.length - 1][1]);
+    };
+    const inE = (x, y, cx, cy, rx, ry) => ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 <= 1;
+    const out = [];
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const x = (c + 0.5) * W / cols, y = (r + 0.5) * H / rows;
+        let col = null;
+        if (inE(x, y, 0.5 * W, 0.5275 * H, 0.14 * W, 0.0425 * H) && y < 0.57 * H) col = '#2B1E1A';
+        else if (inE(x, y, 0.5 * W, 0.59 * H, 0.13 * W, 0.09 * H)) col = '#C98B6B';
+        else if (x > 0.45 * W && x < 0.55 * W && y > 0.66 * H && y < 0.76 * H) col = '#B97A5B';
+        else if (x > 0.21 * W && x < 0.79 * W && y > 0.76 * H) col = '#2F4A7A';
+        else if (inE(x, y, 0.825 * W, 0.97 * H, 0.575 * W, 0.25 * H)) col = '#22192E';
+        else if (inE(x, y, 0.175 * W, 0.89 * H, 0.475 * W, 0.25 * H)) col = '#4A3355';
+        else if (inE(x, y, 0.74 * W, 0.30 * H + 0.12 * W, 0.12 * W, 0.12 * W)) col = '#FFE6A8';
+        out.push({ c: col || sky(y / H) });
+      }
+    }
+    return out;
+  }
+  renderVals() {
+    const s = this.state || {};
+    const W = 186, H = 330;
+    const cols = Math.max(4, Math.round(W / s.block)), rows = Math.max(6, Math.round(H / s.block));
+    const x = 59, y = 144, w = 68, h = 88, cx = 93, cy = 188, rx = 34, ry = 44;
+    const r = Math.min(s.radius, 34);
+    let clip = 'none';
+    if (s.shape === 'oval') {
+      clip = s.invert
+        ? "path(evenodd, 'M0 0H186V330H0Z M" + (cx - rx) + ' ' + cy + ' a' + rx + ' ' + ry + ' 0 1 0 ' + (2 * rx) + ' 0 a' + rx + ' ' + ry + ' 0 1 0 ' + (-2 * rx) + " 0 Z')"
+        : 'ellipse(' + rx + 'px ' + ry + 'px at ' + cx + 'px ' + cy + 'px)';
+    } else if (s.shape === 'rect') {
+      clip = s.invert
+        ? "path(evenodd, 'M0 0H186V330H0Z M" + (x + r) + ' ' + y + ' H' + (x + w - r) + ' A' + r + ' ' + r + ' 0 0 1 ' + (x + w) + ' ' + (y + r) + ' V' + (y + h - r) + ' A' + r + ' ' + r + ' 0 0 1 ' + (x + w - r) + ' ' + (y + h) + ' H' + (x + r) + ' A' + r + ' ' + r + ' 0 0 1 ' + x + ' ' + (y + h - r) + ' V' + (y + r) + ' A' + r + ' ' + r + ' 0 0 1 ' + (x + r) + ' ' + y + " Z')"
+        : 'inset(' + y + 'px ' + (W - x - w) + 'px ' + (H - y - h) + 'px ' + x + 'px round ' + r + 'px)';
+    }
+    const shapeBtn = (id) => {
+      const on = s.shape === id;
+      return { bd: on ? '#FFD23F' : '#2A2A30', bg: on ? '#221F12' : '#17171A', fg: on ? '#FFD23F' : '#F4F3EF', pressed: on ? 'true' : 'false', pick: () => this.setState({ shape: id }) };
+    };
+    const f = s.feather;
+    const names = { none: 'Whole clip', rect: 'Rectangle', oval: 'Oval' };
+    return {
+      cells: this.sample(W, H, cols, rows),
+      gtc: 'repeat(' + cols + ', minmax(0, 1fr))',
+      gtr: 'repeat(' + rows + ', minmax(0, 1fr))',
+      clip,
+      hasShape: s.shape !== 'none',
+      isRect: s.shape === 'rect',
+      mr: s.shape === 'oval' ? '50%' : r + 'px',
+      fx: x - f, fy: y - f, fw: w + 2 * f, fh: h + 2 * f,
+      fr: s.shape === 'oval' ? '50%' : (r + f) + 'px',
+      chip: (s.follow && s.shape !== 'none' ? 'Tracking face' : (s.invert ? 'Outside ' : 'Inside ') + names[s.shape].toLowerCase()) + ' · feather ' + f,
+      previewLabel: 'Mosaic applied ' + (s.shape === 'none' ? 'to the whole clip' : (s.invert ? 'outside' : 'inside') + (s.shape === 'oval' ? ' an ' : ' a ') + names[s.shape].toLowerCase() + ' mask over the face'),
+      shNone: shapeBtn('none'), shRect: shapeBtn('rect'), shOval: shapeBtn('oval'),
+      invPressed: s.invert ? 'true' : 'false',
+      invTrack: s.invert ? '#FFD23F' : '#2A2A30',
+      invKnob: s.invert ? 23 : 3,
+      invKnobColor: s.invert ? '#141210' : '#B4B3BB',
+      toggleInvert: () => this.setState({ invert: !s.invert }),
+      followPressed: s.follow ? 'true' : 'false',
+      followTrack: s.follow ? '#FFD23F' : '#2A2A30',
+      followKnob: s.follow ? 21 : 3,
+      followKnobColor: s.follow ? '#141210' : '#B4B3BB',
+      toggleFollow: () => this.setState({ follow: !s.follow }),
+      block: s.block, feather: s.feather, radius: s.radius,
+      setBlock: (e) => this.setState({ block: Number(e.target.value) }),
+      setFeather: (e) => this.setState({ feather: Number(e.target.value) }),
+      setRadius: (e) => this.setState({ radius: Number(e.target.value) })
+    };
+  }
+}
+</script>
+</body>
+</html>

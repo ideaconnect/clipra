@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Clipra tablet - Edit by text</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0;background:#0D0D0F}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+input{font:inherit}
+a{color:#FFD23F;text-decoration:none}a:hover{color:#FFE27A}
+</style>
+</helmet>
+<div style="width: 1280px; height: 800px; box-sizing: border-box; padding-top: 28px; background: #0D0D0F; color: #F4F3EF; font-family: 'Geist', system-ui, sans-serif; display: flex; flex-direction: column; overflow: hidden">
+
+  <header style="height: 52px; padding: 0 16px 0 8px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #1F1F23; box-sizing: border-box">
+    <a href="TabletHome.dc.html" aria-label="Close project" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #F4F3EF; border-radius: 12px">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+    </a>
+    <svg width="26" height="26" viewBox="0 0 30 30" aria-hidden="true"><rect width="30" height="30" rx="8" fill="#FFD23F"></rect><path d="M10.5 8.5v13l11-6.5z" fill="#141210"></path><path d="M7 23.5L23.5 7" stroke="#FFD23F" stroke-width="2.6" stroke-linecap="round"></path></svg>
+    <span style="display: flex; flex-direction: column; gap: 1px; margin-left: 4px">
+      <span style="font-size: 15px; font-weight: 600">Lisbon weekend</span>
+      <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; color: #A6A5AD">16:9 · 3840×2160 · 30 fps · proxies · auto-saved</span>
+    </span>
+    <span style="flex: 1"></span>
+    <button onClick="{{undo}}" aria-label="Undo last cut" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #F4F3EF">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14L4 9l5-5"></path><path d="M4 9h10a6 6 0 0 1 0 12h-3"></path></svg>
+    </button>
+    <button aria-label="Redo" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #5E5D66">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 14l5-5-5-5"></path><path d="M20 9H10a6 6 0 0 0 0 12h3"></path></svg>
+    </button>
+    <span style="flex: 1"></span>
+    <a href="TabletCaptions.dc.html" style="height: 40px; padding: 0 14px; border-radius: 12px; background: #1F1F23; color: #F4F3EF; display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600">Caption styles</a>
+    <a href="TabletExport.dc.html" style="height: 40px; padding: 0 16px 0 14px; border-radius: 12px; background: #FFD23F; color: #141210; font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 6px">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4M7 9l5-5 5 5M5 20h14"></path></svg>
+      Export
+    </a>
+  </header>
+
+  <div style="height: 400px; display: flex">
+    <nav aria-label="Tools" style="width: 72px; flex-shrink: 0; border-right: 1px solid #1F1F23; display: flex; flex-direction: column; align-items: center; gap: 4px; padding-top: 8px; box-sizing: border-box">
+      <a href="TabletEditor.dc.html" style="width: 64px; height: 58px; border-radius: 12px; color: #B4B3BB; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="9" cy="10" r="2"></circle><path d="M21 16l-5-5-9 9"></path></svg>
+        <span style="font-size: 10px; font-weight: 600">Media</span>
+      </a>
+      <a href="TabletAudio.dc.html" style="width: 64px; height: 58px; border-radius: 12px; color: #B4B3BB; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M9 18V6l10-2v12"></path><circle cx="6.5" cy="18" r="2.5"></circle><circle cx="16.5" cy="16" r="2.5"></circle></svg>
+        <span style="font-size: 10px; font-weight: 600">Audio</span>
+      </a>
+      <a href="TabletText.dc.html" style="width: 64px; height: 58px; border-radius: 12px; color: #B4B3BB; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M5 7V4h14v3M12 4v16M9 20h6"></path></svg>
+        <span style="font-size: 10px; font-weight: 600">Text</span>
+      </a>
+      <a href="TabletEffects.dc.html" style="width: 64px; height: 58px; border-radius: 12px; color: #B4B3BB; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="9" cy="9" r="5"></circle><circle cx="15" cy="9" r="5"></circle><circle cx="12" cy="15" r="5"></circle></svg>
+        <span style="font-size: 10px; font-weight: 600">Effects</span>
+      </a>
+      <a href="TabletEffects.dc.html" style="width: 64px; height: 58px; border-radius: 12px; color: #B4B3BB; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M4 5l8 7-8 7zM20 5l-8 7 8 7z"></path></svg>
+        <span style="font-size: 10px; font-weight: 600">Transitions</span>
+      </a>
+      <a href="TabletCaptions.dc.html" aria-current="page" style="width: 64px; height: 58px; border-radius: 12px; background: #2B2716; color: #FFD23F; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"></rect><path d="M10.5 10.2a2.2 2.2 0 1 0 0 3.6M16.5 10.2a2.2 2.2 0 1 0 0 3.6"></path></svg>
+        <span style="font-size: 10px; font-weight: 600">Captions</span>
+      </a>
+    </nav>
+
+    <section aria-label="Transcript editor" style="flex: 1; min-width: 0; border-right: 1px solid #1F1F23; padding: 12px 20px 0; box-sizing: border-box; display: flex; flex-direction: column; gap: 10px; overflow: hidden">
+      <div style="display: flex; align-items: baseline; gap: 10px">
+        <h2 style="margin: 0; font-family: 'Bricolage Grotesque', 'Geist', sans-serif; font-size: 20px; font-weight: 800">Edit by text</h2>
+        <span style="font-size: 12px; color: #A6A5AD">Delete words and the video follows on every layer</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px">
+        <button role="switch" aria-checked="{{fill.pressed}}" aria-label="Cut filler words, {{fillCount}} found" onClick="{{fill.toggle}}" style="height: 44px; flex-shrink: 0; border-radius: 12px; border: 1.5px solid {{fill.bd}}; background: {{fill.bg}}; box-sizing: border-box; padding: 0 12px; display: flex; align-items: center; gap: 8px; white-space: nowrap">
+          <span style="font-size: 13px; font-weight: 600; color: {{fill.fg}}">Cut filler words</span>
+          <span style="padding: 1px 6px; border-radius: 6px; background: #2A2A30; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; color: #F4F3EF">{{fillCount}}</span>
+        </button>
+        <button role="switch" aria-checked="{{pause.pressed}}" aria-label="Cut pauses, {{pauseCount}} found" onClick="{{pause.toggle}}" style="height: 44px; flex-shrink: 0; border-radius: 12px; border: 1.5px solid {{pause.bd}}; background: {{pause.bg}}; box-sizing: border-box; padding: 0 12px; display: flex; align-items: center; gap: 8px; white-space: nowrap">
+          <span style="font-size: 13px; font-weight: 600; color: {{pause.fg}}">Cut pauses</span>
+          <span style="padding: 1px 6px; border-radius: 6px; background: #2A2A30; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; color: #F4F3EF">{{pauseCount}}</span>
+        </button>
+        <label for="thr" style="font-size: 12px; color: #A6A5AD; margin-left: 4px; white-space: nowrap">over</label>
+        <input id="thr" type="range" min="3" max="20" value="{{thr}}" onChange="{{setThr}}" style="flex: 1; min-width: 80px; max-width: 140px; accent-color: #FFD23F">
+        <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; white-space: nowrap; width: 40px; text-align: right">{{thrText}}</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 14px">
+        <sc-for list="{{segs}}" as="g" hint-placeholder-count="2">
+          <div style="display: flex; gap: 14px">
+            <span style="width: 76px; flex-shrink: 0; display: flex; flex-direction: column; gap: 2px; padding-top: 6px">
+              <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; color: #F4F3EF">{{g.time}}</span>
+              <span style="font-size: 11px; color: #8C8B94">{{g.src}}</span>
+            </span>
+            <p style="margin: 0; flex: 1; line-height: 1.9">
+              <sc-for list="{{g.tokens}}" as="k" hint-placeholder-count="20">
+                <button onClick="{{k.pick}}" aria-pressed="{{k.pressed}}" aria-label="{{k.aria}}" style="display: inline; margin-right: 4px; padding: 1px 3px; border-radius: 5px; background: {{k.bg}}; color: {{k.fg}}; text-decoration: {{k.deco}}; text-underline-offset: 5px; font-family: {{k.ff}}; font-size: {{k.fs}}px; font-weight: {{k.fw}}">{{k.label}}</button>
+              </sc-for>
+            </p>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <section aria-label="Preview" style="width: 588px; flex-shrink: 0; padding: 12px 24px 0; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; gap: 8px">
+      <div role="img" aria-label="Preview at the word Lisbon" style="position: relative; width: 540px; height: 304px; overflow: hidden; flex-shrink: 0">
+        <div style="position: absolute; inset: 0; background: linear-gradient(180deg, #23305C 0%, #6B4D7A 36%, #D9785A 66%, #F3B064 100%)"></div>
+        <div style="position: absolute; left: 70%; top: 20%; width: 10%; aspect-ratio: 1; border-radius: 50%; background: #FFE6A8"></div>
+        <div style="position: absolute; left: -10%; right: 40%; top: 60%; height: 80%; border-radius: 50%; background: #4A3355"></div>
+        <div style="position: absolute; left: 40%; right: -20%; top: 70%; height: 80%; border-radius: 50%; background: #22192E"></div>
+        <div style="position: absolute; left: 38%; right: 38%; top: 70%; bottom: -10%; border-radius: 48% 48% 0 0; background: #2F4A7A"></div>
+        <div style="position: absolute; left: 48.2%; width: 3.6%; top: 58%; height: 14%; background: #B97A5B"></div>
+        <div style="position: absolute; left: 45.4%; width: 9.2%; top: 41%; height: 20%; border-radius: 50%; background: #C98B6B"></div>
+        <div style="position: absolute; left: 45%; width: 10%; top: 39%; height: 10%; border-radius: 50% 50% 30% 30%; background: #2B1E1A"></div>
+        <div style="position: absolute; right: 5%; top: 8%; width: 152px; height: 86px; border: 3px solid #F4F3EF; border-radius: 8px; box-sizing: border-box; box-shadow: 0 8px 18px rgba(0,0,0,0.35); background: linear-gradient(180deg, #8DB9DA 0 34%, transparent 34%), linear-gradient(180deg, transparent 34%, #C4643C 34% 44%, transparent 44%), radial-gradient(rgba(70,45,30,0.55) 1.2px, transparent 1.7px) 0 0 / 10px 9px, repeating-linear-gradient(90deg, #F3E9D8 0 18px, #E9B98C 18px 32px, #F6F0E6 32px 46px, #D9A07A 46px 58px)"></div>
+        <div style="position: absolute; left: 5%; top: 9%; display: flex; flex-direction: column; gap: 4px">
+          <span style="font-family: 'Bricolage Grotesque', 'Geist', sans-serif; font-weight: 800; font-size: 46px; line-height: 0.92; color: #FFFFFF; text-shadow: 0 2px 16px rgba(0,0,0,0.4)">DAY<br>ONE</span>
+        </div>
+        <div style="position: absolute; left: 0; right: 0; bottom: 7%; display: flex; justify-content: center">
+          <span style="padding: 5px 12px; border-radius: 8px; background: rgba(0,0,0,0.62); font-size: 17px; font-weight: 700; color: #FFFFFF">We finally made it to <span style="background: #FFD23F; color: #141210; padding: 0 4px; border-radius: 4px">Lisbon</span></span>
+        </div>
+      </div>
+      <div style="width: 540px; height: 48px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center">
+        <span style="display: flex; align-items: baseline; gap: 8px">
+          <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 13px; color: #8C8B94; text-decoration: {{origDeco}}">0:42.0</span>
+          <span style="font-family: 'Bricolage Grotesque', 'Geist', sans-serif; font-size: 22px; font-weight: 800">{{after}}</span>
+        </span>
+        <button aria-label="Play edited version" style="width: 44px; height: 44px; border-radius: 22px; background: #F4F3EF; color: #0D0D0F; display: flex; align-items: center; justify-content: center">
+          <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"></path></svg>
+        </button>
+        <span style="display: flex; justify-content: flex-end; font-size: 12px; color: #A6A5AD">{{cutSummary}}</span>
+      </div>
+    </section>
+  </div>
+
+  <div style="height: 320px; border-top: 1px solid #1F1F23; display: flex; flex-direction: column; background: #111114">
+    <div style="height: 48px; padding: 0 12px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #1F1F23; box-sizing: border-box">
+      <span style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #A6A5AD">
+        <span style="width: 18px; height: 12px; border-radius: 3px; background: repeating-linear-gradient(135deg, rgba(255,90,54,0.6) 0 3px, rgba(255,90,54,0.2) 3px 6px); display: block"></span>
+        Removed by the transcript, closes the gap on every layer
+      </span>
+      <span style="flex: 1"></span>
+      <button onClick="{{restore}}" style="height: 40px; padding: 0 14px; border-radius: 10px; background: #1F1F23; font-size: 13px; font-weight: 600">Restore all</button>
+      <input type="range" aria-label="Timeline zoom" min="0" max="100" value="45" style="width: 140px; accent-color: #FFD23F">
+    </div>
+    <div style="flex: 1; display: flex; min-height: 0">
+      <div style="width: 120px; flex-shrink: 0; position: relative; border-right: 1px solid #222227; background: #141417">
+        <span style="position: absolute; left: 12px; top: 4px; font-size: 11px; color: #8C8B94">Layers</span>
+        <sc-for list="{{lanes}}" as="l" hint-placeholder-count="6">
+          <button aria-label="{{l.aria}}" style="position: absolute; left: 0; right: 0; top: {{l.top}}px; height: {{l.h}}px; padding: 0 6px 0 10px; display: flex; align-items: center; gap: 5px; color: #8C8B94; background: {{l.bg}}">
+            <span style="padding: 1px 6px; border-radius: 5px; background: {{l.chip}}; color: {{l.chipFg}}; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; font-weight: 600">{{l.name}}</span>
+            <span style="flex: 1"></span>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10v4h4l5 4V6L8 10z"></path><path d="M16.5 9a4 4 0 0 1 0 6"></path></svg>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg>
+          </button>
+        </sc-for>
+      </div>
+      <div style="flex: 1; position: relative; overflow: hidden">
+        <sc-for list="{{ticks}}" as="t" hint-placeholder-count="48">
+          <span style="position: absolute; left: {{t.x}}px; top: 0; width: 1px; height: {{t.h}}px; background: #4A4A52; display: block"></span>
+        </sc-for>
+        <sc-for list="{{labels}}" as="t" hint-placeholder-count="12">
+          <span style="position: absolute; left: {{t.x}}px; top: 6px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 10px; color: #8C8B94">{{t.text}}</span>
+        </sc-for>
+        <sc-for list="{{clips}}" as="c" hint-placeholder-count="16">
+          <span aria-label="{{c.aria}}" style="position: absolute; top: {{c.top}}px; left: {{c.left}}px; width: {{c.width}}px; height: {{c.height}}px; border-radius: 7px; background: {{c.bg}}; box-shadow: inset 0 0 0 {{c.bw}}px {{c.bd}}; overflow: hidden; color: #FFFFFF; display: block">
+            <sc-if value="{{c.wave}}" hint-placeholder-val="{{false}}">
+              <span style="position: absolute; left: 4px; right: 0; top: 0; bottom: 0; display: flex; align-items: center; gap: 1px">
+                <sc-for list="{{c.bars}}" as="b" hint-placeholder-count="40">
+                  <span style="width: 3px; height: {{b.h}}px; border-radius: 1px; background: {{b.c}}; flex-shrink: 0; display: block"></span>
+                </sc-for>
+              </span>
+            </sc-if>
+            <sc-if value="{{c.strip}}" hint-placeholder-val="{{false}}">
+              <span aria-hidden="true" style="position: absolute; left: 0; right: 0; bottom: 0; height: 13px; background: rgba(13,13,15,0.62); display: flex; align-items: center; gap: 1px; padding-left: 3px; overflow: hidden">
+                <sc-for list="{{c.sbars}}" as="b" hint-placeholder-count="30">
+                  <span style="width: 2px; height: {{b.h}}px; border-radius: 1px; background: #5EE0C8; flex-shrink: 0; display: block"></span>
+                </sc-for>
+              </span>
+            </sc-if>
+            <sc-if value="{{c.linked}}" hint-placeholder-val="{{false}}">
+              <span aria-hidden="true" style="position: absolute; right: 5px; top: 4px; color: #FFFFFF; opacity: 0.85; display: block">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"></path><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"></path></svg>
+              </span>
+            </sc-if>
+            <span style="position: absolute; left: {{c.lo}}px; top: {{c.lt}}px; max-width: calc(100% - 22px); padding: {{c.lp}}; border-radius: 5px; background: {{c.chip}}; font-family: {{c.font}}; font-size: {{c.fs}}px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-sizing: border-box">{{c.label}}</span>
+          </span>
+        </sc-for>
+        <sc-for list="{{bands}}" as="b" hint-placeholder-count="7">
+          <span aria-label="{{b.aria}}" style="position: absolute; top: 22px; bottom: 0; left: {{b.x}}px; width: {{b.w}}px; background: repeating-linear-gradient(135deg, rgba(255,90,54,0.5) 0 4px, rgba(255,90,54,0.18) 4px 8px); border-left: 1px solid #FF8A70; border-right: 1px solid #FF8A70; box-sizing: border-box; display: block"></span>
+        </sc-for>
+        <div aria-hidden="true" style="position: absolute; left: {{playX}}px; top: 0; bottom: 0; width: 2px; background: #FFD23F"></div>
+        <div aria-hidden="true" style="position: absolute; left: {{playKnob}}px; top: 0; width: 12px; height: 12px; border-radius: 0 0 6px 6px; background: #FFD23F"></div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { fillers: true, pauses: true, thr: 5, manual: {} };
+  }
+  timeline(cuts) {
+    const PPS = 48;
+    const X = (t) => Math.round(t * PPS * 10) / 10;
+    const fr = 'linear-gradient(90deg, rgba(13,13,15,0.55) 0 1px, transparent 1px) 0 0 / 54px 100%, ';
+    const BG = {
+      sunset: fr + 'linear-gradient(180deg, #2C3566 0%, #8A5878 42%, #E08A5C 72%, #3A2645 73%, #22192E 100%)',
+      tram: fr + 'linear-gradient(180deg, #16324F 0%, #2F6FA8 46%, #F2B705 46%, #F2B705 74%, #1A1A1A 74%)',
+      sintra: fr + 'linear-gradient(180deg, #7FB0D8 0%, #B9D3E6 40%, #E8C46A 40%, #D9A441 58%, #3E6A36 58%, #2C4F27 100%)',
+      beach: fr + 'linear-gradient(180deg, #8FC9E8 0%, #CFE6F2 45%, #3E8FB0 45%, #2F7393 62%, #E8D8B0 62%, #D9C08F 100%)',
+      alfama: fr + 'linear-gradient(180deg, #8DB9DA 0 34%, #C4643C 34% 44%, #F3E9D8 44% 60%, #E9B98C 60% 76%, #D9A07A 76%)',
+      night: fr + 'linear-gradient(180deg, #0B1020 0%, #1B2648 52%, #F2B705 52%, #F2B705 70%, #0B0B0B 70%)'
+    };
+    const R = { cc: [26, 24], v3: [56, 28], v2: [90, 34], v1: [130, 56], a1: [192, 32], a2: [230, 32] };
+    const LN = { cc: 'L6', v3: 'L5', v2: 'L4', v1: 'L3', a1: 'L2', a2: 'L1' };
+    const LINK = { sunset: 'g1', c1: 'g1', tram: 'g2', c2: 'g2', voice: 'g3', c3: 'g3', c4: 'g3', c5: 'g3' };
+    const list = [];
+    const add = (id, row, t1, t2, label, bg, o) => list.push({ id, row, t1, t2, label, bg, kind: 'video', ...(o || {}) });
+    add('adjust', 'v3', 1.5, 5.5, 'fx  Warm look', 'repeating-linear-gradient(135deg, #3A3552 0 6px, #2E2A40 6px 12px)', { kind: 'adjust' });
+    add('day1', 'v3', 6, 9, 'T  Day one', '#A8431A', { kind: 'tag' });
+    add('whoosh', 'v3', 9, 9.8, 'whoosh.wav', '#0E4F49', { kind: 'audio', wc: '#5EE0C8', seed: 5 });
+    add('sintraT', 'v3', 14.5, 17, 'T  SINTRA', '#A8431A', { kind: 'tag' });
+    add('stamp', 'v2', 1, 4.6, 'stamp.png', '#5B45C4', { kind: 'tag' });
+    add('alfama', 'v2', 5, 8.6, 'alfama.mp4', BG.alfama);
+    add('night', 'v2', 15.5, 20, 'night-tram.mp4', BG.night);
+    add('sunset', 'v1', 0, 9.2, 'sunset.mp4', BG.sunset);
+    add('tram', 'v1', 9.2, 11, 'tram.mp4', BG.tram);
+    add('card', 'v1', 11, 14, 'T  Day two', '#000000', { card: true, kind: 'tag' });
+    add('sintra', 'v1', 14, 21.5, 'sintra.mp4', BG.sintra);
+    add('beach', 'v1', 21.5, 30, 'beach.mp4', BG.beach);
+    add('voice', 'a1', 12, 21, 'voiceover.m4a', '#5A2238', { kind: 'audio', wc: '#FF9CC2', seed: 3 });
+    add('music', 'a2', 0, 42, 'lisbon-guitar.mp3', 'repeating-linear-gradient(90deg, rgba(255,210,63,0.95) 0 2px, transparent 2px 30px) 0 0 / 100% 4px no-repeat, #0E4F49', { kind: 'audio', wc: '#5EE0C8', seed: 1 });
+    add('c1', 'cc', 6, 8.8, 'We finally made it to Lisbon', '#1F4FC2', { kind: 'cap' });
+    add('c2', 'cc', 9.4, 11.6, 'The light here is unreal', '#1F4FC2', { kind: 'cap' });
+    add('c3', 'cc', 12.1, 15, 'Tomorrow we’re taking the tram up to Alfama', '#1F4FC2', { kind: 'cap' });
+    add('c4', 'cc', 15.6, 18.2, 'and then the train out to Sintra', '#1F4FC2', { kind: 'cap' });
+    add('c5', 'cc', 18.9, 21, 'if the weather holds', '#1F4FC2', { kind: 'cap' });
+    const VIEW = 1160;
+    const clips = list.map((c) => {
+      const left = X(c.t1) + 1;
+      const width = Math.round((X(c.t2) - X(c.t1) - 2) * 10) / 10;
+      const [top, height] = R[c.row];
+      const bars = [];
+      if (c.kind === 'audio') {
+        const n = Math.max(0, Math.floor((Math.min(width, VIEW - left)) / 4));
+        for (let i = 0; i < n; i++) {
+          const v = Math.abs(Math.sin((i + c.seed * 7) * 0.37) * Math.cos(i * 0.113) + 0.35 * Math.sin(i * 1.7 + c.seed));
+          const gap = c.id === 'voice' && Math.sin(i * 0.21) < -0.7;
+          bars.push({ h: gap ? 2 : Math.max(3, Math.round(3 + v * (height - 12))), c: c.wc });
+        }
+      }
+      const isVid = c.kind === 'video' && !c.card;
+      const isTag = c.kind === 'tag' || c.kind === 'cap' || c.kind === 'adjust';
+      return {
+        ...c, top, height, left, width, bars,
+        wave: c.kind === 'audio',
+        strip: isVid,
+        sbars: Array.from({ length: isVid ? Math.max(0, Math.floor(Math.min(width, VIEW - left) / 3)) : 0 }, (_, i) => ({ h: Math.max(2, Math.round(2 + 8 * Math.abs(Math.sin(i * 0.41 + c.t1) * Math.cos(i * 0.13)))) })),
+        linked: !!LINK[c.id],
+        lo: 6,
+        lt: c.kind === 'audio' ? 5 : (isTag ? Math.round((height - 16) / 2) : 5),
+        lp: isTag ? '0' : '1px 5px',
+        chip: isTag ? 'transparent' : 'rgba(13,13,15,0.8)',
+        font: c.kind === 'video' || c.kind === 'audio' ? "'Geist Mono', ui-monospace, monospace" : "'Geist', system-ui, sans-serif",
+        fs: isTag ? 11 : 10,
+        bd: c.kind === 'adjust' ? '#6E5FA8' : (c.card ? '#3A3A40' : 'transparent'),
+        bw: 1,
+        aria: c.label.trim().replace(/^T\s+/, 'Text ').replace(/^fx\s+/, 'Adjustment clip ') + ' on layer ' + LN[c.row] + (LINK[c.id] ? ', linked' : '')
+      };
+    });
+    const ticks = [], labels = [];
+    for (let t = 0; t <= 24; t += 0.5) {
+      const major = Math.abs(t - Math.round(t)) < 0.01;
+      ticks.push({ x: X(t), h: major ? 8 : 4 });
+      if (major && Math.round(t) % 2 === 0) labels.push({ x: X(t) + 3, text: '00:' + String(Math.round(t)).padStart(2, '0') });
+    }
+    return {
+      clips, ticks, labels,
+      lanes: Object.keys(R).map((k) => ({ name: LN[k], top: R[k][0], h: R[k][1], aria: 'Layer ' + LN[k] + ': visible, unmuted, unlocked', chip: '#2A2A30', chipFg: '#F4F3EF', bg: 'transparent' })),
+      bands: cuts.map((c) => ({ x: X(c.at), w: Math.max(3, Math.round(c.d * PPS)), aria: 'Removed ' + c.d.toFixed(1) + ' s at ' + c.at.toFixed(1) + ' s' })),
+      playX: X(7.9) - 1,
+      playKnob: X(7.9) - 6
+    };
+  }
+  renderVals() {
+    const s = this.state || {};
+    const w = (t, at, d) => ({ kind: 'w', t, at, d });
+    const f = (t, at, d) => ({ kind: 'f', t, at, d });
+    const p = (at, d) => ({ kind: 'p', t: d.toFixed(1) + ' s', at, d });
+    const SEGS = [
+      { time: '00:05.5', src: 'clip audio · L3', tokens: [
+        f('um', 5.5, 0.4), w('We', 6.0, 0.4), w('finally', 6.4, 0.5), w('made', 6.9, 0.4), w('it', 7.3, 0.3), w('to', 7.6, 0.3), w('Lisbon.', 7.9, 0.9),
+        p(8.8, 0.6), w('The', 9.4, 0.3), w('light', 9.7, 0.4), w('here', 10.1, 0.3), w('is,', 10.4, 0.2), f('uh,', 10.6, 0.3), w('unreal.', 10.9, 0.7), p(11.6, 0.5)
+      ] },
+      { time: '00:12.1', src: 'voiceover · L2', tokens: [
+        w('Tomorrow', 12.1, 0.5), w('we’re', 12.6, 0.3), w('taking', 12.9, 0.4), w('the', 13.3, 0.2), w('tram', 13.5, 0.4), w('up', 13.9, 0.3), w('to', 14.2, 0.2), w('Alfama,', 14.4, 0.6),
+        p(15.0, 0.6), w('and', 15.6, 0.2), w('then', 15.8, 0.4), f('um', 16.2, 0.4), w('the', 16.6, 0.2), w('train', 16.8, 0.4), w('out', 17.2, 0.3), w('to', 17.5, 0.2), w('Sintra,', 17.7, 0.5),
+        p(18.2, 0.7), w('if', 18.9, 0.2), w('the', 19.1, 0.2), w('weather', 19.3, 0.5), w('holds,', 19.8, 0.6), f('you know.', 20.6, 0.4)
+      ] }
+    ];
+    const thr = s.thr / 10;
+    let cutTime = 0, cutCount = 0, fillCount = 0, pauseCount = 0;
+    const cuts = [];
+    const segs = SEGS.map((g, gi) => ({
+      time: g.time, src: g.src,
+      tokens: g.tokens.map((k, ki) => {
+        const id = gi + '-' + ki;
+        let cut = !!s.manual[id];
+        if (k.kind === 'f') { fillCount++; if (s.fillers) cut = !s.manual[id + '!']; }
+        if (k.kind === 'p' && k.d > thr) { pauseCount++; if (s.pauses) cut = !s.manual[id + '!']; }
+        if (cut) { cutTime += k.d; cutCount++; cuts.push({ at: k.at, d: k.d }); }
+        const current = k.t === 'Lisbon.';
+        let st = { bg: 'transparent', fg: '#F4F3EF', deco: 'none', ff: "'Geist', system-ui, sans-serif", fs: 17, fw: 400, label: k.t };
+        if (k.kind === 'f') st.deco = 'underline dotted #FFB547';
+        if (k.kind === 'p') st = { ...st, bg: '#1F1F23', fg: '#A6A5AD', ff: "'Geist Mono', ui-monospace, monospace", fs: 12, label: 'pause ' + k.t };
+        if (current && !cut) st = { ...st, bg: '#FFD23F', fg: '#141210', fw: 600 };
+        if (cut) st = { ...st, bg: 'rgba(255,90,54,0.2)', fg: '#FF8A70', deco: 'line-through' };
+        const auto = (k.kind === 'f' && s.fillers) || (k.kind === 'p' && k.d > thr && s.pauses);
+        return {
+          ...st, pressed: cut ? 'true' : 'false',
+          aria: (k.kind === 'p' ? 'Pause of ' + k.t : k.t) + (cut ? ', cut' : ''),
+          pick: () => {
+            const m = { ...s.manual };
+            if (auto) { m[id + '!'] = !m[id + '!']; } else { m[id] = !m[id]; }
+            this.setState({ manual: m });
+          }
+        };
+      })
+    }));
+    const after = 42 - cutTime;
+    const tog = (on, fn) => ({ pressed: on ? 'true' : 'false', bd: on ? '#FFD23F' : '#2A2A30', bg: on ? '#221F12' : '#17171A', fg: on ? '#FFD23F' : '#F4F3EF', toggle: fn });
+    return {
+      ...this.timeline(cuts),
+      segs,
+      after: '0:' + after.toFixed(1).padStart(4, '0'),
+      cutSummary: cutCount ? cutCount + (cutCount === 1 ? ' cut · ' : ' cuts · ') + cutTime.toFixed(1) + ' s shorter' : 'No cuts yet',
+      origDeco: cutCount ? 'line-through' : 'none',
+      fill: tog(s.fillers, () => this.setState({ fillers: !s.fillers })),
+      pause: tog(s.pauses, () => this.setState({ pauses: !s.pauses })),
+      fillCount: fillCount,
+      pauseCount: pauseCount,
+      thr: s.thr,
+      thrText: thr.toFixed(1) + ' s',
+      setThr: (e) => this.setState({ thr: Number(e.target.value) }),
+      restore: () => this.setState({ fillers: false, pauses: false, manual: {} }),
+      undo: () => this.setState({ manual: {} })
+    };
+  }
+}
+</script>
+</body>
+</html>
