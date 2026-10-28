@@ -21,6 +21,16 @@ Keep this list in sync with the build. Every entry needs a license that is compa
 | Play Billing Library | Clipra Pro purchase | Android Software Development Kit License |
 | Bricolage Grotesque, Geist, Geist Mono | Fonts | SIL Open Font License 1.1 |
 
+The fonts are the variable TTFs from the google/fonts repository, bundled in `core/designsystem/src/main/res/font` with their licenses in `core/designsystem/src/main/assets/licenses`:
+
+| File | Source (google/fonts) | SHA-256 |
+|---|---|---|
+| `geist.ttf` | `ofl/geist/Geist[wght].ttf` at 718e1db | `73894e0448cae90a92b6c2f8732b7bb9acb7b94c418bff559dad4a18e1de9659` |
+| `geist_mono.ttf` | `ofl/geistmono/GeistMono[wght].ttf` at 9e25e2b | `d00e590b8eb3a59acc329b2d044fd143ae935090b7da33199ebee27cc7de8196` |
+| `bricolage_grotesque.ttf` | `ofl/bricolagegrotesque/BricolageGrotesque[opsz,wdth,wght].ttf` at 6ce172f | `413e7357809ddd12fd80a96a8a396de0e401638d4acd3cb3e37532f0472ac682` |
+
+The icons are drawn from the design's own SVGs (`design/static/`), so they carry no third-party license.
+
 Models come from their official sources only, pinned to a revision and checked with SHA-256; the sources are listed in `docs/architecture.md`, section 6.
 
 ## Build and test tools
@@ -34,6 +44,8 @@ Used to build and test the app; none of them ship in it.
 | AndroidX Test, Compose UI test, kotlinx-coroutines-test | Tests | Apache-2.0 |
 | Spotless Gradle plugin | Runs ktlint over the Kotlin sources | Apache-2.0 |
 | ktlint | Kotlin style check | MIT |
+| Robolectric | Runs Android code in JVM tests | MIT |
+| Roborazzi | Screenshot tests | Apache-2.0 |
 | GitHub Actions: `actions/checkout`, `actions/setup-java`, `actions/upload-artifact`, `gradle/actions/wrapper-validation` | CI (`.github/workflows/ci.yml`) | MIT |
 
 CI doesn't use `gradle/actions/setup-gradle`: since v6 its caching is a proprietary component under Gradle's terms of use. `actions/setup-java` caches Gradle instead.

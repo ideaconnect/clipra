@@ -7,6 +7,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import tech.idct.clipra.BuildConfig
+import tech.idct.clipra.core.designsystem.gallery.DesignSystemGallery
 import tech.idct.clipra.core.designsystem.placeholder.Board
 import tech.idct.clipra.core.designsystem.placeholder.BoardPlaceholder
 import tech.idct.clipra.feature.audio.audioScreens
@@ -53,10 +54,13 @@ fun ClipraNavHost(navController: NavHostController = rememberNavController()) {
         composable<SettingsRoute> { screen(AppBoards.settings) }
         composable<BoardIndexRoute> {
             BoardIndex(
-                boards = AllBoards.phone,
+                boards = AllBoards.phone + AppBoards.designSystem,
                 onOpen = { navController.navigate(it.route) },
                 onBack = { navController.popBackStack() },
             )
+        }
+        composable<DesignSystemRoute> {
+            DesignSystemGallery(onBack = { navController.popBackStack() })
         }
     }
 }

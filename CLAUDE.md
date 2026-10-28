@@ -21,7 +21,8 @@ Status: design complete, implementation not started. The plan is a set of issues
 | `scripts/plan/` | `issues.json` (the plan as data) and `publish.py` (creates the issues and adds them to Project 6) |
 | `app/` | The Android app: application class, main activity and the navigation that connects the feature modules |
 | `core/`, `ml/`, `feature/`, `monetization/` | The modules of `docs/architecture.md`, section 2 |
-| `build-logic/` | Gradle convention plugins (`clipra.android.library`, `clipra.android.feature`, `clipra.hilt` and others) |
+| `build-logic/` | Gradle convention plugins (`clipra.android.library`, `clipra.android.feature`, `clipra.android.screenshots`, `clipra.hilt` and others) |
+| `core/designsystem/` | The theme (`ClipraTheme.colors`, `.typography`, `.shapes`), components, the icon set (`ClipraIcons`) and the debug gallery |
 | `gradle/libs.versions.toml` | The version of every library and Gradle plugin |
 | `.github/workflows/ci.yml` | CI: Kotlin style, debug build, unit tests and lint on every pull request and on `main` |
 
@@ -55,6 +56,7 @@ Android 10 and later (minSdk 29, targetSdk 36), app id `tech.idct.clipra`. Kotli
 - Needs JDK 17 (`JAVA_HOME`) and the Android SDK with platform 37 (`ANDROID_HOME`).
 - `./gradlew assembleDebug` builds the app. `./gradlew testDebugUnitTest :core:model:test` runs the unit tests and `./gradlew lintDebug` runs Android lint. With an emulator running, `./gradlew connectedDebugAndroidTest` runs the instrumented tests.
 - `./gradlew spotlessCheck` checks the Kotlin style with ktlint; `./gradlew spotlessApply` fixes most findings.
+- Screenshot tests (Roborazzi on Robolectric, `clipra.android.screenshots`) keep their reference images in `<module>/src/test/screenshots`. `./gradlew recordRoborazziDebug` records them after an intended UI change; CI compares with `-Proborazzi.test.verify=true`. Robolectric tests use `@Config(sdk = [34])`, since newer SDKs need a Java 21 test JVM.
 - CI runs the style check, the debug build, the unit tests and lint on every pull request and on `main`, and attaches the debug APK to the run. A pull request is ready only when CI is green.
 - Develop on the phone and tablet emulators; debug builds include x86_64 for them, release builds are arm64-v8a only. Speed is measured on real phones in a later phase.
 - New modules use the convention plugins in `build-logic/`. New libraries go into `gradle/libs.versions.toml` and `docs/third-party.md`.

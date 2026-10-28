@@ -2,4 +2,5 @@
 <resources>
     <string name="app_title_settings">Ustawienia</string>
     <string name="app_title_board_index">Wszystkie ekrany</string>
+    <string name="app_title_design_system">System projektu</string>
 </resources>

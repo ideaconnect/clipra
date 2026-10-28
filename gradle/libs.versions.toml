@@ -18,6 +18,8 @@ androidxTestRunner = "1.7.0"
 espresso = "3.7.0"
 spotless = "8.10.4"
 ktlint = "1.8.0"
+roborazzi = "1.76.0"
+robolectric = "4.17"
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
@@ -44,11 +46,15 @@ junit = { module = "junit:junit", version.ref = "junit4" }
 androidx-test-ext-junit = { module = "androidx.test.ext:junit", version.ref = "androidxTestExtJunit" }
 androidx-test-runner = { module = "androidx.test:runner", version.ref = "androidxTestRunner" }
 androidx-test-espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "espresso" }
+robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
+roborazzi = { module = "io.github.takahirom.roborazzi:roborazzi", version.ref = "roborazzi" }
+roborazzi-compose = { module = "io.github.takahirom.roborazzi:roborazzi-compose", version.ref = "roborazzi" }
 
 # Gradle plugins, compiled against by the convention plugins in build-logic/
 android-gradlePlugin = { module = "com.android.tools.build:gradle", version.ref = "agp" }
 kotlin-gradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 room-gradlePlugin = { module = "androidx.room:room-gradle-plugin", version.ref = "room" }
+roborazzi-gradlePlugin = { module = "io.github.takahirom.roborazzi:roborazzi-gradle-plugin", version.ref = "roborazzi" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
@@ -60,3 +66,4 @@ ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 room = { id = "androidx.room", version.ref = "room" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
+roborazzi = { id = "io.github.takahirom.roborazzi", version.ref = "roborazzi" }
