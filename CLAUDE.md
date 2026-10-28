@@ -19,6 +19,10 @@ Status: design complete, implementation not started. The plan is a set of issues
 | `docs/third-party.md` | Dependencies and their licenses |
 | `docs/plan/ROADMAP.md` | Milestones M0 to M11 and every issue, in order |
 | `scripts/plan/` | `issues.json` (the plan as data) and `publish.py` (creates the issues and adds them to Project 6) |
+| `app/` | The Android app: application class, main activity and the navigation that connects the feature modules |
+| `core/`, `ml/`, `feature/`, `monetization/` | The modules of `docs/architecture.md`, section 2 |
+| `build-logic/` | Gradle convention plugins (`clipra.android.library`, `clipra.android.feature`, `clipra.hilt` and others) |
+| `gradle/libs.versions.toml` | The version of every library and Gradle plugin |
 
 ## How to use the design
 
@@ -43,7 +47,14 @@ If the implementation has to differ from the design (platform limits, accessibil
 
 ## Stack (see `docs/architecture.md`)
 
-Kotlin 2.x, Jetpack Compose, Hilt, Room, DataStore, WorkManager, Media3 (Transformer, CompositionPlayer, effects), whisper.cpp via JNI, ONNX Runtime Mobile (DeepFilterNet 3), RNNoise, MediaPipe Tasks Vision, ML Kit Translation, Google Mobile Ads Next-Gen SDK, UMP SDK, Play Billing Library 9.x. Decisions marked "spike" in the architecture doc are confirmed by the M0 spikes; check `docs/spikes/` and `docs/adr/` once they exist.
+Android 10 and later (minSdk 29, targetSdk 36), app id `tech.idct.clipra`. Kotlin 2.x, Jetpack Compose, Hilt, Room, DataStore, WorkManager, Media3 (Transformer, CompositionPlayer, effects), whisper.cpp via JNI, ONNX Runtime Mobile (DeepFilterNet 3), RNNoise, MediaPipe Tasks Vision, ML Kit Translation, Google Mobile Ads Next-Gen SDK, UMP SDK, Play Billing Library 9.x. Decisions marked "spike" in the architecture doc are confirmed by the M0 spikes; check `docs/spikes/` and `docs/adr/` once they exist.
+
+## Build
+
+- Needs JDK 17 (`JAVA_HOME`) and the Android SDK with platform 37 (`ANDROID_HOME`).
+- `./gradlew assembleDebug` builds the app. `./gradlew testDebugUnitTest :core:model:test` runs the unit tests. With an emulator running, `./gradlew connectedDebugAndroidTest` runs the instrumented tests.
+- Develop on the phone and tablet emulators; debug builds include x86_64 for them, release builds are arm64-v8a only. Speed is measured on real phones in a later phase.
+- New modules use the convention plugins in `build-logic/`. New libraries go into `gradle/libs.versions.toml` and `docs/third-party.md`.
 
 ## Working on an issue
 

@@ -4,7 +4,7 @@ Keep this list in sync with the build. Every entry needs a license that is compa
 
 | Component | Use | License (to confirm at integration) |
 |---|---|---|
-| AndroidX, Jetpack Compose, Media3 | UI, media engine | Apache-2.0 |
+| AndroidX (Activity, Navigation, Room, DataStore, WorkManager, Hilt extensions), Jetpack Compose with Material 3, Media3 | UI, navigation, storage, background work, media engine | Apache-2.0 |
 | Kotlin, kotlinx.coroutines, kotlinx.serialization | Language, async, JSON | Apache-2.0 |
 | Hilt / Dagger | Dependency injection | Apache-2.0 |
 | whisper.cpp | Speech to text runtime | MIT |
@@ -22,3 +22,13 @@ Keep this list in sync with the build. Every entry needs a license that is compa
 | Bricolage Grotesque, Geist, Geist Mono | Fonts | SIL Open Font License 1.1 |
 
 Models come from their official sources only, pinned to a revision and checked with SHA-256; the sources are listed in `docs/architecture.md`, section 6.
+
+## Build and test tools
+
+Used to build and test the app; none of them ship in it.
+
+| Component | Use | License |
+|---|---|---|
+| Gradle, Android Gradle Plugin, Kotlin Gradle plugins, KSP | Build | Apache-2.0 |
+| JUnit 4 | Unit tests | EPL-1.0 (tests only, not distributed) |
+| AndroidX Test, Compose UI test, kotlinx-coroutines-test | Tests | Apache-2.0 |

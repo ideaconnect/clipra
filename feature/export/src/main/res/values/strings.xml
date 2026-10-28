@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="export_title_export">Export</string>
+    <string name="export_title_export_progress">Exporting</string>
+    <string name="export_title_export_done">Saved to Gallery</string>
+</resources>

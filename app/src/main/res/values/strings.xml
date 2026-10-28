@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">Clipra</string>
+    <string name="app_title_settings">Settings</string>
+    <string name="app_title_board_index">All screens</string>
+</resources>

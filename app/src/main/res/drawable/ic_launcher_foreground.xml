@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Placeholder until the design has an app icon: an accent tile with a play cut-out. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="@color/launcher_accent"
+        android:fillType="evenOdd"
+        android:pathData="M42,30 H66 A12,12 0 0 1 78,42 V66 A12,12 0 0 1 66,78 H42 A12,12 0 0 1 30,66 V42 A12,12 0 0 1 42,30 Z M48,42 L48,66 L67,54 Z" />
+</vector>

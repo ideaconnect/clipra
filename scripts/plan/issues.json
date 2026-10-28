@@ -227,12 +227,12 @@
    "scope": [
     "Gradle version catalog, Kotlin 2.x, Compose, Hilt, kotlinx.serialization, Room, DataStore, WorkManager",
     "Modules: app, core:designsystem, core:model, core:data, core:engine, core:audio, ml:whisper, ml:voice, ml:vision, ml:translate, feature:* (empty), monetization",
-    "minSdk 26 (proposed), latest targetSdk required by Play, arm64-v8a first",
-    "App id `tech.idct.clipra` (confirm), debug and release build types, R8 for release",
+    "minSdk 29 (Android 10), targetSdk 36 (required by Play), compileSdk 37; arm64-v8a, plus x86_64 in debug builds for the emulators",
+    "App id `tech.idct.clipra`, debug and release build types, R8 for release",
     "Navigation shell with placeholder destinations for every board in `design/README.md`"
    ],
    "acceptance": [
-    "Project builds and installs on a device",
+    "Project builds and installs on the phone and tablet emulators",
     "Each module compiles independently and has one example unit test",
     "Navigation reaches a placeholder for every phone board"
    ],
@@ -365,14 +365,15 @@
     "Implement Screen and Multiply blend modes as custom shaders",
     "Implement one transition (Dissolve) across a cut",
     "Preview with CompositionPlayer and export 1080p30 with Transformer",
-    "Measure preview frame rate and export time on a mid-range and a low-end phone"
+    "Measure preview frame rate and export time on the emulators now, and on a mid-range and a low-end phone in a later phase"
    ],
    "acceptance": [
     "Written report in `docs/spikes/engine.md` with numbers, code sample and decision",
     "Decision on layer ordering, gaps, compositor and transitions recorded in `docs/architecture.md`"
    ],
    "notes": [
-    "Media3 docs state that cross-fading video is not supported yet; transitions likely need a custom effect"
+    "Media3 docs state that cross-fading video is not supported yet; transitions likely need a custom effect",
+    "Emulators show whether compositing works, not how fast a phone is: the export speed bet stays open until real phones are measured"
    ],
    "refs": [
     "docs/architecture.md"
@@ -406,17 +407,18 @@
     }
    ],
    "scope": [
-    "Build whisper.cpp for arm64-v8a with JNI",
-    "Transcribe a 42 s English and a 42 s Polish clip with tiny, base and small models",
+    "Build whisper.cpp with JNI for arm64-v8a, and for x86_64 to run on the emulators",
+    "Transcribe a 42 s English and a 42 s Polish clip with tiny, base and small models (public-domain recordings until our own test clips arrive)",
     "Get word-level timestamps and confidence",
-    "Measure time, memory and battery on two devices"
+    "Measure time and memory on the emulators now, and time, memory and battery on two phones in a later phase"
    ],
    "acceptance": [
     "Report in `docs/spikes/whisper.md` with real-time factors and word error impressions",
     "Recommendation for the default model and chunking strategy"
    ],
    "notes": [
-    "Model sizes (official files, decimal MB): tiny 78, base 148, small 488, large-v3-turbo q5_0 574"
+    "Model sizes (official files, decimal MB): tiny 78, base 148, small 488, large-v3-turbo q5_0 574",
+    "Emulator real-time factors are not phone numbers; the default model is confirmed once real phones are measured"
    ],
    "refs": [
     "docs/architecture.md",

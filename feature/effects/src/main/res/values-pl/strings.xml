@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="effects_title_filters">Filtry</string>
+    <string name="effects_title_transitions">Przejścia</string>
+    <string name="effects_title_masks">Maski</string>
+    <string name="effects_title_color">Kolor</string>
+    <string name="effects_title_cutout">Wycinanie tła</string>
+    <string name="effects_title_reframe">Automatyczne kadrowanie</string>
+</resources>

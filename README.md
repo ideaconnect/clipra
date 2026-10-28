@@ -26,7 +26,11 @@ An Android video editor for phones and tablets. No account, no upload, no waterm
 
 ## Status
 
-Design complete; implementation is planned in GitHub Project 6 (ClipraPlan). See [docs/plan/ROADMAP.md](docs/plan/ROADMAP.md).
+Implementation has started with milestone M0 (foundations). The plan is tracked in GitHub Project 6 (ClipraPlan); see [docs/plan/ROADMAP.md](docs/plan/ROADMAP.md).
+
+## Build
+
+With JDK 17 and the Android SDK (platform 37) installed, `./gradlew assembleDebug` builds the app for Android 10 and later. [CLAUDE.md](CLAUDE.md) has the test commands.
 
 ## Documentation
 
