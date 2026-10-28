@@ -123,9 +123,17 @@ fun SecondaryButton(
     }
 }
 
-/** An accent text action, such as "Models" on the on-device card, with a 44 dp touch area. */
+/**
+ * A text action, such as "Models" on the on-device card, with a 44 dp touch area. Accent by
+ * default; [color] gives, for example, the danger colour of "Cancel export".
+ */
 @Composable
-fun TextAction(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun TextAction(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    color: Color = ClipraTheme.colors.accent,
+) {
     Surface(
         onClick = onClick,
         modifier = modifier
@@ -134,7 +142,7 @@ fun TextAction(text: String, onClick: () -> Unit, modifier: Modifier = Modifier)
             .semantics { role = Role.Button },
         shape = ClipraTheme.shapes.button,
         color = Color.Transparent,
-        contentColor = ClipraTheme.colors.accent,
+        contentColor = color,
     ) {
         Row(
             modifier = Modifier

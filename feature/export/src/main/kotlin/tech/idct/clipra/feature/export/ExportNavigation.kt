@@ -1,21 +1,29 @@
 package tech.idct.clipra.feature.export
 
+import android.Manifest
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import kotlinx.serialization.Serializable
 import tech.idct.clipra.core.designsystem.placeholder.Board
+import tech.idct.clipra.core.engine.export.ExportState
 
 /** Export for [projectId]; null opens the placeholder board (debug screen index). */
 @Serializable
 data class ExportRoute(val projectId: String? = null)
 
+/** The running export; [projectId] starts one, null shows the one in progress. */
 @Serializable
-data object ExportProgressRoute
+data class ExportProgressRoute(val projectId: String? = null)
 
 @Serializable
 data object ExportDoneRoute
@@ -28,7 +36,7 @@ object ExportBoards {
     val exportProgress = Board(
         id = "ExportProgress",
         title = R.string.export_title_export_progress,
-        route = ExportProgressRoute,
+        route = ExportProgressRoute(),
     )
     val exportDone = Board(
         id = "ExportDone",
@@ -39,8 +47,14 @@ object ExportBoards {
     val all = listOf(export, exportProgress, exportDone)
 }
 
-/** Where Export leads; the app connects it. */
-class ExportActions(val onBack: () -> Unit, val onStarted: (projectId: String) -> Unit)
+/** Where the export screens lead; the app connects them. */
+class ExportActions(
+    val onBack: () -> Unit,
+    val onStarted: (projectId: String) -> Unit,
+    /** Leaves the progress screen; the export carries on. */
+    val onKeepEditing: () -> Unit,
+    val onDone: () -> Unit,
+)
 
 /** Registers this module's destinations. [screen] draws a board until its real screen is built. */
 fun NavGraphBuilder.exportScreens(screen: @Composable (Board) -> Unit, actions: ExportActions) {
@@ -51,7 +65,7 @@ fun NavGraphBuilder.exportScreens(screen: @Composable (Board) -> Unit, actions: 
             ExportRoute(actions)
         }
     }
-    composable<ExportProgressRoute> { screen(ExportBoards.exportProgress) }
+    composable<ExportProgressRoute> { ExportProgressRoute(actions) }
     composable<ExportDoneRoute> { screen(ExportBoards.exportDone) }
 }
 
@@ -66,5 +80,40 @@ private fun ExportRoute(actions: ExportActions, viewModel: ExportViewModel = hil
         onChange = viewModel::change,
         onExport = { viewModel.start(actions.onStarted) },
         onBack = actions.onBack,
+    )
+}
+
+@Composable
+private fun ExportProgressRoute(
+    actions: ExportActions,
+    viewModel: ExportProgressViewModel = hiltViewModel(),
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val askNotifications =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
+    LaunchedEffect(Unit) {
+        // The notification tells you when the video is in the Gallery.
+        if (Build.VERSION.SDK_INT >=
+            33
+        ) {
+            askNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+    LaunchedEffect(state) {
+        if (state is ExportState.Done) actions.onDone()
+    }
+    LifecycleResumeEffect(Unit) {
+        viewModel.setVisible(true)
+        onPauseOrDispose { viewModel.setVisible(false) }
+    }
+    ExportProgressScreen(
+        state = state,
+        onKeepEditing = actions.onKeepEditing,
+        onPause = viewModel::pause,
+        onResume = viewModel::resume,
+        onCancel = {
+            viewModel.cancel()
+            actions.onKeepEditing()
+        },
     )
 }

@@ -29,4 +29,28 @@
         <item quantity="many">%d warstw</item>
         <item quantity="other">%d warstwy</item>
     </plurals>
+    <string name="export_progress_title">Eksportowanie</string>
+    <string name="export_keep_editing">Edytuj dalej</string>
+    <string name="export_pause">Wstrzymaj</string>
+    <string name="export_resume">Wznów</string>
+    <string name="export_cancel">Anuluj eksport</string>
+    <string name="export_back_to_editing">Wróć do edycji</string>
+    <string name="export_frames">Klatka %1$d z %2$d</string>
+    <string name="export_seconds_left">Zostało około %1$d s</string>
+    <string name="export_paused">Wstrzymano</string>
+    <string name="export_starting">Rozpoczynanie</string>
+    <string name="export_settings_line">%1$s · %2$d×%3$d · %4$d kl./s · z oryginałów</string>
+    <string name="export_leave_title">Możesz wyjść z Clipry</string>
+    <string name="export_leave_body">Eksport trwa w tle. Dostaniesz powiadomienie, gdy film będzie w Galerii.</string>
+    <string name="export_saving">Zapisywanie</string>
+    <string name="export_failed_title">Eksport się nie zakończył</string>
+    <string name="export_failed_unsupported">Ten telefon nie koduje tego formatu. Wybierz H.264 lub niższą rozdzielczość.</string>
+    <string name="export_failed_media">Nie da się już odczytać zdjęcia lub filmu z klipu. Sprawdź klipy oznaczone jako brakujące.</string>
+    <string name="export_failed_storage">Brakuje miejsca na film. Zwolnij trochę miejsca i spróbuj ponownie.</string>
+    <string name="export_failed_other">Coś poszło nie tak podczas eksportu. Spróbuj ponownie.</string>
+    <string name="export_notification_channel">Eksporty</string>
+    <string name="export_notification_running">Eksportowanie filmu</string>
+    <string name="export_notification_paused">Eksport wstrzymany</string>
+    <string name="export_notification_done">Zapisano w Galerii</string>
+    <string name="export_notification_failed">Eksport się nie zakończył</string>
 </resources>

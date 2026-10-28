@@ -1,6 +1,7 @@
 package tech.idct.clipra.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -29,6 +30,7 @@ import tech.idct.clipra.feature.effects.ReframeRoute
 import tech.idct.clipra.feature.effects.TransitionsRoute
 import tech.idct.clipra.feature.effects.effectsScreens
 import tech.idct.clipra.feature.export.ExportActions
+import tech.idct.clipra.feature.export.ExportDoneRoute
 import tech.idct.clipra.feature.export.ExportProgressRoute
 import tech.idct.clipra.feature.export.ExportRoute
 import tech.idct.clipra.feature.export.exportScreens
@@ -51,7 +53,14 @@ import tech.idct.clipra.monetization.monetizationScreens
  * The first run starts at onboarding, as in design/screens/flows/first-run.png.
  */
 @Composable
-fun ClipraNavHost(navController: NavHostController = rememberNavController()) {
+fun ClipraNavHost(
+    navController: NavHostController = rememberNavController(),
+    /** Changes each time the export notification is tapped. */
+    openExport: Int = 0,
+) {
+    LaunchedEffect(openExport) {
+        if (openExport > 0) navController.navigate(ExportProgressRoute())
+    }
     val screen: @Composable (Board) -> Unit = { board ->
         BoardPlaceholder(
             board = board,
@@ -109,8 +118,24 @@ fun ClipraNavHost(navController: NavHostController = rememberNavController()) {
             screen,
             ExportActions(
                 onBack = { navController.popBackStack() },
-                // The progress screen runs the export (#58).
-                onStarted = { navController.navigate(ExportProgressRoute) },
+                onStarted = { id ->
+                    navController.navigate(ExportProgressRoute(id)) {
+                        popUpTo<ExportRoute> { inclusive = true }
+                    }
+                },
+                onKeepEditing = {
+                    if (!navController.popBackStack<EditorRoute>(
+                            inclusive = false,
+                        )
+                    ) {
+                        navController.popBackStack()
+                    }
+                },
+                onDone = {
+                    navController.navigate(ExportDoneRoute) {
+                        popUpTo<ExportProgressRoute> { inclusive = true }
+                    }
+                },
             ),
         )
         modelsScreens(screen)
