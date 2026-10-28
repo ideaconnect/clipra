@@ -34,7 +34,7 @@ If the implementation has to differ from the design (platform limits, accessibil
 
 ## Product rules that must not break
 
-- **On-device only.** User media, transcripts and edits never leave the device. Network is allowed only for model downloads (Wi-Fi only by default), ads for free users, and Play billing.
+- **On-device only.** User media, transcripts and edits never leave the device. Network is allowed only for model downloads (Wi-Fi only by default), ads for free users, and Play billing. AI models run on the phone and are downloaded straight from their official sources, pinned to a version and checked with SHA-256; we never host or mirror model files.
 - **Generic layers.** L1 is the bottom layer. Any content can go on any layer; higher layers cover lower ones; every layer plays sound. Layers have only hide, mute and lock. Everything else (normalization, effects, speed) is per clip.
 - **Edit on proxies, export from originals.**
 - **Ads follow `docs/product/monetization.md` exactly:** two interstitials per successful export (start, finish), never back to back (skip the finish ad if the start ad closed less than 30 s before), never while editing, never block or delay the export, skip when offline or not loaded within 2 s, consent first in the EEA and UK, no ads anywhere else, Pro users never request ads.

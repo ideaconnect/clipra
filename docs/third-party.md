@@ -20,3 +20,5 @@ Keep this list in sync with the build. Every entry needs a license that is compa
 | Google User Messaging Platform SDK | Ad consent | Google terms |
 | Play Billing Library | Clipra Pro purchase | Android Software Development Kit License |
 | Bricolage Grotesque, Geist, Geist Mono | Fonts | SIL Open Font License 1.1 |
+
+Models come from their official sources only, pinned to a revision and checked with SHA-256; the sources are listed in `docs/architecture.md`, section 6.

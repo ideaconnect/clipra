@@ -1942,19 +1942,23 @@
    "scope": [
     "Catalogue: Whisper tiny, base (default), small, large-v3-turbo; DeepFilterNet 3; RNNoise built in; translation pairs",
     "WorkManager downloads with Wi-Fi-only constraint (default on) and SHA-256 verification",
+    "Manifest in the app: each file's official URL pinned to a revision, its size and its SHA-256 (sources in docs/architecture.md section 6)",
     "Storage total and per-model size; remove model",
     "Toggle to use NPU or GPU when available"
    ],
    "acceptance": [
     "Interrupted downloads resume",
     "Corrupt downloads are rejected",
-    "Storage maths matches the files on disk"
+    "Storage maths matches the files on disk",
+    "Every manifest URL is an official source pinned to a revision (unit tested)"
    ],
    "notes": [
-    "Host model files on a reliable source with checksums; never bundle large models in the APK"
+    "Download straight from the official sources; never host or mirror model files, and never bundle large models in the APK",
+    "The design's sizes (75, 142, 466, 547 MB) are the official files in binary megabytes (MiB); Android's size formatter shows decimal MB (78, 148, 488, 574). Use one convention for every size and the storage total"
    ],
    "refs": [
-    "docs/product/spec.md section 18"
+    "docs/product/spec.md section 18",
+    "docs/architecture.md section 6"
    ],
    "labels": [
     "type:task",
@@ -3412,7 +3416,9 @@
    "acceptance": [
     "Production release published"
    ],
-   "notes": [],
+   "notes": [
+    "The privacy policy names the model download hosts (Hugging Face, GitHub, Google)"
+   ],
    "refs": [
     "docs/product/monetization.md section 4"
    ],

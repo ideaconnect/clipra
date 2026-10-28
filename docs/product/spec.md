@@ -6,7 +6,7 @@ Screens referenced below live in `design/screens/` (see `design/README.md`). The
 
 ## 1. Principles
 
-1. **On-device only.** Media, transcripts and edits never leave the device. Network is used for three things only: downloading models (Wi-Fi only by default), loading ads for free users, and Google Play billing.
+1. **On-device only.** Media, transcripts and edits never leave the device. Network is used for three things only: downloading models from their official sources (Wi-Fi only by default), loading ads for free users, and Google Play billing.
 2. **Generic layers.** A project is a stack of layers L1 (bottom) to Ln (top). Any content (video, photo, text, caption, audio, adjustment) can go on any layer. A higher layer covers lower ones; every layer contributes sound. Layers only have hide, mute and lock; all other settings belong to clips.
 3. **Edit on proxies, export from originals.** Preview uses low-resolution proxies; export always renders the original media.
 4. **Nothing hidden behind Pro.** Every editing and AI feature is free. Pro only removes ads.
@@ -188,6 +188,7 @@ Screens: `Models`, `Models--tiny-downloaded`, `Onboarding`.
 - Shows total storage used by speech and voice models.
 - Download on Wi-Fi only (default on). Use the phone's NPU or GPU when it can (default on).
 - Face and subject tracking models are built into the app.
+- Models come straight from their official sources: Whisper from the whisper.cpp project on Hugging Face, DeepFilterNet 3 from its GitHub repository, translation packs through ML Kit. Each file is checked before use.
 
 ## 19. First run
 

@@ -94,7 +94,17 @@ Transcript(clipId, words: List<Word(text, start, end, confidence, kind: Word|Fil
 | Translation | ML Kit on-device translation (Google terms) | Language packs downloaded on demand; non-English pairs pivot through English |
 | Stabilization | No model: corner tracking (pyramidal Lucas-Kanade) and per-frame camera motion with RANSAC, using OpenCV (Apache-2.0, trimmed build) | Analysed on the proxy in the background and cached per media hash; the smoothed path is rendered by a per-frame matrix effect with one zoom per clip, in preview and export. No gyro data or learned model in v1 |
 
-Models are downloaded by WorkManager with a Wi-Fi-only constraint by default, verified by SHA-256, stored in app-specific storage, and listed on the AI models screen with their size. Built-in models (RNNoise, MediaPipe) ship in the APK or as an install-time asset pack.
+Every model runs on the phone and comes from its official source. Clipra never hosts or mirrors model files. The app carries a manifest with each file's URL, pinned to a fixed revision (never `main` or `latest`), its size and its SHA-256.
+
+| Model | Official source | Delivery |
+|---|---|---|
+| Whisper ggml: tiny, base, small, large-v3-turbo q5_0 | Hugging Face `ggerganov/whisper.cpp`, the repository whisper.cpp's own download script uses | Downloaded, pinned to a commit |
+| DeepFilterNet 3 (`DeepFilterNet3_onnx.tar.gz`) | GitHub `Rikorose/DeepFilterNet`, `models/` folder | Downloaded, pinned to a release tag |
+| MediaPipe face detector, selfie segmenter, object detector | Google's MediaPipe model storage (`storage.googleapis.com/mediapipe-models`), versioned paths | Built into the APK (or an install-time asset pack), checked at build time |
+| RNNoise | Weights compiled in from the official xiph/rnnoise source | Built in |
+| ML Kit translation packs | Google, through ML Kit | Managed by ML Kit |
+
+Downloads run in WorkManager with a Wi-Fi-only constraint by default, resume after interruptions, are verified by SHA-256 before use, are stored in app-specific storage, and are listed on the AI models screen with their size. If a source moves or a file changes, the download fails with a clear message; the fix ships in an app update, never through another host.
 
 ## 7. Export
 
@@ -114,7 +124,7 @@ Models are downloaded by WorkManager with a Wi-Fi-only constraint by default, ve
 
 - No analytics SDK by default. If crash reporting is added it must be opt-in and must not send media or transcripts.
 - Photo Picker for media import (no broad storage permission). Microphone only when recording a voiceover. Notifications for export progress.
-- Network: model downloads, ads (free users), billing.
+- Network: model downloads straight from the official sources (Hugging Face, GitHub, Google), ads (free users), billing. Those hosts see an ordinary download request (IP address, user agent) and nothing about the user's media; the privacy policy names them.
 
 ## 10. Testing
 
