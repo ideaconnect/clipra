@@ -258,8 +258,8 @@
    "goal": "Every pull request is built, linted and tested automatically.",
    "design": [],
    "scope": [
-    "GitHub Actions workflow: assembleDebug, unit tests, Android lint, ktlint or detekt",
-    "Gradle and dependency caching",
+    "GitHub Actions workflow: assembleDebug, unit tests, Android lint and ktlint (through Spotless, rules in .editorconfig)",
+    "Gradle and dependency caching through actions/setup-java, not gradle/actions/setup-gradle, whose caching is proprietary since v6",
     "Upload the debug APK as a workflow artifact",
     "Branch protection recommendation in the README"
    ],
@@ -269,10 +269,13 @@
     "Debug APK downloadable from the run"
    ],
    "notes": [
-    "Instrumented tests run later on a device farm or emulator matrix (M11)"
+    "Instrumented tests run later on a device farm or emulator matrix (M11)",
+    "Lint errors fail the check and warnings don't, so a new dependency release can't break CI; a missing Polish string is an error"
    ],
    "refs": [
-    "docs/architecture.md"
+    "docs/architecture.md",
+    ".github/workflows/ci.yml",
+    "README.md"
    ],
    "labels": [
     "type:task",
