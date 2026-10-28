@@ -65,14 +65,17 @@ Transcript(clipId, words: List<Word(text, start, end, confidence, kind: Word|Fil
 
 ## 4. Media engine
 
-**Media3** (Transformer for export, CompositionPlayer for preview, the effect module for GL processing). Media3 1.10 is current as of this writing; track the stable channel.
+**Media3 1.11** around Clipra's own compositor: Transformer encodes and muxes the export, CompositionPlayer plays the preview, and Media3 mixes the audio. Track the stable channel. Decided by the engine spike (#6); see `docs/spikes/engine.md` for the evidence and numbers.
 
-- Each layer maps to one `EditedMediaItemSequence`; the project maps to one `Composition`. Media3 compositions support overlapping sequences for picture-in-picture and mixing audio from several sequences. Gaps between clips on a layer, and which sequence draws on top, must be confirmed **(spike)**.
-- Per-clip effects are Media3 `GlEffect`s / custom `GlShaderProgram`s: filters, masks, colour, LUTs, chroma key, text rendering, mosaic.
-- Blend modes (16) need a custom compositor shader **(spike)**. If Media3's compositor cannot be extended enough, fall back to rendering each layer to a texture and blending in our own GL pass.
-- Transitions: Media3's composition guide says cross-fading is not supported yet. Implement transitions as a GL effect that samples both clips across an overlap **(spike)**.
-- Preview uses proxies (720p H.264, generated on import in the background); export always uses originals.
-- Thumbnails and filmstrips: frame extraction from proxies, cached on disk.
+- **Compositor.** `LayerCompositor` (`core:engine`, a Media3 `GlEffect`) draws every layer of a frame. The project maps to one `Composition`. Video is a single sequence: a blank canvas image as long as the timeline, at the project frame rate, carrying the compositor effect. Media3's own multi-sequence compositor only blends with alpha, and Transformer doesn't let an app replace it, so it isn't used.
+- **Layer ordering and gaps.** Layers draw from L1 (bottom) up. A layer with no clip at a time draws nothing, so the layers below show through.
+- **Video clips** are decoded by a `MediaCodec` per active clip into an external texture in the compositor's GL context. Photos, text and captions are textures from bitmaps. Per-clip effects (filters, masks, colour, LUTs, chroma key, transform) are shader passes on the clip's texture before it is blended.
+- **Blend modes (16)** are per clip, in the compositor. Normal uses fixed alpha blending; the other modes draw the clip alone and blend it onto the canvas in a shader that reads both (ping-pong).
+- **Transitions.** Clips overlap on their layer across the cut, and the incoming clip carries the transition. A dissolve is an opacity ramp; other transitions are shaders that read both clips over the overlap.
+- **Audio.** Each layer becomes one audio-only `EditedMediaItemSequence`, with `addGap()` where the layer is silent; Media3 mixes the sequences. Clips that overlap for a transition hand over the sound at the cut.
+- **Preview** renders the same compositor at preview size from proxies (720p H.264, generated on import in the background). Export always uses originals at full size.
+- **Performance work, measured on phones.** Decode ahead on decoder threads into a small `HardwareBuffer` queue per clip. Keep decoders alive across short gaps and recently active clips. Respect the device's hardware decoder instance limit. Preview audio may come from one pre-mixed track if `CompositionPlayer` with several audio sequences stalls (seen on the emulator).
+- **Thumbnails and filmstrips:** frame extraction from proxies, cached on disk.
 
 ## 5. Audio
 
