@@ -19,6 +19,8 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
@@ -38,6 +40,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import tech.idct.clipra.core.designsystem.ClipraTheme
 import tech.idct.clipra.core.designsystem.icon.ClipraIcons
 import tech.idct.clipra.core.designsystem.theme.ClipraDimens
@@ -100,12 +103,16 @@ fun SegmentedControl(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
-                Text(
+                val labelStyle = if (monospace) type.metaStrong else type.bodyStrong
+                // Long labels (and longer translations) shrink to fit rather than being cut.
+                BasicText(
                     text = segment.label,
-                    style = if (monospace) type.metaStrong else type.button,
-                    color = content,
+                    style = labelStyle.copy(color = content, textAlign = TextAlign.Center),
                     maxLines = 1,
-                    textAlign = TextAlign.Center,
+                    autoSize = TextAutoSize.StepBased(
+                        minFontSize = 11.sp,
+                        maxFontSize = labelStyle.fontSize,
+                    ),
                 )
                 if (segment.detail != null) {
                     Text(

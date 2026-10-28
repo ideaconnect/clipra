@@ -3,4 +3,30 @@
     <string name="export_title_export">Eksport</string>
     <string name="export_title_export_progress">Eksportowanie</string>
     <string name="export_title_export_done">Zapisano w Galerii</string>
+    <string name="export_resolution">Rozdzielczość</string>
+    <string name="export_frame_rate">Liczba klatek</string>
+    <string name="export_codec">Kodek</string>
+    <string name="export_codec_h264">Działa wszędzie</string>
+    <string name="export_codec_hevc">Mniejsze pliki</string>
+    <string name="export_codec_av1">Najmniejsze pliki</string>
+    <string name="export_codec_unavailable">Brak w tym telefonie</string>
+    <string name="export_quality">Jakość</string>
+    <string name="export_quality_smaller">Mniejszy</string>
+    <string name="export_quality_recommended">Zalecana</string>
+    <string name="export_quality_high">Wysoka</string>
+    <string name="export_captions">Napisy</string>
+    <string name="export_captions_burn">Wtopione</string>
+    <string name="export_captions_srt">Osobny .srt</string>
+    <string name="export_captions_off">Wyłączone</string>
+    <string name="export_project_line">%1$s · %2$s · %3$s</string>
+    <string name="export_estimate">Szacowany rozmiar</string>
+    <string name="export_megabytes">%1$s MB</string>
+    <string name="export_rate">%1$s Mb/s · %2$s</string>
+    <string name="export_to_gallery">Eksportuj do Galerii</string>
+    <plurals name="export_layers">
+        <item quantity="one">%d warstwa</item>
+        <item quantity="few">%d warstwy</item>
+        <item quantity="many">%d warstw</item>
+        <item quantity="other">%d warstwy</item>
+    </plurals>
 </resources>

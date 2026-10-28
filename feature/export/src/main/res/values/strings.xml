@@ -3,4 +3,28 @@
     <string name="export_title_export">Export</string>
     <string name="export_title_export_progress">Exporting</string>
     <string name="export_title_export_done">Saved to Gallery</string>
+    <string name="export_resolution">Resolution</string>
+    <string name="export_frame_rate">Frame rate</string>
+    <string name="export_codec">Codec</string>
+    <string name="export_codec_h264">Plays everywhere</string>
+    <string name="export_codec_hevc">Smaller files</string>
+    <string name="export_codec_av1">Smallest files</string>
+    <string name="export_codec_unavailable">Not on this phone</string>
+    <string name="export_quality">Quality</string>
+    <string name="export_quality_smaller">Smaller</string>
+    <string name="export_quality_recommended">Recommended</string>
+    <string name="export_quality_high">High</string>
+    <string name="export_captions">Captions</string>
+    <string name="export_captions_burn">Burn in</string>
+    <string name="export_captions_srt">Separate .srt</string>
+    <string name="export_captions_off">Off</string>
+    <string name="export_project_line">%1$s · %2$s · %3$s</string>
+    <string name="export_estimate">Estimated size</string>
+    <string name="export_megabytes">%1$s MB</string>
+    <string name="export_rate">%1$s Mbps · %2$s</string>
+    <string name="export_to_gallery">Export to Gallery</string>
+    <plurals name="export_layers">
+        <item quantity="one">%d layer</item>
+        <item quantity="other">%d layers</item>
+    </plurals>
 </resources>

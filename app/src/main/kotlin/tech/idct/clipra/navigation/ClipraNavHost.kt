@@ -28,6 +28,8 @@ import tech.idct.clipra.feature.effects.MasksRoute
 import tech.idct.clipra.feature.effects.ReframeRoute
 import tech.idct.clipra.feature.effects.TransitionsRoute
 import tech.idct.clipra.feature.effects.effectsScreens
+import tech.idct.clipra.feature.export.ExportActions
+import tech.idct.clipra.feature.export.ExportProgressRoute
 import tech.idct.clipra.feature.export.ExportRoute
 import tech.idct.clipra.feature.export.exportScreens
 import tech.idct.clipra.feature.home.HomeActions
@@ -95,8 +97,7 @@ fun ClipraNavHost(navController: NavHostController = rememberNavController()) {
             screen,
             EditorActions(
                 onClose = { navController.popBackStack() },
-                // Export opens for the project once M8 builds it.
-                onExport = { navController.navigate(ExportRoute) },
+                onExport = { navController.navigate(ExportRoute(it)) },
                 onTool = { tool -> navController.navigate(toolRoute(tool)) },
             ),
         )
@@ -104,7 +105,14 @@ fun ClipraNavHost(navController: NavHostController = rememberNavController()) {
         textScreens(screen)
         captionsScreens(screen)
         audioScreens(screen)
-        exportScreens(screen)
+        exportScreens(
+            screen,
+            ExportActions(
+                onBack = { navController.popBackStack() },
+                // The progress screen runs the export (#58).
+                onStarted = { navController.navigate(ExportProgressRoute) },
+            ),
+        )
         modelsScreens(screen)
         monetizationScreens(screen)
         composable<SettingsRoute> { screen(AppBoards.settings) }
