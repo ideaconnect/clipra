@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="effects_title_filters">Filters</string>
+    <string name="effects_title_transitions">Transitions</string>
+    <string name="effects_title_masks">Masks</string>
+    <string name="effects_title_color">Color</string>
+    <string name="effects_title_cutout">Cutout</string>
+    <string name="effects_title_reframe">Auto-reframe</string>
+</resources>

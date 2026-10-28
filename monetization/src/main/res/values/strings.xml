@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="monetization_title_pro">Clipra Pro</string>
+    <string name="monetization_title_ad_start">Ad 1 of 2</string>
+    <string name="monetization_title_ad_finish">Ad 2 of 2</string>
+</resources>

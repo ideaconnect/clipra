@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="captions_title_captions_setup">Auto captions</string>
+    <string name="captions_title_captions_edit">Captions</string>
+    <string name="captions_title_transcript">Edit by text</string>
+</resources>

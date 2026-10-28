@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="captions_title_captions_setup">Automatyczne napisy</string>
+    <string name="captions_title_captions_edit">Napisy</string>
+    <string name="captions_title_transcript">Edycja przez tekst</string>
+</resources>

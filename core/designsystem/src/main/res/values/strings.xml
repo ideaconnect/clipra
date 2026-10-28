@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="designsystem_back">Back</string>
+    <string name="designsystem_placeholder_note">This screen is a placeholder. It is built later in the plan.</string>
+</resources>

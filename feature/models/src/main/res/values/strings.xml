@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="models_title_onboarding">Welcome to Clipra</string>
+    <string name="models_title_models">AI models</string>
+</resources>

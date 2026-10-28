@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="editor_title_editor">Editor</string>
+    <string name="editor_title_layers">Layers</string>
+</resources>
