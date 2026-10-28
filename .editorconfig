@@ -1,0 +1,13 @@
+root = true
+
+# Kotlin: the Kotlin coding conventions (as in Android Studio), checked by ktlint through
+# Spotless. Lines stay within 100 characters.
+[*.{kt,kts}]
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+max_line_length = 100
+ktlint_code_style = intellij_idea
+ij_kotlin_allow_trailing_comma = true
+ij_kotlin_allow_trailing_comma_on_call_site = true
+ktlint_function_naming_ignore_when_annotated_with = Composable

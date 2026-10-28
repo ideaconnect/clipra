@@ -9,9 +9,7 @@ import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 /** App settings, kept in DataStore. */
-class SettingsRepository @Inject constructor(
-    private val dataStore: DataStore<Preferences>,
-) {
+class SettingsRepository @Inject constructor(private val dataStore: DataStore<Preferences>) {
     /** Download AI models on Wi-Fi only. On by default (docs/product/spec.md, section 18). */
     val wifiOnlyDownloads: Flow<Boolean> = dataStore.data.map { it[WIFI_ONLY_DOWNLOADS] ?: true }
 

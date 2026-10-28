@@ -22,11 +22,7 @@ import tech.idct.clipra.core.designsystem.placeholder.Board
 /** Debug builds only: every phone board in one list, to open any screen directly. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun BoardIndex(
-    boards: List<Board>,
-    onOpen: (Board) -> Unit,
-    onBack: () -> Unit,
-) {
+internal fun BoardIndex(boards: List<Board>, onOpen: (Board) -> Unit, onBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(

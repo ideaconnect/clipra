@@ -9,8 +9,4 @@ import androidx.annotation.StringRes
  * @property title the screen title
  * @property route the type-safe navigation route of the destination
  */
-data class Board(
-    val id: String,
-    @param:StringRes val title: Int,
-    val route: Any,
-)
+data class Board(val id: String, @param:StringRes val title: Int, val route: Any)
