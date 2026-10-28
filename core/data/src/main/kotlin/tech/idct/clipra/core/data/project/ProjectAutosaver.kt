@@ -27,9 +27,7 @@ class ProjectAutosaver(
     @Volatile
     private var unsaved: Project? = null
 
-    init {
-        scope.launch { run() }
-    }
+    private val job = scope.launch { run() }
 
     fun submit(project: Project) {
         unsaved = project
@@ -38,6 +36,12 @@ class ProjectAutosaver(
 
     suspend fun flush() {
         lock.withLock { unsaved?.let { saveNow(it) } }
+    }
+
+    /** Saves what is left and stops. */
+    suspend fun close() {
+        flush()
+        job.cancel()
     }
 
     private suspend fun run() {

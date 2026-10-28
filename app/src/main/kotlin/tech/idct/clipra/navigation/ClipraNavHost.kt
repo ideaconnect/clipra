@@ -11,12 +11,24 @@ import tech.idct.clipra.core.designsystem.gallery.DesignSystemGallery
 import tech.idct.clipra.core.designsystem.placeholder.Board
 import tech.idct.clipra.core.designsystem.placeholder.BoardPlaceholder
 import tech.idct.clipra.core.model.Layout
+import tech.idct.clipra.feature.audio.AudioRoute
 import tech.idct.clipra.feature.audio.audioScreens
 import tech.idct.clipra.feature.captions.CaptionsSetupRoute
+import tech.idct.clipra.feature.captions.TranscriptRoute
 import tech.idct.clipra.feature.captions.captionsScreens
+import tech.idct.clipra.feature.editor.EditorActions
 import tech.idct.clipra.feature.editor.EditorRoute
+import tech.idct.clipra.feature.editor.EditorTool
+import tech.idct.clipra.feature.editor.LayersRoute
 import tech.idct.clipra.feature.editor.editorScreens
+import tech.idct.clipra.feature.effects.ColorRoute
+import tech.idct.clipra.feature.effects.CutoutRoute
+import tech.idct.clipra.feature.effects.FiltersRoute
+import tech.idct.clipra.feature.effects.MasksRoute
+import tech.idct.clipra.feature.effects.ReframeRoute
+import tech.idct.clipra.feature.effects.TransitionsRoute
 import tech.idct.clipra.feature.effects.effectsScreens
+import tech.idct.clipra.feature.export.ExportRoute
 import tech.idct.clipra.feature.export.exportScreens
 import tech.idct.clipra.feature.home.HomeActions
 import tech.idct.clipra.feature.home.NewProjectActions
@@ -79,7 +91,15 @@ fun ClipraNavHost(navController: NavHostController = rememberNavController()) {
                 },
             ),
         )
-        editorScreens(screen)
+        editorScreens(
+            screen,
+            EditorActions(
+                onClose = { navController.popBackStack() },
+                // Export opens for the project once M8 builds it.
+                onExport = { navController.navigate(ExportRoute) },
+                onTool = { tool -> navController.navigate(toolRoute(tool)) },
+            ),
+        )
         effectsScreens(screen)
         textScreens(screen)
         captionsScreens(screen)
@@ -112,4 +132,19 @@ private fun NavController.open(from: Board, to: Board) {
     navigate(to.route) {
         if (from in passThroughBoards) popUpTo(from.route) { inclusive = true }
     }
+}
+
+/** The screen each editor tool opens; most are placeholders until their issues land. */
+private fun toolRoute(tool: EditorTool): Any = when (tool) {
+    EditorTool.Audio -> AudioRoute
+    EditorTool.Text -> TextRoute
+    EditorTool.Filters -> FiltersRoute
+    EditorTool.Transitions -> TransitionsRoute
+    EditorTool.Captions -> CaptionsSetupRoute
+    EditorTool.Transcript -> TranscriptRoute
+    EditorTool.Color -> ColorRoute
+    EditorTool.Cutout -> CutoutRoute
+    EditorTool.Reframe -> ReframeRoute
+    EditorTool.Masks -> MasksRoute
+    EditorTool.Layer -> LayersRoute
 }

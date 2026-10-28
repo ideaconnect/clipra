@@ -1,0 +1,185 @@
+package tech.idct.clipra.feature.editor
+
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performClick
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.github.takahirom.roborazzi.RoborazziOptions
+import com.github.takahirom.roborazzi.captureRoboImage
+import org.junit.Assert.assertEquals
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
+import tech.idct.clipra.core.designsystem.ClipraTheme
+import tech.idct.clipra.core.model.Clip
+import tech.idct.clipra.core.model.ClipType
+import tech.idct.clipra.core.model.Layer
+import tech.idct.clipra.core.model.MediaAsset
+import tech.idct.clipra.core.model.MediaKind
+import tech.idct.clipra.core.model.MediaRef
+import tech.idct.clipra.core.model.Project
+import tech.idct.clipra.core.model.TextSpec
+import tech.idct.clipra.feature.editor.timeline.TimelineActions
+import java.util.Locale
+
+/** The phone editor with the design's layer stack (design/screens/phone/Editor.png). */
+@RunWith(AndroidJUnit4::class)
+@Config(sdk = [34], qualifiers = "w390dp-h844dp-xhdpi")
+class EditorScreenTest {
+    @get:Rule
+    val compose = createComposeRule()
+
+    private val sec = 1_000_000L
+
+    private fun media(id: String, name: String, kind: MediaKind) = MediaAsset(
+        id,
+        "content://$id",
+        kind,
+        name,
+        durationUs = 60 * sec,
+        width = 1080,
+        height = 1920,
+    )
+
+    private fun clip(
+        id: String,
+        type: ClipType,
+        start: Double,
+        length: Double,
+        media: String? = null,
+    ) = Clip(
+        id = id,
+        type = type,
+        startUs = (start * sec).toLong(),
+        durationUs = (length * sec).toLong(),
+        source = media?.let { MediaRef(it, 0, (length * sec).toLong()) },
+    )
+
+    private val project = Project(
+        id = "lisbon",
+        name = "Lisbon weekend",
+        media = listOf(
+            media("guitar", "lisbon-guitar.mp3", MediaKind.Audio),
+            media("voice", "voiceover.m4a", MediaKind.Audio),
+            media("sunset", "sunset.mp4", MediaKind.Video),
+            media("tram", "tram.mp4", MediaKind.Video),
+            media("stamp", "stamp.png", MediaKind.Photo),
+            media("alfama", "alfama.mp4", MediaKind.Video),
+        ),
+        layers = listOf(
+            Layer("L1", clips = listOf(clip("guitar", ClipType.Audio, 0.0, 42.0, "guitar"))),
+            Layer("L2", clips = listOf(clip("voice", ClipType.Audio, 16.0, 10.0, "voice"))),
+            Layer(
+                "L3",
+                clips = listOf(
+                    clip("sunset", ClipType.Video, 0.0, 9.2, "sunset"),
+                    clip("tram", ClipType.Video, 9.2, 4.0, "tram"),
+                ),
+            ),
+            Layer(
+                "L4",
+                clips = listOf(
+                    clip("stamp", ClipType.Photo, 0.0, 3.5, "stamp"),
+                    clip("alfama", ClipType.Video, 5.0, 3.5, "alfama"),
+                ),
+            ),
+            Layer(
+                "L5",
+                clips = listOf(
+                    clip("day-one", ClipType.Text, 6.0, 3.0).copy(text = TextSpec("Day one")),
+                ),
+            ),
+            Layer(
+                "L6",
+                clips = listOf(
+                    clip(
+                        "cap",
+                        ClipType.Caption,
+                        6.0,
+                        3.5,
+                    ).copy(text = TextSpec("We finally made it")),
+                ),
+            ),
+        ),
+    )
+
+    private val noop = EditorCallbacks(
+        onClose = {}, onExport = {}, onTool = {}, onPlayPause = {}, onUndo = {}, onRedo = {},
+        onPickVisual = {}, onPickAudio = {}, onPickReplacement = {}, onSplit = {}, onDuplicate = {},
+        onDelete = {}, onFreeze = {}, onExtract = {}, onLayers = {}, onDismissMessage = {},
+        timeline = TimelineActions({}, {}, {}, { _, _, _ -> }, { _, _, _ -> }, {}),
+    )
+
+    private val options = RoborazziOptions(
+        compareOptions = RoborazziOptions.CompareOptions(changeThreshold = 0.001f),
+    )
+
+    @Test
+    fun editorWithASelectedClip() {
+        Locale.setDefault(Locale.US)
+        compose.setContent {
+            ClipraTheme {
+                EditorScreen(
+                    state = EditorUiState(
+                        project = project,
+                        loaded = true,
+                        canUndo = true,
+                        selectedClipId = "sunset",
+                        playheadUs = 7_120_000,
+                    ),
+                    playing = false,
+                    callbacks = noop,
+                    preview = {},
+                )
+            }
+        }
+        compose.onNodeWithTag("clip-tools").assertExists()
+        compose.onNodeWithTag("undo").assertIsEnabled()
+        compose.onNodeWithTag("redo").assertIsNotEnabled()
+        compose.onNodeWithTag("timecode").assertExists()
+        // TalkBack: type, name, duration, layer and state.
+        compose.onNodeWithContentDescription(
+            "Video sunset.mp4, 9.2s, layer L3, selected",
+        ).assertExists()
+        compose.onRoot().captureRoboImage(roborazziOptions = options)
+    }
+
+    @Test
+    fun selectingAClipSwapsTheTools() {
+        var selected by mutableStateOf<String?>(null)
+        compose.setContent {
+            ClipraTheme {
+                EditorScreen(
+                    state = EditorUiState(
+                        project = project,
+                        loaded = true,
+                        selectedClipId = selected,
+                    ),
+                    playing = false,
+                    callbacks = EditorCallbacks(
+                        onClose = {}, onExport = {}, onTool = {}, onPlayPause = {}, onUndo = {},
+                        onRedo = {}, onPickVisual = {}, onPickAudio = {}, onPickReplacement = {},
+                        onSplit = {
+                        }, onDuplicate = {}, onDelete = {}, onFreeze = {}, onExtract = {},
+                        onLayers = {}, onDismissMessage = {},
+                        timeline = TimelineActions({
+                        }, {}, { selected = it }, { _, _, _ -> }, { _, _, _ -> }, {}),
+                    ),
+                    preview = {},
+                )
+            }
+        }
+        compose.onNodeWithTag("main-tools").assertExists()
+        compose.onNodeWithTag("clip:sunset").performClick()
+        assertEquals("sunset", selected)
+        compose.onNodeWithTag("clip-tools").assertExists()
+    }
+}
