@@ -28,7 +28,7 @@ Status: design complete, implementation not started. The plan is a set of issues
 4. **Read the behaviour.** `design/canvas/<Board>.dc.html` contains a `renderVals()` script with real rules: the export size formula (`Export`), filler and pause cutting (`Transcript`), model storage maths (`Models`), timeline geometry (`Editor`, `TabletEditor`), the ad countdown (`AdStart`). Port the logic, not the HTML.
 5. **Build from the design system.** Use `design/tokens.json` and `design/design-system.md` through the Compose theme in `core:designsystem`. Never hardcode a hex colour, font size or radius in a screen.
 
-Placeholders are not features: bracketed ad text (`[Ad creative]`), "10 PLN" (always show the price from Play Billing), "Reset demo" buttons and the auto-advancing export progress exist only in the prototype.
+Placeholders are not features: bracketed ad text (`[Ad creative]`), "10 PLN" (always show the price from Play Billing), model sizes such as "142 MB" (always show the real file sizes, in decimal units), "Reset demo" buttons and the auto-advancing export progress exist only in the prototype.
 
 If the implementation has to differ from the design (platform limits, accessibility), keep the intent, note the difference in the pull request, and update the issue.
 

@@ -122,7 +122,7 @@ Screens: `Audio`, `Audio--before`, `TabletAudio`, `TabletAudio--music-selected`.
 
 Screens: `CaptionsSetup`, `CaptionsSetup--small-model`, `CaptionsEdit`, `CaptionsEdit--karaoke`, `TabletCaptions`, `TabletCaptions--transcribe-tab`.
 
-- Whisper runs on the device (whisper.cpp). Models: Tiny 75 MB, Base 142 MB (recommended, default), Small 466 MB, Large v3 Turbo (quantized) 547 MB. Choosing a model that is not installed offers "Download N MB and generate".
+- Whisper runs on the device (whisper.cpp). Models: Tiny 78 MB, Base 148 MB (recommended, default), Small 488 MB, Large v3 Turbo (quantized) 574 MB. Choosing a model that is not installed offers "Download N MB and generate".
 - Listen to: Main clips, Voiceover, All tracks. Spoken language: auto-detect or pick. Optional translate to English (Whisper translate task).
 - Options: highlight each word as it is spoken, remove filler words, put captions on a new top layer.
 - Captions are clips on a layer, linked to the source clip they came from.
@@ -189,6 +189,7 @@ Screens: `Models`, `Models--tiny-downloaded`, `Onboarding`.
 - Download on Wi-Fi only (default on). Use the phone's NPU or GPU when it can (default on).
 - Face and subject tracking models are built into the app.
 - Models come straight from their official sources: Whisper from the whisper.cpp project on Hugging Face, DeepFilterNet 3 from its GitHub repository, translation packs through ML Kit. Each file is checked before use.
+- Sizes are real: before a download, the size of the official file; once installed, the size of the files on disk. They are shown in decimal units, as Android's storage settings count them (1 MB = 1,000,000 bytes), so Whisper Base shows 148 MB. The sizes in the design are placeholders.
 
 ## 19. First run
 

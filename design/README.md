@@ -114,6 +114,7 @@ Phone boards are 390×844, tablet boards 1280×800. "States" lists the extra scr
 
 - Ad boards show bracketed placeholders (`[Ad creative]`, `[Advertiser]`, `[Action]`). The real creative comes from the ad network and the app cannot draw over it. Only the timing and the close behaviour are Clipra's.
 - Prices show "10 PLN". In the app, always show the formatted price that Google Play returns for the user's country.
+- Model sizes (Whisper 75, 142, 466 and 547 MB, DeepFilterNet 3 8 MB, the 150 MB onboarding total) are approximate. The app shows the real sizes of the official files in decimal units: Whisper Tiny 78, Base 148, Small 488 and Large v3 Turbo 574 MB, and an onboarding total of 156 MB.
 - "Show the purchase screen again (demo)" and "Reset demo" on the Pro boards exist only to replay the prototype. Do not build them.
 - The export progress board animates from 62% to 100% to demo the finish. Real progress comes from the export engine.
 - Gradients stand in for real video frames and photos.
