@@ -4,6 +4,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -19,8 +20,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
+import kotlinx.coroutines.delay
 import kotlinx.serialization.Serializable
 import tech.idct.clipra.core.designsystem.placeholder.Board
+import tech.idct.clipra.core.engine.preview.PreviewPlayer
 import tech.idct.clipra.feature.editor.timeline.Filmstrip
 import tech.idct.clipra.feature.editor.timeline.FilmstripLoader
 import tech.idct.clipra.feature.editor.timeline.TimelineActions
@@ -89,18 +92,36 @@ private fun EditorRoute(actions: EditorActions, viewModel: EditorViewModel = hil
         viewModel.flush()
     }
 
-    // Plays the playhead forward; the preview player drives it once it is built (#14).
+    // The preview player (#14): the composition follows every edit; while playing, the player
+    // drives the playhead, and while paused, the playhead (scrubbing) seeks the player.
+    val player = remember { PreviewPlayer(context, viewModel.mediaCache) }
+    DisposableEffect(player) {
+        player.onEnded = { playing = false }
+        onDispose { player.release() }
+    }
+    LaunchedEffect(state.project) {
+        val project = state.project ?: return@LaunchedEffect
+        // Edits come in bursts while dragging; rebuild once they settle.
+        delay(150)
+        player.setProject(project, currentState.playheadUs)
+        if (playing) player.play()
+    }
     LaunchedEffect(playing) {
-        if (!playing) return@LaunchedEffect
-        var last = withFrameNanos { it }
-        while (playing) {
-            val now = withFrameNanos { it }
-            val next = currentState.playheadUs + (now - last) / 1_000
-            last = now
-            val end = currentState.project?.durationUs ?: 0
-            viewModel.seek(next)
-            if (next >= end) playing = false
+        if (!playing) {
+            player.pause()
+            return@LaunchedEffect
         }
+        player.play()
+        while (playing) {
+            withFrameNanos { }
+            viewModel.seek(player.positionUs)
+        }
+    }
+    LaunchedEffect(state.playheadUs, playing) {
+        if (playing) return@LaunchedEffect
+        // Coalesce the seeks of a fast scrub.
+        delay(16)
+        player.seekTo(state.playheadUs)
     }
 
     if (state.loaded && state.project == null) {
@@ -123,7 +144,10 @@ private fun EditorRoute(actions: EditorActions, viewModel: EditorViewModel = hil
             },
             onTool = actions.onTool,
             onPlayPause = {
-                if (!playing && state.playheadUs >= project.durationUs) viewModel.seek(0)
+                if (!playing && state.playheadUs >= project.durationUs) {
+                    viewModel.seek(0)
+                    player.seekTo(0)
+                }
                 playing = !playing
             },
             onUndo = viewModel::undo,
@@ -164,7 +188,13 @@ private fun EditorRoute(actions: EditorActions, viewModel: EditorViewModel = hil
                 },
             ),
         ),
-        preview = {},
+        preview = {
+            val selected = state.selectedClipId?.let { project.findClip(it)?.second }
+            PreviewSurface(
+                player = player,
+                showHandles = selected != null && selected.contains(state.playheadUs),
+            )
+        },
         filmstrip = { clip, width, height ->
             Filmstrip(filmstrips, project, clip, width, height, state.dpPerSecond)
         },
