@@ -1,5 +1,6 @@
 package tech.idct.clipra.core.engine.render
 
+import android.content.Context
 import android.graphics.SurfaceTexture
 import android.media.MediaCodec
 import android.media.MediaExtractor
@@ -18,7 +19,7 @@ import androidx.media3.common.util.UnstableApi
  * frame-available callbacks on another thread.
  */
 @OptIn(UnstableApi::class)
-internal class VideoFrameSource(path: String, callbackHandler: Handler) {
+internal class VideoFrameSource(context: Context, path: String, callbackHandler: Handler) {
     val textureId: Int = GlUtil.createExternalTexture()
 
     /** Maps unit quad coordinates to the texture, from [SurfaceTexture.getTransformMatrix]. */
@@ -32,7 +33,7 @@ internal class VideoFrameSource(path: String, callbackHandler: Handler) {
         setOnFrameAvailableListener({ frameAvailable.open() }, callbackHandler)
     }
     private val surface = Surface(surfaceTexture)
-    private val extractor = MediaExtractor()
+    private val extractor = MediaSources.open(context, path)
     private val codec: MediaCodec
     private val info = MediaCodec.BufferInfo()
 
@@ -46,7 +47,6 @@ internal class VideoFrameSource(path: String, callbackHandler: Handler) {
     private var inputQueued = false
 
     init {
-        extractor.setDataSource(path)
         val track = (0 until extractor.trackCount).first {
             val mime = extractor.getTrackFormat(it).getString(MediaFormat.KEY_MIME).orEmpty()
             mime.startsWith("video/")
