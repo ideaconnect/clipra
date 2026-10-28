@@ -9,6 +9,7 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.github.takahirom.roborazzi.RoborazziOptions
 import com.github.takahirom.roborazzi.captureRoboImage
 import org.junit.Rule
 import org.junit.Test
@@ -25,13 +26,18 @@ import tech.idct.clipra.core.designsystem.placeholder.BoardPlaceholder
 /**
  * Screenshot tests of every component group against the references in src/test/screenshots.
  * Record with `./gradlew :core:designsystem:recordRoborazziDebug`, check with
- * `verifyRoborazziDebug`.
+ * `verifyRoborazziDebug`. Text anti-aliasing differs by a few pixels between Windows and Linux,
+ * so up to 0.1% of the pixels may change; any real change of layout or colour is far larger.
  */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34], qualifiers = "w390dp-h844dp-xhdpi")
 class ComponentScreenshotTest {
     @get:Rule
     val compose = createComposeRule()
+
+    private val options = RoborazziOptions(
+        compareOptions = RoborazziOptions.CompareOptions(changeThreshold = 0.001f),
+    )
 
     @Test
     fun buttons() = capture { ButtonsSample() }
@@ -79,6 +85,6 @@ class ComponentScreenshotTest {
                 }
             }
         }
-        compose.onRoot().captureRoboImage()
+        compose.onRoot().captureRoboImage(roborazziOptions = options)
     }
 }
