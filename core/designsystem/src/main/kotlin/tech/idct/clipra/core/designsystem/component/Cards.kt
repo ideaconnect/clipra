@@ -56,6 +56,7 @@ fun OnDeviceCard(
     title: String,
     subtitle: String,
     modifier: Modifier = Modifier,
+    subtitleMaxLines: Int = 2,
     onClick: (() -> Unit)? = null,
     action: (@Composable () -> Unit)? = null,
 ) {
@@ -86,6 +87,7 @@ fun OnDeviceCard(
             title = title,
             subtitle = subtitle,
             subtitleColor = colors.onDeviceCardText,
+            subtitleMaxLines = subtitleMaxLines,
             action = action,
         )
     }
@@ -127,6 +129,7 @@ fun ProCard(
             title = title,
             subtitle = subtitle,
             subtitleColor = colors.proCardText,
+            subtitleMaxLines = 2,
             action = action,
         )
     }
@@ -169,6 +172,7 @@ private fun IconTitleRow(
     title: String,
     subtitle: String,
     subtitleColor: Color,
+    subtitleMaxLines: Int,
     action: (@Composable () -> Unit)?,
 ) {
     val type = ClipraTheme.typography
@@ -186,7 +190,7 @@ private fun IconTitleRow(
                 text = subtitle,
                 style = type.caption,
                 color = subtitleColor,
-                maxLines = 2,
+                maxLines = subtitleMaxLines,
                 overflow = TextOverflow.Ellipsis,
             )
         }

@@ -36,6 +36,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import tech.idct.clipra.core.designsystem.ClipraTheme
 import tech.idct.clipra.core.designsystem.icon.ClipraIcons
@@ -287,7 +288,7 @@ private fun SwitchTrack(checked: Boolean, enabled: Boolean, compact: Boolean) {
     ) {
         Box(
             modifier = Modifier
-                .offset(x = knobX)
+                .offset { IntOffset(knobX.roundToPx(), 0) }
                 .size(ClipraDimens.SwitchKnob)
                 .clip(CircleShape)
                 .background(

@@ -23,6 +23,7 @@ data class ClipraColors(
     val accent: Color,
     val accentHover: Color,
     val onAccent: Color,
+    val onAccentMuted: Color,
     val accentSelectedBackground: Color,
     val accentSelectedBorder: Color,
     val accentChipBackground: Color,
@@ -39,6 +40,7 @@ data class ClipraColors(
     val fillerUnderline: Color,
     val lowConfidenceUnderline: Color,
     val clip: ClipColors,
+    val feature: FeatureColors,
     val ad: AdColors,
 )
 
@@ -59,6 +61,10 @@ data class ClipColors(
     val textCardBorder: Color,
     val beatMarker: Color,
 )
+
+/** Icon colours of the quick actions on Home (Main board): one per feature. */
+@Immutable
+data class FeatureColors(val captions: Color, val text: Color, val mosaic: Color)
 
 /** The ad slots: black, with a light "Ad" badge. */
 @Immutable
@@ -82,6 +88,8 @@ val ClipraDarkColors = ClipraColors(
     accent = Color(0xFFFFD23F),
     accentHover = Color(0xFFFFE27A),
     onAccent = Color(0xFF141210),
+    // Secondary text on the accent, such as the New project card's line on Home.
+    onAccentMuted = Color(0xFF3B3418),
     accentSelectedBackground = Color(0xFF221F12),
     accentSelectedBorder = Color(0xFF5A4C16),
     accentChipBackground = Color(0xFF2B2716),
@@ -113,6 +121,11 @@ val ClipraDarkColors = ClipraColors(
         textCardBorder = Color(0xFF3A3A40),
         // rgba(255, 210, 63, 0.95)
         beatMarker = Color(0xF2FFD23F),
+    ),
+    feature = FeatureColors(
+        captions = Color(0xFF7FA6FF),
+        text = Color(0xFFFF9A6B),
+        mosaic = Color(0xFFB9A6FF),
     ),
     ad = AdColors(
         background = Color(0xFF000000),

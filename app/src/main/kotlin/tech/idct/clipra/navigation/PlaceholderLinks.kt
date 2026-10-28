@@ -12,9 +12,9 @@ import tech.idct.clipra.feature.text.TextBoards
 import tech.idct.clipra.monetization.MonetizationBoards
 
 /**
- * Where each placeholder leads, following the design's flows (design/screens/flows/). Real
- * screens bring their own navigation and take their board out of this map. [debug] adds the
- * screen index to Home.
+ * Where each board leads, following the design's flows (design/screens/flows/). Placeholders
+ * show these as buttons; real screens bring their own navigation, and their entries stay here as
+ * the design's flow for the reachability test. [debug] adds the screen index to Home.
  */
 internal fun placeholderLinks(board: Board, debug: Boolean): List<Board> {
     val links = flows[board].orEmpty()

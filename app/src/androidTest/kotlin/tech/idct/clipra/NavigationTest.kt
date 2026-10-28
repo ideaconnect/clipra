@@ -21,14 +21,20 @@ class NavigationTest {
     fun everyPhoneBoardOpensFromTheScreenIndex() {
         // First run: onboarding leads to Home, and Home (debug build) to the screen index.
         compose.onNodeWithTag("link:Main").performClick()
-        compose.onNodeWithTag("placeholder:Main").performScrollToNode(hasTestTag("link:BoardIndex"))
+        compose.onNodeWithTag("home").performScrollToNode(hasTestTag("link:BoardIndex"))
         compose.onNodeWithTag("link:BoardIndex").performClick()
 
         for (board in AllBoards.phone) {
             compose.onNodeWithTag("index").performScrollToNode(hasTestTag("index:${board.id}"))
             compose.onNodeWithTag("index:${board.id}").performClick()
-            compose.onNodeWithTag("placeholder:${board.id}").assertIsDisplayed()
-            compose.onNodeWithTag("back").performClick()
+            // A built screen is tagged screen:<id>; one still to build, placeholder:<id>.
+            compose.onNode(
+                hasTestTag("screen:${board.id}") or hasTestTag("placeholder:${board.id}"),
+            )
+                .assertIsDisplayed()
+            compose.activity.onBackPressedDispatcher.let { dispatcher ->
+                compose.runOnUiThread { dispatcher.onBackPressed() }
+            }
         }
     }
 }

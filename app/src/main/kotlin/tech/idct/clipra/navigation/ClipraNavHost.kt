@@ -11,16 +11,23 @@ import tech.idct.clipra.core.designsystem.gallery.DesignSystemGallery
 import tech.idct.clipra.core.designsystem.placeholder.Board
 import tech.idct.clipra.core.designsystem.placeholder.BoardPlaceholder
 import tech.idct.clipra.feature.audio.audioScreens
+import tech.idct.clipra.feature.captions.CaptionsSetupRoute
 import tech.idct.clipra.feature.captions.captionsScreens
+import tech.idct.clipra.feature.editor.EditorRoute
 import tech.idct.clipra.feature.editor.editorScreens
 import tech.idct.clipra.feature.effects.effectsScreens
 import tech.idct.clipra.feature.export.exportScreens
+import tech.idct.clipra.feature.home.HomeActions
+import tech.idct.clipra.feature.home.NewProjectRoute
 import tech.idct.clipra.feature.home.homeScreens
 import tech.idct.clipra.feature.models.ModelsBoards
+import tech.idct.clipra.feature.models.ModelsRoute
 import tech.idct.clipra.feature.models.OnboardingRoute
 import tech.idct.clipra.feature.models.modelsScreens
+import tech.idct.clipra.feature.text.TextRoute
 import tech.idct.clipra.feature.text.textScreens
 import tech.idct.clipra.monetization.MonetizationBoards
+import tech.idct.clipra.monetization.ProRoute
 import tech.idct.clipra.monetization.monetizationScreens
 
 /**
@@ -42,7 +49,26 @@ fun ClipraNavHost(navController: NavHostController = rememberNavController()) {
         )
     }
     NavHost(navController = navController, startDestination = OnboardingRoute) {
-        homeScreens(screen)
+        homeScreens(
+            screen,
+            HomeActions(
+                onNewProject = { navController.navigate(NewProjectRoute) },
+                // The editor opens the project once it is built (#13).
+                onOpenProject = { navController.navigate(EditorRoute) },
+                onAutoCaptions = { navController.navigate(CaptionsSetupRoute) },
+                onTextCard = { navController.navigate(TextRoute) },
+                // New project with a mosaic layout preselected comes with #17.
+                onMosaic = { navController.navigate(NewProjectRoute) },
+                onModels = { navController.navigate(ModelsRoute) },
+                onSettings = { navController.navigate(SettingsRoute) },
+                onPro = { navController.navigate(ProRoute) },
+                onScreenIndex = if (BuildConfig.DEBUG) {
+                    { navController.navigate(BoardIndexRoute) }
+                } else {
+                    null
+                },
+            ),
+        )
         editorScreens(screen)
         effectsScreens(screen)
         textScreens(screen)
