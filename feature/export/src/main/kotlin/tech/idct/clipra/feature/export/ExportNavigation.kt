@@ -1,21 +1,28 @@
 package tech.idct.clipra.feature.export
 
 import android.Manifest
+import android.net.Uri
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.Serializable
 import tech.idct.clipra.core.designsystem.placeholder.Board
+import tech.idct.clipra.core.engine.export.ExportManager
 import tech.idct.clipra.core.engine.export.ExportState
+import javax.inject.Inject
 
 /** Export for [projectId]; null opens the placeholder board (debug screen index). */
 @Serializable
@@ -54,6 +61,7 @@ class ExportActions(
     /** Leaves the progress screen; the export carries on. */
     val onKeepEditing: () -> Unit,
     val onDone: () -> Unit,
+    val onPro: () -> Unit,
 )
 
 /** Registers this module's destinations. [screen] draws a board until its real screen is built. */
@@ -66,7 +74,7 @@ fun NavGraphBuilder.exportScreens(screen: @Composable (Board) -> Unit, actions: 
         }
     }
     composable<ExportProgressRoute> { ExportProgressRoute(actions) }
-    composable<ExportDoneRoute> { screen(ExportBoards.exportDone) }
+    composable<ExportDoneRoute> { SavedRoute(screen, actions) }
 }
 
 @Composable
@@ -115,5 +123,39 @@ private fun ExportProgressRoute(
             viewModel.cancel()
             actions.onKeepEditing()
         },
+    )
+}
+
+@HiltViewModel
+class SavedViewModel @Inject constructor(private val exports: ExportManager) : ViewModel() {
+    val state: StateFlow<ExportState> = exports.state
+
+    /** The finished export has been seen; the next one starts fresh. */
+    override fun onCleared() = exports.dismiss()
+}
+
+@Composable
+private fun SavedRoute(
+    screen: @Composable (Board) -> Unit,
+    actions: ExportActions,
+    viewModel: SavedViewModel = hiltViewModel(),
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val saved = state as? ExportState.Done
+    if (saved == null) {
+        // Opened from the screen index without an export.
+        screen(ExportBoards.exportDone)
+        return
+    }
+    val context = LocalContext.current
+    val uri = Uri.parse(saved.uri)
+    SavedScreen(
+        saved = saved,
+        // Every user is a free user until Clipra Pro is on sale (M9).
+        showPro = true,
+        onShare = { shareVideo(context, uri) },
+        onOpenGallery = { openInGallery(context, uri) },
+        onPro = actions.onPro,
+        onBackToEditing = actions.onKeepEditing,
     )
 }

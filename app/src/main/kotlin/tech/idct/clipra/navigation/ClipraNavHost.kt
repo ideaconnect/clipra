@@ -136,6 +136,7 @@ fun ClipraNavHost(
                         popUpTo<ExportProgressRoute> { inclusive = true }
                     }
                 },
+                onPro = { navController.navigate(ProRoute) },
             ),
         )
         modelsScreens(screen)
