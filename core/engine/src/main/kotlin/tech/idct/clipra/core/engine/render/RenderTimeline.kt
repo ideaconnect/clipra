@@ -16,7 +16,12 @@ data class RenderTimeline(
     val layers: List<RenderLayer>,
 )
 
-data class RenderLayer(val clips: List<RenderClip>, val hidden: Boolean = false)
+/** A hidden layer draws nothing; a muted layer adds nothing to the sound. */
+data class RenderLayer(
+    val clips: List<RenderClip>,
+    val hidden: Boolean = false,
+    val muted: Boolean = false,
+)
 
 /**
  * One clip of a layer. [fadeInUs] dissolves the clip in over the clip it overlaps on the same
@@ -45,11 +50,14 @@ data class RenderClip(
 }
 
 sealed interface RenderSource {
-    /** A video file; [inPointUs] is where the clip starts in the file. */
+    /** A video file or content URI; [inPointUs] is where the clip starts in the file. */
     data class Video(val path: String, val inPointUs: Long = 0) : RenderSource
 
     /** A still picture: a photo, or a text card rendered to a bitmap. */
     data class Image(val bitmap: Bitmap) : RenderSource
+
+    /** Sound only (music, voiceover): no picture. */
+    data class Audio(val path: String, val inPointUs: Long = 0) : RenderSource
 }
 
 /** Where a clip sits in the frame. */

@@ -2,7 +2,6 @@ package tech.idct.clipra.core.engine.render
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.media.MediaExtractor
 import android.media.MediaFormat
 import android.net.Uri
 import androidx.annotation.OptIn
@@ -45,31 +44,36 @@ object CompositionFactory {
             add(EditedMediaItemSequence.Builder(setOf(C.TRACK_TYPE_VIDEO)).addItem(video).build())
             if (includeAudio) {
                 timeline.layers.mapNotNullTo(this) {
-                    audioSequence(it, timeline.durationUs)
+                    audioSequence(context, it, timeline.durationUs)
                 }
             }
         }
         return Composition.Builder(sequences).build()
     }
 
-    private fun audioSequence(layer: RenderLayer, durationUs: Long): EditedMediaItemSequence? {
-        val clips = layer.clips.filter { it.source is RenderSource.Video }.sortedBy { it.startUs }
+    private fun audioSequence(
+        context: Context,
+        layer: RenderLayer,
+        durationUs: Long,
+    ): EditedMediaItemSequence? {
+        if (layer.muted) return null
+        val clips = layer.clips.filter { it.soundSource() != null }.sortedBy { it.startUs }
         if (clips.isEmpty()) return null
         val sequence = EditedMediaItemSequence.Builder(setOf(C.TRACK_TYPE_AUDIO))
         var position = 0L
         for (clip in clips) {
-            val source = clip.source as RenderSource.Video
+            val (path, inPointUs) = clip.soundSource()!!
             if (clip.startUs > position) sequence.addGap(clip.startUs - position)
             // Clips that overlap for a transition: the incoming clip's sound starts where the
             // outgoing clip ends.
             val start = maxOf(clip.startUs, position)
             if (start >= clip.endUs) continue
             val item = MediaItem.Builder()
-                .setUri(Uri.fromFile(File(source.path)))
+                .setUri(MediaSources.uri(path))
                 .setClippingConfiguration(
                     MediaItem.ClippingConfiguration.Builder()
-                        .setStartPositionUs(source.inPointUs + (start - clip.startUs))
-                        .setEndPositionUs(source.inPointUs + clip.durationUs)
+                        .setStartPositionUs(inPointUs + (start - clip.startUs))
+                        .setEndPositionUs(inPointUs + clip.durationUs)
                         .build(),
                 )
                 .build()
@@ -77,7 +81,7 @@ object CompositionFactory {
             sequence.addItem(
                 EditedMediaItem.Builder(item)
                     .setRemoveVideo(true)
-                    .setDurationUs(fileDurationUs(source.path))
+                    .setDurationUs(fileDurationUs(context, path))
                     .build(),
             )
             position = clip.endUs
@@ -86,16 +90,18 @@ object CompositionFactory {
         return sequence.build()
     }
 
-    private fun fileDurationUs(path: String): Long {
-        val extractor = MediaExtractor()
+    private fun RenderClip.soundSource(): Pair<String, Long>? = when (val source = source) {
+        is RenderSource.Video -> source.path to source.inPointUs
+        is RenderSource.Audio -> source.path to source.inPointUs
+        is RenderSource.Image -> null
+    }
+
+    private fun fileDurationUs(context: Context, path: String): Long {
+        val extractor = MediaSources.open(context, path)
         try {
-            extractor.setDataSource(path)
             return (0 until extractor.trackCount).maxOf {
                 val format = extractor.getTrackFormat(it)
-                if (format.containsKey(
-                        MediaFormat.KEY_DURATION,
-                    )
-                ) {
+                if (format.containsKey(MediaFormat.KEY_DURATION)) {
                     format.getLong(MediaFormat.KEY_DURATION)
                 } else {
                     0L

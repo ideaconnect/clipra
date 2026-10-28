@@ -36,11 +36,12 @@ class LayerCompositor(
     }
 
     override fun toGlShaderProgram(context: Context, useHdr: Boolean): GlShaderProgram =
-        LayerCompositorProgram(timeline, listener)
+        LayerCompositorProgram(context, timeline, listener)
 }
 
 @OptIn(UnstableApi::class)
 private class LayerCompositorProgram(
+    private val context: Context,
     private val timeline: RenderTimeline,
     private val listener: LayerCompositor.Listener?,
 ) : BaseGlShaderProgram(
@@ -201,11 +202,12 @@ private class LayerCompositorProgram(
         when (val source = clip.source) {
             is RenderSource.Video -> videoFrame(clip, source, timeUs)
             is RenderSource.Image -> imageFrame(clip, source)
+            is RenderSource.Audio -> null
         }
 
     private fun videoFrame(clip: RenderClip, source: RenderSource.Video, timeUs: Long): ClipFrame? {
         val video = videoSources.getOrPut(clip.id) {
-            VideoFrameSource(source.path, callbackHandler)
+            VideoFrameSource(context, source.path, callbackHandler)
         }
         val sourceTimeUs = source.inPointUs + (timeUs - clip.startUs)
         if (!video.frameAt(sourceTimeUs, frameToleranceUs)) return null

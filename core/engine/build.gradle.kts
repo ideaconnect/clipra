@@ -7,6 +7,7 @@ android {
 }
 
 dependencies {
+    api(project(":core:model"))
     api(libs.androidx.media3.common)
     api(libs.androidx.media3.effect)
     api(libs.androidx.media3.exoplayer)
