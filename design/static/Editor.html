@@ -1,0 +1,592 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clipra - Editor (static snapshot)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap">
+<style>
+
+    .sc-placeholder{background:color-mix(in srgb,currentColor 8%,transparent);
+      border:1px solid color-mix(in srgb,currentColor 50%,transparent);
+      border-radius:2px;box-sizing:border-box;overflow:hidden}
+    @keyframes sc-shine{0%{background-position:100% 50%}100%{background-position:0% 50%}}
+    html.sc-dc-streaming .sc-placeholder,
+    html.sc-dc-streaming .sc-interp.sc-missing{position:relative;
+      background:color-mix(in srgb,currentColor 5%,transparent);
+      border-color:transparent}
+    html.sc-dc-streaming .sc-placeholder::before,
+    html.sc-dc-streaming .sc-interp.sc-missing::before{content:'';
+      position:absolute;inset:0;pointer-events:none;
+      background:linear-gradient(90deg,rgba(217,119,87,0) 25%,rgba(247,225,211,.95) 37%,rgba(217,119,87,0) 63%);
+      background-size:400% 100%;animation:sc-shine 1.4s ease infinite}
+    html.sc-dc-streaming .sc-placeholder:nth-child(n+9 of .sc-placeholder)::before,
+    html.sc-dc-streaming .sc-interp.sc-missing:nth-child(n+9 of .sc-interp.sc-missing)::before{animation:none;
+      background:color-mix(in srgb,currentColor 8%,transparent)}
+    .sc-placeholder-error{padding:4px 8px;font:11px/1.4 ui-monospace,monospace;
+      color:color-mix(in srgb,currentColor 70%,transparent);word-break:break-word}
+    .sc-interp.sc-missing{display:inline-block;width:2em;height:1em;overflow:hidden;
+      vertical-align:text-bottom;background:rgba(255,255,255,.3);border:1px solid rgba(0,0,0,.5);
+      border-radius:2px;box-sizing:border-box;color:transparent;
+      user-select:none}
+    .sc-interp.sc-unresolved{font-family:ui-monospace,monospace;font-size:.85em;
+      color:color-mix(in srgb,currentColor 50%,transparent);
+      background:color-mix(in srgb,currentColor 10%,transparent);border-radius:3px;
+      padding:0 3px}
+    .sc-host.sc-has-error{position:relative}
+    .sc-logic-error{position:absolute;top:8px;left:8px;z-index:2147483647;max-width:60ch;
+      padding:6px 10px;background:#b00020;color:#fff;font:12px/1.4 ui-monospace,monospace;
+      border-radius:4px;white-space:pre-wrap;pointer-events:none}
+    /* Mirrors PRINT_BASELINE_CSS in apps/web deck-stage-export.ts — keep both
+       in sync until dc-runtime regains a build step. */
+    @media print {
+      @page { margin: 0.5cm; }
+      figure, table { break-inside: avoid; }
+      #dc-root, #dc-root > .sc-host { height: auto; }
+      *, *::before, *::after {
+        print-color-adjust: exact; -webkit-print-color-adjust: exact;
+        backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+        animation-delay: -99s !important; animation-duration: .001s !important;
+        animation-iteration-count: 1 !important; animation-fill-mode: both !important;
+        animation-play-state: running !important; transition-duration: 0s !important;
+      }
+    }
+  
+x-dc{display:none!important}
+
+body{margin:0;background:#0D0D0F}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+a{color:#FFD23F;text-decoration:none}a:hover{color:#FFE27A}
+.hscroll::-webkit-scrollbar{display:none}
+
+</style>
+</head>
+<body>
+<div id="dc-root"><div class="sc-host" data-sc-name="Editor"><div data-dc-tpl="3" style="width: 390px; height: 844px; box-sizing: border-box; padding-top: 36px; background: rgb(13, 13, 15); color: rgb(244, 243, 239); font-family: Geist, system-ui, sans-serif; display: flex; flex-direction: column; overflow: hidden;">
+
+  <header data-dc-tpl="4" style="height: 48px; padding: 0px 14px 0px 6px; display: flex; align-items: center; gap: 6px;">
+    <a data-dc-tpl="5" href="Main.html" aria-label="Close project" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: rgb(244, 243, 239); border-radius: 12px;">
+      <svg data-dc-tpl="6" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path data-dc-tpl="7" d="M6 6l12 12M18 6L6 18"></path></svg>
+    </a>
+    <span data-dc-tpl="8" style="flex: 1 1 0%; min-width: 0px; display: flex; flex-direction: column; gap: 1px;">
+      <span data-dc-tpl="9" style="font-size: 15px; font-weight: 600;">Lisbon weekend</span>
+      <span data-dc-tpl="10" style="font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 11px; color: rgb(166, 165, 173); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">9:16 · FHD · 30 fps · proxies</span>
+    </span>
+    <a data-dc-tpl="11" href="Export.html" style="height: 40px; padding: 0px 14px 0px 12px; border-radius: 12px; background: rgb(255, 210, 63); color: rgb(20, 18, 16); font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+      <svg data-dc-tpl="12" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path data-dc-tpl="13" d="M12 15V4M7 9l5-5 5 5M5 20h14"></path></svg>
+      Export
+    </a>
+  </header>
+
+  <div data-dc-tpl="14" style="height: 360px; background: rgb(0, 0, 0); display: flex; align-items: center; justify-content: center;">
+    <div data-dc-tpl="15" role="img" aria-label="Preview at 00:07.12: sunset.mp4 on L3, alfama.mp4 picture-in-picture on L4, Day one title on L5, caption on L6" style="position: relative; width: 202px; height: 360px; overflow: hidden;">
+      <div data-dc-tpl="16" style="position: absolute; inset: 0px; background: linear-gradient(rgb(35, 48, 92) 0%, rgb(107, 77, 122) 36%, rgb(217, 120, 90) 66%, rgb(243, 176, 100) 100%);"></div>
+      <div data-dc-tpl="17" style="position: absolute; left: 62%; top: 30%; width: 24%; aspect-ratio: 1 / 1; border-radius: 50%; background: rgb(255, 230, 168);"></div>
+      <div data-dc-tpl="18" style="position: absolute; left: -30%; right: 35%; top: 64%; height: 50%; border-radius: 50%; background: rgb(74, 51, 85);"></div>
+      <div data-dc-tpl="19" style="position: absolute; left: 25%; right: -40%; top: 72%; height: 50%; border-radius: 50%; background: rgb(34, 25, 46);"></div>
+      <div data-dc-tpl="20" style="position: absolute; inset: 74% 21% -6%; border-radius: 48% 48% 0px 0px; background: rgb(47, 74, 122);"></div>
+      <div data-dc-tpl="21" style="position: absolute; left: 45%; width: 10%; top: 66%; height: 10%; background: rgb(185, 122, 91);"></div>
+      <div data-dc-tpl="22" style="position: absolute; left: 37%; width: 26%; top: 50%; height: 18%; border-radius: 50%; background: rgb(201, 139, 107);"></div>
+      <div data-dc-tpl="23" style="position: absolute; left: 36%; width: 28%; top: 48.5%; height: 8.5%; border-radius: 50% 50% 30% 30%; background: rgb(43, 30, 26);"></div>
+
+      <div data-dc-tpl="24" style="position: absolute; right: 7%; top: 7%; width: 70px; height: 96px; border: 2px solid rgb(244, 243, 239); border-radius: 6px; box-sizing: border-box; box-shadow: rgba(0, 0, 0, 0.35) 0px 6px 14px; background: linear-gradient(rgb(141, 185, 218) 0px, rgb(141, 185, 218) 34%, transparent 34%), linear-gradient(transparent 34%, rgb(196, 100, 60) 34%, rgb(196, 100, 60) 44%, transparent 44%), radial-gradient(rgba(70, 45, 30, 0.55) 1px, transparent 1.5px) 0px 0px / 8px 7px, repeating-linear-gradient(90deg, rgb(243, 233, 216) 0px, rgb(243, 233, 216) 12px, rgb(233, 185, 140) 12px, rgb(233, 185, 140) 21px, rgb(246, 240, 230) 21px, rgb(246, 240, 230) 30px, rgb(217, 160, 122) 30px, rgb(217, 160, 122) 38px);"></div>
+
+      <div data-dc-tpl="25" style="position: absolute; left: 8%; top: 8%; display: flex; flex-direction: column; gap: 2px;">
+        <span data-dc-tpl="26" style="font-family: &quot;Bricolage Grotesque&quot;, Geist, sans-serif; font-weight: 800; font-size: 30px; line-height: 0.95; color: rgb(255, 255, 255); letter-spacing: -0.01em; text-shadow: rgba(0, 0, 0, 0.4) 0px 2px 12px;">DAY<br data-dc-tpl="27">ONE</span>
+        <span data-dc-tpl="28" style="font-size: 11px; font-weight: 600; color: rgb(255, 255, 255); text-shadow: rgba(0, 0, 0, 0.5) 0px 1px 6px;">Lisbon, PT</span>
+      </div>
+
+      <div data-dc-tpl="29" style="position: absolute; left: 6%; right: 6%; bottom: 7%; display: flex; justify-content: center;">
+        <span data-dc-tpl="30" style="padding: 4px 8px; border-radius: 6px; background: rgba(0, 0, 0, 0.62); font-size: 12px; font-weight: 700; color: rgb(255, 255, 255); text-align: center;">We finally made it to Lisbon</span>
+      </div>
+    </div>
+  </div>
+
+  <div data-dc-tpl="31" style="height: 48px; padding: 0px 8px 0px 16px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;">
+    <span data-dc-tpl="32" style="font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 13px; display: flex; gap: 6px;">
+      <span data-dc-tpl="33" style="color: rgb(244, 243, 239);">00:07.12</span>
+      <span data-dc-tpl="34" style="color: rgb(140, 139, 148);">/ 00:42.00</span>
+    </span>
+    <button data-dc-tpl="35" aria-label="Play" style="width: 44px; height: 44px; border-radius: 22px; background: rgb(244, 243, 239); color: rgb(13, 13, 15); display: flex; align-items: center; justify-content: center;">
+      <svg data-dc-tpl="36" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path data-dc-tpl="37" d="M8 5.5v13l11-6.5z" fill="currentColor"></path></svg>
+    </button>
+    <span data-dc-tpl="38" style="display: flex; justify-content: flex-end; gap: 0px;">
+      <button data-dc-tpl="39" aria-label="Undo" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: rgb(94, 93, 102);">
+        <svg data-dc-tpl="40" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path data-dc-tpl="41" d="M9 14L4 9l5-5"></path><path data-dc-tpl="42" d="M4 9h10a6 6 0 0 1 0 12h-3"></path></svg>
+      </button>
+      <button data-dc-tpl="43" aria-label="Redo" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: rgb(94, 93, 102);">
+        <svg data-dc-tpl="44" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path data-dc-tpl="45" d="M15 14l5-5-5-5"></path><path data-dc-tpl="46" d="M20 9H10a6 6 0 0 0 0 12h3"></path></svg>
+      </button>
+      <button data-dc-tpl="47" aria-label="Add keyframe" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: rgb(244, 243, 239);">
+        <svg data-dc-tpl="48" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" aria-hidden="true"><path data-dc-tpl="49" d="M12 3.5l8.5 8.5-8.5 8.5L3.5 12z"></path></svg>
+      </button>
+    </span>
+  </div>
+
+  <div data-dc-tpl="50" style="position: relative; height: 236px; background: rgb(17, 17, 20); overflow: hidden; border-top: 1px solid rgb(31, 31, 35);">
+    
+      <span data-dc-tpl="52" style="position: absolute; left: 38.2px; top: 0px; width: 1px; height: 4px; background: rgb(74, 74, 82); display: block;"></span>
+    
+      <span data-dc-tpl="52" style="position: absolute; left: 54.2px; top: 0px; width: 1px; height: 8px; background: rgb(74, 74, 82); display: block;"></span>
+    
+      <span data-dc-tpl="52" style="position: absolute; left: 70.2px; top: 0px; width: 1px; height: 4px; background: rgb(74, 74, 82); display: block;"></span>
+    
+      <span data-dc-tpl="52" style="position: absolute; left: 86.2px; top: 0px; width: 1px; height: 8px; background: rgb(74, 74, 82); display: block;"></span>
+    
+      <span data-dc-tpl="52" style="position: absolute; left: 102.2px; top: 0px; width: 1px; height: 4px; background: rgb(74, 74, 82); display: block;"></span>
+    
+      <span data-dc-tpl="52" style="position: absolute; left: 118.2px; top: 0px; width: 1px; height: 8px; background: rgb(74, 74, 82); display: block;"></span>
+    
+      <span data-dc-tpl="52" style="position: absolute; left: 134.2px; top: 0px; width: 1px; height: 4px; background: rgb(74, 74, 82); display: block;"></span>
+    
+      <span data-dc-tpl="52" style="position: absolute; left: 150.2px; top: 0px; width: 1px; height: 8px; background: rgb(74, 74, 82); display: block;"></span>
+    
+      <span data-dc-tpl="52" style="position: absolute; left: 166.2px; top: 0px; width: 1px; height: 4px; background: rgb(74, 74, 82); display: block;"></span>
+    
+      <span data-dc-tpl="52" style="position: absolute; left: 182.2px; top: 0px; width: 1px; height: 8px; background: rgb(74, 74, 82); display: block;"></span>
+    
+      <span data-dc-tpl="52" style="position: absolute; left: 198.2px; top: 0px; width: 1px; height: 4px; background: rgb(74, 74, 82); display: block;"></span>
+    
+      <span data-dc-tpl="52" style="position: absolute; left: 214.2px; top: 0px; width: 1px; height: 8px; background: rgb(74, 74, 82); display: block;"></span>
+    
+      <span data-dc-tpl="52" style="position: absolute; left: 230.2px; top: 0px; width: 1px; height: 4px; background: rgb(74, 74, 82); display: block;"></span>
+    
+      <span data-dc-tpl="52" style="position: absolute; left: 246.2px; top: 0px; width: 1px; height: 8px; background: rgb(74, 74, 82); display: block;"></span>
+    
+      <span data-dc-tpl="52" style="position: absolute; left: 262.2px; top: 0px; width: 1px; height: 4px; background: rgb(74, 74, 82); display: block;"></span>
+    
+      <span data-dc-tpl="52" style="position: absolute; left: 278.2px; top: 0px; width: 1px; height: 8px; background: rgb(74, 74, 82); display: block;"></span>
+    
+      <span data-dc-tpl="52" style="position: absolute; left: 294.2px; top: 0px; width: 1px; height: 4px; background: rgb(74, 74, 82); display: block;"></span>
+    
+      <span data-dc-tpl="52" style="position: absolute; left: 310.2px; top: 0px; width: 1px; height: 8px; background: rgb(74, 74, 82); display: block;"></span>
+    
+      <span data-dc-tpl="52" style="position: absolute; left: 326.2px; top: 0px; width: 1px; height: 4px; background: rgb(74, 74, 82); display: block;"></span>
+    
+      <span data-dc-tpl="52" style="position: absolute; left: 342.2px; top: 0px; width: 1px; height: 8px; background: rgb(74, 74, 82); display: block;"></span>
+    
+      <span data-dc-tpl="52" style="position: absolute; left: 358.2px; top: 0px; width: 1px; height: 4px; background: rgb(74, 74, 82); display: block;"></span>
+    
+      <span data-dc-tpl="52" style="position: absolute; left: 374.2px; top: 0px; width: 1px; height: 8px; background: rgb(74, 74, 82); display: block;"></span>
+    
+      <span data-dc-tpl="52" style="position: absolute; left: 390.2px; top: 0px; width: 1px; height: 4px; background: rgb(74, 74, 82); display: block;"></span>
+    
+    
+      <span data-dc-tpl="54" style="position: absolute; left: 89.2px; top: 7px; font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 10px; color: rgb(140, 139, 148);"><span class="sc-interp">00:04</span></span>
+    
+      <span data-dc-tpl="54" style="position: absolute; left: 153.2px; top: 7px; font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 10px; color: rgb(140, 139, 148);"><span class="sc-interp">00:06</span></span>
+    
+      <span data-dc-tpl="54" style="position: absolute; left: 217.2px; top: 7px; font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 10px; color: rgb(140, 139, 148);"><span class="sc-interp">00:08</span></span>
+    
+      <span data-dc-tpl="54" style="position: absolute; left: 281.2px; top: 7px; font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 10px; color: rgb(140, 139, 148);"><span class="sc-interp">00:10</span></span>
+    
+      <span data-dc-tpl="54" style="position: absolute; left: 345.2px; top: 7px; font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 10px; color: rgb(140, 139, 148);"><span class="sc-interp">00:12</span></span>
+    
+
+    <a data-dc-tpl="55" href="Layers.html" aria-label="Photo stamp.png on layer L4" style="position: absolute; top: 76px; left: -9px; width: 113px; height: 28px; border-radius: 7px; background: rgb(91, 69, 196); color: rgb(255, 255, 255); display: flex; align-items: center; gap: 5px; padding: 0px 8px 0px 50px; box-sizing: border-box; overflow: hidden;">
+      <svg data-dc-tpl="56" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect data-dc-tpl="57" x="3" y="4" width="18" height="16" rx="2"></rect><circle data-dc-tpl="58" cx="9" cy="10" r="2"></circle><path data-dc-tpl="59" d="M21 16l-5-5-9 9"></path></svg>
+      <span data-dc-tpl="60" style="font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 10px; white-space: nowrap;">stamp.png</span>
+    </a>
+    <a data-dc-tpl="61" href="Layers.html" aria-label="Video alfama.mp4 on layer L4, above sunset.mp4 on L3" style="position: absolute; top: 76px; left: 119px; width: 113px; height: 28px; border-radius: 7px; background: linear-gradient(90deg, rgba(13, 13, 15, 0.55) 0px, rgba(13, 13, 15, 0.55) 1px, transparent 1px) 0px 0px / 36px 100%, linear-gradient(rgb(141, 185, 218) 0px, rgb(141, 185, 218) 34%, rgb(196, 100, 60) 34%, rgb(196, 100, 60) 44%, rgb(243, 233, 216) 44%, rgb(243, 233, 216) 60%, rgb(233, 185, 140) 60%, rgb(233, 185, 140) 76%, rgb(217, 160, 122) 76%); color: rgb(244, 243, 239); overflow: hidden; display: block;">
+      <span data-dc-tpl="62" style="position: absolute; left: 5px; top: 4px; padding: 1px 5px; border-radius: 5px; background: rgba(13, 13, 15, 0.8); font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 10px; white-space: nowrap;">alfama.mp4</span>
+    </a>
+
+    <a data-dc-tpl="63" href="Text.html" aria-label="Text Day one on layer L5" style="position: absolute; top: 50px; left: 150px; width: 95px; height: 22px; border-radius: 7px; background: rgb(168, 67, 26); color: rgb(255, 255, 255); display: flex; align-items: center; gap: 5px; padding: 0px 8px; box-sizing: border-box; overflow: hidden;">
+      <svg data-dc-tpl="64" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path data-dc-tpl="65" d="M5 7V4h14v3M12 4v16M9 20h6"></path></svg>
+      <span data-dc-tpl="66" style="font-size: 11px; font-weight: 600; white-space: nowrap;">Day one</span>
+    </a>
+    <a data-dc-tpl="67" href="Audio.html" aria-label="Sound effect whoosh.wav on layer L5" style="position: absolute; top: 50px; left: 247px; width: 24px; height: 22px; border-radius: 6px; background: repeating-linear-gradient(90deg, rgb(94, 224, 200) 0px, rgb(94, 224, 200) 2px, transparent 2px, transparent 4px) 0px 50% / 100% 55% no-repeat, rgb(14, 79, 73); display: block;"></a>
+    <a data-dc-tpl="68" href="Color.html" aria-label="Adjustment clip Warm look on layer L5, grades every layer below it" style="position: absolute; top: 50px; left: 42px; width: 100px; height: 22px; border-radius: 6px; background: repeating-linear-gradient(135deg, rgb(58, 53, 82) 0px, rgb(58, 53, 82) 5px, rgb(46, 42, 64) 5px, rgb(46, 42, 64) 10px); border: 1px solid rgb(110, 95, 168); box-sizing: border-box; color: rgb(230, 224, 255); display: flex; align-items: center; padding: 0px 6px; font-size: 10px; font-weight: 600; white-space: nowrap; overflow: hidden;">fx Warm look</a>
+
+    
+      <button data-dc-tpl="70" aria-label="sunset.mp4, 9.2 seconds, selected" aria-pressed="true" style="position: absolute; top: 108px; left: -40.8px; width: 292.4px; height: 50px; border-radius: 8px; background: linear-gradient(90deg, rgba(13, 13, 15, 0.55) 0px, rgba(13, 13, 15, 0.55) 1px, transparent 1px) 0px 0px / 36px 100%, linear-gradient(rgb(44, 53, 102) 0%, rgb(138, 88, 120) 42%, rgb(224, 138, 92) 72%, rgb(58, 38, 69) 73%, rgb(34, 25, 46) 100%); box-shadow: rgb(255, 210, 63) 0px 0px 0px 2px inset; overflow: hidden;">
+        
+          <span data-dc-tpl="72" aria-hidden="true" style="position: absolute; left: 0px; right: 0px; bottom: 0px; height: 11px; background: repeating-linear-gradient(90deg, rgb(94, 224, 200) 0px, rgb(94, 224, 200) 2px, transparent 2px, transparent 4px) 0px 50% / 100% 55% no-repeat, rgba(13, 13, 15, 0.62); display: block;"></span>
+        
+        <span data-dc-tpl="73" style="position: absolute; left: 87px; top: 5px; padding: 2px 5px; border-radius: 5px; background: rgba(13, 13, 15, 0.8); font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 10px; color: rgb(244, 243, 239); white-space: nowrap;"><span class="sc-interp">sunset.mp4</span></span>
+        
+          <span data-dc-tpl="75" style="position: absolute; left: 87px; bottom: 14px; padding: 2px 5px; border-radius: 5px; background: rgb(255, 210, 63); font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 10px; font-weight: 600; color: rgb(20, 18, 16);"><span class="sc-interp">9.2s</span></span>
+          <span data-dc-tpl="76" style="position: absolute; left: 0px; top: 0px; bottom: 0px; width: 12px; background: rgb(255, 210, 63); display: flex; align-items: center; justify-content: center; gap: 2px;">
+            <span data-dc-tpl="77" style="width: 2px; height: 16px; border-radius: 1px; background: rgb(20, 18, 16); display: block;"></span>
+          </span>
+          <span data-dc-tpl="78" style="position: absolute; right: 0px; top: 0px; bottom: 0px; width: 12px; background: rgb(255, 210, 63); display: flex; align-items: center; justify-content: center; gap: 2px;">
+            <span data-dc-tpl="79" style="width: 2px; height: 16px; border-radius: 1px; background: rgb(20, 18, 16); display: block;"></span>
+          </span>
+        
+      </button>
+    
+      <button data-dc-tpl="70" aria-label="tram.mp4, 1.8 seconds" aria-pressed="false" style="position: absolute; top: 108px; left: 253.6px; width: 55.6px; height: 50px; border-radius: 8px; background: linear-gradient(90deg, rgba(13, 13, 15, 0.55) 0px, rgba(13, 13, 15, 0.55) 1px, transparent 1px) 0px 0px / 36px 100%, linear-gradient(rgb(22, 50, 79) 0%, rgb(47, 111, 168) 46%, rgb(242, 183, 5) 46%, rgb(242, 183, 5) 74%, rgb(26, 26, 26) 74%); box-shadow: transparent 0px 0px 0px 1px inset; overflow: hidden;">
+        
+          <span data-dc-tpl="72" aria-hidden="true" style="position: absolute; left: 0px; right: 0px; bottom: 0px; height: 11px; background: repeating-linear-gradient(90deg, rgb(94, 224, 200) 0px, rgb(94, 224, 200) 2px, transparent 2px, transparent 4px) 0px 50% / 100% 55% no-repeat, rgba(13, 13, 15, 0.62); display: block;"></span>
+        
+        <span data-dc-tpl="73" style="position: absolute; left: 16px; top: 5px; padding: 2px 5px; border-radius: 5px; background: rgba(13, 13, 15, 0.8); font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 10px; color: rgb(244, 243, 239); white-space: nowrap;"><span class="sc-interp">tram.mp4</span></span>
+        
+      </button>
+    
+      <button data-dc-tpl="70" aria-label="Text card Day two, 3.0 seconds" aria-pressed="false" style="position: absolute; top: 108px; left: 311.2px; width: 94px; height: 50px; border-radius: 8px; background: rgb(0, 0, 0); box-shadow: rgb(58, 58, 64) 0px 0px 0px 1px inset; overflow: hidden;">
+        
+        <span data-dc-tpl="73" style="position: absolute; left: 16px; top: 5px; padding: 2px 5px; border-radius: 5px; background: rgba(13, 13, 15, 0.8); font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 10px; color: rgb(244, 243, 239); white-space: nowrap;"><span class="sc-interp">T  Day two</span></span>
+        
+      </button>
+    
+
+    
+      <a data-dc-tpl="81" href="Transitions.html" aria-label="Transition between sunset.mp4 and tram.mp4: Whip pan" style="position: absolute; top: 121px; left: 242px; width: 24px; height: 24px; border-radius: 6px; background: rgb(244, 243, 239); color: rgb(20, 18, 16); display: flex; align-items: center; justify-content: center; box-shadow: rgba(0, 0, 0, 0.5) 0px 2px 6px; z-index: 2;">
+        <svg data-dc-tpl="82" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path data-dc-tpl="83" d="M4 5l8 7-8 7zM20 5l-8 7 8 7z"></path></svg>
+      </a>
+    
+
+    <a data-dc-tpl="84" href="Audio.html" aria-label="Voiceover voiceover.m4a on layer L2" style="position: absolute; top: 162px; left: 343px; width: 300px; height: 24px; border-radius: 7px; background: repeating-linear-gradient(90deg, rgb(255, 156, 194) 0px, rgb(255, 156, 194) 2px, transparent 2px, transparent 4px) 0px 50% / 100% 55% no-repeat, rgb(90, 34, 56); overflow: hidden; display: block;">
+      <span data-dc-tpl="85" style="position: absolute; left: 4px; top: 3px; padding: 1px 5px; border-radius: 4px; background: rgba(13, 13, 15, 0.8); font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 10px; color: rgb(244, 243, 239); white-space: nowrap;">voiceover.m4a</span>
+    </a>
+    <a data-dc-tpl="86" href="Audio.html" aria-label="Music lisbon-guitar.mp3 on layer L1" style="position: absolute; top: 190px; left: -41px; width: 470px; height: 24px; border-radius: 7px; background: repeating-linear-gradient(90deg, rgba(255, 210, 63, 0.95) 0px, rgba(255, 210, 63, 0.95) 2px, transparent 2px, transparent 20px) 9px 0px / 100% 4px no-repeat, rgb(14, 79, 73); overflow: hidden; display: block;">
+      <span data-dc-tpl="87" style="position: absolute; inset: 0px 0px 0px 4px; display: flex; align-items: center; gap: 1px;">
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 4px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 18px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 15px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 14px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 25px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 26px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 12px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 7px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 12px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 5px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 15px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 10px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 7px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 7px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 11px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 8px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 12px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 8px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 12px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 6px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 12px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 25px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 21px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 11px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 13px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 14px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 9px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 21px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 17px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 17px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 28px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 25px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 10px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 7px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 10px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 8px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 19px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 13px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 5px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 12px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 13px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 7px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 9px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 10px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 11px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 4px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 11px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 22px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 16px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 7px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 11px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 10px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 14px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 23px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 17px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 19px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 29px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 23px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 7px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 5px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 7px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 13px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 23px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 15px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 9px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 16px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 15px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 7px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 8px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 10px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 7px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 8px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 9px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 18px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 11px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 5px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 9px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 7px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 17px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 23px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 16px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 20px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 28px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 19px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 4px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 5px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 5px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 19px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 26px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 17px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 12px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 19px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 14px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 9px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 8px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 8px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 5px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 12px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 6px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 14px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 5px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 8px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 8px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 4px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 19px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 22px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 14px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 19px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 25px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 14px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 8px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 7px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 9px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 23px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 28px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+          <span data-dc-tpl="89" style="width: 3px; height: 17px; border-radius: 1px; background: rgb(94, 224, 200); flex-shrink: 0; display: block;"></span>
+        
+      </span>
+      <span data-dc-tpl="90" style="position: absolute; left: 84px; top: 3px; padding: 1px 5px; border-radius: 4px; background: rgba(13, 13, 15, 0.8); font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 10px; color: rgb(244, 243, 239);">lisbon-guitar.mp3</span>
+    </a>
+
+    
+      <a data-dc-tpl="92" href="CaptionsEdit.html" style="position: absolute; top: 26px; left: 150.2px; width: 89.6px; height: 20px; border-radius: 6px; background: rgb(31, 79, 194); outline: rgb(255, 210, 63) dashed 1.5px; outline-offset: -1px; color: rgb(255, 255, 255); padding: 0px 6px; box-sizing: border-box; display: flex; align-items: center; overflow: hidden;">
+        <svg data-dc-tpl="93" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true" style="flex-shrink: 0; margin-right: 3px;"><path data-dc-tpl="94" d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"></path><path data-dc-tpl="95" d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"></path></svg>
+        <span data-dc-tpl="96" style="font-size: 10px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><span class="sc-interp">We finally made it to Lisbon</span></span>
+      </a>
+    
+      <a data-dc-tpl="92" href="CaptionsEdit.html" style="position: absolute; top: 26px; left: 259px; width: 70.4px; height: 20px; border-radius: 6px; background: rgb(31, 79, 194); outline: none; outline-offset: -1px; color: rgb(255, 255, 255); padding: 0px 6px; box-sizing: border-box; display: flex; align-items: center; overflow: hidden;">
+        <svg data-dc-tpl="93" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true" style="flex-shrink: 0; margin-right: 3px;"><path data-dc-tpl="94" d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"></path><path data-dc-tpl="95" d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"></path></svg>
+        <span data-dc-tpl="96" style="font-size: 10px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><span class="sc-interp">The light here is unreal</span></span>
+      </a>
+    
+      <a data-dc-tpl="92" href="CaptionsEdit.html" style="position: absolute; top: 26px; left: 345.4px; width: 92.8px; height: 20px; border-radius: 6px; background: rgb(31, 79, 194); outline: none; outline-offset: -1px; color: rgb(255, 255, 255); padding: 0px 6px; box-sizing: border-box; display: flex; align-items: center; overflow: hidden;">
+        <svg data-dc-tpl="93" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true" style="flex-shrink: 0; margin-right: 3px;"><path data-dc-tpl="94" d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"></path><path data-dc-tpl="95" d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"></path></svg>
+        <span data-dc-tpl="96" style="font-size: 10px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><span class="sc-interp">Tomorrow we’re taking the tram</span></span>
+      </a>
+    
+
+    <div data-dc-tpl="97" style="position: absolute; left: 0px; top: 0px; bottom: 0px; width: 34px; background: rgb(17, 17, 20); border-right: 1px solid rgb(34, 34, 39); z-index: 3;">
+      <span data-dc-tpl="98" title="Layer L6" style="position: absolute; top: 29px; left: 4px; width: 26px; padding: 1px 0px; border-radius: 4px; background: rgb(42, 42, 48); color: rgb(244, 243, 239); font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 10px; font-weight: 600; text-align: center; display: block;">L6</span>
+      <span data-dc-tpl="99" title="Layer L5" style="position: absolute; top: 54px; left: 4px; width: 26px; padding: 1px 0px; border-radius: 4px; background: rgb(42, 42, 48); color: rgb(244, 243, 239); font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 10px; font-weight: 600; text-align: center; display: block;">L5</span>
+      <span data-dc-tpl="100" title="Layer L4" style="position: absolute; top: 83px; left: 4px; width: 26px; padding: 1px 0px; border-radius: 4px; background: rgb(42, 42, 48); color: rgb(244, 243, 239); font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 10px; font-weight: 600; text-align: center; display: block;">L4</span>
+      <span data-dc-tpl="101" title="Layer L3" style="position: absolute; top: 126px; left: 4px; width: 26px; padding: 1px 0px; border-radius: 4px; background: rgb(42, 42, 48); color: rgb(244, 243, 239); font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 10px; font-weight: 600; text-align: center; display: block;">L3</span>
+      <span data-dc-tpl="102" title="Layer L2" style="position: absolute; top: 167px; left: 4px; width: 26px; padding: 1px 0px; border-radius: 4px; background: rgb(42, 42, 48); color: rgb(244, 243, 239); font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 10px; font-weight: 600; text-align: center; display: block;">L2</span>
+      <span data-dc-tpl="103" title="Layer L1" style="position: absolute; top: 195px; left: 4px; width: 26px; padding: 1px 0px; border-radius: 4px; background: rgb(42, 42, 48); color: rgb(244, 243, 239); font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 10px; font-weight: 600; text-align: center; display: block;">L1</span>
+    </div>
+
+    <button data-dc-tpl="104" aria-label="Add media" style="position: absolute; top: 115px; right: 8px; width: 36px; height: 36px; border-radius: 10px; background: rgb(244, 243, 239); color: rgb(20, 18, 16); display: flex; align-items: center; justify-content: center; box-shadow: rgba(0, 0, 0, 0.55) 0px 4px 12px; z-index: 4;">
+      <svg data-dc-tpl="105" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path data-dc-tpl="106" d="M12 5v14M5 12h14"></path></svg>
+    </button>
+
+    <div data-dc-tpl="107" aria-hidden="true" style="position: absolute; left: 194px; top: 0px; bottom: 0px; width: 2px; background: rgb(255, 210, 63); z-index: 5;"></div>
+    <div data-dc-tpl="108" aria-hidden="true" style="position: absolute; left: 189px; top: 0px; width: 12px; height: 10px; border-radius: 0px 0px 6px 6px; background: rgb(255, 210, 63); z-index: 5;"></div>
+  </div>
+
+  <div data-dc-tpl="109" class="hscroll" style="height: 76px; border-top: 1px solid rgb(31, 31, 35); display: flex; align-items: center; overflow-x: auto; scrollbar-width: none; padding: 0px 4px;">
+    
+      <button data-dc-tpl="111" aria-label="Close clip tools" style="width: 44px; height: 60px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: rgb(244, 243, 239); border-right: 1px solid rgb(42, 42, 48); margin-right: 4px;">
+        <svg data-dc-tpl="112" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path data-dc-tpl="113" d="M15 5l-7 7 7 7"></path></svg>
+      </button>
+      <button data-dc-tpl="114" style="width: 60px; height: 60px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: rgb(244, 243, 239);">
+        <svg data-dc-tpl="115" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle data-dc-tpl="116" cx="6" cy="6" r="3"></circle><circle data-dc-tpl="117" cx="6" cy="18" r="3"></circle><path data-dc-tpl="118" d="M20 4L8.1 15.9M14.5 14.5L20 20M8.1 8.1L12 12"></path></svg>
+        <span data-dc-tpl="119" style="font-size: 11px; color: rgb(180, 179, 187);">Split</span>
+      </button>
+      <button data-dc-tpl="120" style="width: 60px; height: 60px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: rgb(244, 243, 239);">
+        <svg data-dc-tpl="121" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path data-dc-tpl="122" d="M4 16a8 8 0 1 1 16 0"></path><path data-dc-tpl="123" d="M12 16l4-5"></path></svg>
+        <span data-dc-tpl="124" style="font-size: 11px; color: rgb(180, 179, 187);">Speed</span>
+      </button>
+      <a data-dc-tpl="125" href="Audio.html" style="width: 60px; height: 60px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: rgb(244, 243, 239);">
+        <svg data-dc-tpl="126" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path data-dc-tpl="127" d="M4 10v4h4l5 4V6L8 10z"></path><path data-dc-tpl="128" d="M16.5 9a4 4 0 0 1 0 6M19 6.5a8 8 0 0 1 0 11"></path></svg>
+        <span data-dc-tpl="129" style="font-size: 11px; color: rgb(180, 179, 187);">Audio</span>
+      </a>
+      <a data-dc-tpl="130" href="Filters.html" style="width: 60px; height: 60px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: rgb(244, 243, 239);">
+        <svg data-dc-tpl="131" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle data-dc-tpl="132" cx="9" cy="9" r="5"></circle><circle data-dc-tpl="133" cx="15" cy="9" r="5"></circle><circle data-dc-tpl="134" cx="12" cy="15" r="5"></circle></svg>
+        <span data-dc-tpl="135" style="font-size: 11px; color: rgb(180, 179, 187);">Filters</span>
+      </a>
+      <a data-dc-tpl="136" href="Masks.html" style="width: 60px; height: 60px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: rgb(244, 243, 239);">
+        <svg data-dc-tpl="137" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect data-dc-tpl="138" x="3.5" y="3.5" width="17" height="17" rx="3"></rect><ellipse data-dc-tpl="139" cx="12" cy="12" rx="4.5" ry="5.5"></ellipse></svg>
+        <span data-dc-tpl="140" style="font-size: 11px; color: rgb(180, 179, 187);">Mask</span>
+      </a>
+      <a data-dc-tpl="141" href="Layers.html" style="width: 60px; height: 60px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: rgb(244, 243, 239);">
+        <svg data-dc-tpl="142" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path data-dc-tpl="143" d="M12 3l9 5-9 5-9-5z"></path><path data-dc-tpl="144" d="M3 13l9 5 9-5"></path></svg>
+        <span data-dc-tpl="145" style="font-size: 11px; color: rgb(180, 179, 187);">Layer</span>
+      </a>
+      <a data-dc-tpl="146" href="Color.html" style="width: 60px; height: 60px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: rgb(244, 243, 239);">
+        <svg data-dc-tpl="147" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle data-dc-tpl="148" cx="12" cy="12" r="8.5"></circle><path data-dc-tpl="149" d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"></path></svg>
+        <span data-dc-tpl="150" style="font-size: 11px; color: rgb(180, 179, 187);">Color</span>
+      </a>
+      <a data-dc-tpl="151" href="Cutout.html" style="width: 60px; height: 60px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: rgb(244, 243, 239);">
+        <svg data-dc-tpl="152" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path data-dc-tpl="153" d="M3 9V5a2 2 0 0 1 2-2h4M15 3h4a2 2 0 0 1 2 2v4M21 15v4a2 2 0 0 1-2 2h-4M9 21H5a2 2 0 0 1-2-2v-4"></path><circle data-dc-tpl="154" cx="12" cy="10" r="3"></circle><path data-dc-tpl="155" d="M7 18a5 5 0 0 1 10 0"></path></svg>
+        <span data-dc-tpl="156" style="font-size: 11px; color: rgb(180, 179, 187);">Cutout</span>
+      </a>
+      <button data-dc-tpl="157" style="width: 60px; height: 60px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: rgb(244, 243, 239);">
+        <svg data-dc-tpl="158" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle data-dc-tpl="159" cx="12" cy="12" r="4"></circle><path data-dc-tpl="160" d="M12 2v4M12 18v4M2 12h4M18 12h4"></path></svg>
+        <span data-dc-tpl="161" style="font-size: 11px; color: rgb(180, 179, 187);">Stabilize</span>
+      </button>
+      <button data-dc-tpl="162" style="width: 60px; height: 60px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: rgb(244, 243, 239);">
+        <svg data-dc-tpl="163" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path data-dc-tpl="164" d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"></path><path data-dc-tpl="165" d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"></path></svg>
+        <span data-dc-tpl="166" style="font-size: 11px; color: rgb(180, 179, 187);">Linked</span>
+      </button>
+      <button data-dc-tpl="167" style="width: 60px; height: 60px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: rgb(244, 243, 239);">
+        <svg data-dc-tpl="168" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect data-dc-tpl="169" x="8" y="8" width="12" height="12" rx="2"></rect><path data-dc-tpl="170" d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"></path></svg>
+        <span data-dc-tpl="171" style="font-size: 11px; color: rgb(180, 179, 187);">Duplicate</span>
+      </button>
+      <button data-dc-tpl="172" style="width: 60px; height: 60px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: rgb(244, 243, 239);">
+        <svg data-dc-tpl="173" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path data-dc-tpl="174" d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"></path></svg>
+        <span data-dc-tpl="175" style="font-size: 11px; color: rgb(180, 179, 187);">Delete</span>
+      </button>
+      <button data-dc-tpl="176" style="width: 60px; height: 60px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: rgb(244, 243, 239);">
+        <svg data-dc-tpl="177" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path data-dc-tpl="178" d="M6 2v14a2 2 0 0 0 2 2h14"></path><path data-dc-tpl="179" d="M2 6h14a2 2 0 0 1 2 2v14"></path></svg>
+        <span data-dc-tpl="180" style="font-size: 11px; color: rgb(180, 179, 187);">Crop</span>
+      </button>
+      <button data-dc-tpl="181" style="width: 60px; height: 60px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: rgb(244, 243, 239);">
+        <svg data-dc-tpl="182" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path data-dc-tpl="183" d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9"></path></svg>
+        <span data-dc-tpl="184" style="font-size: 11px; color: rgb(180, 179, 187);">Freeze</span>
+      </button>
+      <button data-dc-tpl="185" style="width: 60px; height: 60px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: rgb(244, 243, 239);">
+        <svg data-dc-tpl="186" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path data-dc-tpl="187" d="M20 7H8l3-3M8 7l3 3"></path><path data-dc-tpl="188" d="M4 17h12l-3-3M16 17l-3 3"></path></svg>
+        <span data-dc-tpl="189" style="font-size: 11px; color: rgb(180, 179, 187);">Reverse</span>
+      </button>
+      <button data-dc-tpl="190" style="width: 60px; height: 60px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: rgb(244, 243, 239);">
+        <svg data-dc-tpl="191" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path data-dc-tpl="192" d="M9 18V6l10-2v12"></path><circle data-dc-tpl="193" cx="6.5" cy="18" r="2.5"></circle><circle data-dc-tpl="194" cx="16.5" cy="16" r="2.5"></circle></svg>
+        <span data-dc-tpl="195" style="font-size: 11px; color: rgb(180, 179, 187);">Extract</span>
+      </button>
+      <button data-dc-tpl="196" style="width: 60px; height: 60px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: rgb(244, 243, 239);">
+        <svg data-dc-tpl="197" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path data-dc-tpl="198" d="M4 8h12l-3-3M20 16H8l3 3"></path></svg>
+        <span data-dc-tpl="199" style="font-size: 11px; color: rgb(180, 179, 187);">Replace</span>
+      </button>
+    
+    
+  </div></div></div></div>
+</body>
+</html>

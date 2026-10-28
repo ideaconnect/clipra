@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clipra - Color (static snapshot)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap">
+<style>
+
+    .sc-placeholder{background:color-mix(in srgb,currentColor 8%,transparent);
+      border:1px solid color-mix(in srgb,currentColor 50%,transparent);
+      border-radius:2px;box-sizing:border-box;overflow:hidden}
+    @keyframes sc-shine{0%{background-position:100% 50%}100%{background-position:0% 50%}}
+    html.sc-dc-streaming .sc-placeholder,
+    html.sc-dc-streaming .sc-interp.sc-missing{position:relative;
+      background:color-mix(in srgb,currentColor 5%,transparent);
+      border-color:transparent}
+    html.sc-dc-streaming .sc-placeholder::before,
+    html.sc-dc-streaming .sc-interp.sc-missing::before{content:'';
+      position:absolute;inset:0;pointer-events:none;
+      background:linear-gradient(90deg,rgba(217,119,87,0) 25%,rgba(247,225,211,.95) 37%,rgba(217,119,87,0) 63%);
+      background-size:400% 100%;animation:sc-shine 1.4s ease infinite}
+    html.sc-dc-streaming .sc-placeholder:nth-child(n+9 of .sc-placeholder)::before,
+    html.sc-dc-streaming .sc-interp.sc-missing:nth-child(n+9 of .sc-interp.sc-missing)::before{animation:none;
+      background:color-mix(in srgb,currentColor 8%,transparent)}
+    .sc-placeholder-error{padding:4px 8px;font:11px/1.4 ui-monospace,monospace;
+      color:color-mix(in srgb,currentColor 70%,transparent);word-break:break-word}
+    .sc-interp.sc-missing{display:inline-block;width:2em;height:1em;overflow:hidden;
+      vertical-align:text-bottom;background:rgba(255,255,255,.3);border:1px solid rgba(0,0,0,.5);
+      border-radius:2px;box-sizing:border-box;color:transparent;
+      user-select:none}
+    .sc-interp.sc-unresolved{font-family:ui-monospace,monospace;font-size:.85em;
+      color:color-mix(in srgb,currentColor 50%,transparent);
+      background:color-mix(in srgb,currentColor 10%,transparent);border-radius:3px;
+      padding:0 3px}
+    .sc-host.sc-has-error{position:relative}
+    .sc-logic-error{position:absolute;top:8px;left:8px;z-index:2147483647;max-width:60ch;
+      padding:6px 10px;background:#b00020;color:#fff;font:12px/1.4 ui-monospace,monospace;
+      border-radius:4px;white-space:pre-wrap;pointer-events:none}
+    /* Mirrors PRINT_BASELINE_CSS in apps/web deck-stage-export.ts — keep both
+       in sync until dc-runtime regains a build step. */
+    @media print {
+      @page { margin: 0.5cm; }
+      figure, table { break-inside: avoid; }
+      #dc-root, #dc-root > .sc-host { height: auto; }
+      *, *::before, *::after {
+        print-color-adjust: exact; -webkit-print-color-adjust: exact;
+        backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+        animation-delay: -99s !important; animation-duration: .001s !important;
+        animation-iteration-count: 1 !important; animation-fill-mode: both !important;
+        animation-play-state: running !important; transition-duration: 0s !important;
+      }
+    }
+  
+x-dc{display:none!important}
+
+body{margin:0;background:#0D0D0F}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+a{color:#FFD23F;text-decoration:none}a:hover{color:#FFE27A}
+
+</style>
+</head>
+<body>
+<div id="dc-root"><div class="sc-host" data-sc-name="Color"><div data-dc-tpl="3" style="width: 390px; height: 844px; box-sizing: border-box; padding-top: 36px; background: rgb(13, 13, 15); color: rgb(244, 243, 239); font-family: Geist, system-ui, sans-serif; display: flex; flex-direction: column; overflow: hidden;">
+
+  <header data-dc-tpl="4" style="height: 48px; padding: 0px 12px 0px 6px; display: flex; align-items: center; gap: 6px;">
+    <a data-dc-tpl="5" href="Editor.html" aria-label="Back to timeline" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: rgb(244, 243, 239); border-radius: 12px;">
+      <svg data-dc-tpl="6" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path data-dc-tpl="7" d="M19 12H5M11 6l-6 6 6 6"></path></svg>
+    </a>
+    <span data-dc-tpl="8" style="flex: 1 1 0%; min-width: 0px; display: flex; flex-direction: column; gap: 1px;">
+      <span data-dc-tpl="9" style="font-size: 15px; font-weight: 600;">Color</span>
+      <span data-dc-tpl="10" style="font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 11px; color: rgb(166, 165, 173);">sunset.mp4 · L3</span>
+    </span>
+    <a data-dc-tpl="11" href="Editor.html" style="height: 40px; padding: 0px 14px; border-radius: 12px; background: rgb(255, 210, 63); color: rgb(20, 18, 16); font-size: 14px; font-weight: 700; display: flex; align-items: center;">Done</a>
+  </header>
+
+  <div data-dc-tpl="12" style="height: 300px; background: rgb(0, 0, 0); display: flex; align-items: center; justify-content: center;">
+    <div data-dc-tpl="13" role="img" aria-label="Before and after split view of the color grade" style="position: relative; width: 169px; height: 300px; overflow: hidden;">
+      <div data-dc-tpl="14" style="position: absolute; inset: 0px;">
+        <div data-dc-tpl="15" style="position: absolute; inset: 0px; background: linear-gradient(rgb(35, 48, 92) 0%, rgb(107, 77, 122) 36%, rgb(217, 120, 90) 66%, rgb(243, 176, 100) 100%);"></div>
+        <div data-dc-tpl="16" style="position: absolute; left: 62%; top: 30%; width: 24%; aspect-ratio: 1 / 1; border-radius: 50%; background: rgb(255, 230, 168);"></div>
+        <div data-dc-tpl="17" style="position: absolute; left: -30%; right: 35%; top: 64%; height: 50%; border-radius: 50%; background: rgb(74, 51, 85);"></div>
+        <div data-dc-tpl="18" style="position: absolute; left: 25%; right: -40%; top: 72%; height: 50%; border-radius: 50%; background: rgb(34, 25, 46);"></div>
+        <div data-dc-tpl="19" style="position: absolute; inset: 74% 21% -6%; border-radius: 48% 48% 0px 0px; background: rgb(47, 74, 122);"></div>
+        <div data-dc-tpl="20" style="position: absolute; left: 45%; width: 10%; top: 66%; height: 10%; background: rgb(185, 122, 91);"></div>
+        <div data-dc-tpl="21" style="position: absolute; left: 37%; width: 26%; top: 50%; height: 18%; border-radius: 50%; background: rgb(201, 139, 107);"></div>
+        <div data-dc-tpl="22" style="position: absolute; left: 36%; width: 28%; top: 48.5%; height: 8.5%; border-radius: 50% 50% 30% 30%; background: rgb(43, 30, 26);"></div>
+      </div>
+      <div data-dc-tpl="23" style="position: absolute; inset: 0px; clip-path: inset(0px 0px 0px 50%);">
+        <div data-dc-tpl="24" style="position: absolute; inset: 0px; filter: brightness(1.05) contrast(1.18) saturate(1.12);">
+          <div data-dc-tpl="25" style="position: absolute; inset: 0px; background: linear-gradient(rgb(35, 48, 92) 0%, rgb(107, 77, 122) 36%, rgb(217, 120, 90) 66%, rgb(243, 176, 100) 100%);"></div>
+          <div data-dc-tpl="26" style="position: absolute; left: 62%; top: 30%; width: 24%; aspect-ratio: 1 / 1; border-radius: 50%; background: rgb(255, 230, 168);"></div>
+          <div data-dc-tpl="27" style="position: absolute; left: -30%; right: 35%; top: 64%; height: 50%; border-radius: 50%; background: rgb(74, 51, 85);"></div>
+          <div data-dc-tpl="28" style="position: absolute; left: 25%; right: -40%; top: 72%; height: 50%; border-radius: 50%; background: rgb(34, 25, 46);"></div>
+          <div data-dc-tpl="29" style="position: absolute; inset: 74% 21% -6%; border-radius: 48% 48% 0px 0px; background: rgb(47, 74, 122);"></div>
+          <div data-dc-tpl="30" style="position: absolute; left: 45%; width: 10%; top: 66%; height: 10%; background: rgb(185, 122, 91);"></div>
+          <div data-dc-tpl="31" style="position: absolute; left: 37%; width: 26%; top: 50%; height: 18%; border-radius: 50%; background: rgb(201, 139, 107);"></div>
+          <div data-dc-tpl="32" style="position: absolute; left: 36%; width: 28%; top: 48.5%; height: 8.5%; border-radius: 50% 50% 30% 30%; background: rgb(43, 30, 26);"></div>
+        </div>
+        <div data-dc-tpl="33" style="position: absolute; inset: 0px; background: rgba(255, 150, 50, 0.25); mix-blend-mode: soft-light;"></div>
+        <div data-dc-tpl="34" style="position: absolute; inset: 0px; background: rgba(255, 60, 200, 0); mix-blend-mode: soft-light;"></div>
+        <div data-dc-tpl="35" style="position: absolute; inset: 0px; background: radial-gradient(transparent 45%, rgba(0, 0, 0, 0.85) 100%); opacity: 0.3;"></div>
+      </div>
+      <div data-dc-tpl="36" aria-hidden="true" style="position: absolute; left: calc(50% - 1px); top: 0px; bottom: 0px; width: 2px; background: rgb(255, 255, 255);"></div>
+      <div data-dc-tpl="37" aria-hidden="true" style="position: absolute; left: calc(50% - 14px); top: calc(50% - 14px); width: 28px; height: 28px; border-radius: 14px; background: rgb(255, 255, 255); display: flex; align-items: center; justify-content: center; color: rgb(20, 18, 16);">
+        <svg data-dc-tpl="38" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path data-dc-tpl="39" d="M9 6l-6 6 6 6M15 6l6 6-6 6"></path></svg>
+      </div>
+      <span data-dc-tpl="40" style="position: absolute; left: 6px; top: 6px; padding: 1px 6px; border-radius: 5px; background: rgba(13, 13, 15, 0.82); font-size: 10px; font-weight: 600;">Before</span>
+      <span data-dc-tpl="41" style="position: absolute; right: 6px; top: 6px; padding: 1px 6px; border-radius: 5px; background: rgba(13, 13, 15, 0.82); font-size: 10px; font-weight: 600; color: rgb(255, 210, 63);">After</span>
+    </div>
+  </div>
+
+  <div data-dc-tpl="42" role="tablist" aria-label="Color tools" style="margin: 12px 16px 0px; padding: 4px; border-radius: 14px; background: rgb(23, 23, 26); display: grid; grid-template-columns: repeat(3, minmax(0px, 1fr)); gap: 4px;">
+    
+      <button data-dc-tpl="44" role="tab" aria-selected="true" style="height: 44px; margin: -4px 0px; border: 4px solid transparent; box-sizing: border-box; border-radius: 14px; background: rgb(244, 243, 239); color: rgb(13, 13, 15); font-size: 13px; font-weight: 600;"><span class="sc-interp">Adjust</span></button>
+    
+      <button data-dc-tpl="44" role="tab" aria-selected="false" style="height: 44px; margin: -4px 0px; border: 4px solid transparent; box-sizing: border-box; border-radius: 14px; background: transparent; color: rgb(180, 179, 187); font-size: 13px; font-weight: 600;"><span class="sc-interp">HSL</span></button>
+    
+      <button data-dc-tpl="44" role="tab" aria-selected="false" style="height: 44px; margin: -4px 0px; border: 4px solid transparent; box-sizing: border-box; border-radius: 14px; background: transparent; color: rgb(180, 179, 187); font-size: 13px; font-weight: 600;"><span class="sc-interp">LUT</span></button>
+    
+  </div>
+
+  <div data-dc-tpl="45" style="flex: 1 1 0%; min-height: 0px; padding: 10px 16px 0px; display: flex; flex-direction: column; gap: 2px;">
+    
+      
+        <div data-dc-tpl="48" style="height: 38px; display: flex; align-items: center; gap: 10px;">
+          <label data-dc-tpl="49" for="c-exp" style="font-size: 13px; width: 92px;"><span class="sc-interp">Exposure</span></label>
+          <input data-dc-tpl="50" id="c-exp" type="range" min="-100" max="100" value="10" style="flex: 1 1 0%; accent-color: rgb(255, 210, 63); height: 24px;">
+          <span data-dc-tpl="51" style="font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 12px; width: 34px; text-align: right; color: rgb(244, 243, 239);"><span class="sc-interp">+10</span></span>
+        </div>
+      
+        <div data-dc-tpl="48" style="height: 38px; display: flex; align-items: center; gap: 10px;">
+          <label data-dc-tpl="49" for="c-con" style="font-size: 13px; width: 92px;"><span class="sc-interp">Contrast</span></label>
+          <input data-dc-tpl="50" id="c-con" type="range" min="-100" max="100" value="18" style="flex: 1 1 0%; accent-color: rgb(255, 210, 63); height: 24px;">
+          <span data-dc-tpl="51" style="font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 12px; width: 34px; text-align: right; color: rgb(244, 243, 239);"><span class="sc-interp">+18</span></span>
+        </div>
+      
+        <div data-dc-tpl="48" style="height: 38px; display: flex; align-items: center; gap: 10px;">
+          <label data-dc-tpl="49" for="c-sat" style="font-size: 13px; width: 92px;"><span class="sc-interp">Saturation</span></label>
+          <input data-dc-tpl="50" id="c-sat" type="range" min="-100" max="100" value="12" style="flex: 1 1 0%; accent-color: rgb(255, 210, 63); height: 24px;">
+          <span data-dc-tpl="51" style="font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 12px; width: 34px; text-align: right; color: rgb(244, 243, 239);"><span class="sc-interp">+12</span></span>
+        </div>
+      
+        <div data-dc-tpl="48" style="height: 38px; display: flex; align-items: center; gap: 10px;">
+          <label data-dc-tpl="49" for="c-temp" style="font-size: 13px; width: 92px;"><span class="sc-interp">Temperature</span></label>
+          <input data-dc-tpl="50" id="c-temp" type="range" min="-100" max="100" value="30" style="flex: 1 1 0%; accent-color: rgb(255, 210, 63); height: 24px;">
+          <span data-dc-tpl="51" style="font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 12px; width: 34px; text-align: right; color: rgb(244, 243, 239);"><span class="sc-interp">+30</span></span>
+        </div>
+      
+        <div data-dc-tpl="48" style="height: 38px; display: flex; align-items: center; gap: 10px;">
+          <label data-dc-tpl="49" for="c-tint" style="font-size: 13px; width: 92px;"><span class="sc-interp">Tint</span></label>
+          <input data-dc-tpl="50" id="c-tint" type="range" min="-100" max="100" value="0" style="flex: 1 1 0%; accent-color: rgb(255, 210, 63); height: 24px;">
+          <span data-dc-tpl="51" style="font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 12px; width: 34px; text-align: right; color: rgb(140, 139, 148);"><span class="sc-interp">0</span></span>
+        </div>
+      
+        <div data-dc-tpl="48" style="height: 38px; display: flex; align-items: center; gap: 10px;">
+          <label data-dc-tpl="49" for="c-vig" style="font-size: 13px; width: 92px;"><span class="sc-interp">Vignette</span></label>
+          <input data-dc-tpl="50" id="c-vig" type="range" min="-100" max="100" value="30" style="flex: 1 1 0%; accent-color: rgb(255, 210, 63); height: 24px;">
+          <span data-dc-tpl="51" style="font-family: &quot;Geist Mono&quot;, ui-monospace, monospace; font-size: 12px; width: 34px; text-align: right; color: rgb(244, 243, 239);"><span class="sc-interp">+30</span></span>
+        </div>
+      
+    
+
+    
+
+    
+  </div>
+
+  <div data-dc-tpl="82" style="padding: 10px 16px 26px; display: grid; grid-template-columns: 1fr 1fr 1.4fr; gap: 8px;">
+    <button data-dc-tpl="83" style="height: 44px; border-radius: 12px; background: rgb(31, 31, 35); font-size: 13px; font-weight: 600;">Auto</button>
+    <button data-dc-tpl="84" style="height: 44px; border-radius: 12px; background: rgb(31, 31, 35); font-size: 13px; font-weight: 600;">Reset</button>
+    <button data-dc-tpl="85" style="height: 44px; border-radius: 12px; border: 1.5px solid rgb(255, 210, 63); color: rgb(255, 210, 63); box-sizing: border-box; font-size: 13px; font-weight: 600;">Paste to 4 clips</button>
+  </div></div></div></div>
+</body>
+</html>

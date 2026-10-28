@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Clipra - Text card and effects</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0;background:#0D0D0F}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+input{font:inherit}
+a{color:#FFD23F;text-decoration:none}a:hover{color:#FFE27A}
+.hscroll::-webkit-scrollbar{display:none}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; padding-top: 36px; background: #0D0D0F; color: #F4F3EF; font-family: 'Geist', system-ui, sans-serif; display: flex; flex-direction: column; overflow: hidden">
+
+  <header style="height: 48px; padding: 0 12px 0 6px; display: flex; align-items: center; gap: 6px">
+    <a href="Editor.dc.html" aria-label="Back to timeline" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #F4F3EF; border-radius: 12px">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"></path></svg>
+    </a>
+    <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px">
+      <span style="font-size: 15px; font-weight: 600">Text card</span>
+      <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; color: #A6A5AD">Layer L3 · 00:11.00 – 00:14.00</span>
+    </span>
+    <a href="Editor.dc.html" style="height: 40px; padding: 0 14px; border-radius: 12px; background: #FFD23F; color: #141210; font-size: 14px; font-weight: 700; display: flex; align-items: center">Done</a>
+  </header>
+
+  <div style="height: 280px; background: #000000; display: flex; align-items: center; justify-content: center; border-top: 1px solid #1A1A1E; border-bottom: 1px solid #1A1A1E">
+    <div role="img" aria-label="{{previewLabel}}" style="position: relative; width: 158px; height: 280px; background: {{card}}; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; outline: 1px solid #2A2A30">
+      <span style="max-width: 136px; text-align: center; font-family: 'Bricolage Grotesque', 'Geist', sans-serif; font-weight: 800; font-size: 30px; line-height: 1.05; letter-spacing: -0.01em; text-transform: uppercase; overflow-wrap: anywhere; color: {{fx.color}}; text-shadow: {{fx.shadow}}; -webkit-text-stroke: {{fx.stroke}}; background: {{fx.bg}}; -webkit-background-clip: {{fx.clip}}; background-clip: {{fx.clip}}; padding: {{fx.pad}}; border-radius: 4px">{{text}}</span>
+      <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: {{fg}}; opacity: 0.8">Sintra · 8:40 am</span>
+      <span style="position: absolute; right: 6px; bottom: 6px; padding: 2px 6px; border-radius: 5px; background: rgba(13,13,15,0.85); color: #FFD23F; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 10px">In: {{animName}}</span>
+    </div>
+  </div>
+
+  <div style="flex: 1; min-height: 0; padding: 12px 16px 0; display: flex; flex-direction: column; gap: 14px">
+    <div style="display: flex; gap: 8px">
+      <label style="flex: 1; height: 48px; border-radius: 12px; background: #17171A; border: 1.5px solid #2A2A30; box-sizing: border-box; padding: 0 12px; display: flex; align-items: center; gap: 10px">
+        <span style="font-size: 12px; color: #A6A5AD">Text</span>
+        <input type="text" value="{{text}}" onChange="{{setText}}" style="flex: 1; min-width: 0; background: transparent; border: 0; outline: none; color: #F4F3EF; font-size: 15px; font-weight: 500">
+      </label>
+      <button aria-label="Font: Bricolage Grotesque" style="width: 48px; height: 48px; border-radius: 12px; background: #17171A; border: 1.5px solid #2A2A30; box-sizing: border-box; font-family: 'Bricolage Grotesque', 'Geist', sans-serif; font-weight: 800; font-size: 17px">Aa</button>
+      <button aria-label="Text alignment: center" style="width: 48px; height: 48px; border-radius: 12px; background: #17171A; border: 1.5px solid #2A2A30; box-sizing: border-box; display: flex; align-items: center; justify-content: center">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M7 12h10M5 18h14"></path></svg>
+      </button>
+    </div>
+
+    <section style="display: flex; flex-direction: column; gap: 6px">
+      <h2 style="margin: 0; font-size: 13px; font-weight: 600; color: #A6A5AD">Card color</h2>
+      <div style="display: flex; gap: 8px">
+        <sc-for list="{{cards}}" as="c" hint-placeholder-count="6">
+          <button onClick="{{c.pick}}" aria-label="{{c.label}}" aria-pressed="{{c.pressed}}" style="width: 44px; height: 44px; border-radius: 22px; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 0 2px {{c.ring}}">
+            <span style="width: 34px; height: 34px; border-radius: 17px; background: {{c.v}}; border: 1px solid #3A3A40; box-sizing: border-box; display: block"></span>
+          </button>
+        </sc-for>
+        <button aria-label="Custom color" style="width: 44px; height: 44px; border-radius: 22px; display: flex; align-items: center; justify-content: center">
+          <span style="width: 34px; height: 34px; border-radius: 17px; background: conic-gradient(#FF5A36, #FFD23F, #3BD17A, #2FB8FF, #7A5AF8, #FF4FD8, #FF5A36); display: flex; align-items: center; justify-content: center">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#141210" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+          </span>
+        </button>
+      </div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 6px">
+      <h2 style="margin: 0; font-size: 13px; font-weight: 600; color: #A6A5AD">Text effect</h2>
+      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px">
+        <sc-for list="{{effects}}" as="e" hint-placeholder-count="12">
+          <button onClick="{{e.pick}}" aria-pressed="{{e.pressed}}" style="height: 60px; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 0 0 2px {{e.ring}}">
+            <span style="height: 40px; background: {{e.cardBg}}; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid #2A2A30">
+              <span style="font-family: 'Bricolage Grotesque', 'Geist', sans-serif; font-weight: 800; font-size: 20px; color: {{e.color}}; text-shadow: {{e.shadow}}; -webkit-text-stroke: {{e.stroke}}; background: {{e.bg}}; -webkit-background-clip: {{e.clip}}; background-clip: {{e.clip}}; padding: {{e.pad}}; border-radius: 3px">Aa</span>
+            </span>
+            <span style="flex: 1; background: #17171A; font-size: 11px; font-weight: 500; color: {{e.fg}}; display: flex; align-items: center; justify-content: center">{{e.name}}</span>
+          </button>
+        </sc-for>
+      </div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 6px">
+      <h2 style="margin: 0; font-size: 13px; font-weight: 600; color: #A6A5AD">Animation in</h2>
+      <div class="hscroll" style="display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: 0 -16px; padding: 0 16px">
+        <sc-for list="{{anims}}" as="a" hint-placeholder-count="8">
+          <button onClick="{{a.pick}}" aria-pressed="{{a.pressed}}" style="height: 40px; padding: 0 14px; border-radius: 20px; background: {{a.bg}}; color: {{a.fg}}; font-size: 13px; font-weight: 600; white-space: nowrap; flex-shrink: 0">{{a.name}}</button>
+        </sc-for>
+      </div>
+    </section>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { text: 'Day two', card: 'black', fx: 'retro', anim: 'type' };
+  }
+  renderVals() {
+    const s = this.state || {};
+    const CARDS = [
+      { id: 'black', label: 'Black', v: '#000000', light: false },
+      { id: 'white', label: 'White', v: '#FFFFFF', light: true },
+      { id: 'yellow', label: 'Yellow', v: '#FFD23F', light: true },
+      { id: 'red', label: 'Red', v: '#E5482E', light: false },
+      { id: 'blue', label: 'Blue', v: '#2F4FE0', light: false },
+      { id: 'green', label: 'Green', v: '#17795A', light: false }
+    ];
+    const card = CARDS.find((c) => c.id === s.card) || CARDS[0];
+    const fg = card.light ? '#141210' : '#FFFFFF';
+    const base = { color: fg, shadow: 'none', stroke: '0px transparent', bg: 'none', clip: 'border-box', pad: '0' };
+    const FX = [
+      ['none', 'None', {}],
+      ['outline', 'Outline', { stroke: '1.5px #FF5A36' }],
+      ['shadow', 'Shadow', { shadow: '0 3px 0 rgba(0,0,0,0.35), 0 8px 18px rgba(0,0,0,0.55)' }],
+      ['glow', 'Glow', { color: '#FFFFFF', shadow: '0 0 6px rgba(255,210,63,0.95), 0 0 16px rgba(255,210,63,0.7)' }],
+      ['neon', 'Neon', { color: '#FFE9F7', shadow: '0 0 3px #FF4FD8, 0 0 10px #FF4FD8, 0 0 22px #B000FF' }],
+      ['box', 'Box', { color: '#141210', bg: card.id === 'yellow' ? '#FFFFFF' : '#FFD23F', pad: '0 0.18em' }],
+      ['gradient', 'Gradient', { color: 'transparent', bg: 'linear-gradient(90deg, #FFD23F, #FF5A36)', clip: 'text' }],
+      ['extrude', 'Extrude', { color: '#FFD23F', shadow: '1px 1px 0 #C99A00, 2px 2px 0 #B38800, 3px 3px 0 #9C7600, 4px 4px 0 #846300, 5px 6px 8px rgba(0,0,0,0.5)' }],
+      ['glitch', 'Glitch', { shadow: '-2px 0 0 #00E5FF, 2px 0 0 #FF2D55' }],
+      ['hollow', 'Hollow', { color: 'transparent', stroke: '1.5px ' + fg }],
+      ['retro', 'Retro', { color: '#FFD23F', shadow: '3px 3px 0 #FF5A36, 6px 6px 0 #3D5AFE' }],
+      ['marker', 'Marker', { bg: 'linear-gradient(transparent 58%, rgba(255,90,54,0.85) 58%)', pad: '0 0.1em' }]
+    ];
+    const cur = FX.find((f) => f[0] === s.fx) || FX[0];
+    const fx = { ...base, ...cur[2] };
+    const ANIMS = [['none', 'None'], ['type', 'Typewriter'], ['fade', 'Fade up'], ['pop', 'Pop'], ['slide', 'Slide'], ['bounce', 'Bounce'], ['wave', 'Wave'], ['glitch', 'Glitch in'], ['karaoke', 'Karaoke']];
+    const anim = ANIMS.find((a) => a[0] === s.anim) || ANIMS[0];
+    return {
+      text: s.text,
+      card: card.v,
+      fg,
+      fx,
+      animName: anim[1],
+      previewLabel: 'Text card: ' + s.text + ' on a ' + card.label.toLowerCase() + ' background with the ' + cur[1] + ' effect',
+      setText: (e) => this.setState({ text: e.target.value }),
+      cards: CARDS.map((c) => ({ ...c, ring: c.id === card.id ? '#FFD23F' : 'transparent', pressed: c.id === card.id ? 'true' : 'false', pick: () => this.setState({ card: c.id }) })),
+      effects: FX.map(([id, name, o]) => {
+        const on = id === cur[0];
+        return { name, cardBg: card.v, ...base, ...o, ring: on ? '#FFD23F' : '#2A2A30', fg: on ? '#FFD23F' : '#B4B3BB', pressed: on ? 'true' : 'false', pick: () => this.setState({ fx: id }) };
+      }),
+      anims: ANIMS.map(([id, name]) => {
+        const on = id === anim[0];
+        return { name, bg: on ? '#F4F3EF' : '#17171A', fg: on ? '#0D0D0F' : '#F4F3EF', pressed: on ? 'true' : 'false', pick: () => this.setState({ anim: id }) };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

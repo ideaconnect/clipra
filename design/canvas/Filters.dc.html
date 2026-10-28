@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Clipra - Filters</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0;background:#0D0D0F}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+a{color:#FFD23F;text-decoration:none}a:hover{color:#FFE27A}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; padding-top: 36px; background: #0D0D0F; color: #F4F3EF; font-family: 'Geist', system-ui, sans-serif; display: flex; flex-direction: column; overflow: hidden">
+
+  <header style="height: 48px; padding: 0 12px 0 6px; display: flex; align-items: center; gap: 6px">
+    <a href="Editor.dc.html" aria-label="Back to timeline" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #F4F3EF; border-radius: 12px">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"></path></svg>
+    </a>
+    <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px">
+      <span style="font-size: 15px; font-weight: 600">Filters</span>
+      <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; color: #A6A5AD">sunset.mp4 · 24 filters</span>
+    </span>
+    <a href="Editor.dc.html" style="height: 40px; padding: 0 14px; border-radius: 12px; background: #FFD23F; color: #141210; font-size: 14px; font-weight: 700; display: flex; align-items: center">Done</a>
+  </header>
+
+  <div style="position: relative; height: 240px; background: #000000; display: flex; align-items: center; justify-content: center">
+    <div role="img" aria-label="{{previewLabel}}" style="position: relative; width: 135px; height: 240px; overflow: hidden; isolation: isolate">
+      <div style="position: absolute; inset: 0; background: linear-gradient(180deg, #23305C 0%, #6B4D7A 36%, #D9785A 66%, #F3B064 100%)"></div>
+      <div style="position: absolute; left: 62%; top: 30%; width: 24%; aspect-ratio: 1; border-radius: 50%; background: #FFE6A8"></div>
+      <div style="position: absolute; left: -30%; right: 35%; top: 64%; height: 50%; border-radius: 50%; background: #4A3355"></div>
+      <div style="position: absolute; left: 25%; right: -40%; top: 72%; height: 50%; border-radius: 50%; background: #22192E"></div>
+      <div style="position: absolute; left: 21%; right: 21%; top: 74%; bottom: -6%; border-radius: 48% 48% 0 0; background: #2F4A7A"></div>
+      <div style="position: absolute; left: 45%; width: 10%; top: 66%; height: 10%; background: #B97A5B"></div>
+      <div style="position: absolute; left: 37%; width: 26%; top: 50%; height: 18%; border-radius: 50%; background: #C98B6B"></div>
+      <div style="position: absolute; left: 36%; width: 28%; top: 48.5%; height: 8.5%; border-radius: 50% 50% 30% 30%; background: #2B1E1A"></div>
+
+      <div style="position: absolute; inset: 0; opacity: {{op}}">
+        <div style="position: absolute; inset: 0; filter: {{sel.f}}">
+          <div style="position: absolute; inset: 0; background: linear-gradient(180deg, #23305C 0%, #6B4D7A 36%, #D9785A 66%, #F3B064 100%)"></div>
+          <div style="position: absolute; left: 62%; top: 30%; width: 24%; aspect-ratio: 1; border-radius: 50%; background: #FFE6A8"></div>
+          <div style="position: absolute; left: -30%; right: 35%; top: 64%; height: 50%; border-radius: 50%; background: #4A3355"></div>
+          <div style="position: absolute; left: 25%; right: -40%; top: 72%; height: 50%; border-radius: 50%; background: #22192E"></div>
+          <div style="position: absolute; left: 21%; right: 21%; top: 74%; bottom: -6%; border-radius: 48% 48% 0 0; background: #2F4A7A"></div>
+          <div style="position: absolute; left: 45%; width: 10%; top: 66%; height: 10%; background: #B97A5B"></div>
+          <div style="position: absolute; left: 37%; width: 26%; top: 50%; height: 18%; border-radius: 50%; background: #C98B6B"></div>
+          <div style="position: absolute; left: 36%; width: 28%; top: 48.5%; height: 8.5%; border-radius: 50% 50% 30% 30%; background: #2B1E1A"></div>
+        </div>
+        <div style="position: absolute; inset: 0; background: {{sel.ov}}; mix-blend-mode: {{sel.blend}}"></div>
+        <sc-if value="{{sel.mosaic}}" hint-placeholder-val="{{true}}">
+          <div style="position: absolute; inset: 0; display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); grid-template-rows: repeat(16, minmax(0, 1fr))">
+            <sc-for list="{{pvCells}}" as="m" hint-placeholder-count="144">
+              <span style="background: {{m.c}}; display: block"></span>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+    <span style="position: absolute; left: 16px; bottom: 14px; display: flex; flex-direction: column; gap: 2px">
+      <span style="font-size: 15px; font-weight: 700">{{sel.name}}</span>
+      <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; color: #A6A5AD">{{intensity}}% strength</span>
+    </span>
+    <button aria-label="Hold to compare with original" style="position: absolute; right: 12px; bottom: 8px; width: 44px; height: 44px; border-radius: 22px; background: #1F1F23; display: flex; align-items: center; justify-content: center; color: #F4F3EF">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M12 4v16"></path><path d="M12 4h7a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-7z" fill="currentColor" stroke="none" opacity="0.45"></path></svg>
+    </button>
+  </div>
+
+  <div style="padding: 10px 16px 0; display: flex; align-items: center; gap: 6px">
+    <sc-for list="{{cats}}" as="c" hint-placeholder-count="3">
+      <button onClick="{{c.pick}}" aria-pressed="{{c.pressed}}" style="height: 44px; margin: -4px; padding: 0 12px; border: 4px solid transparent; box-sizing: border-box; background-clip: padding-box; border-radius: 22px; background: {{c.bg}}; color: {{c.fg}}; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px">
+        {{c.label}}
+        <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; opacity: 0.7">{{c.n}}</span>
+      </button>
+    </sc-for>
+    <span style="flex: 1"></span>
+    <button style="height: 44px; margin: -4px 0; padding: 0 4px; color: #FFD23F; font-size: 13px; font-weight: 600">Apply to all</button>
+  </div>
+
+  <div style="padding: 12px 16px 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px 8px; align-content: start; flex: 1; min-height: 0">
+    <sc-for list="{{tiles}}" as="f" hint-placeholder-count="25">
+      <button onClick="{{f.pick}}" aria-pressed="{{f.pressed}}" style="display: flex; flex-direction: column; gap: 5px; align-items: stretch; min-width: 0">
+        <span style="position: relative; display: block; height: 48px; border-radius: 10px; overflow: hidden; isolation: isolate; box-shadow: 0 0 0 2px {{f.ring}}">
+          <span style="position: absolute; inset: 0; display: block; filter: {{f.f}}">
+            <span style="position: absolute; inset: 0; display: block; background: linear-gradient(180deg, #23305C 0%, #6B4D7A 36%, #D9785A 66%, #F3B064 100%)"></span>
+            <span style="position: absolute; left: 62%; top: 22%; width: 22%; aspect-ratio: 1; border-radius: 50%; background: #FFE6A8; display: block"></span>
+            <span style="position: absolute; left: -30%; right: 35%; top: 62%; height: 70%; border-radius: 50%; background: #4A3355; display: block"></span>
+            <span style="position: absolute; left: 25%; right: -40%; top: 74%; height: 70%; border-radius: 50%; background: #22192E; display: block"></span>
+          </span>
+          <span style="position: absolute; inset: 0; display: block; background: {{f.ov}}; mix-blend-mode: {{f.blend}}"></span>
+          <span style="position: absolute; inset: 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); grid-template-rows: repeat(5, minmax(0, 1fr))">
+            <sc-for list="{{f.cells}}" as="m" hint-placeholder-count="0">
+              <span style="background: {{m.c}}; display: block"></span>
+            </sc-for>
+          </span>
+        </span>
+        <span style="font-size: 11px; font-weight: 500; color: {{f.fg}}; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{f.name}}</span>
+      </button>
+    </sc-for>
+  </div>
+
+  <div style="height: 52px; padding: 0 16px 26px; display: flex; align-items: center; gap: 12px">
+    <label for="strength" style="font-size: 13px; font-weight: 600; width: 64px">Strength</label>
+    <input id="strength" type="range" min="0" max="100" value="{{intensity}}" onChange="{{setIntensity}}" style="flex: 1; accent-color: #FFD23F; height: 28px">
+    <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 13px; width: 36px; text-align: right">{{intensity}}</span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { pick: 'mosaic', cat: 'all', intensity: 80 };
+  }
+  sample(W, H, cols, rows, person, sunTop) {
+    const hex = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+    const toHex = (c) => '#' + c.map((v) => Math.round(v).toString(16).padStart(2, '0')).join('');
+    const stops = [[0, hex('#23305C')], [0.36, hex('#6B4D7A')], [0.66, hex('#D9785A')], [1, hex('#F3B064')]];
+    const sky = (t) => {
+      for (let i = 1; i < stops.length; i++) {
+        if (t <= stops[i][0]) {
+          const a = stops[i - 1], b = stops[i];
+          const k = (t - a[0]) / (b[0] - a[0]);
+          return toHex(a[1].map((v, j) => v + (b[1][j] - v) * k));
+        }
+      }
+      return toHex(stops[stops.length - 1][1]);
+    };
+    const inE = (x, y, cx, cy, rx, ry) => ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 <= 1;
+    const out = [];
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const x = (c + 0.5) * W / cols, y = (r + 0.5) * H / rows;
+        let col = null;
+        if (person) {
+          if (inE(x, y, 0.5 * W, 0.53 * H, 0.14 * W, 0.0425 * H) && y < 0.57 * H) col = '#2B1E1A';
+          else if (inE(x, y, 0.5 * W, 0.59 * H, 0.13 * W, 0.09 * H)) col = '#C98B6B';
+          else if (x > 0.45 * W && x < 0.55 * W && y > 0.66 * H && y < 0.76 * H) col = '#B97A5B';
+          else if (x > 0.21 * W && x < 0.79 * W && y > 0.76 * H) col = '#2F4A7A';
+        }
+        if (!col && inE(x, y, 0.825 * W, (sunTop ? 0.74 : 0.72) * H + 0.35 * H * (sunTop ? 1 : 0.71), 0.575 * W, (sunTop ? 0.35 : 0.25) * H)) col = '#22192E';
+        if (!col && inE(x, y, 0.175 * W, (sunTop ? 0.62 : 0.64) * H + (sunTop ? 0.35 : 0.25) * H, 0.475 * W, (sunTop ? 0.35 : 0.25) * H)) col = '#4A3355';
+        if (!col) {
+          const sr = (sunTop ? 0.11 : 0.12) * W;
+          if (inE(x, y, 0.62 * W + sr, (sunTop ? 0.22 : 0.30) * H + sr, sr, sr)) col = '#FFE6A8';
+        }
+        out.push({ c: col || sky(y / H) });
+      }
+    }
+    return out;
+  }
+  renderVals() {
+    const s = this.state || {};
+    const grain = 'repeating-radial-gradient(circle at 30% 40%, rgba(255,255,255,0.22) 0 1px, transparent 1px 3px), repeating-radial-gradient(circle at 70% 60%, rgba(0,0,0,0.3) 0 1px, transparent 1px 2.5px)';
+    const vig = 'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.8) 100%)';
+    const F = [
+      { id: 'none', name: 'None', cat: 'all', f: 'none', ov: 'none', blend: 'normal' },
+      { id: 'vivid', name: 'Vivid', cat: 'look', f: 'saturate(1.6) contrast(1.1)' },
+      { id: 'warm', name: 'Warm', cat: 'look', f: 'sepia(0.3) saturate(1.4) hue-rotate(-12deg)' },
+      { id: 'cool', name: 'Cool', cat: 'look', f: 'sepia(0.35) hue-rotate(170deg) saturate(1.2) brightness(1.05)' },
+      { id: 'cine', name: 'Cinematic', cat: 'look', f: 'contrast(1.2) saturate(1.3)', ov: 'linear-gradient(180deg, rgba(0,150,160,0.6), rgba(255,140,60,0.4))', blend: 'soft-light' },
+      { id: 'matte', name: 'Matte', cat: 'look', f: 'contrast(0.78) brightness(1.12) saturate(0.85)' },
+      { id: 'mono', name: 'Mono', cat: 'look', f: 'grayscale(1)' },
+      { id: 'noir', name: 'Noir', cat: 'look', f: 'grayscale(1) contrast(1.7) brightness(0.9)', ov: vig },
+      { id: 'sepia', name: 'Sepia', cat: 'look', f: 'sepia(0.9)' },
+      { id: 'vintage', name: 'Vintage', cat: 'look', f: 'sepia(0.5) contrast(0.9) brightness(1.05) saturate(1.2)', ov: 'radial-gradient(ellipse at center, transparent 45%, rgba(40,20,0,0.65) 100%)' },
+      { id: 'film', name: 'Film', cat: 'look', f: 'sepia(0.18) contrast(1.08) saturate(0.9)', ov: grain, blend: 'overlay' },
+      { id: 'night', name: 'Night', cat: 'look', f: 'brightness(0.55) sepia(1) hue-rotate(180deg) saturate(1.6)' },
+      { id: 'neon', name: 'Neon', cat: 'look', f: 'hue-rotate(250deg) saturate(2) contrast(1.15)' },
+      { id: 'pastel', name: 'Pastel', cat: 'look', f: 'saturate(0.6) brightness(1.2) contrast(0.85)' },
+      { id: 'mosaic', name: 'Mosaic', cat: 'style', f: 'none', mosaic: true },
+      { id: 'blur', name: 'Blur', cat: 'style', f: 'blur(2.5px)' },
+      { id: 'glitch', name: 'Glitch', cat: 'style', f: 'saturate(1.3)', ov: 'repeating-linear-gradient(0deg, transparent 0 6px, rgba(0,255,234,0.5) 6px 8px, transparent 8px 13px, rgba(255,0,92,0.5) 13px 15px)', blend: 'screen' },
+      { id: 'vhs', name: 'VHS', cat: 'style', f: 'saturate(1.4) contrast(1.1) blur(0.4px)', ov: 'repeating-linear-gradient(0deg, rgba(0,0,0,0.4) 0 1px, transparent 1px 3px)' },
+      { id: 'grain', name: 'Grain', cat: 'style', f: 'contrast(1.05)', ov: grain, blend: 'overlay' },
+      { id: 'vignette', name: 'Vignette', cat: 'style', f: 'none', ov: vig },
+      { id: 'rgb', name: 'RGB split', cat: 'style', f: 'saturate(1.2)', ov: 'linear-gradient(90deg, rgba(255,0,80,0.45), transparent 35%, transparent 65%, rgba(0,190,255,0.45))', blend: 'screen' },
+      { id: 'leak', name: 'Light leak', cat: 'style', f: 'brightness(1.05)', ov: 'radial-gradient(circle at 85% 15%, rgba(255,140,60,0.95), rgba(255,80,120,0.4) 35%, transparent 65%)', blend: 'screen' },
+      { id: 'halftone', name: 'Halftone', cat: 'style', f: 'grayscale(0.3) contrast(1.2)', ov: 'radial-gradient(circle, rgba(0,0,0,0.6) 1.2px, transparent 1.7px) 0 0 / 5px 5px', blend: 'multiply' },
+      { id: 'duotone', name: 'Duotone', cat: 'style', f: 'grayscale(1) contrast(1.2)', ov: 'linear-gradient(135deg, #5B2A86, #FF8A5B)', blend: 'color' },
+      { id: 'glow', name: 'Soft glow', cat: 'style', f: 'brightness(1.12) saturate(1.15) contrast(0.95)', ov: 'radial-gradient(circle at 65% 40%, rgba(255,230,180,0.6), transparent 60%)', blend: 'screen' }
+    ].map((x) => ({ ov: 'none', blend: 'normal', mosaic: false, ...x }));
+    const tileCells = this.sample(62, 48, 6, 5, false, true);
+    const pvCells = this.sample(135, 240, 9, 16, true, false);
+    const sel = F.find((x) => x.id === s.pick) || F[0];
+    const CATS = [['all', 'All', 24], ['look', 'Looks', 13], ['style', 'Stylized', 11]];
+    const shown = F.filter((x) => s.cat === 'all' || x.cat === s.cat || x.id === 'none');
+    return {
+      sel,
+      op: String(s.intensity / 100),
+      intensity: s.intensity,
+      pvCells,
+      previewLabel: 'Preview of sunset.mp4 with the ' + sel.name + ' filter',
+      setIntensity: (e) => this.setState({ intensity: Number(e.target.value) }),
+      cats: CATS.map(([id, label, n]) => {
+        const on = id === s.cat;
+        return { label, n, bg: on ? '#F4F3EF' : '#17171A', fg: on ? '#0D0D0F' : '#F4F3EF', pressed: on ? 'true' : 'false', pick: () => this.setState({ cat: id }) };
+      }),
+      tiles: shown.map((x) => {
+        const on = x.id === sel.id;
+        return { ...x, cells: x.mosaic ? tileCells : [], ring: on ? '#FFD23F' : 'transparent', fg: on ? '#FFD23F' : '#B4B3BB', pressed: on ? 'true' : 'false', pick: () => this.setState({ pick: x.id }) };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Clipra - AI models</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0;background:#0D0D0F}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+a{color:#FFD23F;text-decoration:none}a:hover{color:#FFE27A}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; padding-top: 36px; background: #0D0D0F; color: #F4F3EF; font-family: 'Geist', system-ui, sans-serif; display: flex; flex-direction: column; overflow: hidden">
+
+  <header style="height: 52px; padding: 0 20px 0 6px; display: flex; align-items: center; gap: 4px">
+    <a href="Main.dc.html" aria-label="Back to projects" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #F4F3EF; border-radius: 12px">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"></path></svg>
+    </a>
+    <h1 style="margin: 0; font-family: 'Bricolage Grotesque', 'Geist', sans-serif; font-weight: 700; font-size: 22px; letter-spacing: -0.01em">AI models</h1>
+  </header>
+
+  <div style="flex: 1; min-height: 0; overflow: hidden; padding: 4px 16px 0; display: flex; flex-direction: column; gap: 8px">
+    <section style="border-radius: 16px; background: #131A13; border: 1px solid #22331F; padding: 12px; display: flex; flex-direction: column; gap: 8px">
+      <div style="display: flex; align-items: baseline; gap: 8px">
+        <span style="font-family: 'Bricolage Grotesque', 'Geist', sans-serif; font-size: 24px; font-weight: 800">{{totalText}}</span>
+        <span style="font-size: 12px; color: #B4C4B0">speech and voice models on this phone</span>
+      </div>
+      <div aria-hidden="true" style="height: 8px; border-radius: 4px; background: #22331F; display: flex; overflow: hidden">
+        <sc-for list="{{bar}}" as="b" hint-placeholder-count="2">
+          <span style="width: {{b.w}}%; background: {{b.c}}; display: block"></span>
+        </sc-for>
+      </div>
+      <span style="font-size: 12px; color: #B4C4B0; line-height: 1.4">Face and subject tracking is built in. Everything runs offline and nothing you edit is sent anywhere.</span>
+    </section>
+
+    <div style="display: flex; flex-direction: column">
+      <sc-for list="{{toggles}}" as="o" hint-placeholder-count="2">
+        <button role="switch" aria-checked="{{o.pressed}}" onClick="{{o.toggle}}" style="height: 40px; display: flex; align-items: center; gap: 12px; text-align: left">
+          <span style="flex: 1; font-size: 14px; font-weight: 500">{{o.label}}</span>
+          <span style="width: 44px; height: 26px; border-radius: 13px; background: {{o.track}}; position: relative; display: block">
+            <span style="position: absolute; top: 3px; left: {{o.knob}}px; width: 20px; height: 20px; border-radius: 10px; background: {{o.knobColor}}; display: block"></span>
+          </span>
+        </button>
+      </sc-for>
+    </div>
+
+    <sc-for list="{{groups}}" as="g" hint-placeholder-count="3">
+      <section style="display: flex; flex-direction: column; gap: 4px">
+        <h2 style="margin: 4px 0 0; font-size: 12px; font-weight: 600; color: #A6A5AD">{{g.title}}</h2>
+        <sc-for list="{{g.items}}" as="m" hint-placeholder-count="3">
+          <div style="height: 44px; border-radius: 12px; background: #17171A; padding: 0 6px 0 12px; display: flex; align-items: center; gap: 10px">
+            <span style="flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 8px">
+              <span style="font-size: 14px; font-weight: 600; white-space: nowrap">{{m.name}}</span>
+              <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; color: #A6A5AD; white-space: nowrap">{{m.size}}</span>
+              <sc-if value="{{m.isDefault}}" hint-placeholder-val="{{false}}">
+                <span style="padding: 1px 6px; border-radius: 5px; background: #2B2716; color: #FFD23F; font-size: 10px; font-weight: 700">Default</span>
+              </sc-if>
+            </span>
+            <button onClick="{{m.act}}" aria-label="{{m.aria}}" style="height: 44px; margin: -5px; padding: 0 12px; border: 5px solid transparent; box-sizing: border-box; background-clip: padding-box; border-radius: 15px; background: {{m.btnBg}}; color: {{m.btnFg}}; font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 4px">{{m.btn}}</button>
+          </div>
+        </sc-for>
+      </section>
+    </sc-for>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { inst: { tiny: false, base: true, small: false, turbo: false, dfn: true, rnn: true, enpl: true, plen: false, ende: false }, wifi: true, accel: true };
+  }
+  renderVals() {
+    const s = this.state || {};
+    const inst = s.inst || {};
+    const SIZE = { tiny: 75, base: 142, small: 466, turbo: 547, dfn: 8 };
+    const sw = (on, toggle) => ({ pressed: on ? 'true' : 'false', track: on ? '#FFD23F' : '#2A2A30', knob: on ? 21 : 3, knobColor: on ? '#141210' : '#B4B3BB', toggle });
+    const flip = (id) => this.setState({ inst: { ...inst, [id]: !inst[id] } });
+    const item = (id, name, size, opts) => {
+      const o = opts || {};
+      const on = !!inst[id] || o.builtIn;
+      const locked = o.builtIn || o.isDefault;
+      return {
+        name, size, isDefault: !!o.isDefault,
+        btn: o.builtIn ? 'Built in' : (on ? 'Installed' : 'Get'),
+        btnBg: on ? 'transparent' : '#FFD23F',
+        btnFg: on ? '#8FE388' : '#141210',
+        aria: o.builtIn ? name + ' is built in' : (on ? 'Remove ' + name : 'Download ' + name),
+        act: () => { if (!locked) flip(id); }
+      };
+    };
+    let total = 0;
+    Object.keys(SIZE).forEach((k) => { if (inst[k]) total += SIZE[k]; });
+    const COL = { tiny: '#5EE0C8', base: '#8FE388', small: '#7FA6FF', turbo: '#B9A6FF', dfn: '#FF9CC2' };
+    return {
+      totalText: total + ' MB',
+      bar: Object.keys(SIZE).filter((k) => inst[k]).map((k) => ({ w: (SIZE[k] / Math.max(total, 1) * 100).toFixed(1), c: COL[k] })),
+      toggles: [
+        { label: 'Download on Wi-Fi only', ...sw(s.wifi, () => this.setState({ wifi: !s.wifi })) },
+        { label: 'Use the phone’s NPU or GPU when it can', ...sw(s.accel, () => this.setState({ accel: !s.accel })) }
+      ],
+      groups: [
+        { title: 'Captions · Whisper', items: [
+          item('tiny', 'Tiny', '75 MB'),
+          item('base', 'Base', '142 MB', { isDefault: true }),
+          item('small', 'Small', '466 MB'),
+          item('turbo', 'Large v3 Turbo', '547 MB')
+        ] },
+        { title: 'Voice cleanup', items: [
+          item('dfn', 'DeepFilterNet 3', '8 MB'),
+          item('rnn', 'RNNoise', 'lite', { builtIn: true })
+        ] },
+        { title: 'Caption translation · offline, per language pair', items: [
+          item('enpl', 'English → Polish', ''),
+          item('plen', 'Polish → English', ''),
+          item('ende', 'English → German', '')
+        ] }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

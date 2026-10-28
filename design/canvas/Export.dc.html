@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Clipra - Export</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0;background:#0D0D0F}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+a{color:#FFD23F;text-decoration:none}a:hover{color:#FFE27A}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; padding-top: 36px; background: #0D0D0F; color: #F4F3EF; font-family: 'Geist', system-ui, sans-serif; display: flex; flex-direction: column; overflow: hidden">
+
+  <header style="height: 52px; padding: 0 20px 0 6px; display: flex; align-items: center; gap: 4px">
+    <a href="Editor.dc.html" aria-label="Back to timeline" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #F4F3EF; border-radius: 12px">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"></path></svg>
+    </a>
+    <h1 style="margin: 0; font-family: 'Bricolage Grotesque', 'Geist', sans-serif; font-weight: 700; font-size: 22px; letter-spacing: -0.01em">Export</h1>
+  </header>
+
+  <div style="flex: 1; min-height: 0; padding: 0 16px; display: flex; flex-direction: column; gap: 10px">
+    <div style="display: flex; align-items: center; gap: 12px">
+      <span style="position: relative; width: 32px; height: 56px; border-radius: 6px; overflow: hidden; flex-shrink: 0; display: block">
+        <span style="position: absolute; inset: 0; display: block; background: linear-gradient(180deg, #23305C 0%, #6B4D7A 36%, #D9785A 66%, #F3B064 100%)"></span>
+        <span style="position: absolute; left: 60%; top: 28%; width: 26%; aspect-ratio: 1; border-radius: 50%; background: #FFE6A8; display: block"></span>
+        <span style="position: absolute; left: -30%; right: 30%; top: 64%; height: 60%; border-radius: 50%; background: #4A3355; display: block"></span>
+        <span style="position: absolute; left: 20%; right: -40%; top: 74%; height: 60%; border-radius: 50%; background: #22192E; display: block"></span>
+      </span>
+      <span style="display: flex; flex-direction: column; gap: 3px">
+        <span style="font-size: 16px; font-weight: 600">Lisbon weekend</span>
+        <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; color: #A6A5AD">0:42 · 9:16 · 6 layers</span>
+      </span>
+    </div>
+
+    <section style="display: flex; flex-direction: column; gap: 6px">
+      <h2 style="margin: 0; font-size: 13px; font-weight: 600; color: #A6A5AD">Resolution</h2>
+      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: 16px; background: #17171A">
+        <sc-for list="{{res}}" as="x" hint-placeholder-count="4">
+          <button onClick="{{x.pick}}" aria-pressed="{{x.pressed}}" style="height: 52px; border-radius: 12px; background: {{x.bg}}; color: {{x.fg}}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px">
+            <span style="font-size: 15px; font-weight: 700">{{x.label}}</span>
+            <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 10px; color: {{x.sub}}">{{x.dims}}</span>
+          </button>
+        </sc-for>
+      </div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 6px">
+      <h2 style="margin: 0; font-size: 13px; font-weight: 600; color: #A6A5AD">Frame rate</h2>
+      <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: 14px; background: #17171A">
+        <sc-for list="{{fps}}" as="f" hint-placeholder-count="5">
+          <button onClick="{{f.pick}}" aria-pressed="{{f.pressed}}" style="height: 44px; border-radius: 10px; background: {{f.bg}}; color: {{f.fg}}; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 14px; font-weight: 600">{{f.v}}</button>
+        </sc-for>
+      </div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 6px">
+      <h2 style="margin: 0; font-size: 13px; font-weight: 600; color: #A6A5AD">Codec</h2>
+      <div role="radiogroup" aria-label="Codec" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+        <sc-for list="{{codecs}}" as="c" hint-placeholder-count="3">
+          <button role="radio" aria-checked="{{c.pressed}}" aria-disabled="{{c.disabled}}" onClick="{{c.pick}}" style="height: 56px; border-radius: 14px; border: 1.5px solid {{c.bd}}; background: {{c.bg}}; box-sizing: border-box; padding: 0 10px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; text-align: left">
+            <span style="font-size: 14px; font-weight: 700; color: {{c.fg}}">{{c.name}}</span>
+            <span style="font-size: 11px; color: #A6A5AD">{{c.note}}</span>
+          </button>
+        </sc-for>
+      </div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 6px">
+      <h2 style="margin: 0; font-size: 13px; font-weight: 600; color: #A6A5AD">Quality</h2>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: 14px; background: #17171A">
+        <sc-for list="{{quality}}" as="q" hint-placeholder-count="3">
+          <button onClick="{{q.pick}}" aria-pressed="{{q.pressed}}" style="height: 44px; border-radius: 10px; background: {{q.bg}}; color: {{q.fg}}; font-size: 13px; font-weight: 600">{{q.label}}</button>
+        </sc-for>
+      </div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 6px">
+      <h2 style="margin: 0; font-size: 13px; font-weight: 600; color: #A6A5AD">Captions</h2>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: 14px; background: #17171A">
+        <sc-for list="{{caps}}" as="k" hint-placeholder-count="3">
+          <button onClick="{{k.pick}}" aria-pressed="{{k.pressed}}" style="height: 44px; border-radius: 10px; background: {{k.bg}}; color: {{k.fg}}; font-size: 13px; font-weight: 600">{{k.label}}</button>
+        </sc-for>
+      </div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 6px">
+      <h2 style="margin: 0; font-size: 13px; font-weight: 600; color: #A6A5AD">Also save</h2>
+      <div style="display: flex; gap: 8px">
+        <sc-for list="{{extras}}" as="x" hint-placeholder-count="2">
+          <button onClick="{{x.toggle}}" aria-pressed="{{x.pressed}}" style="height: 44px; padding: 0 14px 0 10px; border-radius: 22px; border: 1.5px solid {{x.bd}}; background: {{x.bg}}; color: {{x.fg}}; box-sizing: border-box; display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600">
+            <span style="width: 18px; height: 18px; border-radius: 5px; background: {{x.box}}; border: 1.5px solid {{x.boxBd}}; box-sizing: border-box; display: flex; align-items: center; justify-content: center; color: #141210">
+              <sc-if value="{{x.on}}" hint-placeholder-val="{{true}}">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>
+              </sc-if>
+            </span>
+            {{x.label}}
+          </button>
+        </sc-for>
+      </div>
+    </section>
+  </div>
+
+  <div style="padding: 10px 16px 22px; border-top: 1px solid #1F1F23; display: flex; flex-direction: column; gap: 10px">
+    <div style="display: flex; align-items: baseline; gap: 8px">
+      <span style="font-size: 13px; color: #A6A5AD">Estimated size</span>
+      <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 20px; font-weight: 600">{{size}}</span>
+      <span style="flex: 1"></span>
+      <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; color: #A6A5AD">{{rate}}</span>
+    </div>
+    <a href="AdStart.dc.html" style="height: 56px; border-radius: 16px; background: #FFD23F; color: #141210; font-size: 16px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4M7 9l5-5 5 5M5 20h14"></path></svg>
+      Export to Gallery
+    </a>
+    <a href="Pro.dc.html" style="height: 44px; margin: -8px 0 -6px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; color: #A6A5AD">
+      <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" style="color: #FFD23F"><path d="M3 8.5l4.5 3.7L12 5l4.5 7.2L21 8.5l-1.8 9H4.8z" fill="currentColor"></path><rect x="4.8" y="19" width="14.4" height="2" rx="1" fill="currentColor"></rect></svg>
+      Two short ads play while it exports.
+      <span style="color: #FFD23F; font-weight: 600">Remove for 10 PLN</span>
+    </a>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { res: 1080, fps: 30, codec: 'h264', quality: 'rec', caps: 'burn', jpg: true, otio: true };
+  }
+  renderVals() {
+    const s = this.state || {};
+    const RES = [[720, '720p', 7.5], [1080, '1080p', 12], [1440, '2K', 24], [2160, '4K', 45]];
+    const CODECS = [['h264', 'H.264', 'Plays everywhere', 1], ['hevc', 'HEVC', 'Smaller files', 0.6], ['av1', 'AV1', 'Not on this phone', 0.5]];
+    const QUALITY = [['small', 'Smaller', 0.6], ['rec', 'Recommended', 1], ['high', 'High', 1.6]];
+    const CAPS = [['burn', 'Burn in'], ['srt', 'Separate .srt'], ['off', 'Off']];
+    const seg = (on) => ({ bg: on ? '#FFD23F' : 'transparent', fg: on ? '#141210' : '#F4F3EF', sub: on ? '#3B3418' : '#A6A5AD', pressed: on ? 'true' : 'false' });
+    const r = RES.find((x) => x[0] === s.res) || RES[1];
+    const c = CODECS.find((x) => x[0] === s.codec) || CODECS[0];
+    const q = QUALITY.find((x) => x[0] === s.quality) || QUALITY[1];
+    const mbps = r[2] * (s.fps > 30 ? 1.5 : 1) * q[2] * c[3];
+    const mb = mbps * 42 / 8 + 1.3;
+    const fmt = (v) => v >= 100 ? Math.round(v) + '' : v.toFixed(1);
+    return {
+      res: RES.map(([p, label]) => ({ label, dims: p + '×' + Math.round(p * 16 / 9 / 2) * 2, ...seg(p === r[0]), pick: () => this.setState({ res: p }) })),
+      fps: [24, 25, 30, 50, 60].map((v) => ({ v, ...seg(v === s.fps), pick: () => this.setState({ fps: v }) })),
+      codecs: CODECS.map(([id, name, note]) => {
+        const on = id === c[0];
+        return { name, note, disabled: id === 'av1' ? 'true' : 'false', bd: on ? '#FFD23F' : '#2A2A30', bg: on ? '#221F12' : '#17171A', fg: on ? '#FFD23F' : (id === 'av1' ? '#6E6D76' : '#F4F3EF'), pressed: on ? 'true' : 'false', pick: () => { if (id !== 'av1') this.setState({ codec: id }); } };
+      }),
+      quality: QUALITY.map(([id, label]) => ({ label, ...seg(id === q[0]), pick: () => this.setState({ quality: id }) })),
+      caps: CAPS.map(([id, label]) => ({ label, ...seg(id === s.caps), pick: () => this.setState({ caps: id }) })),
+      extras: [['jpg', 'Cover .jpg'], ['otio', 'Project .otio']].map(([key, label]) => {
+        const on = !!s[key];
+        return { label, on, pressed: on ? 'true' : 'false', bd: on ? '#FFD23F' : '#2A2A30', bg: on ? '#221F12' : '#17171A', fg: on ? '#FFD23F' : '#F4F3EF', box: on ? '#FFD23F' : 'transparent', boxBd: on ? '#FFD23F' : '#6E6D76', toggle: () => this.setState({ [key]: !on }) };
+      }),
+      size: '~' + fmt(mb) + ' MB',
+      rate: fmt(mbps) + ' Mbps · ' + c[1]
+    };
+  }
+}
+</script>
+</body>
+</html>

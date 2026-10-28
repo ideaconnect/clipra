@@ -1,0 +1,391 @@
+{
+  "v": 3,
+  "createdOnFiles": {
+    "v": 1,
+    "at": "2026-10-26T16:12:37Z"
+  },
+  "title": "Clipra",
+  "launch": {
+    "view": "canvas"
+  },
+  "pages": [],
+  "boards": {
+    "Main.dc.html": {
+      "x": 470,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "Home",
+      "is_interactive": true,
+      "radius": 28
+    },
+    "NewProject.dc.html": {
+      "x": 940,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "New project - format & resolution",
+      "is_interactive": true,
+      "radius": 28
+    },
+    "Editor.dc.html": {
+      "x": 1410,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "Editor - timeline",
+      "is_interactive": true,
+      "radius": 28
+    },
+    "Layers.dc.html": {
+      "x": 1880,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "Layers & blending",
+      "is_interactive": true,
+      "radius": 28
+    },
+    "Filters.dc.html": {
+      "x": 0,
+      "y": 1244,
+      "w": 390,
+      "h": 844,
+      "title": "Filters",
+      "is_interactive": true,
+      "radius": 28
+    },
+    "Transitions.dc.html": {
+      "x": 470,
+      "y": 1244,
+      "w": 390,
+      "h": 844,
+      "title": "Transitions",
+      "is_interactive": true,
+      "radius": 28
+    },
+    "Text.dc.html": {
+      "x": 940,
+      "y": 1244,
+      "w": 390,
+      "h": 844,
+      "title": "Text card & effects",
+      "is_interactive": true,
+      "radius": 28
+    },
+    "Masks.dc.html": {
+      "x": 1410,
+      "y": 1244,
+      "w": 390,
+      "h": 844,
+      "title": "Masks",
+      "is_interactive": true,
+      "radius": 28
+    },
+    "CaptionsSetup.dc.html": {
+      "x": 0,
+      "y": 2488,
+      "w": 390,
+      "h": 844,
+      "title": "Auto captions - setup",
+      "is_interactive": true,
+      "radius": 28
+    },
+    "CaptionsEdit.dc.html": {
+      "x": 470,
+      "y": 2488,
+      "w": 390,
+      "h": 844,
+      "title": "Auto captions - edit",
+      "is_interactive": true,
+      "radius": 28
+    },
+    "Audio.dc.html": {
+      "x": 0,
+      "y": 4976,
+      "w": 390,
+      "h": 844,
+      "title": "Audio cleanup",
+      "is_interactive": true,
+      "radius": 28
+    },
+    "Export.dc.html": {
+      "x": 0,
+      "y": 3732,
+      "w": 390,
+      "h": 844,
+      "title": "Export",
+      "is_interactive": true,
+      "radius": 28
+    },
+    "Transcript.dc.html": {
+      "x": 940,
+      "y": 2488,
+      "w": 390,
+      "h": 844,
+      "title": "Edit by text",
+      "is_interactive": true,
+      "radius": 28
+    },
+    "Color.dc.html": {
+      "x": 1880,
+      "y": 1244,
+      "w": 390,
+      "h": 844,
+      "title": "Color",
+      "is_interactive": true,
+      "radius": 28
+    },
+    "Cutout.dc.html": {
+      "x": 1410,
+      "y": 2488,
+      "w": 390,
+      "h": 844,
+      "title": "Cutout & chroma key",
+      "is_interactive": true,
+      "radius": 28
+    },
+    "Reframe.dc.html": {
+      "x": 1880,
+      "y": 2488,
+      "w": 390,
+      "h": 844,
+      "title": "Auto-reframe",
+      "is_interactive": true,
+      "radius": 28
+    },
+    "Models.dc.html": {
+      "x": 940,
+      "y": 4976,
+      "w": 390,
+      "h": 844,
+      "title": "AI models",
+      "is_interactive": true,
+      "radius": 28
+    },
+    "Onboarding.dc.html": {
+      "x": 0,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "title": "First run",
+      "is_interactive": true,
+      "radius": 28
+    },
+    "ExportProgress.dc.html": {
+      "x": 940,
+      "y": 3732,
+      "w": 390,
+      "h": 844,
+      "title": "Export progress",
+      "is_interactive": true,
+      "radius": 28
+    },
+    "TabletHome.dc.html": {
+      "x": 0,
+      "y": 6220,
+      "w": 1280,
+      "h": 800,
+      "title": "Tablet - Home & new project",
+      "is_interactive": true,
+      "radius": 20
+    },
+    "TabletEditor.dc.html": {
+      "x": 1360,
+      "y": 6220,
+      "w": 1280,
+      "h": 800,
+      "title": "Tablet - Editor",
+      "is_interactive": true,
+      "radius": 20
+    },
+    "TabletEffects.dc.html": {
+      "x": 2720,
+      "y": 6220,
+      "w": 1280,
+      "h": 800,
+      "title": "Tablet - Filters, transitions & masks",
+      "is_interactive": true,
+      "radius": 20
+    },
+    "TabletText.dc.html": {
+      "x": 4080,
+      "y": 6220,
+      "w": 1280,
+      "h": 800,
+      "title": "Tablet - Text",
+      "is_interactive": true,
+      "radius": 20
+    },
+    "TabletCaptions.dc.html": {
+      "x": 0,
+      "y": 7140,
+      "w": 1280,
+      "h": 800,
+      "title": "Tablet - Auto captions",
+      "is_interactive": true,
+      "radius": 20
+    },
+    "TabletAudio.dc.html": {
+      "x": 1360,
+      "y": 7140,
+      "w": 1280,
+      "h": 800,
+      "title": "Tablet - Audio cleanup",
+      "is_interactive": true,
+      "radius": 20
+    },
+    "TabletExport.dc.html": {
+      "x": 4080,
+      "y": 7140,
+      "w": 1280,
+      "h": 800,
+      "title": "Tablet - Export",
+      "is_interactive": true,
+      "radius": 20
+    },
+    "TabletTranscript.dc.html": {
+      "x": 2720,
+      "y": 7140,
+      "w": 1280,
+      "h": 800,
+      "title": "Tablet - Edit by text",
+      "is_interactive": true,
+      "radius": 20
+    },
+    "AdStart.dc.html": {
+      "w": 390,
+      "h": 844,
+      "title": "Export ad 1 of 2 - when export starts",
+      "is_interactive": true,
+      "radius": 28,
+      "x": 470,
+      "y": 3732
+    },
+    "AdFinish.dc.html": {
+      "w": 390,
+      "h": 844,
+      "title": "Export ad 2 of 2 - when export finishes",
+      "is_interactive": true,
+      "radius": 28,
+      "x": 1410,
+      "y": 3732
+    },
+    "ExportDone.dc.html": {
+      "w": 390,
+      "h": 844,
+      "title": "Saved to Gallery",
+      "is_interactive": true,
+      "radius": 28,
+      "x": 1880,
+      "y": 3732
+    },
+    "Pro.dc.html": {
+      "w": 390,
+      "h": 844,
+      "title": "Clipra Pro - remove ads, 10 PLN once",
+      "is_interactive": true,
+      "radius": 28,
+      "x": 470,
+      "y": 4976
+    },
+    "TabletAd.dc.html": {
+      "w": 1280,
+      "h": 800,
+      "title": "Tablet - Export ad (both slots)",
+      "is_interactive": true,
+      "radius": 20,
+      "x": 0,
+      "y": 8060
+    },
+    "TabletPro.dc.html": {
+      "w": 1280,
+      "h": 800,
+      "title": "Tablet - Clipra Pro",
+      "is_interactive": true,
+      "radius": 20,
+      "x": 1360,
+      "y": 8060
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "NewProject.dc.html",
+    "Editor.dc.html",
+    "Layers.dc.html",
+    "Filters.dc.html",
+    "Transitions.dc.html",
+    "Text.dc.html",
+    "Masks.dc.html",
+    "CaptionsSetup.dc.html",
+    "CaptionsEdit.dc.html",
+    "Audio.dc.html",
+    "Export.dc.html",
+    "Transcript.dc.html",
+    "Color.dc.html",
+    "Cutout.dc.html",
+    "Reframe.dc.html",
+    "Models.dc.html",
+    "Onboarding.dc.html",
+    "ExportProgress.dc.html",
+    "TabletHome.dc.html",
+    "TabletEditor.dc.html",
+    "TabletEffects.dc.html",
+    "TabletText.dc.html",
+    "TabletCaptions.dc.html",
+    "TabletAudio.dc.html",
+    "TabletExport.dc.html",
+    "TabletTranscript.dc.html",
+    "AdStart.dc.html",
+    "AdFinish.dc.html",
+    "ExportDone.dc.html",
+    "Pro.dc.html",
+    "TabletAd.dc.html",
+    "TabletPro.dc.html"
+  ],
+  "notes": {
+    "row1": {
+      "x": 0,
+      "y": -300,
+      "text": "Start & edit",
+      "kind": "title1",
+      "maxW": 2270
+    },
+    "row2": {
+      "x": 0,
+      "y": 944,
+      "text": "Effects & look",
+      "kind": "title1",
+      "maxW": 2270
+    },
+    "row3": {
+      "x": 0,
+      "y": 2188,
+      "text": "On-device AI: captions, edit by text, cutout, reframe",
+      "kind": "title1",
+      "maxW": 2270
+    },
+    "row4": {
+      "x": 0,
+      "y": 3432,
+      "text": "Export with two ads",
+      "kind": "title1",
+      "maxW": 2270
+    },
+    "tablet": {
+      "x": 0,
+      "y": 5920,
+      "text": "Tablet - landscape 1280×800",
+      "kind": "title1",
+      "maxW": 5360
+    },
+    "row5": {
+      "x": 0,
+      "y": 4676,
+      "text": "Audio, Clipra Pro & AI models",
+      "kind": "title1",
+      "maxW": 1340
+    }
+  },
+  "designSystems": []
+}

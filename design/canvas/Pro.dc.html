@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Clipra - Clipra Pro</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0;background:#0D0D0F}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+a{color:#FFD23F;text-decoration:none}a:hover{color:#FFE27A}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; padding-top: 36px; background: #0D0D0F; color: #F4F3EF; font-family: 'Geist', system-ui, sans-serif; display: flex; flex-direction: column; overflow: hidden">
+
+  <header style="height: 52px; padding: 0 20px 0 6px; display: flex; align-items: center">
+    <a href="Main.dc.html" aria-label="Close" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #F4F3EF; border-radius: 12px">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+    </a>
+  </header>
+
+  <div style="flex: 1; min-height: 0; padding: 0 24px; display: flex; flex-direction: column; gap: 18px">
+    <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 12px">
+      <span style="width: 64px; height: 64px; border-radius: 20px; background: #FFD23F; color: #141210; display: flex; align-items: center; justify-content: center">
+        <svg width="34" height="34" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8.5l4.5 3.7L12 5l4.5 7.2L21 8.5l-1.8 9H4.8z" fill="currentColor"></path><rect x="4.8" y="19" width="14.4" height="2" rx="1" fill="currentColor"></rect></svg>
+      </span>
+      <h1 style="margin: 0; font-family: 'Bricolage Grotesque', 'Geist', sans-serif; font-weight: 800; font-size: 34px; letter-spacing: -0.02em; line-height: 1">{{headline}}</h1>
+      <p style="margin: 0; font-size: 15px; color: #B4B3BB; line-height: 1.45">{{subline}}</p>
+    </div>
+
+    <sc-if value="{{notOwned}}" hint-placeholder-val="{{true}}">
+      <div style="border-radius: 18px; background: #1B1910; border: 1px solid #4A3F14; padding: 14px 16px; display: flex; align-items: baseline; gap: 10px">
+        <span style="font-family: 'Bricolage Grotesque', 'Geist', sans-serif; font-weight: 800; font-size: 32px; color: #FFD23F">10 PLN</span>
+        <span style="font-size: 13px; color: #C9C2A2">one time · not a subscription</span>
+      </div>
+    </sc-if>
+
+    <ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 14px">
+      <sc-for list="{{perks}}" as="p" hint-placeholder-count="4">
+        <li style="display: flex; gap: 12px; align-items: flex-start">
+          <span style="width: 24px; height: 24px; border-radius: 12px; background: #2B2716; color: #FFD23F; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>
+          </span>
+          <span style="display: flex; flex-direction: column; gap: 2px">
+            <span style="font-size: 15px; font-weight: 600">{{p.title}}</span>
+            <span style="font-size: 13px; color: #A6A5AD; line-height: 1.4">{{p.note}}</span>
+          </span>
+        </li>
+      </sc-for>
+    </ul>
+  </div>
+
+  <div style="padding: 12px 20px 22px; display: flex; flex-direction: column; gap: 6px">
+    <sc-if value="{{notOwned}}" hint-placeholder-val="{{true}}">
+      <button onClick="{{buy}}" style="height: 56px; border-radius: 16px; background: #FFD23F; color: #141210; font-size: 16px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px">
+        <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8.5l4.5 3.7L12 5l4.5 7.2L21 8.5l-1.8 9H4.8z" fill="currentColor"></path><rect x="4.8" y="19" width="14.4" height="2" rx="1" fill="currentColor"></rect></svg>
+        Buy Pro · 10 PLN
+      </button>
+      <button onClick="{{buy}}" style="height: 44px; font-size: 14px; font-weight: 600; color: #F4F3EF">Restore purchase</button>
+    </sc-if>
+    <sc-if value="{{owned}}" hint-placeholder-val="{{false}}">
+      <a href="Main.dc.html" style="height: 56px; border-radius: 16px; background: #FFD23F; color: #141210; font-size: 16px; font-weight: 700; display: flex; align-items: center; justify-content: center">Back to projects</a>
+      <button onClick="{{reset}}" style="height: 44px; font-size: 13px; font-weight: 600; color: #8C8B94">Show the purchase screen again (demo)</button>
+    </sc-if>
+    <p style="margin: 0; font-size: 11px; color: #8C8B94; text-align: center; line-height: 1.5">Paid once through Google Play. Your exact price and currency show at checkout.</p>
+    <button style="height: 36px; font-size: 12px; font-weight: 600; color: #B4B3BB; text-decoration: underline; text-underline-offset: 3px">Ad privacy choices</button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { owned: false };
+  }
+  renderVals() {
+    const s = this.state || {};
+    const owned = !!s.owned;
+    return {
+      owned,
+      notOwned: !owned,
+      headline: owned ? 'You’re Pro' : 'Clipra Pro',
+      subline: owned ? 'Ads are gone for good. Thank you for supporting Clipra.' : 'One payment. No ads when you export, ever.',
+      perks: [
+        { title: 'No ads when you export', note: 'Both export ads disappear on every project.' },
+        { title: 'Nothing else changes', note: 'Every editing tool and on-device AI feature stays free.' },
+        { title: 'Yours on every device', note: 'Linked to your Google Play account. Restore it any time.' },
+        { title: 'Keeps Clipra independent', note: 'Pays for the on-device AI work, never with your data.' }
+      ],
+      buy: () => this.setState({ owned: true }),
+      reset: () => this.setState({ owned: false })
+    };
+  }
+}
+</script>
+</body>
+</html>
