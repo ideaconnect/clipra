@@ -29,6 +29,7 @@ import androidx.media3.effect.GlShaderProgram
 class LayerCompositor(
     private val timeline: RenderTimeline,
     private val listener: Listener? = null,
+    private val gate: PauseGate? = null,
 ) : GlEffect {
     /** Reports the time spent drawing each frame, for measurements. */
     fun interface Listener {
@@ -36,7 +37,7 @@ class LayerCompositor(
     }
 
     override fun toGlShaderProgram(context: Context, useHdr: Boolean): GlShaderProgram =
-        LayerCompositorProgram(context, timeline, listener)
+        LayerCompositorProgram(context, timeline, listener, gate)
 }
 
 @OptIn(UnstableApi::class)
@@ -44,6 +45,7 @@ private class LayerCompositorProgram(
     private val context: Context,
     private val timeline: RenderTimeline,
     private val listener: LayerCompositor.Listener?,
+    private val gate: PauseGate?,
 ) : BaseGlShaderProgram(
     /* useHighPrecisionColorComponents= */
     false,
@@ -79,6 +81,8 @@ private class LayerCompositorProgram(
     }
 
     override fun drawFrame(inputTexId: Int, presentationTimeUs: Long) {
+        // A paused export holds the frame here; the encoder and muxer simply wait.
+        gate?.awaitOpen()
         val started = System.nanoTime()
         val output = IntArray(1).also {
             GLES20.glGetIntegerv(

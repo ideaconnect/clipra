@@ -32,12 +32,13 @@ object ProjectRender {
         media: MediaResolver,
         width: Int = project.format.outputSize.width,
         height: Int = project.format.outputSize.height,
+        frameRate: Int = project.format.frameRate.fps,
     ): RenderTimeline = RenderTimeline(
         width = width,
         height = height,
-        frameRate = project.format.frameRate.fps,
+        frameRate = frameRate,
         // At least one frame, so an empty project still renders its background.
-        durationUs = maxOf(project.durationUs, 1_000_000L / project.format.frameRate.fps),
+        durationUs = maxOf(project.durationUs, 1_000_000L / frameRate),
         background = backgroundColor(project.format.background),
         layers = project.layers.map { layer ->
             RenderLayer(
