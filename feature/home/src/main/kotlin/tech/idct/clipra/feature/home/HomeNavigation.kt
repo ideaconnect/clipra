@@ -24,8 +24,9 @@ import tech.idct.clipra.core.designsystem.placeholder.Board
 @Serializable
 data object MainRoute
 
+/** New project, optionally with a layout preselected ("Mosaic layout" on Home). */
 @Serializable
-data object NewProjectRoute
+data class NewProjectRoute(val layout: String? = null)
 
 /**
  * The boards this module builds, from design/README.md ("Start and edit").
@@ -35,19 +36,35 @@ object HomeBoards {
     val newProject = Board(
         id = "NewProject",
         title = R.string.home_title_new_project,
-        route = NewProjectRoute,
+        route = NewProjectRoute(),
     )
 
     val all = listOf(main, newProject)
 }
 
-/**
- * Registers this module's destinations. Home is built; [screen] draws the boards that are still
- * placeholders.
- */
-fun NavGraphBuilder.homeScreens(screen: @Composable (Board) -> Unit, actions: HomeActions) {
+/** Where New project leads: back, or into the editor with the created project. */
+class NewProjectActions(val onBack: () -> Unit, val onCreated: (projectId: String) -> Unit)
+
+/** Registers this module's destinations: Home and New project. */
+fun NavGraphBuilder.homeScreens(actions: HomeActions, newProject: NewProjectActions) {
     composable<MainRoute> { HomeRoute(actions) }
-    composable<NewProjectRoute> { screen(HomeBoards.newProject) }
+    composable<NewProjectRoute> { NewProjectRoute(newProject) }
+}
+
+@Composable
+private fun NewProjectRoute(
+    actions: NewProjectActions,
+    viewModel: NewProjectViewModel = hiltViewModel(),
+) {
+    val format by viewModel.format.collectAsStateWithLifecycle()
+    val name = stringResource(R.string.home_new_default_name)
+    NewProjectScreen(
+        format = format,
+        onFormatChange = viewModel::change,
+        onCreate = { viewModel.create(name, actions.onCreated) },
+        onBack = actions.onBack,
+        fourKSupported = viewModel.fourKSupported,
+    )
 }
 
 @Composable

@@ -49,4 +49,25 @@
     <string name="home_delete_body">Tego nie można cofnąć. Twoje zdjęcia i filmy w Galerii zostaną na miejscu.</string>
     <string name="home_cancel">Anuluj</string>
     <string name="home_copy_name">%1$s - kopia</string>
+    <string name="home_new_ratio">Proporcje</string>
+    <string name="home_new_layout">Układ</string>
+    <string name="home_new_layout_note">mozaika dzieli kadr na pola</string>
+    <string name="home_new_resolution">Rozdzielczość</string>
+    <string name="home_new_4k_unsupported">Ten telefon nie ma kodera wideo 2160p, więc eksport 4K może się nie udać. Edytor działa normalnie.</string>
+    <string name="home_new_frame_rate">Liczba klatek</string>
+    <string name="home_new_background">Tło</string>
+    <string name="home_new_background_note">wypełnia puste miejsca i karty tekstowe</string>
+    <string name="home_new_summary">%1$s · %2$s · %3$d kl./s · %4$s</string>
+    <string name="home_new_create">Utwórz projekt</string>
+    <string name="home_new_default_name">Projekt bez nazwy</string>
+    <string name="home_ratio_reels">Reels</string>
+    <string name="home_ratio_youtube">YouTube</string>
+    <string name="home_ratio_square">Kwadrat</string>
+    <string name="home_ratio_feed">Post</string>
+    <string name="home_ratio_classic">Klasyczny</string>
+    <string name="home_ratio_cinema">Kino</string>
+    <string name="home_background_black">Czarne</string>
+    <string name="home_background_white">Białe</string>
+    <string name="home_background_yellow">Żółte</string>
+    <string name="home_background_blur">Rozmycie</string>
 </resources>

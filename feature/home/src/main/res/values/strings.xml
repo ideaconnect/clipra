@@ -48,4 +48,26 @@
     <string name="home_delete_body">This can\'t be undone. Your photos and videos in the Gallery stay where they are.</string>
     <string name="home_cancel">Cancel</string>
     <string name="home_copy_name">%1$s copy</string>
+    <string name="home_new_ratio">Aspect ratio</string>
+    <string name="home_new_layout">Layout</string>
+    <string name="home_new_layout_note">mosaic splits the frame into cells</string>
+    <string name="home_new_resolution">Resolution</string>
+    <string name="home_new_4k_unsupported">This phone has no encoder for 2160p video, so 4K may not export. The editor still works.</string>
+    <string name="home_new_frame_rate">Frame rate</string>
+    <string name="home_new_background">Background</string>
+    <string name="home_new_background_note">fills empty space and text cards</string>
+    <string name="home_new_size" translatable="false">%1$d × %2$d</string>
+    <string name="home_new_summary">%1$s · %2$s · %3$d fps · %4$s</string>
+    <string name="home_new_create">Create project</string>
+    <string name="home_new_default_name">Untitled project</string>
+    <string name="home_ratio_reels">Reels</string>
+    <string name="home_ratio_youtube">YouTube</string>
+    <string name="home_ratio_square">Square</string>
+    <string name="home_ratio_feed">Feed</string>
+    <string name="home_ratio_classic">Classic</string>
+    <string name="home_ratio_cinema">Cinema</string>
+    <string name="home_background_black">Black</string>
+    <string name="home_background_white">White</string>
+    <string name="home_background_yellow">Yellow</string>
+    <string name="home_background_blur">Blur</string>
 </resources>

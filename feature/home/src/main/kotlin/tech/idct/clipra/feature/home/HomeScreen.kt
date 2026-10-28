@@ -484,37 +484,16 @@ private fun frameSize(ratio: AspectRatio): Pair<Dp, Dp> {
 @Composable
 private fun LayoutFrame(layout: Layout, width: Dp, height: Dp) {
     val colors = ClipraTheme.colors
-    val (rows, columns) = when (layout) {
-        Layout.Single -> 1 to 1
-        Layout.Split2 -> if (width >= height) 1 to 2 else 2 to 1
-        Layout.Split3 -> if (width >= height) 1 to 3 else 3 to 1
-        Layout.Grid2x2 -> 2 to 2
-        Layout.Grid3x3 -> 3 to 3
-    }
-    Column(
+    LayoutCells(
+        layout = layout,
+        portrait = height > width,
+        width = width,
+        height = height,
+        cell = colors.surfaceRaised,
         modifier = Modifier
-            .size(width, height)
             .clip(RoundedCornerShape(4.dp))
             .background(colors.background),
-        verticalArrangement = Arrangement.spacedBy(2.dp),
-    ) {
-        repeat(rows) {
-            Row(
-                modifier = Modifier.weight(1f),
-                horizontalArrangement = Arrangement.spacedBy(2.dp),
-            ) {
-                repeat(columns) {
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxSize()
-                            .background(colors.surfaceRaised)
-                            .border(1.dp, colors.borderStrong),
-                    )
-                }
-            }
-        }
-    }
+    )
 }
 
 @Composable
@@ -538,14 +517,6 @@ private fun formatBadge(ratio: AspectRatio, layout: Layout, resolution: String):
     } else {
         stringResource(R.string.home_badge_mosaic, stringResource(layout.labelRes()), resolution)
     }
-
-private fun Layout.labelRes(): Int = when (this) {
-    Layout.Single -> R.string.home_layout_single
-    Layout.Split2 -> R.string.home_layout_split2
-    Layout.Split3 -> R.string.home_layout_split3
-    Layout.Grid2x2 -> R.string.home_layout_grid2x2
-    Layout.Grid3x3 -> R.string.home_layout_grid3x3
-}
 
 @Composable
 private fun editedAgoText(ago: EditedAgo): String = when (ago) {

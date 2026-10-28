@@ -111,7 +111,7 @@ fun SegmentedControl(
                     Text(
                         text = segment.detail,
                         style = type.meta,
-                        color = if (selected) colors.onAccent else colors.textSecondary,
+                        color = if (selected) colors.onAccentMuted else colors.textSecondary,
                         maxLines = 1,
                     )
                 }
@@ -123,7 +123,7 @@ fun SegmentedControl(
 /**
  * A selectable card for a few rich options (aspect ratio, codec): 56 dp or taller, the selected
  * one with an accent border on a warm fill. Disabled cards stay visible and say why in
- * [subtitle].
+ * [subtitle]. [compact] tightens the padding for narrow cards, three to a row.
  */
 @Composable
 fun ChoiceCard(
@@ -134,6 +134,8 @@ fun ChoiceCard(
     subtitle: String? = null,
     enabled: Boolean = true,
     monospaceTitle: Boolean = false,
+    accentTitleWhenSelected: Boolean = true,
+    compact: Boolean = false,
     leading: (@Composable (selected: Boolean) -> Unit)? = null,
 ) {
     val colors = ClipraTheme.colors
@@ -151,18 +153,21 @@ fun ChoiceCard(
                 role = Role.RadioButton,
                 onClick = onClick,
             )
-            .padding(horizontal = 14.dp, vertical = 10.dp),
+            .padding(
+                horizontal = if (compact) 10.dp else 14.dp,
+                vertical = if (compact) 8.dp else 10.dp,
+            ),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(if (compact) 8.dp else 12.dp),
     ) {
         leading?.invoke(selected)
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
                 text = title,
-                style = if (monospaceTitle) type.metaTitle else type.bodyStrong,
+                style = if (monospaceTitle) type.metaStrong else type.bodyStrong,
                 color = when {
                     !enabled -> colors.textDisabled
-                    selected -> colors.accent
+                    selected && accentTitleWhenSelected -> colors.accent
                     else -> colors.textPrimary
                 },
                 maxLines = 1,
@@ -170,7 +175,7 @@ fun ChoiceCard(
             if (subtitle != null) {
                 Text(
                     text = subtitle,
-                    style = type.caption.copy(fontSize = type.chip.fontSize),
+                    style = if (compact) type.toolLabel else type.label,
                     color = if (enabled) colors.textSecondary else colors.textDisabled,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -180,8 +185,11 @@ fun ChoiceCard(
     }
 }
 
-/** How a selected [ClipraChip] looks: accent fill, or warm fill with an accent border. */
-enum class ChipStyle { Accent, Outline }
+/**
+ * How a selected [ClipraChip] looks: accent fill, warm fill with an accent border, or only an
+ * accent border (the background colours of New project).
+ */
+enum class ChipStyle { Accent, Outline, Border }
 
 /** A pill choice, 36 dp visible with a 44 dp touch area. */
 @Composable
@@ -200,7 +208,7 @@ fun ClipraChip(
     val accentFill = selected && selectedStyle == ChipStyle.Accent
     val fill = when {
         accentFill -> colors.accent
-        selected -> colors.accentSelectedBackground
+        selected && selectedStyle == ChipStyle.Outline -> colors.accentSelectedBackground
         else -> colors.surface
     }
     val border = when {
