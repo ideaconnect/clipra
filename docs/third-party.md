@@ -46,6 +46,7 @@ Used to build and test the app; none of them ship in it.
 | ktlint | Kotlin style check | MIT |
 | Robolectric | Runs Android code in JVM tests | MIT |
 | Roborazzi | Screenshot tests | Apache-2.0 |
+| FFmpeg (command line, on the developer's machine) | Generated the synthetic test clips in `core/engine/src/androidTest/assets/spike/` | LGPL/GPL tool; not part of the build, and the generated clips carry no license |
 | GitHub Actions: `actions/checkout`, `actions/setup-java`, `actions/upload-artifact`, `gradle/actions/wrapper-validation` | CI (`.github/workflows/ci.yml`) | MIT |
 
 CI doesn't use `gradle/actions/setup-gradle`: since v6 its caching is a proprietary component under Gradle's terms of use. `actions/setup-java` caches Gradle instead.

@@ -49,7 +49,7 @@ If the implementation has to differ from the design (platform limits, accessibil
 
 ## Stack (see `docs/architecture.md`)
 
-Android 10 and later (minSdk 29, targetSdk 36), app id `tech.idct.clipra`. Kotlin 2.x, Jetpack Compose, Hilt, Room, DataStore, WorkManager, Media3 (Transformer, CompositionPlayer, effects), whisper.cpp via JNI, ONNX Runtime Mobile (DeepFilterNet 3), RNNoise, MediaPipe Tasks Vision, ML Kit Translation, Google Mobile Ads Next-Gen SDK, UMP SDK, Play Billing Library 9.x. Decisions marked "spike" in the architecture doc are confirmed by the M0 spikes; check `docs/spikes/` and `docs/adr/` once they exist.
+Android 10 and later (minSdk 29, targetSdk 36), app id `tech.idct.clipra`. Kotlin 2.x, Jetpack Compose, Hilt, Room, DataStore, WorkManager, Media3 1.11 (Transformer, CompositionPlayer, effects) around Clipra's own layer compositor in `core:engine` (decided by the engine spike, `docs/spikes/engine.md`), whisper.cpp via JNI, ONNX Runtime Mobile (DeepFilterNet 3), RNNoise, MediaPipe Tasks Vision, ML Kit Translation, Google Mobile Ads Next-Gen SDK, UMP SDK, Play Billing Library 9.x. Decisions marked "spike" in the architecture doc are confirmed by the M0 spikes; check `docs/spikes/` and `docs/adr/` once they exist.
 
 ## Build
 
