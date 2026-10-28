@@ -32,6 +32,16 @@ Implementation has started with milestone M0 (foundations). The plan is tracked 
 
 With JDK 17 and the Android SDK (platform 37) installed, `./gradlew assembleDebug` builds the app for Android 10 and later. [CLAUDE.md](CLAUDE.md) has the test commands.
 
+## Continuous integration
+
+[CI](.github/workflows/ci.yml) runs on every pull request and every push to `main`: the Kotlin style check (ktlint), the debug build, the unit tests and Android lint. Each run attaches the debug APK as `app-debug.apk`, and the test and lint reports when something fails.
+
+Recommended protection for `main` (Settings, Rules, Rulesets, applied to the default branch):
+
+- Require a pull request before merging. Keep the required approvals at 0 while one person maintains the repo, since GitHub doesn't let you approve your own pull request.
+- Require the `Build and test` status check to pass, with the branch up to date with `main`.
+- Block force pushes and deletion.
+
 ## Documentation
 
 - [Design](design/README.md): every screen, flows, tokens and the design system

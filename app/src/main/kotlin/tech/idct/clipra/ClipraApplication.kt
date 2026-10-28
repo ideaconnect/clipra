@@ -7,7 +7,9 @@ import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 
 @HiltAndroidApp
-class ClipraApplication : Application(), Configuration.Provider {
+class ClipraApplication :
+    Application(),
+    Configuration.Provider {
     @Inject
     lateinit var workerFactory: HiltWorkerFactory
 

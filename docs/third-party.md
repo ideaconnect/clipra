@@ -32,3 +32,8 @@ Used to build and test the app; none of them ship in it.
 | Gradle, Android Gradle Plugin, Kotlin Gradle plugins, KSP | Build | Apache-2.0 |
 | JUnit 4 | Unit tests | EPL-1.0 (tests only, not distributed) |
 | AndroidX Test, Compose UI test, kotlinx-coroutines-test | Tests | Apache-2.0 |
+| Spotless Gradle plugin | Runs ktlint over the Kotlin sources | Apache-2.0 |
+| ktlint | Kotlin style check | MIT |
+| GitHub Actions: `actions/checkout`, `actions/setup-java`, `actions/upload-artifact`, `gradle/actions/wrapper-validation` | CI (`.github/workflows/ci.yml`) | MIT |
+
+CI doesn't use `gradle/actions/setup-gradle`: since v6 its caching is a proprietary component under Gradle's terms of use. `actions/setup-java` caches Gradle instead.

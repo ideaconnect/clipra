@@ -2,3 +2,7 @@
 gradlew text eol=lf
 *.bat text eol=crlf
 *.jar binary
+
+# Kotlin sources use LF on every OS, which is what ktlint (spotlessCheck) expects.
+*.kt text eol=lf
+*.kts text eol=lf
