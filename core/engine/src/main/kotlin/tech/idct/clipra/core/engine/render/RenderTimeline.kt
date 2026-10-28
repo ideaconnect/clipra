@@ -36,6 +36,8 @@ data class RenderClip(
     val blend: BlendMode = BlendMode.Normal,
     val opacity: Float = 1f,
     val fadeInUs: Long = 0,
+    /** Source time per timeline time: 1 plays normally, 0 holds the first frame (freeze). */
+    val rate: Double = 1.0,
 ) {
     val endUs: Long get() = startUs + durationUs
 

@@ -57,7 +57,10 @@ object CompositionFactory {
         durationUs: Long,
     ): EditedMediaItemSequence? {
         if (layer.muted) return null
-        val clips = layer.clips.filter { it.soundSource() != null }.sortedBy { it.startUs }
+        // A held frame (rate 0) is silent; other speeds play their sound with M2-speed.
+        val clips = layer.clips.filter {
+            it.soundSource() != null && it.rate > 0
+        }.sortedBy { it.startUs }
         if (clips.isEmpty()) return null
         val sequence = EditedMediaItemSequence.Builder(setOf(C.TRACK_TYPE_AUDIO))
         var position = 0L

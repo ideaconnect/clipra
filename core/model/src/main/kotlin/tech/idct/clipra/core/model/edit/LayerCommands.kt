@@ -72,7 +72,8 @@ data class AddClip(val clip: Clip, val target: LayerTarget) : EditCommand {
 
 /**
  * Moves a clip in time and, optionally, to another layer: a higher layer makes it cover what's
- * below. Dropping it above the top layer ([LayerTarget.NewOnTop]) creates a layer.
+ * below. Dropping it above the top layer ([LayerTarget.NewOnTop]) creates a layer. Linked clips
+ * move by the same time.
  */
 data class MoveClip(val clipId: String, val startUs: Long, val target: LayerTarget? = null) :
     EditCommand {
@@ -85,6 +86,8 @@ data class MoveClip(val clipId: String, val startUs: Long, val target: LayerTarg
         val removed = withLayer.updateLayer(from.id) { layer ->
             layer.copy(clips = layer.clips.filter { it.id != clipId })
         }
+        // Linked partners (a caption, detached sound) keep their layers and follow in time.
         return removed.updateLayer(toLayerId) { it.withClip(moved) }
+            .shiftClips(project.linkedPartners(clipId), startUs - clip.startUs)
     }
 }
