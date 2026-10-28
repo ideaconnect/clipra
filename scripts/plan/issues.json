@@ -2431,7 +2431,7 @@
     "OpenCV (Apache-2.0) for corners, optical flow and RANSAC: build only core, imgproc, video and calib3d (with what they need) for arm64-v8a; the full official package is far too large",
     "Store the path in normalized units keyed by timestamp (phone video is often variable frame rate), so it fits the proxy and the original and survives trims, speed changes and reverse",
     "Cutout masks and face tracks are computed on source frames, so they go through the same transform; the user's transform, crop and masks apply after it. Share path smoothing with face follow and reframe",
-    "No board for the Stabilize sheet yet: build it from the design system like the other clip tool sheets",
+    "No board, by decision: build the sheet from the design system like the other clip tool sheets, with the strength slider and the crop readout",
     "Not in v1: rolling-shutter (wobble) correction and full-frame stabilization without crop"
    ],
    "refs": [
