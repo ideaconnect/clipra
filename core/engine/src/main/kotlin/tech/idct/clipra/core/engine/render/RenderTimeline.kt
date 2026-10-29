@@ -1,6 +1,7 @@
 package tech.idct.clipra.core.engine.render
 
 import android.graphics.Bitmap
+import tech.idct.clipra.core.model.Transform
 
 /**
  * What the layer compositor draws: the output format and the layers, L1 (bottom) first. Each
@@ -24,15 +25,15 @@ data class RenderLayer(
 )
 
 /**
- * One clip of a layer. [fadeInUs] dissolves the clip in over the clip it overlaps on the same
- * layer (a transition across a cut).
+ * One clip of a layer. [transform] places it in the frame (see `ClipGeometry`); [fadeInUs]
+ * dissolves the clip in over the clip it overlaps on the same layer (a transition across a cut).
  */
 data class RenderClip(
     val id: String,
     val startUs: Long,
     val durationUs: Long,
     val source: RenderSource,
-    val placement: Placement = Placement.Fill,
+    val transform: Transform = Transform(),
     val blend: BlendMode = BlendMode.Normal,
     val opacity: Float = 1f,
     val fadeInUs: Long = 0,
@@ -43,11 +44,11 @@ data class RenderClip(
 
     fun isActiveAt(timeUs: Long): Boolean = timeUs in startUs until endUs
 
-    /** Opacity at [timeUs], including the dissolve in. */
-    fun opacityAt(timeUs: Long): Float {
-        if (fadeInUs <= 0) return opacity
+    /** Opacity at [timeUs], including the dissolve in, starting from [base]. */
+    fun opacityAt(timeUs: Long, base: Float = opacity): Float {
+        if (fadeInUs <= 0) return base
         val progress = ((timeUs - startUs).toFloat() / fadeInUs).coerceIn(0f, 1f)
-        return opacity * progress
+        return base * progress
     }
 }
 
@@ -60,15 +61,6 @@ sealed interface RenderSource {
 
     /** Sound only (music, voiceover): no picture. */
     data class Audio(val path: String, val inPointUs: Long = 0) : RenderSource
-}
-
-/** Where a clip sits in the frame. */
-sealed interface Placement {
-    /** Covers the whole frame, cropping what doesn't fit. */
-    data object Fill : Placement
-
-    /** Fits inside a rectangle given in fractions of the frame, from the top-left corner. */
-    data class Box(val left: Float, val top: Float, val width: Float, val height: Float) : Placement
 }
 
 /** The spike's blend modes; the full set of 16 comes with M2-blend. */

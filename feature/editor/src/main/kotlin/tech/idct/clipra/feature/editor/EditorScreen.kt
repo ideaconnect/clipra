@@ -27,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -79,6 +80,7 @@ class EditorCallbacks(
     val onFreeze: () -> Unit,
     val onExtract: () -> Unit,
     val onLayers: () -> Unit,
+    val onCrop: () -> Unit,
     val onDismissMessage: () -> Unit,
     val timeline: TimelineActions,
 )
@@ -95,6 +97,7 @@ fun EditorScreen(
     callbacks: EditorCallbacks,
     preview: @Composable () -> Unit,
     modifier: Modifier = Modifier,
+    previewOverlay: @Composable () -> Unit = {},
     filmstrip: @Composable (
         tech.idct.clipra.core.model.Clip,
         Float,
@@ -135,7 +138,7 @@ fun EditorScreen(
                     )
                 },
             )
-            PreviewArea(project.format, preview)
+            PreviewArea(project.format, preview, previewOverlay)
             Transport(state, playing, callbacks)
             Timeline(
                 project = project,
@@ -166,13 +169,21 @@ private fun formatLine(format: Format): String = stringResource(
     format.frameRate.fps,
 )
 
-/** The preview, letterboxed in black at the project's ratio. */
+/**
+ * The preview, letterboxed in black at the project's ratio. [overlay] covers the whole area,
+ * since a moved clip's handles can sit beyond the frame, and is clipped to it.
+ */
 @Composable
-private fun PreviewArea(format: Format, content: @Composable () -> Unit) {
+private fun PreviewArea(
+    format: Format,
+    content: @Composable () -> Unit,
+    overlay: @Composable () -> Unit,
+) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(360.dp)
+            .clipToBounds()
             .background(ClipraTheme.colors.ad.background),
         contentAlignment = Alignment.Center,
     ) {
@@ -186,6 +197,7 @@ private fun PreviewArea(format: Format, content: @Composable () -> Unit) {
         ) {
             content()
         }
+        overlay()
     }
 }
 
@@ -323,8 +335,8 @@ private fun mainTools(callbacks: EditorCallbacks, onAdd: () -> Unit): List<Tool>
 }
 
 /**
- * With a clip selected. Speed, Stabilize, Linked, Crop and Reverse join when their issues land
- * (M2, M7), so every tool shown does something.
+ * With a clip selected. Speed, Stabilize, Linked and Reverse join when their issues land (M2,
+ * M7), so every tool shown does something.
  */
 @Composable
 private fun clipTools(callbacks: EditorCallbacks): List<Tool> {
@@ -339,6 +351,7 @@ private fun clipTools(callbacks: EditorCallbacks): List<Tool> {
         tool(R.string.editor_tool_cutout, ClipraIcons.Cutout) { open(EditorTool.Cutout) },
         tool(R.string.editor_tool_duplicate, ClipraIcons.Duplicate, callbacks.onDuplicate),
         tool(R.string.editor_tool_delete, ClipraIcons.Delete, callbacks.onDelete),
+        tool(R.string.editor_tool_crop, ClipraIcons.Crop, callbacks.onCrop),
         tool(R.string.editor_tool_freeze, ClipraIcons.Freeze, callbacks.onFreeze),
         tool(R.string.editor_tool_extract, ClipraIcons.Music, callbacks.onExtract),
         tool(R.string.editor_tool_replace, ClipraIcons.Replace, callbacks.onPickReplacement),

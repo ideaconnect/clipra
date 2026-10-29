@@ -1,11 +1,13 @@
 package tech.idct.clipra.core.model.edit
 
+import tech.idct.clipra.core.model.BlendMode
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
 import tech.idct.clipra.core.model.MediaKind
 import tech.idct.clipra.core.model.MediaRef
 import tech.idct.clipra.core.model.Project
 import tech.idct.clipra.core.model.Speed
+import tech.idct.clipra.core.model.Transform
 import java.util.UUID
 import kotlin.math.roundToLong
 
@@ -264,5 +266,25 @@ data class ReplaceMedia(val clipId: String, val mediaId: String) : EditCommand {
             speed = Speed(),
         )
         return project.replaceClip(replaced)
+    }
+}
+
+/** Sets where a clip sits in the frame (#19); keyframes come with #21. */
+data class SetTransform(val clipId: String, val transform: Transform) : EditCommand {
+    override fun apply(project: Project): Project {
+        val (layer, clip) = project.clipWithLayer(clipId)
+        layer.requireUnlocked()
+        return project.replaceClip(clip.copy(transform = clip.transform.copy(value = transform)))
+    }
+}
+
+/** Sets how a clip blends with the layers below it and its opacity, 0 to 1 (#20). */
+data class SetBlend(val clipId: String, val blend: BlendMode, val opacity: Float) : EditCommand {
+    override fun apply(project: Project): Project {
+        val (layer, clip) = project.clipWithLayer(clipId)
+        layer.requireUnlocked()
+        return project.replaceClip(
+            clip.copy(blend = blend, opacity = clip.opacity.copy(value = opacity.coerceIn(0f, 1f))),
+        )
     }
 }

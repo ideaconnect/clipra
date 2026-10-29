@@ -29,6 +29,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import tech.idct.clipra.core.model.ClipGeometry
+import tech.idct.clipra.core.model.Fit
+import tech.idct.clipra.core.model.Transform
 import java.io.File
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -36,6 +39,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.math.abs
+import tech.idct.clipra.core.model.Size as ModelSize
 
 /**
  * The engine spike (#6): five layers with gaps, Screen and Multiply blend modes, a dissolve, a
@@ -221,7 +225,7 @@ class EngineSpikeTest {
                             1_000_000,
                             2_000_000,
                             video("green"),
-                            placement = Placement.Box(0.25f, 0.35f, 0.5f, 0.3f),
+                            transform = box(0.25f, 0.35f, 0.5f, 0.3f, 1080, 1080),
                             blend = BlendMode.Screen,
                         ),
                         RenderClip(
@@ -229,7 +233,7 @@ class EngineSpikeTest {
                             5_000_000,
                             2_000_000,
                             RenderSource.Image(photo),
-                            placement = Placement.Box(0.05f, 0.05f, 0.4f, 0.2f),
+                            transform = box(0.05f, 0.05f, 0.4f, 0.2f, 800, 800),
                         ),
                     ),
                 ),
@@ -251,11 +255,37 @@ class EngineSpikeTest {
                             0,
                             8_000_000,
                             RenderSource.Image(textCard()),
-                            placement = Placement.Box(0.1f, 0.82f, 0.8f, 0.1f),
+                            transform = box(0.1f, 0.82f, 0.8f, 0.1f, 800, 100),
                         ),
                     ),
                 ),
             ),
+        )
+    }
+
+    /**
+     * Fits a [sourceWidth] × [sourceHeight] picture inside a box given in fractions of the 9:16
+     * frame, from its top-left corner.
+     */
+    private fun box(
+        left: Float,
+        top: Float,
+        width: Float,
+        height: Float,
+        sourceWidth: Int,
+        sourceHeight: Int,
+    ): Transform {
+        val frame = ModelSize(1080, 1920)
+        val source = ModelSize(sourceWidth, sourceHeight)
+        val fitted = minOf(
+            width * frame.width / sourceWidth,
+            height * frame.height / sourceHeight,
+        )
+        return Transform(
+            x = left + width / 2 - 0.5f,
+            y = top + height / 2 - 0.5f,
+            scale = fitted / ClipGeometry.baseScale(Fit.Fit, frame, source),
+            fit = Fit.Fit,
         )
     }
 

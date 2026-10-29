@@ -15,12 +15,15 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.effect.BaseGlShaderProgram
 import androidx.media3.effect.GlEffect
 import androidx.media3.effect.GlShaderProgram
+import tech.idct.clipra.core.model.ClipGeometry
+import tech.idct.clipra.core.model.Size as FrameSize
 
 /**
  * Draws a [RenderTimeline] as a Media3 effect. It replaces each input frame (a blank canvas from
  * the composition) with the layers at that frame's time, L1 first: video clips come from their
- * own decoders, photos and text from bitmaps, and each clip is blended onto the canvas with its
- * blend mode. Gaps draw nothing, so the layers below show through.
+ * own decoders, photos and text from bitmaps, and each clip is placed by its transform and
+ * blended onto the canvas with its blend mode. Gaps draw nothing, so the layers below show
+ * through. [live] values, while set, replace the clips' own (a gesture in progress).
  *
  * Media3's own compositor blends only with alpha, and Transformer doesn't let an app replace it,
  * so Clipra composites here (docs/spikes/engine.md).
@@ -30,6 +33,7 @@ class LayerCompositor(
     private val timeline: RenderTimeline,
     private val listener: Listener? = null,
     private val gate: PauseGate? = null,
+    private val live: LiveEdits? = null,
 ) : GlEffect {
     /** Reports the time spent drawing each frame, for measurements. */
     fun interface Listener {
@@ -37,7 +41,7 @@ class LayerCompositor(
     }
 
     override fun toGlShaderProgram(context: Context, useHdr: Boolean): GlShaderProgram =
-        LayerCompositorProgram(context, timeline, listener, gate)
+        LayerCompositorProgram(context, timeline, listener, gate, live)
 }
 
 @OptIn(UnstableApi::class)
@@ -46,6 +50,7 @@ private class LayerCompositorProgram(
     private val timeline: RenderTimeline,
     private val listener: LayerCompositor.Listener?,
     private val gate: PauseGate?,
+    private val live: LiveEdits?,
 ) : BaseGlShaderProgram(
     /* useHighPrecisionColorComponents= */
     false,
@@ -114,7 +119,7 @@ private class LayerCompositorProgram(
         GLES20.glDisable(GLES20.GL_BLEND)
         copyProgram.use()
         copyProgram.setSamplerTexIdUniform("uTex", result.texture, 0)
-        drawQuad(copyProgram, FULL_FRAME, identity)
+        drawQuad(copyProgram, FULL_FRAME, FULL_UNIT, identity)
         listener?.onFrameDrawn(presentationTimeUs, System.nanoTime() - started)
     }
 
@@ -136,9 +141,9 @@ private class LayerCompositorProgram(
 
     private fun drawClip(clip: RenderClip, timeUs: Long) {
         val frame = clipFrame(clip, timeUs) ?: return
-        val opacity = clip.opacityAt(timeUs)
+        val opacity = clip.opacityAt(timeUs, live?.opacity(clip.id) ?: clip.opacity)
         if (opacity <= 0f) return
-        val position = quadFor(clip.placement, frame.width, frame.height)
+        val (position, unit) = quadFor(clip, frame.width, frame.height)
         val program = if (frame.external) externalProgram else bitmapProgram
         if (clip.blend == BlendMode.Normal) {
             // Alpha blending straight onto the canvas.
@@ -151,7 +156,7 @@ private class LayerCompositorProgram(
                 GLES20.GL_ONE,
                 GLES20.GL_ONE_MINUS_SRC_ALPHA,
             )
-            drawSource(program, frame, opacity, position)
+            drawSource(program, frame, opacity, position, unit)
             GLES20.glDisable(GLES20.GL_BLEND)
             return
         }
@@ -160,7 +165,7 @@ private class LayerCompositorProgram(
         GlUtil.focusFramebufferUsingCurrentContext(clipLayer.fbo, clipLayer.width, clipLayer.height)
         GLES20.glClearColor(0f, 0f, 0f, 0f)
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
-        drawSource(program, frame, opacity, position)
+        drawSource(program, frame, opacity, position, unit)
 
         val source = canvas[current]!!
         current = 1 - current
@@ -174,7 +179,7 @@ private class LayerCompositorProgram(
         blendProgram.setSamplerTexIdUniform("uDst", source.texture, 0)
         blendProgram.setSamplerTexIdUniform("uSrc", clipLayer.texture, 1)
         blendProgram.setIntUniform("uMode", clip.blend.ordinal)
-        drawQuad(blendProgram, FULL_FRAME, identity)
+        drawQuad(blendProgram, FULL_FRAME, FULL_UNIT, identity)
     }
 
     private fun drawSource(
@@ -182,20 +187,22 @@ private class LayerCompositorProgram(
         frame: ClipFrame,
         opacity: Float,
         position: FloatArray,
+        unit: FloatArray,
     ) {
         program.use()
         program.setSamplerTexIdUniform("uTex", frame.texture, 0)
         program.setFloatUniform("uOpacity", opacity)
-        drawQuad(program, position, frame.textureMatrix)
+        drawQuad(program, position, unit, frame.textureMatrix)
     }
 
-    private fun drawQuad(program: GlProgram, position: FloatArray, textureMatrix: FloatArray) {
+    private fun drawQuad(
+        program: GlProgram,
+        position: FloatArray,
+        unit: FloatArray,
+        textureMatrix: FloatArray,
+    ) {
         program.setBufferAttribute("aPos", position, GlUtil.HOMOGENEOUS_COORDINATE_VECTOR_SIZE)
-        program.setBufferAttribute(
-            "aUnit",
-            GlUtil.getTextureCoordinateBounds(),
-            GlUtil.HOMOGENEOUS_COORDINATE_VECTOR_SIZE,
-        )
+        program.setBufferAttribute("aUnit", unit, GlUtil.HOMOGENEOUS_COORDINATE_VECTOR_SIZE)
         program.setFloatsUniform("uTexMatrix", textureMatrix)
         program.bindAttributesAndUniforms()
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4)
@@ -235,37 +242,40 @@ private class LayerCompositorProgram(
         }
     }
 
-    /** The clip's quad in NDC: Fill covers the frame, Box fits inside the box. */
-    private fun quadFor(placement: Placement, sourceWidth: Int, sourceHeight: Int): FloatArray {
-        val frameW = timeline.width.toFloat()
-        val frameH = timeline.height.toFloat()
-        val (left, top, width, height) = when (placement) {
-            Placement.Fill -> {
-                val scale = maxOf(frameW / sourceWidth, frameH / sourceHeight)
-                val w = sourceWidth * scale / frameW
-                val h = sourceHeight * scale / frameH
-                listOf((1 - w) / 2, (1 - h) / 2, w, h)
-            }
-
-            is Placement.Box -> {
-                val boxW = placement.width * frameW
-                val boxH = placement.height * frameH
-                val scale = minOf(boxW / sourceWidth, boxH / sourceHeight)
-                val w = sourceWidth * scale / frameW
-                val h = sourceHeight * scale / frameH
-                listOf(
-                    placement.left + (placement.width - w) / 2,
-                    placement.top + (placement.height - h) / 2,
-                    w,
-                    h,
-                )
-            }
+    /**
+     * The clip's quad in NDC and the matching unit texture coordinates, from [ClipGeometry]. The
+     * strip runs bottom-left, bottom-right, top-left, top-right of the (cropped) source; unit
+     * coordinates have their origin at the source's bottom-left, as the texture matrices expect.
+     */
+    private fun quadFor(
+        clip: RenderClip,
+        sourceWidth: Int,
+        sourceHeight: Int,
+    ): Pair<FloatArray, FloatArray> {
+        val transform = live?.transform(clip.id) ?: clip.transform
+        val frameSize = FrameSize(timeline.width, timeline.height)
+        val corners = ClipGeometry.corners(
+            transform,
+            frameSize,
+            FrameSize(sourceWidth, sourceHeight),
+        )
+        val position = FloatArray(16)
+        listOf(corners[2], corners[3], corners[0], corners[1]).forEachIndexed { i, corner ->
+            position[i * 4] = corner.x / timeline.width * 2 - 1
+            position[i * 4 + 1] = 1 - corner.y / timeline.height * 2
+            position[i * 4 + 3] = 1f
         }
-        val x0 = left * 2 - 1
-        val x1 = (left + width) * 2 - 1
-        val y0 = 1 - (top + height) * 2
-        val y1 = 1 - top * 2
-        return floatArrayOf(x0, y0, 0f, 1f, x1, y0, 0f, 1f, x0, y1, 0f, 1f, x1, y1, 0f, 1f)
+        val left = transform.cropLeft
+        val right = 1 - transform.cropRight
+        val bottom = transform.cropBottom
+        val top = 1 - transform.cropTop
+        val unit = floatArrayOf(
+            left, bottom, 0f, 1f,
+            right, bottom, 0f, 1f,
+            left, top, 0f, 1f,
+            right, top, 0f, 1f,
+        )
+        return position to unit
     }
 
     private class ClipFrame(
@@ -292,5 +302,6 @@ private class LayerCompositorProgram(
 
     private companion object {
         val FULL_FRAME: FloatArray = GlUtil.getNormalizedCoordinateBounds()
+        val FULL_UNIT: FloatArray = GlUtil.getTextureCoordinateBounds()
     }
 }

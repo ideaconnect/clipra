@@ -63,4 +63,49 @@
         <item quantity="one">%d clip</item>
         <item quantity="other">%d clips</item>
     </plurals>
+
+    <!-- Layers board (#19, #20) -->
+    <string name="editor_layers_header">%1$s · layer L%2$d</string>
+    <string name="editor_layers_subtitle">%1$s · %2$s - %3$s</string>
+    <string name="editor_layers_video_audio">Video + audio</string>
+    <string name="editor_layers_done">Done</string>
+    <string name="editor_layers_tab_blend">Blend</string>
+    <string name="editor_layers_tab_transform">Transform</string>
+    <string name="editor_layers_tab_layers">Layers</string>
+    <string name="editor_layers_opacity">Opacity</string>
+    <string name="editor_layers_percent">%d%%</string>
+    <string name="editor_layers_chip">%1$s · %2$d%%</string>
+    <string name="editor_blend_normal">Normal</string>
+    <string name="editor_blend_multiply">Multiply</string>
+    <string name="editor_blend_screen">Screen</string>
+    <string name="editor_blend_overlay">Overlay</string>
+    <string name="editor_blend_soft_light">Soft light</string>
+    <string name="editor_blend_hard_light">Hard light</string>
+    <string name="editor_blend_darken">Darken</string>
+    <string name="editor_blend_lighten">Lighten</string>
+    <string name="editor_blend_dodge">Dodge</string>
+    <string name="editor_blend_burn">Burn</string>
+    <string name="editor_blend_add">Add</string>
+    <string name="editor_blend_difference">Difference</string>
+    <string name="editor_blend_exclusion">Exclusion</string>
+    <string name="editor_blend_hue">Hue</string>
+    <string name="editor_blend_color">Color</string>
+    <string name="editor_blend_luminosity">Luminosity</string>
+    <string name="editor_transform_x">Position X</string>
+    <string name="editor_transform_y">Position Y</string>
+    <string name="editor_transform_scale">Scale</string>
+    <string name="editor_transform_rotation">Rotation</string>
+    <string name="editor_transform_px">px</string>
+    <string name="editor_transform_fit">Fit</string>
+    <string name="editor_transform_fill">Fill</string>
+    <string name="editor_transform_flip">Flip</string>
+    <string name="editor_transform_crop">Crop</string>
+    <string name="editor_transform_reset">Reset</string>
+    <string name="editor_transform_crop_hint">Drag the corners to crop</string>
+    <string name="editor_layers_hint">Higher layers cover lower ones. Every layer plays its sound.</string>
+    <string name="editor_layers_empty_here">Empty here</string>
+    <string name="editor_layers_clip_span">%1$s · %2$s-%3$s s</string>
+    <string name="editor_layers_next_clip">%1$s from %2$s s</string>
+    <string name="editor_layers_reorder">Drag to reorder layer L%d</string>
+    <string name="editor_tool_crop">Crop</string>
 </resources>

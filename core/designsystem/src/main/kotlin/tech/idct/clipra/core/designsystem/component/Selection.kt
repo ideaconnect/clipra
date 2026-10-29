@@ -356,7 +356,10 @@ fun SwitchRow(
     }
 }
 
-/** A slider with its label on the left and the value in Geist Mono on the right. */
+/**
+ * A slider with its label on the left and the value in Geist Mono on the right.
+ * [onValueChangeFinished] marks the end of a drag, for example to make it one undo step.
+ */
 @Composable
 fun LabelledSlider(
     label: String,
@@ -368,6 +371,7 @@ fun LabelledSlider(
     steps: Int = 0,
     enabled: Boolean = true,
     labelWidth: Dp = 72.dp,
+    onValueChangeFinished: (() -> Unit)? = null,
 ) {
     val colors = ClipraTheme.colors
     val type = ClipraTheme.typography
@@ -386,6 +390,7 @@ fun LabelledSlider(
             valueRange = valueRange,
             steps = steps,
             enabled = enabled,
+            onValueChangeFinished = onValueChangeFinished,
             modifier = Modifier.weight(1f),
             colors = SliderDefaults.colors(
                 thumbColor = colors.textPrimary,

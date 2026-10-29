@@ -604,5 +604,5 @@ private fun Modifier.dashedOutline(color: Color): Modifier = drawBehind {
 }
 
 /** A text clip's words, or the media's file name. */
-private fun clipName(project: Project, clip: Clip): String =
+internal fun clipName(project: Project, clip: Clip): String =
     clip.text?.text ?: clip.source?.let { project.asset(it.mediaId)?.displayName }.orEmpty()

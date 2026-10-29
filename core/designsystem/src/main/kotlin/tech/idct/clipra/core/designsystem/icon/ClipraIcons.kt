@@ -72,6 +72,8 @@ object ClipraIcons {
 
     @DrawableRes val Freeze = R.drawable.designsystem_ic_freeze
 
+    @DrawableRes val Grip = R.drawable.designsystem_ic_grip
+
     @DrawableRes val Hidden = R.drawable.designsystem_ic_hidden
 
     @DrawableRes val Image = R.drawable.designsystem_ic_image
@@ -200,6 +202,7 @@ object ClipraIcons {
         "flip" to Flip,
         "forward" to Forward,
         "freeze" to Freeze,
+        "grip" to Grip,
         "hidden" to Hidden,
         "image" to Image,
         "keyframe" to Keyframe,

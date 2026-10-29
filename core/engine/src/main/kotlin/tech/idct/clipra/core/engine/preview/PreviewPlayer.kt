@@ -12,11 +12,13 @@ import androidx.media3.transformer.CompositionPlayer
 import tech.idct.clipra.core.engine.media.MediaCache
 import tech.idct.clipra.core.engine.media.ProjectMediaResolver
 import tech.idct.clipra.core.engine.render.CompositionFactory
+import tech.idct.clipra.core.engine.render.LiveEdits
 import tech.idct.clipra.core.engine.render.MediaResolver
 import tech.idct.clipra.core.engine.render.ProjectRender
 import tech.idct.clipra.core.model.Format
 import tech.idct.clipra.core.model.MediaAsset
 import tech.idct.clipra.core.model.Project
+import tech.idct.clipra.core.model.Transform
 import kotlin.math.roundToInt
 
 /**
@@ -31,6 +33,9 @@ class PreviewPlayer(private val context: Context, cache: MediaCache) {
 
     /** CompositionPlayer can't seek or play before it has a composition. */
     private var hasComposition = false
+
+    /** The current composition's gesture values; each rebuild starts without any. */
+    private var live = LiveEdits()
 
     /** Called when playback reaches the end. */
     var onEnded: (() -> Unit)? = null
@@ -51,7 +56,8 @@ class PreviewPlayer(private val context: Context, cache: MediaCache) {
     fun setProject(project: Project, positionUs: Long) {
         val size = previewSize(project.format)
         val timeline = ProjectRender.timeline(project, media, size.width, size.height)
-        player.setComposition(CompositionFactory.create(context, timeline))
+        live = LiveEdits()
+        player.setComposition(CompositionFactory.create(context, timeline, live = live))
         hasComposition = true
         player.seekTo(positionUs / 1_000)
         player.prepare()
@@ -72,6 +78,25 @@ class PreviewPlayer(private val context: Context, cache: MediaCache) {
 
     fun seekTo(positionUs: Long) {
         if (hasComposition) player.seekTo(positionUs / 1_000)
+    }
+
+    /**
+     * Shows [clipId] with [transform] while a gesture is going, without an edit: the paused
+     * frame is drawn again. The next [setProject] (the committed edit) replaces it.
+     */
+    fun setLiveTransform(clipId: String, transform: Transform) {
+        live.setTransform(clipId, transform)
+        redraw()
+    }
+
+    /** Like [setLiveTransform], for the opacity slider. */
+    fun setLiveOpacity(clipId: String, opacity: Float) {
+        live.setOpacity(clipId, opacity)
+        redraw()
+    }
+
+    private fun redraw() {
+        if (hasComposition && !player.playWhenReady) player.seekTo(player.currentPosition)
     }
 
     fun release() = player.release()

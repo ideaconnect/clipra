@@ -67,6 +67,7 @@ object ProjectRender {
             startUs = clip.startUs,
             durationUs = clip.durationUs,
             source = source,
+            transform = clip.transform.value,
             blend = blendMode(clip.blend),
             opacity = clip.opacity.value,
             rate = clip.speed.rate,

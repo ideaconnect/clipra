@@ -30,6 +30,7 @@ object CompositionFactory {
         timeline: RenderTimeline,
         includeAudio: Boolean = true,
         gate: PauseGate? = null,
+        live: LiveEdits? = null,
         listener: LayerCompositor.Listener? = null,
     ): Composition {
         val canvas = MediaItem.Builder()
@@ -39,7 +40,9 @@ object CompositionFactory {
         val video = EditedMediaItem.Builder(canvas)
             .setFrameRate(timeline.frameRate)
             .setDurationUs(timeline.durationUs)
-            .setEffects(Effects(emptyList(), listOf(LayerCompositor(timeline, listener, gate))))
+            .setEffects(
+                Effects(emptyList(), listOf(LayerCompositor(timeline, listener, gate, live))),
+            )
             .build()
         val sequences = buildList {
             add(EditedMediaItemSequence.Builder(setOf(C.TRACK_TYPE_VIDEO)).addItem(video).build())
