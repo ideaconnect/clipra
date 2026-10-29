@@ -61,9 +61,10 @@ object CompositionFactory {
         durationUs: Long,
     ): EditedMediaItemSequence? {
         if (layer.muted) return null
-        // A held frame (rate 0) is silent; other speeds play their sound with M2-speed.
+        // A held frame (rate 0) is silent; other speeds play their sound with M2-speed. Clips
+        // turned all the way down (such as a video whose sound was extracted) add nothing.
         val clips = layer.clips.filter {
-            it.soundSource() != null && it.rate > 0
+            it.soundSource() != null && it.rate > 0 && it.audio.volume > 0f
         }.sortedBy { it.startUs }
         if (clips.isEmpty()) return null
         val sequence = EditedMediaItemSequence.Builder(setOf(C.TRACK_TYPE_AUDIO))
@@ -85,10 +86,18 @@ object CompositionFactory {
                 )
                 .build()
             // CompositionPlayer needs every item's duration: the file's, before clipping.
+            val gain = ClipGain(
+                volume = clip.audio.volume,
+                fadeInUs = clip.audio.fadeInUs,
+                fadeOutUs = clip.audio.fadeOutUs,
+                durationUs = clip.durationUs,
+                offsetUs = start - clip.startUs,
+            )
             sequence.addItem(
                 EditedMediaItem.Builder(item)
                     .setRemoveVideo(true)
                     .setDurationUs(fileDurationUs(context, path))
+                    .setEffects(Effects(listOf(gain), emptyList()))
                     .build(),
             )
             position = clip.endUs
@@ -98,7 +107,7 @@ object CompositionFactory {
     }
 
     private fun RenderClip.soundSource(): Pair<String, Long>? = when (val source = source) {
-        is RenderSource.Video -> source.path to source.inPointUs
+        is RenderSource.Video -> if (source.hasAudio) source.path to source.inPointUs else null
         is RenderSource.Audio -> source.path to source.inPointUs
         is RenderSource.Image -> null
     }

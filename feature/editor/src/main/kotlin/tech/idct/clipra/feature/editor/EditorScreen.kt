@@ -103,6 +103,7 @@ fun EditorScreen(
         Float,
         Float,
     ) -> Unit = { _, _, _ -> },
+    waveforms: tech.idct.clipra.feature.editor.timeline.WaveformLoader? = null,
 ) {
     val colors = ClipraTheme.colors
     val project = state.project ?: return
@@ -151,6 +152,7 @@ fun EditorScreen(
                     .weight(1f)
                     .fillMaxWidth(),
                 filmstrip = filmstrip,
+                waveforms = waveforms,
             )
             Tools(state.selectedClipId != null, callbacks)
         }
@@ -367,4 +369,5 @@ private fun EditorMessage.textRes(): Int = when (this) {
     EditorMessage.ImportFailed -> R.string.editor_message_import_failed
     EditorMessage.NeedsPicture -> R.string.editor_message_needs_picture
     EditorMessage.NeedsCut -> R.string.editor_message_needs_cut
+    EditorMessage.NeedsSound -> R.string.editor_message_needs_sound
 }

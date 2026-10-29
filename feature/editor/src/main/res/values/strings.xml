@@ -112,4 +112,5 @@
     <string name="editor_tool_crop">Crop</string>
     <string name="editor_transition_marker">Transition between %1$s and %2$s</string>
     <string name="editor_new_text">Your text</string>
+    <string name="editor_message_needs_sound">Add a clip with sound first</string>
 </resources>

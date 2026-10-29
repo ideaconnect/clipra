@@ -3,6 +3,7 @@ package tech.idct.clipra.core.model.edit
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Test
+import tech.idct.clipra.core.model.AudioSettings
 import tech.idct.clipra.core.model.BlendMode
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
@@ -59,5 +60,18 @@ class TransformCommandsTest {
             SetTransform("nope", Transform()).apply(project)
         }
         assertEquals(EditRejected.Reason.ClipNotFound, error.reason)
+    }
+
+    @Test
+    fun audioStaysWithinTheClip() {
+        val loud = SetAudio(
+            "c",
+            AudioSettings(volume = 3f, fadeInUs = 5_000_000, fadeOutUs = 200_000),
+        )
+            .apply(project)
+        val audio = loud.findClip("c")!!.second.audio
+        assertEquals(2f, audio.volume)
+        assertEquals(1_000_000L, audio.fadeInUs)
+        assertEquals(200_000L, audio.fadeOutUs)
     }
 }

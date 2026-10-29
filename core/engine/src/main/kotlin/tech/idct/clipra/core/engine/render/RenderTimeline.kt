@@ -1,6 +1,7 @@
 package tech.idct.clipra.core.engine.render
 
 import android.graphics.Bitmap
+import tech.idct.clipra.core.model.AudioSettings
 import tech.idct.clipra.core.model.BlendMode
 import tech.idct.clipra.core.model.Easing
 import tech.idct.clipra.core.model.Effect
@@ -71,6 +72,8 @@ data class RenderClip(
     val effects: List<Effect> = emptyList(),
     /** Limits one of the effects to a region of the picture (#27). */
     val mask: Mask? = null,
+    /** The clip's volume and fades (#36). */
+    val audio: AudioSettings = AudioSettings(),
 ) {
     val endUs: Long get() = startUs + durationUs
 
@@ -93,6 +96,8 @@ sealed interface RenderSource {
         val path: String,
         val inPointUs: Long = 0,
         val durationUs: Long = Long.MAX_VALUE,
+        /** Whether the file has a sound track; silent videos add nothing to the mix. */
+        val hasAudio: Boolean = true,
     ) : RenderSource
 
     /** A still picture: a photo, or a text card rendered to a bitmap. */

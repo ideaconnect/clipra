@@ -106,7 +106,10 @@ class ProjectRenderTest {
     fun clipsCarryTheirSourceTimingAndBlend() {
         val a = timeline.layers[0].clips.single()
         assertEquals("a", a.id)
-        assertEquals(RenderSource.Video("/proxies/v.mp4", 500_000, 10_000_000), a.source)
+        assertEquals(
+            RenderSource.Video("/proxies/v.mp4", 500_000, 10_000_000, hasAudio = false),
+            a.source,
+        )
         assertEquals(BlendMode.Screen, timeline.layers[1].clips.single().blend)
         assertEquals(
             RenderSource.Audio("/proxies/m.mp4", 0),

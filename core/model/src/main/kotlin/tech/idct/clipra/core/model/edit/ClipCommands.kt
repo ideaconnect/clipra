@@ -1,5 +1,6 @@
 package tech.idct.clipra.core.model.edit
 
+import tech.idct.clipra.core.model.AudioSettings
 import tech.idct.clipra.core.model.BlendMode
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
@@ -286,5 +287,19 @@ data class SetBlend(val clipId: String, val blend: BlendMode, val opacity: Float
         return project.replaceClip(
             clip.copy(blend = blend, opacity = clip.opacity.copy(value = opacity.coerceIn(0f, 1f))),
         )
+    }
+}
+
+/** Sets a clip's volume (0 to 2), fades and other sound settings (#36). */
+data class SetAudio(val clipId: String, val audio: AudioSettings) : EditCommand {
+    override fun apply(project: Project): Project {
+        val (layer, clip) = project.clipWithLayer(clipId)
+        layer.requireUnlocked()
+        val fitted = audio.copy(
+            volume = audio.volume.coerceIn(0f, 2f),
+            fadeInUs = audio.fadeInUs.coerceIn(0, clip.durationUs),
+            fadeOutUs = audio.fadeOutUs.coerceIn(0, clip.durationUs),
+        )
+        return project.replaceClip(clip.copy(audio = fitted))
     }
 }
