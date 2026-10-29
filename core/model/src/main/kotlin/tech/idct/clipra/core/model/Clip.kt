@@ -99,13 +99,30 @@ data class Effect(
     val params: Map<String, Float> = emptyMap(),
 )
 
+/**
+ * Limits one of the clip's effects to a region of its picture (#27): inside a rectangle or an
+ * oval, or outside it when inverted. It lives in the picture's own space, so it moves with the
+ * clip.
+ */
 @Serializable
 data class Mask(
     val shape: MaskShape = MaskShape.None,
     val invert: Boolean = false,
-    val featherPx: Float = 0f,
+    /** How far the edge fades out, in fractions of the picture's shorter side. */
+    val feather: Float = 0f,
+    /** Rounding of a rectangle's corners, in fractions of the picture's shorter side. */
     val cornerRadius: Float = 0f,
     val followFace: Boolean = false,
+    /** The centre, in fractions of the clip's picture from its top-left corner. */
+    val x: Float = 0.5f,
+    val y: Float = 0.4f,
+    /** The size, in fractions of the picture's width and height. */
+    val width: Float = 0.4f,
+    val height: Float = 0.3f,
+    /** Turned clockwise, in degrees. */
+    val rotation: Float = 0f,
+    /** The effect type the mask limits; null limits the clip's filter. */
+    val effect: String? = null,
 )
 
 @Serializable

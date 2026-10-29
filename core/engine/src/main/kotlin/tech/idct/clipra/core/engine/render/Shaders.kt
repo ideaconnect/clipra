@@ -166,11 +166,20 @@ internal object Shaders {
      * One filter (#25) on a clip's picture (straight alpha, upright): it samples the input
      * (plain, in mosaic blocks, with the colours split, or glitched), applies the CSS filter
      * functions as one colour matrix, blends an overlay (gradient or pattern) on top with
-     * `uMode`, and mixes the result with the input by strength. `FilterRecipes` sets the
-     * uniforms; positions in the overlay are in fractions of the picture, y down, as in CSS.
+     * `uMode`, and mixes the result with the original (`uOriginal`, usually the same input) by
+     * strength, inside the mask (#27) when the clip has one. `FilterRecipes` sets the uniforms;
+     * positions in the overlay and the mask are in fractions of the picture, y down, as in CSS.
      */
     const val FILTER = PRECISION + BLEND_FUNCTIONS + """
         uniform sampler2D uTex;
+        uniform sampler2D uOriginal;
+        uniform int uMaskShape;
+        uniform vec2 uMaskCentre;
+        uniform vec2 uMaskSize;
+        uniform float uMaskTurn;
+        uniform float uMaskFeather;
+        uniform float uMaskRadius;
+        uniform float uMaskInvert;
         uniform vec2 uSize;
         uniform mat4 uMatrix;
         uniform int uSampling;
@@ -271,16 +280,41 @@ internal object Shaders {
             return vec4(0.0);
         }
 
+        // How much of the effect shows at d: 1 inside the mask, fading over the feather.
+        float coverage(vec2 d) {
+            if (uMaskShape == 0) return 1.0;
+            float aspect = uSize.x / uSize.y;
+            float shortSide = min(aspect, 1.0);
+            vec2 v = (d - uMaskCentre) * vec2(aspect, 1.0);
+            float s = sin(uMaskTurn);
+            float c = cos(uMaskTurn);
+            vec2 local = vec2(c * v.x + s * v.y, -s * v.x + c * v.y);
+            vec2 extent = uMaskSize * vec2(aspect, 1.0) * 0.5;
+            float dist;
+            if (uMaskShape == 1) {
+                float r = min(uMaskRadius * shortSide, min(extent.x, extent.y));
+                vec2 q = abs(local) - extent + r;
+                dist = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r;
+            } else {
+                dist = (length(local / max(extent, vec2(1e-5))) - 1.0) * min(extent.x, extent.y);
+            }
+            float feather = uMaskFeather * shortSide;
+            float inside = feather > 0.0
+                ? 1.0 - smoothstep(0.0, feather, dist)
+                : (dist <= 0.0 ? 1.0 : 0.0);
+            return uMaskInvert > 0.5 ? 1.0 - inside : inside;
+        }
+
         void main() {
-            vec4 original = texture2D(uTex, vTex);
+            vec4 original = texture2D(uOriginal, vTex);
             vec4 c = sampleInput(vTex);
             vec3 rgb = clamp((uMatrix * vec4(c.rgb, 1.0)).rgb, 0.0, 1.0);
             if (uOverlay != 0) {
                 vec4 o = overlayColor(vec2(vTex.x, 1.0 - vTex.y));
                 rgb = mix(rgb, clamp(blendColor(rgb, o.rgb), 0.0, 1.0), o.a);
             }
-            float alpha = mix(original.a, c.a, uStrength);
-            gl_FragColor = vec4(mix(original.rgb, rgb, uStrength), alpha);
+            float amount = uStrength * coverage(vec2(vTex.x, 1.0 - vTex.y));
+            gl_FragColor = vec4(mix(original.rgb, rgb, amount), mix(original.a, c.a, amount));
         }
     """
 

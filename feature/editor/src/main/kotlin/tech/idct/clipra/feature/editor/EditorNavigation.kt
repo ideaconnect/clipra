@@ -254,7 +254,7 @@ private fun EditorRoute(actions: EditorActions, viewModel: EditorViewModel = hil
                 when (tool) {
                     EditorTool.Layer -> openBoard(LayerTab.Blend, false)
 
-                    EditorTool.Filters -> {
+                    EditorTool.Filters, EditorTool.Masks -> {
                         // The selected clip, or the one on top at the playhead.
                         val clip = selected?.takeIf { it.takesFilters() }
                             ?: project.layers.reversed().flatMap { it.clips }

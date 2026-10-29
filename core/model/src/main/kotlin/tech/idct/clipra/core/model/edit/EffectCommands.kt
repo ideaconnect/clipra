@@ -4,6 +4,7 @@ import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
 import tech.idct.clipra.core.model.Effect
 import tech.idct.clipra.core.model.Filters
+import tech.idct.clipra.core.model.Mask
 import tech.idct.clipra.core.model.Project
 
 // Effect commands (#25). A clip has at most one filter; picking another replaces it.
@@ -51,4 +52,42 @@ private fun Clip.withFilter(type: String?, strength: Float): Clip {
     val params = if (current?.type == type) current.params else emptyMap()
     val filter = Effect(type, strength.coerceIn(0f, 1f), params)
     return copy(effects = listOf(filter) + others)
+}
+
+/**
+ * Sets a clip's mask (#27). A mask limits an effect, so when the clip has none of type
+ * [addIfMissing] yet, that filter is added at the default strength in the same step.
+ */
+data class SetMask(val clipId: String, val mask: Mask?, val addIfMissing: String? = null) :
+    EditCommand {
+    override fun apply(project: Project): Project {
+        val (layer, clip) = project.clipWithLayer(clipId)
+        layer.requireUnlocked()
+        val needed = addIfMissing?.takeIf { type -> clip.effects.none { it.type == type } }
+        val withEffect = if (needed != null) {
+            clip.withFilter(needed, Filters.DEFAULT_STRENGTH)
+        } else {
+            clip
+        }
+        return project.replaceClip(withEffect.copy(mask = mask))
+    }
+}
+
+/** Sets parameter [key] of the clip's effect [type], such as Mosaic's block size. */
+data class SetEffectParam(val clipId: String, val type: String, val key: String, val value: Float) :
+    EditCommand {
+    override fun apply(project: Project): Project {
+        val (layer, clip) = project.clipWithLayer(clipId)
+        layer.requireUnlocked()
+        if (clip.effects.none {
+                it.type == type
+            }
+        ) {
+            throw EditRejected(EditRejected.Reason.OutOfRange)
+        }
+        val effects = clip.effects.map {
+            if (it.type == type) it.copy(params = it.params + (key to value)) else it
+        }
+        return project.replaceClip(clip.copy(effects = effects))
+    }
 }

@@ -94,6 +94,7 @@ object ProjectRender {
             opacity = clip.opacity.value,
             rate = clip.speed.rate,
             effects = clip.effects,
+            mask = clip.mask,
         )
     }
 
