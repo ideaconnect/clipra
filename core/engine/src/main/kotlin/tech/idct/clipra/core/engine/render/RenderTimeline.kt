@@ -74,6 +74,11 @@ data class RenderClip(
     val mask: Mask? = null,
     /** The clip's volume and fades (#36). */
     val audio: AudioSettings = AudioSettings(),
+    /**
+     * The cleaned voice (#39) to play instead of the source's own sound: mono, 48 kHz and
+     * lined up with the source from its start.
+     */
+    val voicePath: String? = null,
 ) {
     val endUs: Long get() = startUs + durationUs
 

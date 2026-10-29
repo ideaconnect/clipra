@@ -23,4 +23,18 @@
     <string name="audio_target_social">Social media, YouTube</string>
     <string name="audio_target_podcast">Podcast, głos</string>
     <string name="audio_target_broadcast">Telewizja, R128</string>
+    <string name="audio_voice_title">Czyszczenie głosu AI</string>
+    <string name="audio_on_device">Na urządzeniu</string>
+    <string name="audio_voice_detail">Usuwa szum wiatru, ulicy i pomieszczenia</string>
+    <string name="audio_voice_cleaning">Czyszczenie głosu… %1$d%%</string>
+    <string name="audio_engine_dfn">DeepFilterNet 3</string>
+    <string name="audio_engine_dfn_detail">Najlepsza jakość · %1$s</string>
+    <string name="audio_engine_get">Pobierz · %1$s</string>
+    <string name="audio_engine_downloading">Pobieranie %1$d%%</string>
+    <string name="audio_engine_wifi">Czeka na Wi-Fi</string>
+    <string name="audio_engine_network">Czeka na połączenie</string>
+    <string name="audio_engine_rnnoise">RNNoise</string>
+    <string name="audio_engine_rnnoise_detail">Lekki, starsze telefony</string>
+    <string name="audio_strength">Siła</string>
+    <string name="audio_apply_all">Zastosuj do wszystkich klipów z mową</string>
 </resources>

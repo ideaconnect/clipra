@@ -7,6 +7,7 @@ import tech.idct.clipra.core.engine.render.MediaResolver
 import tech.idct.clipra.core.engine.render.TextRenderer
 import tech.idct.clipra.core.model.MediaAsset
 import tech.idct.clipra.core.model.TextSpec
+import tech.idct.clipra.core.model.VoiceCleanup
 
 /**
  * Finds a project's media for the engine. Preview reads the proxy when it is ready and the
@@ -29,6 +30,9 @@ class ProjectMediaResolver(
 
     override fun text(spec: TextSpec, card: Boolean, width: Int, height: Int): Bitmap =
         TextRenderer.render(context, spec, card, width, height)
+
+    override fun voice(asset: MediaAsset, cleanup: VoiceCleanup): String? =
+        cache.voiceMix(asset.id, cleanup).takeIf { it.exists() }?.path
 
     override fun image(asset: MediaAsset): Bitmap? {
         if (!isAvailable(context, asset.uri)) return null

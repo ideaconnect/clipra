@@ -7,6 +7,7 @@ import tech.idct.clipra.core.model.ClipType
 import tech.idct.clipra.core.model.MediaAsset
 import tech.idct.clipra.core.model.Project
 import tech.idct.clipra.core.model.TextSpec
+import tech.idct.clipra.core.model.VoiceCleanup
 import tech.idct.clipra.core.model.cuts
 
 /**
@@ -22,6 +23,9 @@ interface MediaResolver {
 
     /** A text clip drawn at [width] × [height] (#31); a [card] fills it with its colour. */
     fun text(spec: TextSpec, card: Boolean, width: Int, height: Int): Bitmap?
+
+    /** The sound of [asset] after AI voice cleanup (#39), once it is ready; null until then. */
+    fun voice(asset: MediaAsset, cleanup: VoiceCleanup): String? = null
 }
 
 /** Turns a project into what the layer compositor draws (docs/architecture.md, section 4). */
@@ -108,10 +112,11 @@ object ProjectRender {
             // Captions and adjustment clips come with M6 and M2.
             else -> null
         } ?: return null
-        return renderClipOf(clip, source)
+        val voice = clip.audio.voiceCleanup?.let { media.voice(asset, it) }
+        return renderClipOf(clip, source, voice)
     }
 
-    private fun renderClipOf(clip: Clip, source: RenderSource) = RenderClip(
+    private fun renderClipOf(clip: Clip, source: RenderSource, voice: String? = null) = RenderClip(
         id = clip.id,
         startUs = clip.startUs,
         durationUs = clip.durationUs,
@@ -123,6 +128,7 @@ object ProjectRender {
         effects = clip.effects,
         mask = clip.mask,
         audio = clip.audio,
+        voicePath = voice,
     )
 
     /** Text renders up to twice the frame's size when scaled up. */

@@ -49,7 +49,15 @@ object Waveforms {
         val file = cache.waveform(asset.id)
         if (file.exists()) return Waveform(file.readBytes())
         val source = media.source(asset) ?: return null
-        val durationUs = asset.durationUs
+        return waveform(context, source, asset.durationUs, file)
+    }
+
+    /**
+     * The waveform of the sound in [source] ([durationUs] long, 0 when unknown), kept in [file];
+     * such as a cleaned voice (#39). Null when it has no sound.
+     */
+    fun waveform(context: Context, source: String, durationUs: Long, file: File): Waveform? {
+        if (file.exists()) return Waveform(file.readBytes())
         val slices = if (durationUs >= SLICE_FROM_US) SLICES else 1
         // Unknown lengths grow the buckets as they go, in one slice.
         val known = durationUs > 0

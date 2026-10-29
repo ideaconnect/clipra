@@ -1,5 +1,6 @@
 package tech.idct.clipra.feature.audio
 
+import android.text.format.Formatter
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -11,11 +12,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -34,19 +37,25 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import tech.idct.clipra.core.designsystem.ClipraTheme
 import tech.idct.clipra.core.designsystem.component.ChoiceCard
+import tech.idct.clipra.core.designsystem.component.ClipraSwitch
 import tech.idct.clipra.core.designsystem.component.HeaderNavigation
 import tech.idct.clipra.core.designsystem.component.LabelledSlider
 import tech.idct.clipra.core.designsystem.component.PrimaryButton
 import tech.idct.clipra.core.designsystem.component.ScreenHeader
+import tech.idct.clipra.core.designsystem.component.SecondaryButton
 import tech.idct.clipra.core.designsystem.component.Segment
 import tech.idct.clipra.core.designsystem.component.SegmentedControl
 import tech.idct.clipra.core.designsystem.component.SegmentedStyle
 import tech.idct.clipra.core.designsystem.component.SwitchRow
+import tech.idct.clipra.core.designsystem.icon.ClipraIcons
+import tech.idct.clipra.core.designsystem.theme.ClipraDimens
 import tech.idct.clipra.core.engine.media.Loudness
 import tech.idct.clipra.core.engine.media.Waveform
 import tech.idct.clipra.core.engine.render.ClipGain
@@ -54,7 +63,11 @@ import tech.idct.clipra.core.model.AudioSettings
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
 import tech.idct.clipra.core.model.LoudnessTargets
+import tech.idct.clipra.core.model.VoiceCleanup
+import tech.idct.clipra.core.model.VoiceEngine
 import tech.idct.clipra.core.model.normalizeDb
+import tech.idct.clipra.core.models.ModelCatalog
+import tech.idct.clipra.core.models.ModelStatus
 import java.util.Locale
 import kotlin.math.log10
 import kotlin.math.pow
@@ -68,12 +81,18 @@ class AudioActions(
     val onVolumeDone: () -> Unit,
     val onAudio: (AudioSettings) -> Unit,
     val onLoudnessTarget: (Int?) -> Unit,
+    val onVoice: (Boolean) -> Unit = {},
+    val onEngine: (VoiceEngine) -> Unit = {},
+    val onStrength: (Float) -> Unit = {},
+    val onStrengthDone: () -> Unit = {},
+    val onApplyToAll: () -> Unit = {},
 )
 
 /**
  * The Audio board (#36): the clip's waveform with its loudness before and after, its volume
- * (0 to 200%), its fades and loudness normalization (#37). Noise reduction, voice cleanup and
- * ducking join with their issues. [volume] follows the slider while it moves.
+ * (0 to 200%), its fades, loudness normalization (#37) and AI voice cleanup (#39). Noise
+ * reduction and ducking join with their issues. [volume] and [strength] follow their sliders
+ * while they move.
  */
 @Composable
 fun AudioScreen(
@@ -81,6 +100,7 @@ fun AudioScreen(
     volume: Float,
     actions: AudioActions,
     modifier: Modifier = Modifier,
+    strength: Float? = null,
 ) {
     val colors = ClipraTheme.colors
     val project = state.project ?: return
@@ -123,7 +143,9 @@ fun AudioScreen(
             CompareCard(
                 clip,
                 state.waveform,
+                state.voice.cleanedWaveform.takeIf { audio.voiceCleanup != null },
                 audio.copy(volume = volume),
+                state.recorded,
                 state.measured,
                 state.measuring,
             )
@@ -160,20 +182,170 @@ fun AudioScreen(
                 )
             }
             NormalizeCard(audio, state.measured, state.measuring, actions.onLoudnessTarget)
+            VoiceCleanupCard(audio.voiceCleanup, strength, state.voice, actions)
+            SecondaryButton(
+                text = stringResource(R.string.audio_apply_all),
+                onClick = actions.onApplyToAll,
+                leadingIcon = ClipraIcons.Copy,
+                outlined = true,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("audio-apply-all"),
+            )
         }
     }
 }
 
 /**
+ * AI voice cleanup (#39): the switch, the two engines and the strength. DeepFilterNet 3 says
+ * whether it still has to be downloaded; the cleanup's progress replaces the explanation while
+ * it runs. Off, the engines and strength are dimmed.
+ */
+@Composable
+private fun VoiceCleanupCard(
+    cleanup: VoiceCleanup?,
+    liveStrength: Float?,
+    voice: VoiceUiState,
+    actions: AudioActions,
+) {
+    val colors = ClipraTheme.colors
+    val type = ClipraTheme.typography
+    val on = cleanup != null
+    val engine = cleanup?.engine ?: VoiceEngine.DeepFilterNet
+    val strength = liveStrength ?: cleanup?.strength ?: VoiceCleanup.DEFAULT_STRENGTH
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(ClipraTheme.shapes.card)
+            .background(colors.surface)
+            .padding(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 12.dp)
+            .testTag("audio-voice"),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = ClipraDimens.TouchTarget)
+                .toggleable(value = on, role = Role.Switch, onValueChange = actions.onVoice)
+                .testTag("audio-voice-switch"),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        text = stringResource(R.string.audio_voice_title),
+                        style = type.bodyStrong,
+                        color = colors.textPrimary,
+                    )
+                    Text(
+                        text = stringResource(R.string.audio_on_device),
+                        style = type.toolLabel,
+                        color = colors.onDeviceText,
+                        modifier = Modifier
+                            .clip(ClipraTheme.shapes.thumb)
+                            .background(colors.onDeviceBackground)
+                            .padding(horizontal = 6.dp, vertical = 1.dp),
+                    )
+                }
+                val cleaning = voice.cleaning
+                Text(
+                    text = if (on && cleaning != null) {
+                        stringResource(R.string.audio_voice_cleaning, (cleaning * 100).roundToInt())
+                    } else {
+                        stringResource(R.string.audio_voice_detail)
+                    },
+                    style = type.caption,
+                    color = colors.textSecondary,
+                )
+            }
+            ClipraSwitch(checked = on, onCheckedChange = null)
+        }
+        Row(
+            modifier = Modifier
+                .alpha(if (on) 1f else 0.4f)
+                .selectableGroup(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            ChoiceCard(
+                title = stringResource(R.string.audio_engine_dfn),
+                subtitle = deepFilterNetDetail(voice.deepFilterNet),
+                selected = on && engine == VoiceEngine.DeepFilterNet,
+                onClick = { actions.onEngine(VoiceEngine.DeepFilterNet) },
+                modifier = Modifier
+                    .weight(1f)
+                    .testTag("audio-engine-dfn"),
+            )
+            ChoiceCard(
+                title = stringResource(R.string.audio_engine_rnnoise),
+                subtitle = stringResource(R.string.audio_engine_rnnoise_detail),
+                selected = on && engine == VoiceEngine.RNNoise,
+                onClick = { actions.onEngine(VoiceEngine.RNNoise) },
+                modifier = Modifier
+                    .weight(1f)
+                    .testTag("audio-engine-rnnoise"),
+            )
+        }
+        LabelledSlider(
+            label = stringResource(R.string.audio_strength),
+            value = strength,
+            onValueChange = actions.onStrength,
+            onValueChangeFinished = actions.onStrengthDone,
+            valueText = "${(strength * 100).roundToInt()}",
+            enabled = on,
+            labelWidth = 80.dp,
+            modifier = Modifier
+                .height(44.dp)
+                .testTag("audio-strength"),
+        )
+    }
+}
+
+/** DeepFilterNet 3's line: its size once in, or what its download is doing. */
+@Composable
+private fun deepFilterNetDetail(status: ModelStatus): String {
+    val context = LocalContext.current
+    val model = ModelCatalog.deepFilterNet
+    return when (status) {
+        is ModelStatus.Installed -> stringResource(
+            R.string.audio_engine_dfn_detail,
+            Formatter.formatShortFileSize(context, status.bytes),
+        )
+
+        is ModelStatus.Downloading -> stringResource(
+            R.string.audio_engine_downloading,
+            (status.bytes * 100 / status.total.coerceAtLeast(1)).toInt(),
+        )
+
+        is ModelStatus.Waiting -> stringResource(
+            if (status.wifiOnly) R.string.audio_engine_wifi else R.string.audio_engine_network,
+        )
+
+        else -> stringResource(
+            R.string.audio_engine_get,
+            Formatter.formatShortFileSize(context, model.download?.bytes ?: 0),
+        )
+    }
+}
+
+/**
  * The clip's stretch of its media's waveform and its loudness: Before is the media as it is,
- * After is what the export plays, with the volume, fades and normalization (the limiter caps
- * the bars at the ceiling). Quiet stretches are dimmed.
+ * After is what the export plays, with the voice cleanup ([cleaned], once ready), volume,
+ * fades and normalization (the limiter caps the bars at the ceiling). Quiet stretches are
+ * dimmed.
  */
 @Composable
 private fun CompareCard(
     clip: Clip,
     waveform: Waveform?,
+    cleaned: Waveform?,
     audio: AudioSettings,
+    recorded: Loudness.Measurement?,
     measured: Loudness.Measurement?,
     measuring: Boolean,
 ) {
@@ -209,7 +381,10 @@ private fun CompareCard(
                     .testTag("audio-compare"),
             )
             Spacer(Modifier.weight(1f))
-            Readout(if (after) levelsAfter(measured, audio) else measured?.let(::levels), measuring)
+            Readout(
+                if (after) levelsAfter(measured, audio) else recorded?.let(::levels),
+                measuring,
+            )
         }
         Canvas(
             modifier = Modifier
@@ -220,9 +395,10 @@ private fun CompareCard(
             val step = 4.8.dp.toPx()
             val usPerPx = clip.durationUs * clip.speed.rate / size.width
             val clipUsPerPx = clip.durationUs / size.width
+            val shown = if (after) cleaned ?: waveform else waveform
             val bars = FloatArray((size.width / step).toInt()) { bar ->
                 val x = bar * step
-                val peak = waveform?.peakBetween(
+                val peak = shown?.peakBetween(
                     inPointUs + (x * usPerPx).toLong(),
                     inPointUs + ((x + step) * usPerPx).toLong(),
                 ) ?: 0f

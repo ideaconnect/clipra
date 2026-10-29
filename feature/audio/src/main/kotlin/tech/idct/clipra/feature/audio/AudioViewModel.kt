@@ -8,9 +8,14 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -20,19 +25,27 @@ import tech.idct.clipra.core.data.project.ProjectSession
 import tech.idct.clipra.core.engine.media.Loudness
 import tech.idct.clipra.core.engine.media.MediaCache
 import tech.idct.clipra.core.engine.media.ProjectMediaResolver
+import tech.idct.clipra.core.engine.media.VoiceCleaner
 import tech.idct.clipra.core.engine.media.Waveform
 import tech.idct.clipra.core.engine.media.Waveforms
 import tech.idct.clipra.core.model.AudioSettings
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
+import tech.idct.clipra.core.model.MediaAsset
 import tech.idct.clipra.core.model.Project
+import tech.idct.clipra.core.model.VoiceCleanup
+import tech.idct.clipra.core.model.VoiceEngine
+import tech.idct.clipra.core.model.edit.ApplyVoiceCleanupToAll
 import tech.idct.clipra.core.model.edit.SetAudio
+import tech.idct.clipra.core.models.ModelCatalog
+import tech.idct.clipra.core.models.ModelManager
+import tech.idct.clipra.core.models.ModelStatus
 import javax.inject.Inject
 import kotlin.math.abs
 
 /**
  * What the Audio screen shows: the clip, its sound settings and its waveform, and the
- * loudness of its stretch of media ([measuring] until it is known; null when it has no sound).
+ * loudness of what it plays ([measuring] until it is known; null when it has no sound).
  */
 data class AudioUiState(
     val project: Project? = null,
@@ -41,6 +54,19 @@ data class AudioUiState(
     val loaded: Boolean = false,
     val measured: Loudness.Measurement? = null,
     val measuring: Boolean = true,
+    val voice: VoiceUiState = VoiceUiState(),
+    /** The recording's own loudness, for Before; [measured] when nothing cleans it up. */
+    val recorded: Loudness.Measurement? = measured,
+)
+
+/**
+ * AI voice cleanup (#39): where DeepFilterNet 3's download stands, the clip's cleanup progress
+ * while it runs, and the cleaned sound's waveform once it is ready.
+ */
+data class VoiceUiState(
+    val deepFilterNet: ModelStatus = ModelStatus.Missing(),
+    val cleaning: Float? = null,
+    val cleanedWaveform: Waveform? = null,
 )
 
 @HiltViewModel
@@ -48,6 +74,8 @@ class AudioViewModel @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val projects: OpenProjects,
     private val cache: MediaCache,
+    private val voices: VoiceCleaner,
+    private val models: ModelManager,
     @param:ApplicationScope private val appScope: CoroutineScope,
     savedState: SavedStateHandle,
 ) : ViewModel() {
@@ -55,6 +83,9 @@ class AudioViewModel @Inject constructor(
     private val clipId: String? = savedState["clipId"]
     private var session: ProjectSession? = null
     private val mutableState = MutableStateFlow(AudioUiState())
+
+    /** The engine chosen before its model was downloaded; it is used once the model is in. */
+    private var pendingEngine: VoiceEngine? = null
 
     val state: StateFlow<AudioUiState> = mutableState.asStateFlow()
 
@@ -67,7 +98,7 @@ class AudioViewModel @Inject constructor(
                 return@launch
             }
             launch { loadWaveform(opened.project) }
-            launch { measure(opened.project) }
+            launch { watchVoice() }
             opened.state.collect { session ->
                 mutableState.update {
                     it.copy(
@@ -94,6 +125,114 @@ class AudioViewModel @Inject constructor(
         setAudio(clip.audio.measured(measured).copy(loudnessTarget = target))
     }
 
+    /** Turns AI voice cleanup on (DeepFilterNet 3 when downloaded, else RNNoise) or off. */
+    fun setVoiceOn(on: Boolean) {
+        if (!on) return setVoiceCleanup(null)
+        val engine = if (voices.isAvailable(VoiceEngine.DeepFilterNet)) {
+            VoiceEngine.DeepFilterNet
+        } else {
+            VoiceEngine.RNNoise
+        }
+        setVoiceCleanup(VoiceCleanup(engine))
+    }
+
+    /** Picks the engine; DeepFilterNet 3 is downloaded first and picked when it is in. */
+    fun chooseEngine(engine: VoiceEngine) {
+        if (!voices.isAvailable(engine)) {
+            pendingEngine = engine
+            viewModelScope.launch { models.download(ModelCatalog.deepFilterNet) }
+            return
+        }
+        pendingEngine = null
+        val current = state.value.clip?.audio?.voiceCleanup ?: VoiceCleanup()
+        setVoiceCleanup(current.copy(engine = engine))
+    }
+
+    /** Commits the cleanup strength (0 to 1) when the slider is let go. */
+    fun setVoiceStrength(strength: Float) {
+        val current = state.value.clip?.audio?.voiceCleanup ?: return
+        setVoiceCleanup(current.copy(strength = strength))
+    }
+
+    /** Gives every video clip with sound this clip's cleanup (or none), as one undo step. */
+    fun applyVoiceToAll() {
+        val clip = state.value.clip ?: return
+        val current = session ?: return
+        current.edit(ApplyVoiceCleanupToAll(clip.audio.voiceCleanup))
+        val project = current.project
+        appScope.launch(Dispatchers.IO) { voices.requestAll(project) }
+    }
+
+    private fun setVoiceCleanup(cleanup: VoiceCleanup?) {
+        val clip = state.value.clip ?: return
+        setAudio(clip.audio.copy(voiceCleanup = cleanup))
+        val asset = asset() ?: return
+        if (cleanup != null) appScope.launch(Dispatchers.IO) { voices.request(asset, cleanup) }
+    }
+
+    private fun asset(): MediaAsset? {
+        val current = state.value
+        return current.clip?.source?.let { current.project?.asset(it.mediaId) }
+    }
+
+    /**
+     * Follows the cleanup: DeepFilterNet's download, the clip's progress, and each time the
+     * cleaned sound changes, its waveform and a new loudness measurement.
+     */
+    private suspend fun watchVoice() = coroutineScope {
+        launch {
+            models.models.collect { all ->
+                val status = all.firstOrNull { it.model == ModelCatalog.deepFilterNet }?.status
+                    ?: return@collect
+                mutableState.update { it.copy(voice = it.voice.copy(deepFilterNet = status)) }
+                val pending = pendingEngine
+                if (status is ModelStatus.Installed && pending != null) chooseEngine(pending)
+            }
+        }
+        launch {
+            combine(voices.running, state) { running, current ->
+                val cleanup = current.clip?.audio?.voiceCleanup
+                val asset = asset()
+                if (cleanup == null || asset == null) {
+                    null
+                } else {
+                    running[VoiceCleaner.key(asset, cleanup.engine)]
+                }
+            }.distinctUntilChanged().collect { progress ->
+                mutableState.update { it.copy(voice = it.voice.copy(cleaning = progress)) }
+            }
+        }
+        combine(cache.voiceVersion, state) { version, current ->
+            Triple(version, current.clip?.audio?.voiceCleanup, current.project != null)
+        }.filter { it.third }
+            .distinctUntilChanged()
+            .collectLatest { (_, cleanup) ->
+                val project = state.value.project ?: return@collectLatest
+                loadCleanedWaveform(cleanup)
+                measure(project)
+            }
+    }
+
+    private suspend fun loadCleanedWaveform(cleanup: VoiceCleanup?) {
+        val asset = asset()
+        val mix = if (cleanup != null && asset != null) voices.mix(asset, cleanup) else null
+        val waveform = if (mix == null || asset == null) {
+            null
+        } else {
+            withContext(Dispatchers.IO) {
+                runCatching {
+                    Waveforms.waveform(
+                        context,
+                        mix.path,
+                        asset.durationUs,
+                        cache.voiceWaveform(mix),
+                    )
+                }.getOrNull()
+            }
+        }
+        mutableState.update { it.copy(voice = it.voice.copy(cleanedWaveform = waveform)) }
+    }
+
     override fun onCleared() {
         if (session != null && projectId != null) appScope.launch { projects.release(projectId) }
     }
@@ -109,24 +248,33 @@ class AudioViewModel @Inject constructor(
     }
 
     /**
-     * Measures the clip's stretch of its original media. A normalized clip that was trimmed
-     * since it was last measured gets the new measurement, so the export stays on target.
+     * Measures the clip's stretch of what it plays: its cleaned voice once that is ready, its
+     * original media otherwise. A normalized clip that was trimmed (or cleaned up) since it was
+     * last measured gets the new measurement, so the export stays on target.
      */
     private suspend fun measure(project: Project) {
         val clip = clipId?.let { project.findClip(it)?.second }
         val source = clip?.source
         val asset = source?.let { project.asset(it.mediaId) }
+        var recorded: Loudness.Measurement? = null
         val measured = if (asset == null || (clip.type == ClipType.Video && !asset.hasAudio)) {
             null
         } else {
             withContext(Dispatchers.Default) {
                 val media = ProjectMediaResolver(context, cache, forExport = true, maxImageSide = 0)
-                val path = media.source(asset) ?: return@withContext null
+                val original = media.source(asset) ?: return@withContext null
                 val endUs = source.inPointUs + (clip.durationUs * clip.speed.rate).toLong()
-                runCatching { Loudness.measure(context, path, source.inPointUs, endUs) }.getOrNull()
+                fun measure(path: String) = runCatching {
+                    Loudness.measure(context, path, source.inPointUs, endUs)
+                }.getOrNull()
+                recorded = measure(original)
+                val voice = clip.audio.voiceCleanup?.let { voices.mix(asset, it) }
+                if (voice == null) recorded else measure(voice.path)
             }
         }
-        mutableState.update { it.copy(measured = measured, measuring = false) }
+        mutableState.update {
+            it.copy(measured = measured, recorded = recorded, measuring = false)
+        }
         val current = state.value.clip ?: return
         val stored = current.audio.measuredLufs
         if (measured != null && current.audio.loudnessTarget != null &&

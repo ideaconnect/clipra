@@ -109,8 +109,11 @@ object CompositionFactory {
     }
 
     private fun RenderClip.soundSource(): Pair<String, Long>? = when (val source = source) {
-        is RenderSource.Video -> if (source.hasAudio) source.path to source.inPointUs else null
-        is RenderSource.Audio -> source.path to source.inPointUs
+        is RenderSource.Video ->
+            if (source.hasAudio) (voicePath ?: source.path) to source.inPointUs else null
+
+        is RenderSource.Audio -> (voicePath ?: source.path) to source.inPointUs
+
         is RenderSource.Image -> null
     }
 

@@ -9,6 +9,7 @@ import tech.idct.clipra.core.model.MediaRef
 import tech.idct.clipra.core.model.Project
 import tech.idct.clipra.core.model.Speed
 import tech.idct.clipra.core.model.Transform
+import tech.idct.clipra.core.model.VoiceCleanup
 import java.util.UUID
 import kotlin.math.roundToLong
 
@@ -290,6 +291,32 @@ data class SetBlend(val clipId: String, val blend: BlendMode, val opacity: Float
     }
 }
 
+/**
+ * "Apply to all clips with speech" (#39): gives every video clip with sound on an unlocked layer
+ * [cleanup], or turns it off with null; one undo step. Sounds from the music picker are left
+ * alone.
+ */
+data class ApplyVoiceCleanupToAll(val cleanup: VoiceCleanup?) : EditCommand {
+    override fun apply(project: Project): Project {
+        val fitted = cleanup?.let { it.copy(strength = it.strength.coerceIn(0f, 1f)) }
+        return project.copy(
+            layers = project.layers.map { layer ->
+                if (layer.locked) return@map layer
+                layer.copy(
+                    clips = layer.clips.map { clip ->
+                        val asset = clip.source?.let { project.asset(it.mediaId) }
+                        if (clip.type == ClipType.Video && asset?.hasAudio == true) {
+                            clip.copy(audio = clip.audio.copy(voiceCleanup = fitted))
+                        } else {
+                            clip
+                        }
+                    },
+                )
+            },
+        )
+    }
+}
+
 /** Sets a clip's volume (0 to 2), fades and other sound settings (#36). */
 data class SetAudio(val clipId: String, val audio: AudioSettings) : EditCommand {
     override fun apply(project: Project): Project {
@@ -299,6 +326,9 @@ data class SetAudio(val clipId: String, val audio: AudioSettings) : EditCommand 
             volume = audio.volume.coerceIn(0f, 2f),
             fadeInUs = audio.fadeInUs.coerceIn(0, clip.durationUs),
             fadeOutUs = audio.fadeOutUs.coerceIn(0, clip.durationUs),
+            voiceCleanup = audio.voiceCleanup?.let {
+                it.copy(strength = it.strength.coerceIn(0f, 1f))
+            },
         )
         return project.replaceClip(clip.copy(audio = fitted))
     }

@@ -22,6 +22,7 @@ import tech.idct.clipra.core.model.MediaAsset
 import tech.idct.clipra.core.model.Project
 import tech.idct.clipra.core.model.TextSpec
 import tech.idct.clipra.core.model.Transform
+import tech.idct.clipra.core.model.VoiceCleanup
 import kotlin.math.roundToInt
 
 /**
@@ -135,6 +136,9 @@ class PreviewPlayer(private val context: Context, cache: MediaCache) {
             }
 
         override fun source(asset: MediaAsset): String? = inner.source(asset)
+
+        override fun voice(asset: MediaAsset, cleanup: VoiceCleanup): String? =
+            inner.voice(asset, cleanup)
 
         override fun image(asset: MediaAsset): Bitmap? = images.getOrPut(asset.id) {
             inner.image(asset)

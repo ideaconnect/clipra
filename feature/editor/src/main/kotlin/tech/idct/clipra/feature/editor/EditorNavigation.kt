@@ -130,7 +130,9 @@ private fun EditorRoute(actions: EditorActions, viewModel: EditorViewModel = hil
         player.onEnded = { playing = false }
         onDispose { player.release() }
     }
-    LaunchedEffect(state.project) {
+    // A cleaned voice (#39) that becomes ready also rebuilds, so the preview plays it.
+    val voiceVersion by viewModel.mediaCache.voiceVersion.collectAsStateWithLifecycle()
+    LaunchedEffect(state.project, voiceVersion) {
         liveTransform = null
         liveOpacity = null
         val project = state.project ?: return@LaunchedEffect

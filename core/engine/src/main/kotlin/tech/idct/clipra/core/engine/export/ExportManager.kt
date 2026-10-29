@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import tech.idct.clipra.core.engine.media.MediaCache
+import tech.idct.clipra.core.engine.media.VoiceCleaner
 import tech.idct.clipra.core.engine.render.PauseGate
 import tech.idct.clipra.core.model.Project
 import tech.idct.clipra.core.model.export.ExportSettings
@@ -70,8 +71,9 @@ enum class ExportEvent { Started, Finished, Failed, Cancelled }
 class ExportManager @Inject constructor(
     @param:ApplicationContext private val context: Context,
     cache: MediaCache,
+    voices: VoiceCleaner,
 ) {
-    private val renderer = ExportRenderer(context, cache)
+    private val renderer = ExportRenderer(context, cache, voices)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val mutableState = MutableStateFlow<ExportState>(ExportState.Idle)
     private val mutableEvents = MutableSharedFlow<ExportEvent>(extraBufferCapacity = 8)

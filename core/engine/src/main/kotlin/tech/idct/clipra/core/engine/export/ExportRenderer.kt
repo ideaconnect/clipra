@@ -20,10 +20,13 @@ import androidx.media3.transformer.Transformer
 import androidx.media3.transformer.VideoEncoderSettings
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import tech.idct.clipra.core.engine.media.MediaCache
 import tech.idct.clipra.core.engine.media.ProjectMediaResolver
+import tech.idct.clipra.core.engine.media.VoiceCleaner
 import tech.idct.clipra.core.engine.render.CompositionFactory
 import tech.idct.clipra.core.engine.render.PauseGate
 import tech.idct.clipra.core.engine.render.ProjectRender
@@ -52,10 +55,15 @@ class ExportFailedException(val failure: ExportFailure, cause: Throwable? = null
 /**
  * Renders a project from its original media (#57): the same layer compositor as the preview, at
  * the export size, frame rate, codec and bitrate of [ExportSettings], with Transformer. The video
- * is written to a cache file, then published to MediaStore in Movies/Clipra.
+ * is written to a cache file, then published to MediaStore in Movies/Clipra. Cleaned voices
+ * (#39) that are not ready yet are made first, so the export never has the noisy sound.
  */
 @OptIn(UnstableApi::class)
-class ExportRenderer(private val context: Context, private val cache: MediaCache) {
+class ExportRenderer(
+    private val context: Context,
+    private val cache: MediaCache,
+    private val voices: VoiceCleaner? = null,
+) {
     /** The rendered file, before it is published. */
     data class Rendered(val file: File, val width: Int, val height: Int)
 
@@ -70,6 +78,7 @@ class ExportRenderer(private val context: Context, private val cache: MediaCache
         onProgress: (Float) -> Unit,
     ): Rendered {
         val size = settings.outputSize(project)
+        voices?.let { prepareVoices(it, project) }
         val media = ProjectMediaResolver(
             context,
             cache,
@@ -210,6 +219,18 @@ class ExportRenderer(private val context: Context, private val cache: MediaCache
 
         else -> ExportFailure.Other
     }
+
+    /** Every clip's cleaned voice, made now where the background work has not finished. */
+    private suspend fun prepareVoices(cleaner: VoiceCleaner, project: Project) =
+        withContext(Dispatchers.Default) {
+            for (clip in project.layers.flatMap { it.clips }) {
+                val cleanup = clip.audio.voiceCleanup ?: continue
+                val asset = clip.source?.let { project.asset(it.mediaId) } ?: continue
+                if (!asset.hasAudio) continue
+                ensureActive()
+                cleaner.prepare(asset, cleanup) { !isActive }
+            }
+        }
 
     private companion object {
         const val PROGRESS_INTERVAL_MS = 250L

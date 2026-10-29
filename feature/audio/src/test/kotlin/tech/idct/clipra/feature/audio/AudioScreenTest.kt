@@ -31,6 +31,9 @@ import tech.idct.clipra.core.model.MediaAsset
 import tech.idct.clipra.core.model.MediaKind
 import tech.idct.clipra.core.model.MediaRef
 import tech.idct.clipra.core.model.Project
+import tech.idct.clipra.core.model.VoiceCleanup
+import tech.idct.clipra.core.model.VoiceEngine
+import tech.idct.clipra.core.models.ModelStatus
 import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.sin
@@ -160,6 +163,69 @@ class AudioScreenTest {
         compose.onNodeWithText("No sound").assertExists()
         compose.onNodeWithText("This clip has no sound to measure").assertExists()
         assertEquals(emptyList<Int?>(), targets)
+    }
+
+    /** AI voice cleanup (#39) with DeepFilterNet 3 at 70%, then the states around it. */
+    @Test
+    fun voiceCleanup() {
+        Locale.setDefault(Locale.US)
+        val engines = mutableListOf<VoiceEngine>()
+        val switches = mutableListOf<Boolean>()
+        var applied = 0
+        val cleaned = clip.copy(
+            audio = clip.audio.copy(voiceCleanup = VoiceCleanup(VoiceEngine.DeepFilterNet, 0.7f)),
+        )
+        var state by mutableStateOf(
+            AudioUiState(
+                project,
+                cleaned,
+                waveform,
+                loaded = true,
+                measured = Loudness.Measurement(-20f, -4f),
+                measuring = false,
+                voice = VoiceUiState(deepFilterNet = ModelStatus.Installed(8_589_309)),
+            ),
+        )
+        compose.setContent {
+            ClipraTheme {
+                AudioScreen(
+                    state,
+                    1f,
+                    AudioActions(
+                        onBack = {},
+                        onVolume = {},
+                        onVolumeDone = {},
+                        onAudio = {},
+                        onLoudnessTarget = {},
+                        onVoice = { switches += it },
+                        onEngine = { engines += it },
+                        onApplyToAll = { applied++ },
+                    ),
+                )
+            }
+        }
+        compose.onNodeWithTag("audio-apply-all").performScrollTo()
+        compose.onNodeWithText("Best quality · 8.6 MB").assertExists()
+        compose.onNodeWithText("Cuts wind, traffic and room noise").assertExists()
+        compose.onNodeWithText("70").assertExists()
+        compose.onNodeWithTag("audio-voice-switch").assertIsOn()
+        compose.onRoot().captureRoboImage(roborazziOptions = options)
+
+        compose.onNodeWithTag("audio-engine-rnnoise").performClick()
+        compose.onNodeWithTag("audio-voice-switch").performClick()
+        compose.onNodeWithTag("audio-apply-all").performClick()
+        assertEquals(listOf(VoiceEngine.RNNoise), engines)
+        assertEquals(listOf(false), switches)
+        assertEquals(1, applied)
+
+        state = state.copy(voice = state.voice.copy(cleaning = 0.45f))
+        compose.onNodeWithText("Cleaning up the voice… 45%").assertExists()
+        state = state.copy(
+            voice = VoiceUiState(deepFilterNet = ModelStatus.Downloading(3_991_568, 7_983_136)),
+        )
+        compose.onNodeWithText("Downloading 50%").assertExists()
+        state = state.copy(voice = VoiceUiState(deepFilterNet = ModelStatus.Missing()))
+        compose.onNodeWithText("Download · 8.0 MB").assertExists()
     }
 
     @Test

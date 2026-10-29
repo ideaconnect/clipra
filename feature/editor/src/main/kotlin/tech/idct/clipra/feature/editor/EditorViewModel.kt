@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,6 +20,7 @@ import tech.idct.clipra.core.data.project.ProjectSession
 import tech.idct.clipra.core.engine.media.MediaCache
 import tech.idct.clipra.core.engine.media.MediaImporter
 import tech.idct.clipra.core.engine.media.ProjectMediaResolver
+import tech.idct.clipra.core.engine.media.VoiceCleaner
 import tech.idct.clipra.core.model.BlendMode
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
@@ -87,6 +89,7 @@ class EditorViewModel @Inject constructor(
     private val projects: OpenProjects,
     private val importer: MediaImporter,
     val mediaCache: MediaCache,
+    private val voices: VoiceCleaner,
     @param:ApplicationScope private val appScope: CoroutineScope,
     savedState: SavedStateHandle,
 ) : ViewModel() {
@@ -105,6 +108,8 @@ class EditorViewModel @Inject constructor(
                 return@launch
             }
             opened.state.collect { session ->
+                // Cleaned voices (#39) the cache lost, or that were asked for elsewhere.
+                appScope.launch(Dispatchers.IO) { voices.requestAll(session.project) }
                 mutableState.update { state ->
                     state.copy(
                         project = session.project,
