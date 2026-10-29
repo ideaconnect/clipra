@@ -35,6 +35,9 @@ import tech.idct.clipra.core.model.Transform
 import tech.idct.clipra.core.model.edit.ApplyFilterToAll
 import tech.idct.clipra.core.model.edit.SetFilter
 import tech.idct.clipra.core.model.filter
+import tech.idct.clipra.feature.effects.common.THUMBNAIL_GRID
+import tech.idct.clipra.feature.effects.common.centreCrop
+import tech.idct.clipra.feature.effects.common.gridCell
 import javax.inject.Inject
 
 /** Which filters the grid shows. */
@@ -133,9 +136,7 @@ class FiltersViewModel @Inject constructor(
             val types = listOf("") + Filters.all
             val grid = stills.render(gridTimeline(still, types, width, height), 0)
             val thumbnails = types.withIndex().associate { (index, type) ->
-                val column = index % GRID
-                val row = index / GRID
-                type to Bitmap.createBitmap(grid, column * width, row * height, width, height)
+                type to gridCell(grid, index, width, height)
             }
             mutableState.update { it.copy(thumbnails = thumbnails) }
         }
@@ -149,8 +150,8 @@ class FiltersViewModel @Inject constructor(
     /** One cell per filter, each the still at a fifth of the grid, with its filter. */
     private fun gridTimeline(still: Bitmap, types: List<String>, width: Int, height: Int) =
         RenderTimeline(
-            width = width * GRID,
-            height = height * GRID,
+            width = width * THUMBNAIL_GRID,
+            height = height * THUMBNAIL_GRID,
             frameRate = 30,
             durationUs = 1_000_000,
             background = 0xFF000000.toInt(),
@@ -163,9 +164,9 @@ class FiltersViewModel @Inject constructor(
                             durationUs = 1_000_000,
                             source = RenderSource.Image(still),
                             transform = Transform(
-                                x = (index % GRID + 0.5f) / GRID - 0.5f,
-                                y = (index / GRID + 0.5f) / GRID - 0.5f,
-                                scale = 1f / GRID,
+                                x = (index % THUMBNAIL_GRID + 0.5f) / THUMBNAIL_GRID - 0.5f,
+                                y = (index / THUMBNAIL_GRID + 0.5f) / THUMBNAIL_GRID - 0.5f,
+                                scale = 1f / THUMBNAIL_GRID,
                                 fit = Fit.Fit,
                             ),
                             effects = if (type.isEmpty()) emptyList() else listOf(Effect(type, 1f)),
@@ -174,23 +175,4 @@ class FiltersViewModel @Inject constructor(
                 ),
             ),
         )
-
-    /** [bitmap] cut to the tiles' shape around its centre and scaled to [width] × [height]. */
-    private fun centreCrop(bitmap: Bitmap, width: Int, height: Int): Bitmap {
-        val target = width.toFloat() / height
-        val cropWidth = minOf(bitmap.width, (bitmap.height * target).toInt()).coerceAtLeast(1)
-        val cropHeight = minOf(bitmap.height, (bitmap.width / target).toInt()).coerceAtLeast(1)
-        val cropped = Bitmap.createBitmap(
-            bitmap,
-            (bitmap.width - cropWidth) / 2,
-            (bitmap.height - cropHeight) / 2,
-            cropWidth,
-            cropHeight,
-        )
-        return Bitmap.createScaledBitmap(cropped, width, height, true)
-    }
-
-    private companion object {
-        const val GRID = 5
-    }
 }

@@ -2,12 +2,7 @@ package tech.idct.clipra.core.engine.render
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.Canvas
 import android.graphics.Color
-import android.graphics.LinearGradient
-import android.graphics.Paint
-import android.graphics.RectF
-import android.graphics.Shader
 import android.util.Log
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -34,7 +29,7 @@ class FilterGoldenTest {
 
     @Test
     fun everyFilterMatchesItsGolden() {
-        val scene = sunset()
+        val scene = GoldenScenes.sunset(WIDTH, HEIGHT)
         val failures = Filters.all.mapNotNull { type ->
             val rendered = Offscreen.render(context, timeline(scene, type), TIME_US)
             if (record) {
@@ -56,7 +51,7 @@ class FilterGoldenTest {
 
     @Test
     fun zeroStrengthChangesNothing() {
-        val scene = sunset()
+        val scene = GoldenScenes.sunset(WIDTH, HEIGHT)
         val plain = Offscreen.render(context, timeline(scene, null), TIME_US)
         for (type in listOf("noir", "mosaic", "blur", "duotone")) {
             val none = Offscreen.render(context, timeline(scene, type, strength = 0f), TIME_US)
@@ -66,7 +61,7 @@ class FilterGoldenTest {
 
     @Test
     fun strengthBlendsWithTheOriginal() {
-        val scene = sunset()
+        val scene = GoldenScenes.sunset(WIDTH, HEIGHT)
         val plain = Offscreen.render(context, timeline(scene, null), TIME_US)
         val full = Offscreen.render(context, timeline(scene, "mono"), TIME_US)
         val half = Offscreen.render(context, timeline(scene, "mono", strength = 0.5f), TIME_US)
@@ -113,58 +108,6 @@ class FilterGoldenTest {
         File(directory, "$name.png").outputStream().use {
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)
         }
-    }
-
-    /** The design's preview scene: a sunset sky, the sun, two hills and a person. */
-    private fun sunset(): Bitmap {
-        val bitmap = Bitmap.createBitmap(WIDTH, HEIGHT, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(bitmap)
-        val w = WIDTH.toFloat()
-        val h = HEIGHT.toFloat()
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-        paint.shader = LinearGradient(
-            0f,
-            0f,
-            0f,
-            h,
-            intArrayOf(
-                0xFF23305C.toInt(),
-                0xFF6B4D7A.toInt(),
-                0xFFD9785A.toInt(),
-                0xFFF3B064.toInt(),
-            ),
-            floatArrayOf(0f, 0.36f, 0.66f, 1f),
-            Shader.TileMode.CLAMP,
-        )
-        canvas.drawRect(0f, 0f, w, h, paint)
-        paint.shader = null
-        fun oval(left: Float, top: Float, right: Float, bottom: Float, color: Long) {
-            paint.color = color.toInt()
-            canvas.drawOval(RectF(left * w, top * h, right * w, bottom * h), paint)
-        }
-        val sun = 0.24f * w
-        paint.color = 0xFFFFE6A8.toInt()
-        canvas.drawOval(RectF(0.62f * w, 0.30f * h, 0.62f * w + sun, 0.30f * h + sun), paint)
-        oval(-0.30f, 0.64f, 0.65f, 1.14f, 0xFF4A3355)
-        oval(0.25f, 0.72f, 1.40f, 1.22f, 0xFF22192E)
-        paint.color = 0xFF2F4A7A.toInt()
-        canvas.drawRoundRect(
-            RectF(0.21f * w, 0.74f * h, 0.79f * w, 1.06f * h),
-            0.28f * w,
-            0.15f * h,
-            paint,
-        )
-        paint.color = 0xFFB97A5B.toInt()
-        canvas.drawRect(0.45f * w, 0.66f * h, 0.55f * w, 0.76f * h, paint)
-        oval(0.37f, 0.50f, 0.63f, 0.68f, 0xFFC98B6B)
-        paint.color = 0xFF2B1E1A.toInt()
-        canvas.drawRoundRect(
-            RectF(0.36f * w, 0.485f * h, 0.64f * w, 0.57f * h),
-            0.14f * w,
-            0.04f * h,
-            paint,
-        )
-        return bitmap
     }
 
     private companion object {

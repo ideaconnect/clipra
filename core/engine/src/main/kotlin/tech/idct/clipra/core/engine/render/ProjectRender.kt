@@ -6,6 +6,7 @@ import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
 import tech.idct.clipra.core.model.MediaAsset
 import tech.idct.clipra.core.model.Project
+import tech.idct.clipra.core.model.cuts
 
 /**
  * Where the engine reads a project's media: proxies for preview, originals for export. Returns
@@ -40,19 +41,41 @@ object ProjectRender {
         durationUs = maxOf(project.durationUs, 1_000_000L / frameRate),
         background = backgroundColor(project.format.background),
         layers = project.layers.map { layer ->
+            val clips = layer.clips.mapNotNull { clip -> renderClip(project, clip, media) }
             RenderLayer(
-                clips = layer.clips.mapNotNull { clip -> renderClip(project, clip, media) },
+                clips = clips,
                 hidden = layer.hidden,
                 muted = layer.muted,
+                transitions = transitions(project, layer.id, clips.map { it.id }.toSet()),
             )
         },
     )
+
+    /** The layer's transitions whose cut is still there, between clips that render. */
+    private fun transitions(project: Project, layerId: String, rendered: Set<String>) =
+        project.transitions.filter { it.layerId == layerId }.mapNotNull { transition ->
+            val cut = project.cuts().firstOrNull {
+                it.layerId == layerId && it.timeUs == transition.cutTimeUs
+            } ?: return@mapNotNull null
+            if (cut.from.id !in rendered || cut.to.id !in rendered) return@mapNotNull null
+            RenderTransition(
+                fromClipId = cut.from.id,
+                toClipId = cut.to.id,
+                startUs = cut.timeUs - transition.durationUs / 2,
+                durationUs = transition.durationUs,
+                type = transition.type,
+                easing = transition.easing,
+            )
+        }
 
     private fun renderClip(project: Project, clip: Clip, media: MediaResolver): RenderClip? {
         val ref = clip.source ?: return null
         val asset = project.asset(ref.mediaId) ?: return null
         val source = when (clip.type) {
-            ClipType.Video -> media.source(asset)?.let { RenderSource.Video(it, ref.inPointUs) }
+            ClipType.Video -> media.source(asset)?.let {
+                val length = asset.durationUs.takeIf { d -> d > 0 } ?: Long.MAX_VALUE
+                RenderSource.Video(it, ref.inPointUs, length)
+            }
 
             ClipType.Audio -> media.source(asset)?.let { RenderSource.Audio(it, ref.inPointUs) }
 

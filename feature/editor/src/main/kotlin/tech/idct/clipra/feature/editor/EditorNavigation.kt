@@ -25,7 +25,10 @@ import kotlinx.coroutines.delay
 import kotlinx.serialization.Serializable
 import tech.idct.clipra.core.designsystem.placeholder.Board
 import tech.idct.clipra.core.engine.preview.PreviewPlayer
+import tech.idct.clipra.core.model.Cut
 import tech.idct.clipra.core.model.Transform
+import tech.idct.clipra.core.model.cutAfter
+import tech.idct.clipra.core.model.cuts
 import tech.idct.clipra.core.model.edit.takesFilters
 import tech.idct.clipra.feature.editor.layers.LayerTab
 import tech.idct.clipra.feature.editor.layers.LayersActions
@@ -37,6 +40,7 @@ import tech.idct.clipra.feature.editor.layers.sourceSize
 import tech.idct.clipra.feature.editor.timeline.Filmstrip
 import tech.idct.clipra.feature.editor.timeline.FilmstripLoader
 import tech.idct.clipra.feature.editor.timeline.TimelineActions
+import kotlin.math.abs
 
 /** The editor for [projectId]; null opens the placeholder board (debug screen index). */
 @Serializable
@@ -257,7 +261,7 @@ private fun EditorRoute(actions: EditorActions, viewModel: EditorViewModel = hil
                                 .firstOrNull { it.takesFilters() && it.contains(state.playheadUs) }
                             ?: project.layers.flatMap { it.clips }.firstOrNull { it.takesFilters() }
                         if (clip == null) {
-                            viewModel.notAvailable()
+                            viewModel.say(EditorMessage.NeedsPicture)
                         } else {
                             playing = false
                             val playhead = if (clip.contains(state.playheadUs)) {
@@ -266,6 +270,23 @@ private fun EditorRoute(actions: EditorActions, viewModel: EditorViewModel = hil
                                 clip.startUs
                             }
                             actions.onTool(tool, ToolTarget(project.id, clip.id, playhead))
+                        }
+                    }
+
+                    EditorTool.Transitions -> {
+                        // The cut at either end of the selected clip, or the one nearest the
+                        // playhead.
+                        val cuts = project.cuts()
+                        val near = { cut: Cut -> abs(cut.timeUs - state.playheadUs) }
+                        val cut = selected?.let { clip ->
+                            cuts.filter { it.from.id == clip.id || it.to.id == clip.id }
+                                .minByOrNull(near)
+                        } ?: cuts.minByOrNull(near)
+                        if (cut == null) {
+                            viewModel.say(EditorMessage.NeedsCut)
+                        } else {
+                            playing = false
+                            actions.onTool(tool, ToolTarget(project.id, cut.from.id, cut.timeUs))
                         }
                     }
 
@@ -284,6 +305,15 @@ private fun EditorRoute(actions: EditorActions, viewModel: EditorViewModel = hil
                 onSelect = viewModel::select,
                 onMove = viewModel::move,
                 onTrim = viewModel::trim,
+                onTransition = { fromClipId ->
+                    project.cutAfter(fromClipId)?.let { cut ->
+                        playing = false
+                        actions.onTool(
+                            EditorTool.Transitions,
+                            ToolTarget(project.id, cut.from.id, cut.timeUs),
+                        )
+                    }
+                },
                 onAddMedia = {
                     pickVisual.launch(
                         PickVisualMediaRequest(

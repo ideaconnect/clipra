@@ -175,7 +175,7 @@ private fun toolRoute(tool: EditorTool, target: ToolTarget): Any = when (tool) {
     EditorTool.Audio -> AudioRoute
     EditorTool.Text -> TextRoute
     EditorTool.Filters -> FiltersRoute(target.projectId, target.clipId, target.playheadUs)
-    EditorTool.Transitions -> TransitionsRoute
+    EditorTool.Transitions -> TransitionsRoute(target.projectId, target.clipId, target.playheadUs)
     EditorTool.Captions -> CaptionsSetupRoute
     EditorTool.Transcript -> TranscriptRoute
     EditorTool.Color -> ColorRoute

@@ -364,4 +364,6 @@ private fun EditorMessage.textRes(): Int = when (this) {
     EditorMessage.CantSplitHere -> R.string.editor_message_out_of_range
     EditorMessage.NotAvailable -> R.string.editor_message_not_available
     EditorMessage.ImportFailed -> R.string.editor_message_import_failed
+    EditorMessage.NeedsPicture -> R.string.editor_message_needs_picture
+    EditorMessage.NeedsCut -> R.string.editor_message_needs_cut
 }

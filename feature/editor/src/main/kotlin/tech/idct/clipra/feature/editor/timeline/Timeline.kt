@@ -3,6 +3,7 @@ package tech.idct.clipra.feature.editor.timeline
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
@@ -41,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
@@ -61,14 +63,17 @@ import androidx.compose.ui.unit.dp
 import tech.idct.clipra.core.designsystem.ClipraTheme
 import tech.idct.clipra.core.designsystem.component.ClipraIcon
 import tech.idct.clipra.core.designsystem.icon.ClipraIcons
+import tech.idct.clipra.core.designsystem.theme.ClipraDimens
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
 import tech.idct.clipra.core.model.Project
+import tech.idct.clipra.core.model.cuts
 import tech.idct.clipra.core.model.edit.Edge
 import tech.idct.clipra.core.model.edit.LayerTarget
 import tech.idct.clipra.core.model.edit.Snapping
 import tech.idct.clipra.core.model.edit.linkedPartners
 import tech.idct.clipra.core.model.edit.randomId
+import tech.idct.clipra.core.model.transitionOn
 import tech.idct.clipra.feature.editor.R
 import kotlin.math.roundToInt
 
@@ -80,6 +85,8 @@ class TimelineActions(
     val onMove: (clipId: String, startUs: Long, target: LayerTarget) -> Unit,
     val onTrim: (clipId: String, edge: Edge, toUs: Long) -> Unit,
     val onAddMedia: () -> Unit,
+    /** Opens the transition on the cut after [fromClipId]. */
+    val onTransition: (fromClipId: String) -> Unit = {},
 )
 
 /**
@@ -168,6 +175,20 @@ fun Timeline(
                                     actions = actions,
                                     filmstrip = filmstrip,
                                 )
+                            }
+                            project.cuts().filter { it.layerId == layer.id }.forEach { cut ->
+                                if (project.transitionOn(cut) != null) {
+                                    TransitionMarker(
+                                        x = geometry.x(cut.timeUs),
+                                        laneHeight = laneHeight,
+                                        description = stringResource(
+                                            R.string.editor_transition_marker,
+                                            clipName(project, cut.from),
+                                            clipName(project, cut.to),
+                                        ),
+                                        onClick = { actions.onTransition(cut.from.id) },
+                                    )
+                                }
                             }
                             if (index == 0) {
                                 AddMediaButton(
@@ -384,10 +405,14 @@ private fun ClipBlock(
             }
             .testTag("clip:${clip.id}"),
     ) {
+        // Videos without sound have no audio strip.
+        val sound = clip.type == ClipType.Video &&
+            clip.source?.let { project.asset(it.mediaId) }?.hasAudio != false
         if (clip.type == ClipType.Video && !missing) {
-            filmstrip(clip, width, laneHeight - TimelineGeometry.AUDIO_STRIP)
+            val strip = if (sound) TimelineGeometry.AUDIO_STRIP else 0f
+            filmstrip(clip, width, laneHeight - strip)
         }
-        if (clip.type == ClipType.Video) {
+        if (sound) {
             AudioStrip(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
@@ -497,6 +522,43 @@ private fun TrimHandle(
         contentAlignment = Alignment.Center,
     ) {
         Box(modifier = Modifier.size(2.dp, 14.dp).background(colors.onAccent))
+    }
+}
+
+/** A cut with a transition (Editor board): a light chip on the cut; tap to edit it. */
+@Composable
+private fun TransitionMarker(
+    x: Float,
+    laneHeight: Float,
+    description: String,
+    onClick: () -> Unit,
+) {
+    val colors = ClipraTheme.colors
+    val touch = ClipraDimens.TouchTarget.value
+    Box(
+        modifier = Modifier
+            .offset(x = (x - touch / 2).dp, y = ((laneHeight - touch) / 2).dp)
+            .size(ClipraDimens.TouchTarget)
+            .clickable(role = Role.Button, onClick = onClick)
+            .semantics { contentDescription = description }
+            .testTag("transition-marker"),
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(24.dp)
+                .shadow(4.dp, ClipraTheme.shapes.thumb)
+                .clip(ClipraTheme.shapes.thumb)
+                .background(colors.textPrimary),
+            contentAlignment = Alignment.Center,
+        ) {
+            ClipraIcon(
+                icon = ClipraIcons.Transition,
+                contentDescription = null,
+                tint = colors.onAccent,
+                size = 14.dp,
+            )
+        }
     }
 }
 

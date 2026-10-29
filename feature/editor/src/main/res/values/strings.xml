@@ -49,6 +49,8 @@
     <string name="editor_message_out_of_range">Can\'t do that here</string>
     <string name="editor_message_not_available">That didn\'t work</string>
     <string name="editor_message_import_failed">Couldn\'t read that file</string>
+    <string name="editor_message_needs_picture">Add a video or photo first</string>
+    <string name="editor_message_needs_cut">Put two clips side by side to add a transition</string>
     <string name="editor_layers_title">Layers</string>
     <string name="editor_layer_hide">Hide layer</string>
     <string name="editor_layer_show">Show layer</string>
@@ -108,4 +110,5 @@
     <string name="editor_layers_next_clip">%1$s from %2$s s</string>
     <string name="editor_layers_reorder">Drag to reorder layer L%d</string>
     <string name="editor_tool_crop">Crop</string>
+    <string name="editor_transition_marker">Transition between %1$s and %2$s</string>
 </resources>

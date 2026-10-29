@@ -66,7 +66,15 @@ data class EditorUiState(
 )
 
 /** A short note for the user after an edit was refused or media couldn't be read. */
-enum class EditorMessage { LayerLocked, NoRoom, CantSplitHere, NotAvailable, ImportFailed }
+enum class EditorMessage {
+    LayerLocked,
+    NoRoom,
+    CantSplitHere,
+    NotAvailable,
+    ImportFailed,
+    NeedsPicture,
+    NeedsCut,
+}
 
 @HiltViewModel
 class EditorViewModel @Inject constructor(
@@ -124,8 +132,8 @@ class EditorViewModel @Inject constructor(
 
     fun dismissMessage() = mutableState.update { it.copy(message = null) }
 
-    /** Says a tool has nothing to work on yet, such as Filters in a project without pictures. */
-    fun notAvailable() = mutableState.update { it.copy(message = EditorMessage.NotAvailable) }
+    /** Shows [message], such as why a tool has nothing to work on yet. */
+    fun say(message: EditorMessage) = mutableState.update { it.copy(message = message) }
 
     fun undo() = session?.undo()
 

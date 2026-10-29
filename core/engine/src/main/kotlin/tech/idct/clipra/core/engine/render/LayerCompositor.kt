@@ -19,6 +19,7 @@ import tech.idct.clipra.core.model.BlendMode
 import tech.idct.clipra.core.model.ClipGeometry
 import tech.idct.clipra.core.model.Effect
 import tech.idct.clipra.core.model.Filters
+import tech.idct.clipra.core.model.Transitions
 import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin
@@ -28,8 +29,9 @@ import tech.idct.clipra.core.model.Size as FrameSize
  * Draws a [RenderTimeline] as a Media3 effect. It replaces each input frame (a blank canvas from
  * the composition) with the layers at that frame's time, L1 first: video clips come from their
  * own decoders, photos and text from bitmaps; each clip goes through its filters, is placed by
- * its transform and is blended onto the canvas with its blend mode. Gaps draw nothing, so the layers below show
- * through. [live] values, while set, replace the clips' own (a gesture in progress).
+ * its transform and is blended onto the canvas with its blend mode, and transitions join clips
+ * across cuts. Gaps draw nothing, so the layers below show through. [live] values, while set,
+ * replace the clips' own (a gesture in progress).
  *
  * Media3's own compositor blends only with alpha, and Transformer doesn't let an app replace it,
  * so Clipra composites here (docs/spikes/engine.md).
@@ -74,6 +76,10 @@ private class LayerCompositorProgram(
     private val copyProgram = GlProgram(Shaders.VERTEX, Shaders.COPY)
     private val filterProgram = GlProgram(Shaders.VERTEX, Shaders.FILTER)
     private val blurProgram = GlProgram(Shaders.VERTEX, Shaders.BLUR)
+    private val transitionProgram = GlProgram(Shaders.VERTEX, Shaders.TRANSITION)
+
+    // The two clips of a transition, each drawn alone; made on the first transition.
+    private var transitionTargets: Array<Target>? = null
 
     private val canvas = arrayOfNulls<Target>(2)
     private var current = 0
@@ -118,7 +124,22 @@ private class LayerCompositorProgram(
         val active = HashSet<String>()
         for (layer in timeline.layers) {
             if (layer.hidden) continue
+            val transition = layer.transitions.firstOrNull { it.isActiveAt(presentationTimeUs) }
+            val from = transition?.let { t -> layer.clips.firstOrNull { it.id == t.fromClipId } }
+            val to = transition?.let { t -> layer.clips.firstOrNull { it.id == t.toClipId } }
+            var transitionDrawn = false
             for (clip in layer.clips) {
+                if (transition != null && from != null && to != null &&
+                    (clip.id == from.id || clip.id == to.id)
+                ) {
+                    if (!transitionDrawn) {
+                        active += from.id
+                        active += to.id
+                        drawTransition(transition, from, to, presentationTimeUs)
+                        transitionDrawn = true
+                    }
+                    continue
+                }
                 if (!clip.isActiveAt(presentationTimeUs)) continue
                 active += clip.id
                 drawClip(clip, presentationTimeUs)
@@ -151,6 +172,8 @@ private class LayerCompositorProgram(
         bitmapTextures.values.forEach { GlUtil.deleteTexture(it) }
         bitmapTextures.clear()
         (canvas + clipTarget).filterNotNull().forEach { it.delete() }
+        transitionTargets?.forEach { it.delete() }
+        transitionTargets = null
         effectTargets.values.forEach { pair -> pair.forEach { it.delete() } }
         effectTargets.clear()
         val programs = listOf(
@@ -160,21 +183,45 @@ private class LayerCompositorProgram(
             copyProgram,
             filterProgram,
             blurProgram,
+            transitionProgram,
         )
         programs.forEach { it.delete() }
         callbackThread.quitSafely()
     }
 
-    private fun drawClip(clip: RenderClip, timeUs: Long) {
-        val raw = clipFrame(clip, timeUs) ?: return
+    /** A clip's picture at a time, through its filters, with where it lands. */
+    private class Prepared(
+        val frame: ClipFrame,
+        val opacity: Float,
+        val position: FloatArray,
+        val unit: FloatArray,
+    )
+
+    private fun prepare(clip: RenderClip, timeUs: Long): Prepared? {
+        val raw = clipFrame(clip, timeUs) ?: return null
         val opacity = clip.opacityAt(timeUs, live?.opacity(clip.id) ?: clip.opacity)
-        if (opacity <= 0f) return
+        if (opacity <= 0f) return null
         val filters = (live?.effects(clip.id) ?: clip.effects).mapNotNull { effect ->
             FilterRecipes.of(effect.type)?.takeIf { effect.strength > 0f }?.let { it to effect }
         }
         val frame = if (filters.isEmpty()) raw else filtered(raw, filters, timeUs)
         val (position, unit) = quadFor(clip, frame.width, frame.height)
-        val program = if (frame.external) externalProgram else bitmapProgram
+        return Prepared(frame, opacity, position, unit)
+    }
+
+    /** Draws [prepared] alone into [target], over transparency. */
+    private fun drawAlone(target: Target, prepared: Prepared?) {
+        GlUtil.focusFramebufferUsingCurrentContext(target.fbo, target.width, target.height)
+        GLES20.glDisable(GLES20.GL_BLEND)
+        GLES20.glClearColor(0f, 0f, 0f, 0f)
+        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
+        if (prepared == null) return
+        val program = if (prepared.frame.external) externalProgram else bitmapProgram
+        drawSource(program, prepared.frame, prepared.opacity, prepared.position, prepared.unit)
+    }
+
+    private fun drawClip(clip: RenderClip, timeUs: Long) {
+        val prepared = prepare(clip, timeUs) ?: return
         if (clip.blend == BlendMode.Normal) {
             // Alpha blending straight onto the canvas.
             val target = canvas[current]!!
@@ -186,17 +233,59 @@ private class LayerCompositorProgram(
                 GLES20.GL_ONE,
                 GLES20.GL_ONE_MINUS_SRC_ALPHA,
             )
-            drawSource(program, frame, opacity, position, unit)
+            val program = if (prepared.frame.external) externalProgram else bitmapProgram
+            drawSource(program, prepared.frame, prepared.opacity, prepared.position, prepared.unit)
             GLES20.glDisable(GLES20.GL_BLEND)
             return
         }
         // Other modes read the canvas: draw the clip alone, then blend it into the other canvas.
+        drawAlone(clipTarget!!, prepared)
+        blendLayer(clip.blend)
+    }
+
+    /**
+     * A transition: both clips drawn alone (the outgoing one past its end, the incoming one
+     * before its start), combined by the transition shader, then blended like one clip, with
+     * the outgoing clip's mode for the first half and the incoming one's after.
+     */
+    private fun drawTransition(
+        transition: RenderTransition,
+        from: RenderClip,
+        to: RenderClip,
+        timeUs: Long,
+    ) {
+        val targets = transitionTargets ?: arrayOf(
+            Target.create(timeline.width, timeline.height),
+            Target.create(timeline.width, timeline.height),
+        ).also { transitionTargets = it }
+        drawAlone(targets[0], prepare(from, timeUs))
+        drawAlone(targets[1], prepare(to, timeUs))
+        val linear = (timeUs - transition.startUs).toFloat() / transition.durationUs
+        val progress = Transitions.ease(transition.easing, linear)
+
+        val region = transition.region ?: RenderTransition.Region(0f, 0f, 1f, 1f)
         val clipLayer = clipTarget!!
         GlUtil.focusFramebufferUsingCurrentContext(clipLayer.fbo, clipLayer.width, clipLayer.height)
-        GLES20.glClearColor(0f, 0f, 0f, 0f)
-        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
-        drawSource(program, frame, opacity, position, unit)
+        GLES20.glDisable(GLES20.GL_BLEND)
+        transitionProgram.use()
+        transitionProgram.setSamplerTexIdUniform("uA", targets[0].texture, 0)
+        transitionProgram.setSamplerTexIdUniform("uB", targets[1].texture, 1)
+        transitionProgram.setFloatUniform("uProgress", progress)
+        transitionProgram.setIntUniform("uType", Shaders.transitionIndex(transition.type))
+        transitionProgram.setFloatsUniform(
+            "uRegion",
+            floatArrayOf(region.left, 1 - region.top - region.height, region.width, region.height),
+        )
+        val aspect = region.width * timeline.width / (region.height * timeline.height)
+        transitionProgram.setFloatUniform("uAspect", aspect)
+        transitionProgram.setFloatUniform("uTime", timeUs / 1_000_000f)
+        drawQuad(transitionProgram, FULL_FRAME, FULL_UNIT, identity)
+        blendLayer(if (progress < 0.5f) from.blend else to.blend)
+    }
 
+    /** Blends the clip layer (straight alpha) into the other canvas with [mode]. */
+    private fun blendLayer(mode: BlendMode) {
+        val clipLayer = clipTarget!!
         val source = canvas[current]!!
         current = 1 - current
         val destination = canvas[current]!!
@@ -208,7 +297,7 @@ private class LayerCompositorProgram(
         blendProgram.use()
         blendProgram.setSamplerTexIdUniform("uDst", source.texture, 0)
         blendProgram.setSamplerTexIdUniform("uSrc", clipLayer.texture, 1)
-        blendProgram.setIntUniform("uMode", Shaders.blendIndex(clip.blend))
+        blendProgram.setIntUniform("uMode", Shaders.blendIndex(mode))
         drawQuad(blendProgram, FULL_FRAME, FULL_UNIT, identity)
     }
 
@@ -356,7 +445,11 @@ private class LayerCompositorProgram(
         val video = videoSources.getOrPut(clip.id) {
             VideoFrameSource(context, source.path, callbackHandler)
         }
-        val sourceTimeUs = source.inPointUs + ((timeUs - clip.startUs) * clip.rate).toLong()
+        // In a transition the clip runs on past its end or starts early; outside the file the
+        // nearest frame holds.
+        val frameUs = 1_000_000L / timeline.frameRate
+        val sourceTimeUs = (source.inPointUs + ((timeUs - clip.startUs) * clip.rate).toLong())
+            .coerceIn(0, maxOf(0, source.durationUs - frameUs))
         if (!video.frameAt(sourceTimeUs, frameToleranceUs)) return null
         return ClipFrame(video.textureId, video.textureMatrix, video.width, video.height, true)
     }

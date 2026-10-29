@@ -7,6 +7,7 @@ import org.junit.Test
 import tech.idct.clipra.core.model.BlendMode
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
+import tech.idct.clipra.core.model.Easing
 import tech.idct.clipra.core.model.Format
 import tech.idct.clipra.core.model.FrameRate
 import tech.idct.clipra.core.model.Layer
@@ -16,6 +17,7 @@ import tech.idct.clipra.core.model.MediaRef
 import tech.idct.clipra.core.model.Project
 import tech.idct.clipra.core.model.Resolution
 import tech.idct.clipra.core.model.TextSpec
+import tech.idct.clipra.core.model.Transition
 import tech.idct.clipra.core.model.edit.LayerTarget
 import tech.idct.clipra.core.model.edit.MoveClip
 
@@ -102,7 +104,7 @@ class ProjectRenderTest {
     fun clipsCarryTheirSourceTimingAndBlend() {
         val a = timeline.layers[0].clips.single()
         assertEquals("a", a.id)
-        assertEquals(RenderSource.Video("/proxies/v.mp4", 500_000), a.source)
+        assertEquals(RenderSource.Video("/proxies/v.mp4", 500_000, 10_000_000), a.source)
         assertEquals(BlendMode.Screen, timeline.layers[1].clips.single().blend)
         assertEquals(
             RenderSource.Audio("/proxies/m.mp4", 0),
@@ -126,5 +128,26 @@ class ProjectRenderTest {
         val layers = ProjectRender.timeline(moved, resolver).layers
         assertTrue(layers[0].clips.none { it.id == "a" })
         assertTrue(layers[2].clips.any { it.id == "a" })
+    }
+
+    @Test
+    fun transitionsSitOnTheirCuts() {
+        val withCut = project.copy(
+            layers = listOf(
+                Layer("L1", clips = listOf(videoClip("a", 0), videoClip("b", 2_000_000))),
+            ),
+            transitions = listOf(
+                Transition("t", "L1", 2_000_000, "spin", 600_000, Easing.Linear),
+                // The cut moved away: left out.
+                Transition("old", "L1", 5_000_000, "dissolve"),
+            ),
+        )
+        val transition = ProjectRender.timeline(withCut, resolver).layers[0].transitions.single()
+        assertEquals("a", transition.fromClipId)
+        assertEquals("b", transition.toClipId)
+        assertEquals(1_700_000L, transition.startUs)
+        assertEquals(600_000L, transition.durationUs)
+        assertEquals("spin", transition.type)
+        assertEquals(Easing.Linear, transition.easing)
     }
 }
