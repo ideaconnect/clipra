@@ -80,7 +80,7 @@ enum class MediaKind { Video, Photo, Audio }
 @Serializable
 data class LinkGroup(val id: String, val clipIds: List<String>)
 
-/** A transition across the cut at [cutTimeUs] on a layer; the clips overlap around the cut. */
+/** A transition on the cut at [cutTimeUs] of a layer, centred on it (see `Transitions`). */
 @Serializable
 data class Transition(
     val id: String,

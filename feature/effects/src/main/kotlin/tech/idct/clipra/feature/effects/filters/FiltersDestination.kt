@@ -20,6 +20,7 @@ import tech.idct.clipra.core.designsystem.component.VideoSurface
 import tech.idct.clipra.core.engine.preview.PreviewPlayer
 import tech.idct.clipra.core.model.Filters
 import tech.idct.clipra.core.model.filter
+import tech.idct.clipra.feature.effects.common.TILE_HEIGHT
 import kotlin.math.roundToInt
 
 /**

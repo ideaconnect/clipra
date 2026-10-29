@@ -47,6 +47,7 @@ class EditorScreenTest {
         durationUs = 60 * sec,
         width = 1080,
         height = 1920,
+        hasAudio = kind == MediaKind.Video,
     )
 
     private fun clip(

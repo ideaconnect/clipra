@@ -47,4 +47,41 @@
     <string name="effects_filter_halftone">Raster</string>
     <string name="effects_filter_duotone">Duotone</string>
     <string name="effects_filter_soft_glow">Poświata</string>
+
+    <!-- Transitions (#26) -->
+    <string name="effects_transition_title">Przejście</string>
+    <string name="effects_transition_subtitle">%1$s → %2$s</string>
+    <string name="effects_transition_meta">%1$s s · środek</string>
+    <string name="effects_transition_play">Odtwórz przejście</string>
+    <string name="effects_category_basic">Podstawowe</string>
+    <string name="effects_category_motion">Ruch</string>
+    <string name="effects_duration">Czas</string>
+    <string name="effects_seconds">%1$s s</string>
+    <string name="effects_easing_linear">Liniowo</string>
+    <string name="effects_easing_in_out">Łagodnie</string>
+    <string name="effects_easing_out">Wyhamowanie</string>
+    <string name="effects_transition_dissolve">Przenikanie</string>
+    <string name="effects_transition_fade_black">Do czerni</string>
+    <string name="effects_transition_fade_white">Do bieli</string>
+    <string name="effects_transition_wipe_left">Zasłona w lewo</string>
+    <string name="effects_transition_wipe_down">Zasłona w dół</string>
+    <string name="effects_transition_clock">Zegar</string>
+    <string name="effects_transition_iris">Przesłona</string>
+    <string name="effects_transition_split">Rozsunięcie</string>
+    <string name="effects_transition_slide_left">Wsuń w lewo</string>
+    <string name="effects_transition_slide_up">Wsuń w górę</string>
+    <string name="effects_transition_push">Wypchnięcie</string>
+    <string name="effects_transition_zoom_in">Przybliżenie</string>
+    <string name="effects_transition_zoom_out">Oddalenie</string>
+    <string name="effects_transition_whip_pan">Szybka panorama</string>
+    <string name="effects_transition_spin">Obrót</string>
+    <string name="effects_transition_shake">Wstrząs</string>
+    <string name="effects_transition_cube">Sześcian</string>
+    <string name="effects_transition_glitch">Glitch</string>
+    <string name="effects_transition_flash">Błysk</string>
+    <string name="effects_transition_blur">Rozmycie</string>
+    <string name="effects_transition_pixelate">Pikselizacja</string>
+    <string name="effects_transition_light_leak">Prześwit</string>
+    <string name="effects_transition_film_burn">Spalona taśma</string>
+    <string name="effects_transition_ink">Atrament</string>
 </resources>

@@ -2,6 +2,7 @@ package tech.idct.clipra.core.engine.render
 
 import android.graphics.Bitmap
 import tech.idct.clipra.core.model.BlendMode
+import tech.idct.clipra.core.model.Easing
 import tech.idct.clipra.core.model.Effect
 import tech.idct.clipra.core.model.Transform
 
@@ -19,12 +20,36 @@ data class RenderTimeline(
     val layers: List<RenderLayer>,
 )
 
-/** A hidden layer draws nothing; a muted layer adds nothing to the sound. */
+/**
+ * A hidden layer draws nothing; a muted layer adds nothing to the sound. [transitions] join
+ * neighbouring clips across their cuts.
+ */
 data class RenderLayer(
     val clips: List<RenderClip>,
     val hidden: Boolean = false,
     val muted: Boolean = false,
+    val transitions: List<RenderTransition> = emptyList(),
 )
+
+/**
+ * A transition from clip [fromClipId] to [toClipId] over [startUs] to [startUs] +
+ * [durationUs]: the outgoing clip plays on past its end and the incoming one starts early.
+ * [region] (fractions of the frame, from the top-left) keeps it to part of the frame; null is
+ * the whole frame.
+ */
+data class RenderTransition(
+    val fromClipId: String,
+    val toClipId: String,
+    val startUs: Long,
+    val durationUs: Long,
+    val type: String,
+    val easing: Easing = Easing.EaseInOut,
+    val region: Region? = null,
+) {
+    data class Region(val left: Float, val top: Float, val width: Float, val height: Float)
+
+    fun isActiveAt(timeUs: Long): Boolean = timeUs in startUs until startUs + durationUs
+}
 
 /**
  * One clip of a layer. [transform] places it in the frame (see `ClipGeometry`); [fadeInUs]
@@ -57,8 +82,15 @@ data class RenderClip(
 }
 
 sealed interface RenderSource {
-    /** A video file or content URI; [inPointUs] is where the clip starts in the file. */
-    data class Video(val path: String, val inPointUs: Long = 0) : RenderSource
+    /**
+     * A video file or content URI; [inPointUs] is where the clip starts in the file, and
+     * [durationUs] how long the file is (times past it hold the last frame).
+     */
+    data class Video(
+        val path: String,
+        val inPointUs: Long = 0,
+        val durationUs: Long = Long.MAX_VALUE,
+    ) : RenderSource
 
     /** A still picture: a photo, or a text card rendered to a bitmap. */
     data class Image(val bitmap: Bitmap) : RenderSource

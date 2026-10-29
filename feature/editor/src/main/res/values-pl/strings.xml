@@ -49,6 +49,8 @@
     <string name="editor_message_out_of_range">Nie można tego zrobić w tym miejscu</string>
     <string name="editor_message_not_available">To się nie udało</string>
     <string name="editor_message_import_failed">Nie udało się odczytać pliku</string>
+    <string name="editor_message_needs_picture">Najpierw dodaj wideo lub zdjęcie</string>
+    <string name="editor_message_needs_cut">Ustaw dwa klipy obok siebie, aby dodać przejście</string>
     <string name="editor_layers_title">Warstwy</string>
     <string name="editor_layer_hide">Ukryj warstwę</string>
     <string name="editor_layer_show">Pokaż warstwę</string>
@@ -110,4 +112,5 @@
     <string name="editor_layers_next_clip">%1$s od %2$s s</string>
     <string name="editor_layers_reorder">Przeciągnij, aby przenieść warstwę L%d</string>
     <string name="editor_tool_crop">Kadruj</string>
+    <string name="editor_transition_marker">Przejście między %1$s a %2$s</string>
 </resources>

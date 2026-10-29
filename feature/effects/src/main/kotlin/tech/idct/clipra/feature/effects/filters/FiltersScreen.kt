@@ -55,6 +55,10 @@ import tech.idct.clipra.core.designsystem.theme.ClipraDimens
 import tech.idct.clipra.core.model.Filters
 import tech.idct.clipra.core.model.filter
 import tech.idct.clipra.feature.effects.R
+import tech.idct.clipra.feature.effects.common.PICKER_COLUMNS
+import tech.idct.clipra.feature.effects.common.PickerCategory
+import tech.idct.clipra.feature.effects.common.PickerPreview
+import tech.idct.clipra.feature.effects.common.PickerTile
 import kotlin.math.roundToInt
 
 /** What the Filters screen can do. */
@@ -112,7 +116,7 @@ fun FiltersScreen(
                 )
             },
         )
-        PreviewArea(project.format.ratio.let { it.width.toFloat() / it.height }, preview) {
+        PickerPreview(project.format.ratio.let { it.width.toFloat() / it.height }, preview) {
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
@@ -166,32 +170,6 @@ fun FiltersScreen(
                 .height(52.dp)
                 .testTag("filter-strength"),
         )
-    }
-}
-
-/** The preview, letterboxed at the project's ratio, with [overlay] on top. */
-@Composable
-private fun PreviewArea(
-    ratio: Float,
-    preview: @Composable () -> Unit,
-    overlay: @Composable androidx.compose.foundation.layout.BoxScope.() -> Unit,
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(240.dp)
-            .clipToBounds()
-            .background(ClipraTheme.colors.ad.background),
-        contentAlignment = Alignment.Center,
-    ) {
-        Box(
-            modifier = Modifier
-                .aspectRatio(ratio, matchHeightConstraintsFirst = true)
-                .testTag("preview"),
-        ) {
-            preview()
-        }
-        overlay()
     }
 }
 
@@ -251,7 +229,7 @@ private fun Categories(category: FilterCategory, actions: FiltersActions) {
                     FilterCategory.Stylized ->
                         R.string.effects_category_stylized to Filters.stylized.size
                 }
-                CategoryChip(
+                PickerCategory(
                     label = stringResource(label),
                     count = count,
                     selected = entry == category,
@@ -270,38 +248,6 @@ private fun Categories(category: FilterCategory, actions: FiltersActions) {
 }
 
 @Composable
-private fun CategoryChip(
-    label: String,
-    count: Int,
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val colors = ClipraTheme.colors
-    val type = ClipraTheme.typography
-    val content = if (selected) colors.background else colors.textPrimary
-    Row(
-        modifier = modifier
-            .heightIn(min = ClipraDimens.TouchTarget)
-            .selectable(selected = selected, role = Role.Tab, onClick = onClick),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Row(
-            modifier = Modifier
-                .clip(ClipraTheme.shapes.chip)
-                .background(if (selected) colors.textPrimary else colors.surface)
-                .height(ClipraDimens.ChipHeight)
-                .padding(horizontal = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            Text(text = label, style = type.chip, color = content)
-            Text(text = count.toString(), style = type.meta, color = content.copy(alpha = 0.7f))
-        }
-    }
-}
-
-@Composable
 private fun Grid(
     category: FilterCategory,
     selected: String?,
@@ -315,10 +261,10 @@ private fun Grid(
         FilterCategory.Stylized -> Filters.stylized
     }
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        shown.chunked(COLUMNS).forEach { row ->
+        shown.chunked(PICKER_COLUMNS).forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 row.forEach { type ->
-                    Tile(
+                    PickerTile(
                         name = filterName(type),
                         thumbnail = thumbnails[type.orEmpty()],
                         selected = type == selected,
@@ -328,57 +274,9 @@ private fun Grid(
                             .testTag("filter:${type ?: "none"}"),
                     )
                 }
-                repeat(COLUMNS - row.size) { Spacer(modifier = Modifier.weight(1f)) }
+                repeat(PICKER_COLUMNS - row.size) { Spacer(modifier = Modifier.weight(1f)) }
             }
         }
-    }
-}
-
-@Composable
-private fun Tile(
-    name: String,
-    thumbnail: Bitmap?,
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val colors = ClipraTheme.colors
-    val shape = ClipraTheme.shapes.segment
-    Column(
-        modifier = modifier.selectable(
-            selected = selected,
-            role = Role.RadioButton,
-            onClick = onClick,
-        ),
-        verticalArrangement = Arrangement.spacedBy(5.dp),
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(TILE_HEIGHT)
-                .border(2.dp, if (selected) colors.accent else Color.Transparent, shape)
-                .padding(if (selected) 2.dp else 0.dp)
-                .clip(shape)
-                .background(colors.surfaceRaised),
-        ) {
-            if (thumbnail != null) {
-                Image(
-                    bitmap = thumbnail.asImageBitmap(),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize(),
-                )
-            }
-        }
-        Text(
-            text = name,
-            style = ClipraTheme.typography.toolLabel,
-            color = if (selected) colors.accent else colors.textSecondaryAlt,
-            textAlign = TextAlign.Center,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.fillMaxWidth(),
-        )
     }
 }
 
@@ -414,8 +312,3 @@ fun filterName(type: String?): String = stringResource(
         else -> R.string.effects_filter_none
     },
 )
-
-private const val COLUMNS = 5
-
-/** Thumbnail height; the view model renders them at this size. */
-internal val TILE_HEIGHT = 48.dp

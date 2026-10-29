@@ -94,7 +94,13 @@ fun ScreenHeader(
                 overflow = TextOverflow.Ellipsis,
             )
             if (subtitle != null) {
-                Text(text = subtitle, style = type.meta, color = colors.textSecondary, maxLines = 1)
+                Text(
+                    text = subtitle,
+                    style = type.meta,
+                    color = colors.textSecondary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
             }
         }
         actions()

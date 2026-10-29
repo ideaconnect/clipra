@@ -7,6 +7,7 @@ import androidx.navigation.toRoute
 import kotlinx.serialization.Serializable
 import tech.idct.clipra.core.designsystem.placeholder.Board
 import tech.idct.clipra.feature.effects.filters.FiltersDestination
+import tech.idct.clipra.feature.effects.transitions.TransitionsDestination
 
 /** Filters on [clipId] of [projectId]; no project opens the placeholder board (screen index). */
 @Serializable
@@ -16,8 +17,16 @@ data class FiltersRoute(
     val playheadUs: Long = 0,
 )
 
+/**
+ * Transitions on the cut after [clipId] of [projectId]; no project opens the placeholder board
+ * (screen index).
+ */
 @Serializable
-data object TransitionsRoute
+data class TransitionsRoute(
+    val projectId: String? = null,
+    val clipId: String? = null,
+    val playheadUs: Long = 0,
+)
 
 @Serializable
 data object MasksRoute
@@ -43,7 +52,7 @@ object EffectsBoards {
     val transitions = Board(
         id = "Transitions",
         title = R.string.effects_title_transitions,
-        route = TransitionsRoute,
+        route = TransitionsRoute(),
     )
     val masks = Board(id = "Masks", title = R.string.effects_title_masks, route = MasksRoute)
     val color = Board(id = "Color", title = R.string.effects_title_color, route = ColorRoute)
@@ -69,7 +78,13 @@ fun NavGraphBuilder.effectsScreens(screen: @Composable (Board) -> Unit, actions:
             FiltersDestination(onDone = actions.onDone)
         }
     }
-    composable<TransitionsRoute> { screen(EffectsBoards.transitions) }
+    composable<TransitionsRoute> { entry ->
+        if (entry.toRoute<TransitionsRoute>().projectId == null) {
+            screen(EffectsBoards.transitions)
+        } else {
+            TransitionsDestination(onDone = actions.onDone)
+        }
+    }
     composable<MasksRoute> { screen(EffectsBoards.masks) }
     composable<ColorRoute> { screen(EffectsBoards.color) }
     composable<CutoutRoute> { screen(EffectsBoards.cutout) }

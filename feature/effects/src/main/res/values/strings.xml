@@ -45,4 +45,41 @@
     <string name="effects_filter_halftone">Halftone</string>
     <string name="effects_filter_duotone">Duotone</string>
     <string name="effects_filter_soft_glow">Soft glow</string>
+
+    <!-- Transitions (#26) -->
+    <string name="effects_transition_title">Transition</string>
+    <string name="effects_transition_subtitle">%1$s → %2$s</string>
+    <string name="effects_transition_meta">%1$s s · midpoint</string>
+    <string name="effects_transition_play">Play the transition</string>
+    <string name="effects_category_basic">Basic</string>
+    <string name="effects_category_motion">Motion</string>
+    <string name="effects_duration">Duration</string>
+    <string name="effects_seconds">%1$s s</string>
+    <string name="effects_easing_linear">Linear</string>
+    <string name="effects_easing_in_out">Ease in-out</string>
+    <string name="effects_easing_out">Ease out</string>
+    <string name="effects_transition_dissolve">Dissolve</string>
+    <string name="effects_transition_fade_black">Fade black</string>
+    <string name="effects_transition_fade_white">Fade white</string>
+    <string name="effects_transition_wipe_left">Wipe left</string>
+    <string name="effects_transition_wipe_down">Wipe down</string>
+    <string name="effects_transition_clock">Clock</string>
+    <string name="effects_transition_iris">Iris</string>
+    <string name="effects_transition_split">Split</string>
+    <string name="effects_transition_slide_left">Slide left</string>
+    <string name="effects_transition_slide_up">Slide up</string>
+    <string name="effects_transition_push">Push</string>
+    <string name="effects_transition_zoom_in">Zoom in</string>
+    <string name="effects_transition_zoom_out">Zoom out</string>
+    <string name="effects_transition_whip_pan">Whip pan</string>
+    <string name="effects_transition_spin">Spin</string>
+    <string name="effects_transition_shake">Shake</string>
+    <string name="effects_transition_cube">Cube</string>
+    <string name="effects_transition_glitch">Glitch</string>
+    <string name="effects_transition_flash">Flash</string>
+    <string name="effects_transition_blur">Blur</string>
+    <string name="effects_transition_pixelate">Pixelate</string>
+    <string name="effects_transition_light_leak">Light leak</string>
+    <string name="effects_transition_film_burn">Film burn</string>
+    <string name="effects_transition_ink">Ink</string>
 </resources>
