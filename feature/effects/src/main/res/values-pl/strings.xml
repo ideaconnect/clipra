@@ -84,4 +84,23 @@
     <string name="effects_transition_light_leak">Prześwit</string>
     <string name="effects_transition_film_burn">Spalona taśma</string>
     <string name="effects_transition_ink">Atrament</string>
+
+    <!-- Masks (#27) -->
+    <string name="effects_mask_title">Maska</string>
+    <string name="effects_mask_subtitle">%1$s · %2$s</string>
+    <string name="effects_mask_effect">Efekt %1$s</string>
+    <string name="effects_mask_none">Brak</string>
+    <string name="effects_mask_rectangle">Prostokąt</string>
+    <string name="effects_mask_oval">Owal</string>
+    <string name="effects_mask_applies_to">Dotyczy</string>
+    <string name="effects_mask_invert">Odwróć</string>
+    <string name="effects_mask_block_size">Wielkość bloku</string>
+    <string name="effects_mask_feather">Wtapianie</string>
+    <string name="effects_mask_radius">Zaokrąglenie</string>
+    <string name="effects_mask_inside_oval">Wewnątrz owalu</string>
+    <string name="effects_mask_outside_oval">Poza owalem</string>
+    <string name="effects_mask_inside_rectangle">Wewnątrz prostokąta</string>
+    <string name="effects_mask_outside_rectangle">Poza prostokątem</string>
+    <string name="effects_mask_chip">%1$s · wtapianie %2$d</string>
+    <string name="effects_pixels">%d px</string>
 </resources>

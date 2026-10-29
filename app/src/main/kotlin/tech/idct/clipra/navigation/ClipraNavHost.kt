@@ -181,6 +181,6 @@ private fun toolRoute(tool: EditorTool, target: ToolTarget): Any = when (tool) {
     EditorTool.Color -> ColorRoute
     EditorTool.Cutout -> CutoutRoute
     EditorTool.Reframe -> ReframeRoute
-    EditorTool.Masks -> MasksRoute
+    EditorTool.Masks -> MasksRoute(target.projectId, target.clipId, target.playheadUs)
     EditorTool.Layer -> LayersRoute
 }

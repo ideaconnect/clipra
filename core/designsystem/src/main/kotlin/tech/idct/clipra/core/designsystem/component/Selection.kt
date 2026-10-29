@@ -169,15 +169,22 @@ fun ChoiceCard(
     ) {
         leading?.invoke(selected)
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(
+            val titleStyle = if (monospaceTitle) type.metaStrong else type.bodyStrong
+            // Long titles (and longer translations) shrink to fit rather than being cut.
+            BasicText(
                 text = title,
-                style = if (monospaceTitle) type.metaStrong else type.bodyStrong,
-                color = when {
-                    !enabled -> colors.textDisabled
-                    selected && accentTitleWhenSelected -> colors.accent
-                    else -> colors.textPrimary
-                },
+                style = titleStyle.copy(
+                    color = when {
+                        !enabled -> colors.textDisabled
+                        selected && accentTitleWhenSelected -> colors.accent
+                        else -> colors.textPrimary
+                    },
+                ),
                 maxLines = 1,
+                autoSize = TextAutoSize.StepBased(
+                    minFontSize = 11.sp,
+                    maxFontSize = titleStyle.fontSize,
+                ),
             )
             if (subtitle != null) {
                 Text(

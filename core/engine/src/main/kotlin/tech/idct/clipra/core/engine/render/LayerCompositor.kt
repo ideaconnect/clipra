@@ -19,6 +19,8 @@ import tech.idct.clipra.core.model.BlendMode
 import tech.idct.clipra.core.model.ClipGeometry
 import tech.idct.clipra.core.model.Effect
 import tech.idct.clipra.core.model.Filters
+import tech.idct.clipra.core.model.Mask
+import tech.idct.clipra.core.model.MaskShape
 import tech.idct.clipra.core.model.Transitions
 import kotlin.math.cos
 import kotlin.math.roundToInt
@@ -204,7 +206,8 @@ private class LayerCompositorProgram(
         val filters = (live?.effects(clip.id) ?: clip.effects).mapNotNull { effect ->
             FilterRecipes.of(effect.type)?.takeIf { effect.strength > 0f }?.let { it to effect }
         }
-        val frame = if (filters.isEmpty()) raw else filtered(raw, filters, timeUs)
+        val mask = live?.mask(clip.id) ?: clip.mask
+        val frame = if (filters.isEmpty()) raw else filtered(raw, filters, mask, timeUs)
         val (position, unit) = quadFor(clip, frame.width, frame.height)
         return Prepared(frame, opacity, position, unit)
     }
@@ -303,11 +306,12 @@ private class LayerCompositorProgram(
 
     /**
      * The clip's picture through [filters]: drawn upright into an effect texture (no larger than
-     * the frame), then one pass per filter, two for a blur.
+     * the frame), then one pass per filter, two for a blur. The [mask] limits one of them.
      */
     private fun filtered(
         frame: ClipFrame,
         filters: List<Pair<FilterRecipe, Effect>>,
+        mask: Mask?,
         timeUs: Long,
     ): ClipFrame {
         val longest = maxOf(timeline.width, timeline.height).toFloat()
@@ -317,42 +321,113 @@ private class LayerCompositorProgram(
         val key = width.toLong() shl 32 or height.toLong()
         effectSizesUsed += key
         val targets = effectTargets.getOrPut(key) {
-            arrayOf(Target.create(width, height), Target.create(width, height))
+            Array(3) { Target.create(width, height) }
         }
-        var input = 0
         fun focus(target: Target) {
             GlUtil.focusFramebufferUsingCurrentContext(target.fbo, target.width, target.height)
             GLES20.glDisable(GLES20.GL_BLEND)
         }
+        var current = 0
         focus(targets[0])
         GLES20.glClearColor(0f, 0f, 0f, 0f)
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
         val source = if (frame.external) externalProgram else bitmapProgram
         drawSource(source, frame, 1f, FULL_FRAME, FULL_UNIT)
 
+        // The mask limits the effect it names, or the first filter.
+        val maskedType = mask?.takeIf { it.shape != MaskShape.None }
+            ?.let { it.effect ?: filters.first().second.type }
+
         for ((recipe, effect) in filters) {
+            val effectMask = mask.takeIf { effect.type == maskedType }
             if (recipe.blur > 0f) {
-                // Blur's strength is its radius.
+                // Blur's strength is its radius; a mask then fades it against the original.
                 val deviation = recipe.blur * effect.strength * minOf(width, height)
-                for (step in listOf(deviation / 4 / width to 0f, 0f to deviation / 4 / height)) {
-                    focus(targets[1 - input])
-                    blurProgram.use()
-                    blurProgram.setSamplerTexIdUniform("uTex", targets[input].texture, 0)
-                    blurProgram.setFloatsUniform("uStep", floatArrayOf(step.first, step.second))
-                    drawQuad(blurProgram, FULL_FRAME, FULL_UNIT, identity)
-                    input = 1 - input
+                val across = (current + 1) % 3
+                val down = (current + 2) % 3
+                blur(targets[current], targets[across], deviation / 4 / width, 0f)
+                blur(targets[across], targets[down], 0f, deviation / 4 / height)
+                if (effectMask == null) {
+                    current = down
+                } else {
+                    focus(targets[across])
+                    filterPass(
+                        targets[down],
+                        targets[current],
+                        FilterRecipe(),
+                        Effect(effect.type, 1f),
+                        effectMask,
+                        width,
+                        height,
+                        timeUs,
+                    )
+                    current = across
                 }
                 continue
             }
-            focus(targets[1 - input])
-            filterProgram.use()
-            filterProgram.setSamplerTexIdUniform("uTex", targets[input].texture, 0)
-            setFilterUniforms(recipe, effect, width, height, timeUs)
-            drawQuad(filterProgram, FULL_FRAME, FULL_UNIT, identity)
-            input = 1 - input
+            val next = (current + 1) % 3
+            focus(targets[next])
+            filterPass(
+                targets[current],
+                targets[current],
+                recipe,
+                effect,
+                effectMask,
+                width,
+                height,
+                timeUs,
+            )
+            current = next
         }
-        val result = targets[input]
+        val result = targets[current]
         return ClipFrame(result.texture, identity, width, height, external = false)
+    }
+
+    private fun blur(from: Target, to: Target, stepX: Float, stepY: Float) {
+        GlUtil.focusFramebufferUsingCurrentContext(to.fbo, to.width, to.height)
+        GLES20.glDisable(GLES20.GL_BLEND)
+        blurProgram.use()
+        blurProgram.setSamplerTexIdUniform("uTex", from.texture, 0)
+        blurProgram.setFloatsUniform("uStep", floatArrayOf(stepX, stepY))
+        drawQuad(blurProgram, FULL_FRAME, FULL_UNIT, identity)
+    }
+
+    /** One filter pass into the focused target: [input] filtered, mixed with [original]. */
+    private fun filterPass(
+        input: Target,
+        original: Target,
+        recipe: FilterRecipe,
+        effect: Effect,
+        mask: Mask?,
+        width: Int,
+        height: Int,
+        timeUs: Long,
+    ) {
+        filterProgram.use()
+        filterProgram.setSamplerTexIdUniform("uTex", input.texture, 0)
+        filterProgram.setSamplerTexIdUniform("uOriginal", original.texture, 1)
+        setFilterUniforms(recipe, effect, width, height, timeUs)
+        setMaskUniforms(mask)
+        drawQuad(filterProgram, FULL_FRAME, FULL_UNIT, identity)
+    }
+
+    private fun setMaskUniforms(mask: Mask?) {
+        val program = filterProgram
+        val shape = when (mask?.shape) {
+            MaskShape.Rectangle -> 1
+            MaskShape.Oval -> 2
+            else -> 0
+        }
+        program.setIntUniform("uMaskShape", shape)
+        program.setFloatsUniform("uMaskCentre", floatArrayOf(mask?.x ?: 0.5f, mask?.y ?: 0.5f))
+        program.setFloatsUniform("uMaskSize", floatArrayOf(mask?.width ?: 1f, mask?.height ?: 1f))
+        program.setFloatUniform(
+            "uMaskTurn",
+            Math.toRadians((mask?.rotation ?: 0f).toDouble()).toFloat(),
+        )
+        program.setFloatUniform("uMaskFeather", mask?.feather ?: 0f)
+        program.setFloatUniform("uMaskRadius", mask?.cornerRadius ?: 0f)
+        program.setFloatUniform("uMaskInvert", if (mask?.invert == true) 1f else 0f)
     }
 
     private fun setFilterUniforms(

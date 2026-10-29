@@ -7,6 +7,7 @@ import androidx.navigation.toRoute
 import kotlinx.serialization.Serializable
 import tech.idct.clipra.core.designsystem.placeholder.Board
 import tech.idct.clipra.feature.effects.filters.FiltersDestination
+import tech.idct.clipra.feature.effects.masks.MasksDestination
 import tech.idct.clipra.feature.effects.transitions.TransitionsDestination
 
 /** Filters on [clipId] of [projectId]; no project opens the placeholder board (screen index). */
@@ -28,8 +29,13 @@ data class TransitionsRoute(
     val playheadUs: Long = 0,
 )
 
+/** The mask of [clipId] in [projectId]; no project opens the placeholder board (screen index). */
 @Serializable
-data object MasksRoute
+data class MasksRoute(
+    val projectId: String? = null,
+    val clipId: String? = null,
+    val playheadUs: Long = 0,
+)
 
 @Serializable
 data object ColorRoute
@@ -54,7 +60,7 @@ object EffectsBoards {
         title = R.string.effects_title_transitions,
         route = TransitionsRoute(),
     )
-    val masks = Board(id = "Masks", title = R.string.effects_title_masks, route = MasksRoute)
+    val masks = Board(id = "Masks", title = R.string.effects_title_masks, route = MasksRoute())
     val color = Board(id = "Color", title = R.string.effects_title_color, route = ColorRoute)
     val cutout = Board(id = "Cutout", title = R.string.effects_title_cutout, route = CutoutRoute)
     val reframe = Board(
@@ -85,7 +91,13 @@ fun NavGraphBuilder.effectsScreens(screen: @Composable (Board) -> Unit, actions:
             TransitionsDestination(onDone = actions.onDone)
         }
     }
-    composable<MasksRoute> { screen(EffectsBoards.masks) }
+    composable<MasksRoute> { entry ->
+        if (entry.toRoute<MasksRoute>().projectId == null) {
+            screen(EffectsBoards.masks)
+        } else {
+            MasksDestination(onDone = actions.onDone)
+        }
+    }
     composable<ColorRoute> { screen(EffectsBoards.color) }
     composable<CutoutRoute> { screen(EffectsBoards.cutout) }
     composable<ReframeRoute> { screen(EffectsBoards.reframe) }

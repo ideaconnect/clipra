@@ -17,6 +17,7 @@ import tech.idct.clipra.core.engine.render.MediaResolver
 import tech.idct.clipra.core.engine.render.ProjectRender
 import tech.idct.clipra.core.model.Effect
 import tech.idct.clipra.core.model.Format
+import tech.idct.clipra.core.model.Mask
 import tech.idct.clipra.core.model.MediaAsset
 import tech.idct.clipra.core.model.Project
 import tech.idct.clipra.core.model.Transform
@@ -93,6 +94,12 @@ class PreviewPlayer(private val context: Context, cache: MediaCache) {
     /** Like [setLiveTransform], for the filter strength and hold-to-compare; null restores. */
     fun setLiveEffects(clipId: String, effects: List<Effect>?) {
         live.setEffects(clipId, effects)
+        redraw()
+    }
+
+    /** Like [setLiveTransform], for a mask being dragged. */
+    fun setLiveMask(clipId: String, mask: Mask) {
+        live.setMask(clipId, mask)
         redraw()
     }
 

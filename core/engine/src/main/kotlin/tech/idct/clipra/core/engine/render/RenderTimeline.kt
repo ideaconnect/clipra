@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import tech.idct.clipra.core.model.BlendMode
 import tech.idct.clipra.core.model.Easing
 import tech.idct.clipra.core.model.Effect
+import tech.idct.clipra.core.model.Mask
 import tech.idct.clipra.core.model.Transform
 
 /**
@@ -68,6 +69,8 @@ data class RenderClip(
     val rate: Double = 1.0,
     /** Filters, in order (#25); effects the compositor doesn't draw yet are skipped. */
     val effects: List<Effect> = emptyList(),
+    /** Limits one of the effects to a region of the picture (#27). */
+    val mask: Mask? = null,
 ) {
     val endUs: Long get() = startUs + durationUs
 

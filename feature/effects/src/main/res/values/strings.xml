@@ -82,4 +82,23 @@
     <string name="effects_transition_light_leak">Light leak</string>
     <string name="effects_transition_film_burn">Film burn</string>
     <string name="effects_transition_ink">Ink</string>
+
+    <!-- Masks (#27) -->
+    <string name="effects_mask_title">Mask</string>
+    <string name="effects_mask_subtitle">%1$s · %2$s</string>
+    <string name="effects_mask_effect">%1$s effect</string>
+    <string name="effects_mask_none">None</string>
+    <string name="effects_mask_rectangle">Rectangle</string>
+    <string name="effects_mask_oval">Oval</string>
+    <string name="effects_mask_applies_to">Applies to</string>
+    <string name="effects_mask_invert">Invert</string>
+    <string name="effects_mask_block_size">Block size</string>
+    <string name="effects_mask_feather">Feather</string>
+    <string name="effects_mask_radius">Corner radius</string>
+    <string name="effects_mask_inside_oval">Inside oval</string>
+    <string name="effects_mask_outside_oval">Outside oval</string>
+    <string name="effects_mask_inside_rectangle">Inside rectangle</string>
+    <string name="effects_mask_outside_rectangle">Outside rectangle</string>
+    <string name="effects_mask_chip">%1$s · feather %2$d</string>
+    <string name="effects_pixels">%d px</string>
 </resources>

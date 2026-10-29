@@ -1,19 +1,21 @@
 package tech.idct.clipra.core.engine.render
 
 import tech.idct.clipra.core.model.Effect
+import tech.idct.clipra.core.model.Mask
 import tech.idct.clipra.core.model.Transform
 import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Values that override a clip's own while a gesture is still going: a transform being dragged
- * (#19), an opacity being slid (#20), or the effects while a filter's strength is slid or the
- * original is held for comparison (#25). The preview follows the finger without rebuilding the
+ * (#19), an opacity being slid (#20), the effects while a filter's strength is slid or the
+ * original is held for comparison (#25), or a mask being dragged (#27). The preview follows the finger without rebuilding the
  * composition. The UI thread writes them and the compositor's GL thread reads them.
  */
 class LiveEdits {
     private val transforms = ConcurrentHashMap<String, Transform>()
     private val opacities = ConcurrentHashMap<String, Float>()
     private val effects = ConcurrentHashMap<String, List<Effect>>()
+    private val masks = ConcurrentHashMap<String, Mask>()
 
     fun transform(clipId: String): Transform? = transforms[clipId]
 
@@ -28,6 +30,12 @@ class LiveEdits {
     }
 
     fun effects(clipId: String): List<Effect>? = effects[clipId]
+
+    fun mask(clipId: String): Mask? = masks[clipId]
+
+    fun setMask(clipId: String, mask: Mask) {
+        masks[clipId] = mask
+    }
 
     /** Draws [clipId] with [list] instead of its effects; null goes back to its own. */
     fun setEffects(clipId: String, list: List<Effect>?) {
