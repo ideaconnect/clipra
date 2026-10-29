@@ -147,10 +147,32 @@ data class AudioSettings(
     val volume: Float = 1f,
     val fadeInUs: Long = 0,
     val fadeOutUs: Long = 0,
+    /** Normalize to this many LUFS (#37), or null to leave the level alone. */
     val loudnessTarget: Int? = null,
+    /** The clip's own integrated loudness (LUFS) and true peak (dBTP), as measured. */
+    val measuredLufs: Float? = null,
+    val truePeakDb: Float? = null,
     val noiseReduction: Float? = null,
     val voiceCleanup: Float? = null,
 )
+
+/** Normalization (#37): the gain in dB that takes the clip to its target, or 0. */
+val AudioSettings.normalizeDb: Float
+    get() {
+        val target = loudnessTarget ?: return 0f
+        val measured = measuredLufs ?: return 0f
+        return target - measured
+    }
+
+/** The loudness targets of spec section 11, in LUFS. */
+object LoudnessTargets {
+    const val SOCIAL = -14
+    const val PODCAST = -16
+    const val BROADCAST = -23
+
+    /** The ceiling for true peaks, in dBTP. */
+    const val PEAK_CEILING_DB = -1f
+}
 
 @Serializable
 data class TextSpec(

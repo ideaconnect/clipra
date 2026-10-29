@@ -12,6 +12,7 @@ import androidx.media3.transformer.Composition
 import androidx.media3.transformer.EditedMediaItem
 import androidx.media3.transformer.EditedMediaItemSequence
 import androidx.media3.transformer.Effects
+import tech.idct.clipra.core.model.normalizeDb
 import java.io.File
 
 /**
@@ -92,6 +93,7 @@ object CompositionFactory {
                 fadeOutUs = clip.audio.fadeOutUs,
                 durationUs = clip.durationUs,
                 offsetUs = start - clip.startUs,
+                normalizeDb = clip.audio.normalizeDb,
             )
             sequence.addItem(
                 EditedMediaItem.Builder(item)

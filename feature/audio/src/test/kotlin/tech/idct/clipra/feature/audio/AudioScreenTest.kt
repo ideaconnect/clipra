@@ -1,9 +1,16 @@
 package tech.idct.clipra.feature.audio
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.RoborazziOptions
 import com.github.takahirom.roborazzi.captureRoboImage
@@ -13,11 +20,13 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import tech.idct.clipra.core.designsystem.ClipraTheme
+import tech.idct.clipra.core.engine.media.Loudness
 import tech.idct.clipra.core.engine.media.Waveform
 import tech.idct.clipra.core.model.AudioSettings
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
 import tech.idct.clipra.core.model.Layer
+import tech.idct.clipra.core.model.LoudnessTargets
 import tech.idct.clipra.core.model.MediaAsset
 import tech.idct.clipra.core.model.MediaKind
 import tech.idct.clipra.core.model.MediaRef
@@ -79,7 +88,7 @@ class AudioScreenTest {
                 AudioScreen(
                     state = AudioUiState(project, clip, waveform, loaded = true),
                     volume = 1f,
-                    actions = AudioActions({}, {}, {}, { picked += it }),
+                    actions = AudioActions({}, {}, {}, { picked += it }, {}),
                 )
             }
         }
@@ -90,5 +99,84 @@ class AudioScreenTest {
         compose.onNodeWithText("0.5 s").performClick()
         compose.onNodeWithText("2.0 s").performClick()
         assertEquals(2_000_000L, picked.last().fadeInUs)
+    }
+
+    /** Normalized to -14 LUFS: the readout shows the clip before and after, the design's numbers. */
+    @Test
+    fun normalizeLoudness() {
+        Locale.setDefault(Locale.US)
+        val targets = mutableListOf<Int?>()
+        val normalized = clip.copy(
+            audio = clip.audio.copy(
+                loudnessTarget = LoudnessTargets.SOCIAL,
+                measuredLufs = -22.8f,
+                truePeakDb = -3.1f,
+            ),
+        )
+        compose.setContent {
+            ClipraTheme {
+                AudioScreen(
+                    state = AudioUiState(
+                        project,
+                        normalized,
+                        waveform,
+                        loaded = true,
+                        measured = Loudness.Measurement(-22.8f, -3.1f),
+                        measuring = false,
+                    ),
+                    volume = 1f,
+                    actions = AudioActions({}, {}, {}, {}, { targets += it }),
+                )
+            }
+        }
+        compose.onNodeWithText("-14.0 LUFS").assertExists()
+        compose.onNodeWithText("peak -1.0 dBTP").assertExists()
+        compose.onNodeWithTag("audio-normalize").assertIsOn()
+        compose.onRoot().captureRoboImage(roborazziOptions = options)
+
+        compose.onNodeWithText("Before").performClick()
+        compose.onNodeWithText("-22.8 LUFS").assertExists()
+        compose.onNodeWithText("peak -3.1 dBTP").assertExists()
+
+        compose.onNodeWithTag("audio-target-23").performScrollTo().performClick()
+        compose.onNodeWithTag("audio-normalize").performClick()
+        assertEquals(listOf(LoudnessTargets.BROADCAST, null), targets)
+    }
+
+    /** Until the clip is measured, normalization waits; a silent clip says why it cannot. */
+    @Test
+    fun normalizeWaitsForTheMeasurement() {
+        Locale.setDefault(Locale.US)
+        var state by mutableStateOf(AudioUiState(project, clip, waveform, loaded = true))
+        val targets = mutableListOf<Int?>()
+        compose.setContent {
+            ClipraTheme {
+                AudioScreen(state, 1f, AudioActions({}, {}, {}, {}, { targets += it }))
+            }
+        }
+        compose.onNodeWithText("Measuring…").assertExists()
+        compose.onNodeWithTag("audio-normalize").assertIsNotEnabled()
+        state = state.copy(measuring = false)
+        compose.onNodeWithText("No sound").assertExists()
+        compose.onNodeWithText("This clip has no sound to measure").assertExists()
+        assertEquals(emptyList<Int?>(), targets)
+    }
+
+    @Test
+    fun levelsAfterFollowVolumeAndNormalization() {
+        val measured = Loudness.Measurement(-22.8f, -3.1f)
+        val plain = AudioSettings(volume = 0.5f)
+        val half = levelsAfter(measured, plain)!!
+        assertEquals(-28.8f, half.lufs, 0.05f)
+        assertEquals(-9.1f, half.peakDb, 0.05f)
+        // Normalizing moves loudness to the target; the limiter holds the peak at -1 dBTP.
+        val podcast = plain.copy(
+            volume = 1f,
+            loudnessTarget = LoudnessTargets.PODCAST,
+            measuredLufs = -22.8f,
+        )
+        assertEquals(Levels(-16f, -1f), levelsAfter(measured, podcast))
+        assertEquals(null, levelsAfter(measured, plain.copy(volume = 0f)))
+        assertEquals(null, levelsAfter(null, plain))
     }
 }

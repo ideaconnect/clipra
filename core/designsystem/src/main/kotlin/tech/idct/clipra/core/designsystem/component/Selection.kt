@@ -130,7 +130,8 @@ fun SegmentedControl(
 /**
  * A selectable card for a few rich options (aspect ratio, codec): 56 dp or taller, the selected
  * one with an accent border on a warm fill. Disabled cards stay visible and say why in
- * [subtitle]. [compact] tightens the padding for narrow cards, three to a row.
+ * [subtitle]. [compact] tightens the padding for narrow cards, three to a row; [centered]
+ * centres their text.
  */
 @Composable
 fun ChoiceCard(
@@ -143,6 +144,7 @@ fun ChoiceCard(
     monospaceTitle: Boolean = false,
     accentTitleWhenSelected: Boolean = true,
     compact: Boolean = false,
+    centered: Boolean = false,
     leading: (@Composable (selected: Boolean) -> Unit)? = null,
 ) {
     val colors = ClipraTheme.colors
@@ -165,10 +167,16 @@ fun ChoiceCard(
                 vertical = if (compact) 8.dp else 10.dp,
             ),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(if (compact) 8.dp else 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(
+            if (compact) 8.dp else 12.dp,
+            if (centered) Alignment.CenterHorizontally else Alignment.Start,
+        ),
     ) {
         leading?.invoke(selected)
-        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+            horizontalAlignment = if (centered) Alignment.CenterHorizontally else Alignment.Start,
+        ) {
             val titleStyle = if (monospaceTitle) type.metaStrong else type.bodyStrong
             // Long titles (and longer translations) shrink to fit rather than being cut.
             BasicText(
