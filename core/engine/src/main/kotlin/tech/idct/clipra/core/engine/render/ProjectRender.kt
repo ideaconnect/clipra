@@ -6,7 +6,6 @@ import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
 import tech.idct.clipra.core.model.MediaAsset
 import tech.idct.clipra.core.model.Project
-import tech.idct.clipra.core.model.BlendMode as ModelBlend
 
 /**
  * Where the engine reads a project's media: proxies for preview, originals for export. Returns
@@ -68,17 +67,10 @@ object ProjectRender {
             durationUs = clip.durationUs,
             source = source,
             transform = clip.transform.value,
-            blend = blendMode(clip.blend),
+            blend = clip.blend,
             opacity = clip.opacity.value,
             rate = clip.speed.rate,
         )
-    }
-
-    /** The compositor draws Normal, Multiply and Screen so far; M2 brings the other 13. */
-    private fun blendMode(mode: ModelBlend): BlendMode = when (mode) {
-        ModelBlend.Multiply -> BlendMode.Multiply
-        ModelBlend.Screen -> BlendMode.Screen
-        else -> BlendMode.Normal
     }
 
     /** ARGB of the project background. Blur falls back to black until it is built. */
