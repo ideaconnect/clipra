@@ -42,6 +42,16 @@ data class ClipraColors(
     val clip: ClipColors,
     val feature: FeatureColors,
     val ad: AdColors,
+    /** The custom colour swatch (Text board): a colour wheel. */
+    val colorWheel: List<Color> = listOf(
+        Color(0xFFFF5A36),
+        Color(0xFFFFD23F),
+        Color(0xFF3BD17A),
+        Color(0xFF2FB8FF),
+        Color(0xFF7A5AF8),
+        Color(0xFFFF4FD8),
+        Color(0xFFFF5A36),
+    ),
 )
 
 /** Timeline clip colours: they tell the content type apart. */

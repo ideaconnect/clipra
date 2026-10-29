@@ -70,4 +70,5 @@
     <string name="home_background_white">White</string>
     <string name="home_background_yellow">Yellow</string>
     <string name="home_background_blur">Blur</string>
+    <string name="home_new_card_title">Day one</string>
 </resources>

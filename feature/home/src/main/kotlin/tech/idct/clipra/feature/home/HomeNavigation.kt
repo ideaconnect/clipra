@@ -24,9 +24,12 @@ import tech.idct.clipra.core.designsystem.placeholder.Board
 @Serializable
 data object MainRoute
 
-/** New project, optionally with a layout preselected ("Mosaic layout" on Home). */
+/**
+ * New project, optionally with a layout preselected ("Mosaic layout" on Home), or starting with a
+ * text card ("Text card" on Home).
+ */
 @Serializable
-data class NewProjectRoute(val layout: String? = null)
+data class NewProjectRoute(val layout: String? = null, val textCard: Boolean = false)
 
 /**
  * The boards this module builds, from design/README.md ("Start and edit").
@@ -42,8 +45,14 @@ object HomeBoards {
     val all = listOf(main, newProject)
 }
 
-/** Where New project leads: back, or into the editor with the created project. */
-class NewProjectActions(val onBack: () -> Unit, val onCreated: (projectId: String) -> Unit)
+/**
+ * Where New project leads: back, or into the editor with the created project and, when it
+ * starts with a text card, that card's clip.
+ */
+class NewProjectActions(
+    val onBack: () -> Unit,
+    val onCreated: (projectId: String, textClipId: String?) -> Unit,
+)
 
 /** Registers this module's destinations: Home and New project. */
 fun NavGraphBuilder.homeScreens(actions: HomeActions, newProject: NewProjectActions) {
@@ -58,10 +67,11 @@ private fun NewProjectRoute(
 ) {
     val format by viewModel.format.collectAsStateWithLifecycle()
     val name = stringResource(R.string.home_new_default_name)
+    val title = stringResource(R.string.home_new_card_title)
     NewProjectScreen(
         format = format,
         onFormatChange = viewModel::change,
-        onCreate = { viewModel.create(name, actions.onCreated) },
+        onCreate = { viewModel.create(name, title, actions.onCreated) },
         onBack = actions.onBack,
         fourKSupported = viewModel.fourKSupported,
     )

@@ -1,4 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="text_title_text">Text</string>
+    <!-- Text (#31) -->
+    <string name="text_card">Text card</string>
+    <string name="text_overlay">Text</string>
+    <string name="text_subtitle">Layer L%1$d · %2$s - %3$s</string>
+    <string name="text_done">Done</string>
+    <string name="text_label">Text</string>
+    <string name="text_align_start">Align to the start</string>
+    <string name="text_align_center">Align to the centre</string>
+    <string name="text_align_end">Align to the end</string>
+    <string name="text_card_color">Card color</string>
+    <string name="text_color">Text color</string>
+    <string name="text_color_none">No card, text over the video</string>
+    <string name="text_color_black">Black</string>
+    <string name="text_color_white">White</string>
+    <string name="text_color_yellow">Yellow</string>
+    <string name="text_color_red">Red</string>
+    <string name="text_color_blue">Blue</string>
+    <string name="text_color_green">Green</string>
+    <string name="text_color_custom">Custom color</string>
+    <string name="text_hue">Hue</string>
+    <string name="text_shade">Shade</string>
+    <string name="text_use_color">Use color</string>
+    <string name="text_cancel">Cancel</string>
+    <string name="text_size">Size</string>
+    <string name="text_pixels">%d px</string>
+    <string name="text_weight_regular">Regular</string>
+    <string name="text_weight_medium">Medium</string>
+    <string name="text_weight_bold">Bold</string>
+    <string name="text_weight_heavy">Heavy</string>
 </resources>

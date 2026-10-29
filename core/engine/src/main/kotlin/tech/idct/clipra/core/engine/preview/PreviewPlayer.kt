@@ -20,6 +20,7 @@ import tech.idct.clipra.core.model.Format
 import tech.idct.clipra.core.model.Mask
 import tech.idct.clipra.core.model.MediaAsset
 import tech.idct.clipra.core.model.Project
+import tech.idct.clipra.core.model.TextSpec
 import tech.idct.clipra.core.model.Transform
 import kotlin.math.roundToInt
 
@@ -115,9 +116,23 @@ class PreviewPlayer(private val context: Context, cache: MediaCache) {
 
     fun release() = player.release()
 
-    /** Photos decode once per editor session instead of on every rebuild. */
+    /**
+     * Photos decode once per editor session instead of on every rebuild, and text draws again
+     * only when it changes.
+     */
     private class CachingResolver(private val inner: MediaResolver) : MediaResolver {
         private val images = HashMap<String, Bitmap?>()
+        private val texts = object : LinkedHashMap<TextKey, Bitmap?>(16, 0.75f, true) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<TextKey, Bitmap?>) =
+                size > MAX_TEXTS
+        }
+
+        private data class TextKey(val spec: TextSpec, val card: Boolean, val w: Int, val h: Int)
+
+        override fun text(spec: TextSpec, card: Boolean, width: Int, height: Int): Bitmap? =
+            texts.getOrPut(TextKey(spec, card, width, height)) {
+                inner.text(spec, card, width, height)
+            }
 
         override fun source(asset: MediaAsset): String? = inner.source(asset)
 
@@ -130,6 +145,7 @@ class PreviewPlayer(private val context: Context, cache: MediaCache) {
         /** Preview renders at 540p on its short side: proxies are 720p, and the view is small. */
         const val PREVIEW_SHORT_SIDE = 540
         private const val IMAGE_SIDE = PREVIEW_SHORT_SIDE * 2
+        private const val MAX_TEXTS = 32
 
         fun previewSize(format: Format): tech.idct.clipra.core.model.Size {
             val output = format.outputSize

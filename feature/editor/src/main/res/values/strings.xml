@@ -111,4 +111,5 @@
     <string name="editor_layers_reorder">Drag to reorder layer L%d</string>
     <string name="editor_tool_crop">Crop</string>
     <string name="editor_transition_marker">Transition between %1$s and %2$s</string>
+    <string name="editor_new_text">Your text</string>
 </resources>

@@ -70,4 +70,5 @@
     <string name="home_background_white">Białe</string>
     <string name="home_background_yellow">Żółte</string>
     <string name="home_background_blur">Rozmycie</string>
+    <string name="home_new_card_title">Dzień pierwszy</string>
 </resources>

@@ -6,6 +6,7 @@ import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
 import tech.idct.clipra.core.model.MediaAsset
 import tech.idct.clipra.core.model.Project
+import tech.idct.clipra.core.model.TextSpec
 import tech.idct.clipra.core.model.cuts
 
 /**
@@ -18,6 +19,9 @@ interface MediaResolver {
 
     /** The decoded picture of a photo asset. */
     fun image(asset: MediaAsset): Bitmap?
+
+    /** A text clip drawn at [width] × [height] (#31); a [card] fills it with its colour. */
+    fun text(spec: TextSpec, card: Boolean, width: Int, height: Int): Bitmap?
 }
 
 /** Turns a project into what the layer compositor draws (docs/architecture.md, section 4). */
@@ -41,7 +45,9 @@ object ProjectRender {
         durationUs = maxOf(project.durationUs, 1_000_000L / frameRate),
         background = backgroundColor(project.format.background),
         layers = project.layers.map { layer ->
-            val clips = layer.clips.mapNotNull { clip -> renderClip(project, clip, media) }
+            val clips = layer.clips.mapNotNull { clip ->
+                renderClip(project, clip, media, width, height)
+            }
             RenderLayer(
                 clips = clips,
                 hidden = layer.hidden,
@@ -68,7 +74,25 @@ object ProjectRender {
             )
         }
 
-    private fun renderClip(project: Project, clip: Clip, media: MediaResolver): RenderClip? {
+    private fun renderClip(
+        project: Project,
+        clip: Clip,
+        media: MediaResolver,
+        width: Int,
+        height: Int,
+    ): RenderClip? {
+        if (clip.type == ClipType.TextCard || clip.type == ClipType.Text) {
+            val spec = clip.text ?: return null
+            // Drawn at the frame's size, larger when scaled up, so it stays sharp.
+            val factor = clip.transform.value.scale.coerceIn(1f, MAX_TEXT_FACTOR)
+            val bitmap = media.text(
+                spec,
+                card = clip.type == ClipType.TextCard,
+                width = (width * factor).toInt(),
+                height = (height * factor).toInt(),
+            ) ?: return null
+            return renderClipOf(clip, RenderSource.Image(bitmap))
+        }
         val ref = clip.source ?: return null
         val asset = project.asset(ref.mediaId) ?: return null
         val source = when (clip.type) {
@@ -81,22 +105,27 @@ object ProjectRender {
 
             ClipType.Photo -> media.image(asset)?.let { RenderSource.Image(it) }
 
-            // Text, captions and adjustment clips come with M4, M6 and M2.
+            // Captions and adjustment clips come with M6 and M2.
             else -> null
         } ?: return null
-        return RenderClip(
-            id = clip.id,
-            startUs = clip.startUs,
-            durationUs = clip.durationUs,
-            source = source,
-            transform = clip.transform.value,
-            blend = clip.blend,
-            opacity = clip.opacity.value,
-            rate = clip.speed.rate,
-            effects = clip.effects,
-            mask = clip.mask,
-        )
+        return renderClipOf(clip, source)
     }
+
+    private fun renderClipOf(clip: Clip, source: RenderSource) = RenderClip(
+        id = clip.id,
+        startUs = clip.startUs,
+        durationUs = clip.durationUs,
+        source = source,
+        transform = clip.transform.value,
+        blend = clip.blend,
+        opacity = clip.opacity.value,
+        rate = clip.speed.rate,
+        effects = clip.effects,
+        mask = clip.mask,
+    )
+
+    /** Text renders up to twice the frame's size when scaled up. */
+    private const val MAX_TEXT_FACTOR = 2f
 
     /** ARGB of the project background. Blur falls back to black until it is built. */
     fun backgroundColor(background: Background): Int = when (background) {

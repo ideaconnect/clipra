@@ -26,9 +26,13 @@ import tech.idct.clipra.core.model.MediaAsset
 import tech.idct.clipra.core.model.MediaKind
 import tech.idct.clipra.core.model.MediaRef
 import tech.idct.clipra.core.model.Project
+import tech.idct.clipra.core.model.TextColors
+import tech.idct.clipra.core.model.TextFonts
+import tech.idct.clipra.core.model.TextSpec
 import tech.idct.clipra.core.model.Transform
 import tech.idct.clipra.core.model.edit.AddClip
 import tech.idct.clipra.core.model.edit.AddLayer
+import tech.idct.clipra.core.model.edit.AddText
 import tech.idct.clipra.core.model.edit.DeleteClip
 import tech.idct.clipra.core.model.edit.DuplicateClip
 import tech.idct.clipra.core.model.edit.Edge
@@ -163,6 +167,32 @@ class EditorViewModel @Inject constructor(
     fun setBlend(clipId: String, blend: BlendMode, opacity: Float) =
         edit(SetBlend(clipId, blend, opacity))
 
+    /**
+     * Adds text saying [words] at the playhead, for three seconds, over the video; returns its
+     * clip id, or null when it couldn't be added.
+     */
+    fun addText(words: String): String? {
+        val project = state.value.project ?: return null
+        val start = state.value.playheadUs.coerceIn(0, maxOf(0, project.durationUs))
+        val clip = Clip(
+            id = randomId(),
+            type = ClipType.Text,
+            startUs = start,
+            durationUs = TEXT_DURATION_US,
+            text = TextSpec(
+                text = words,
+                font = TextFonts.BRICOLAGE,
+                weight = 800,
+                size = 0.08f,
+                color = TextColors.WHITE,
+            ),
+        )
+        val session = session ?: return null
+        val refused = session.edit(AddText(clip)) ?: return clip.id
+        mutableState.update { it.copy(message = refused.toMessage()) }
+        return null
+    }
+
     /** Selects the clip [layerId] shows at the playhead, if any. */
     fun selectOnLayer(layerId: String) {
         val project = state.value.project ?: return
@@ -283,5 +313,6 @@ class EditorViewModel @Inject constructor(
 
     private companion object {
         const val PHOTO_DURATION_US = 3_000_000L
+        const val TEXT_DURATION_US = 3_000_000L
     }
 }

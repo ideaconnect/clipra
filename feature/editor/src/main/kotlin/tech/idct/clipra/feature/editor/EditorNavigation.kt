@@ -14,6 +14,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -25,6 +26,7 @@ import kotlinx.coroutines.delay
 import kotlinx.serialization.Serializable
 import tech.idct.clipra.core.designsystem.placeholder.Board
 import tech.idct.clipra.core.engine.preview.PreviewPlayer
+import tech.idct.clipra.core.model.ClipType
 import tech.idct.clipra.core.model.Cut
 import tech.idct.clipra.core.model.Transform
 import tech.idct.clipra.core.model.cutAfter
@@ -159,6 +161,7 @@ private fun EditorRoute(actions: EditorActions, viewModel: EditorViewModel = hil
     }
     val project = state.project ?: return
     val selected = state.selectedClipId?.let { project.findClip(it)?.second }
+    val newText = stringResource(R.string.editor_new_text)
     val openBoard = { tab: LayerTab, crop: Boolean ->
         selected?.let { clip ->
             playing = false
@@ -270,6 +273,19 @@ private fun EditorRoute(actions: EditorActions, viewModel: EditorViewModel = hil
                                 clip.startUs
                             }
                             actions.onTool(tool, ToolTarget(project.id, clip.id, playhead))
+                        }
+                    }
+
+                    EditorTool.Text -> {
+                        playing = false
+                        val clipId = selected?.takeIf {
+                            it.type == ClipType.Text || it.type == ClipType.TextCard
+                        }?.id ?: viewModel.addText(newText)
+                        if (clipId != null) {
+                            val clip = project.findClip(clipId)?.second
+                            val playhead = clip?.takeIf { !it.contains(state.playheadUs) }
+                                ?.startUs ?: state.playheadUs
+                            actions.onTool(tool, ToolTarget(project.id, clipId, playhead))
                         }
                     }
 

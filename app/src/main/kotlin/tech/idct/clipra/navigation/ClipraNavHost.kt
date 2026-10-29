@@ -44,6 +44,7 @@ import tech.idct.clipra.feature.models.ModelsBoards
 import tech.idct.clipra.feature.models.ModelsRoute
 import tech.idct.clipra.feature.models.OnboardingRoute
 import tech.idct.clipra.feature.models.modelsScreens
+import tech.idct.clipra.feature.text.TextNavigationActions
 import tech.idct.clipra.feature.text.TextRoute
 import tech.idct.clipra.feature.text.textScreens
 import tech.idct.clipra.monetization.MonetizationBoards
@@ -81,7 +82,7 @@ fun ClipraNavHost(
                 onNewProject = { navController.navigate(NewProjectRoute()) },
                 onOpenProject = { navController.navigate(EditorRoute(it)) },
                 onAutoCaptions = { navController.navigate(CaptionsSetupRoute) },
-                onTextCard = { navController.navigate(TextRoute) },
+                onTextCard = { navController.navigate(NewProjectRoute(textCard = true)) },
                 onMosaic = {
                     navController.navigate(NewProjectRoute(layout = Layout.Grid2x2.name))
                 },
@@ -97,10 +98,11 @@ fun ClipraNavHost(
             NewProjectActions(
                 onBack = { navController.popBackStack() },
                 // Back from the editor returns to Home, not to New project.
-                onCreated = { id ->
+                onCreated = { id, textClipId ->
                     navController.navigate(EditorRoute(id)) {
                         popUpTo<NewProjectRoute> { inclusive = true }
                     }
+                    if (textClipId != null) navController.navigate(TextRoute(id, textClipId))
                 },
             ),
         )
@@ -113,7 +115,7 @@ fun ClipraNavHost(
             ),
         )
         effectsScreens(screen, EffectsActions(onDone = { navController.popBackStack() }))
-        textScreens(screen)
+        textScreens(screen, TextNavigationActions(onDone = { navController.popBackStack() }))
         captionsScreens(screen)
         audioScreens(screen)
         exportScreens(
@@ -173,7 +175,7 @@ private fun NavController.open(from: Board, to: Board) {
 /** The screen each editor tool opens; most are placeholders until their issues land. */
 private fun toolRoute(tool: EditorTool, target: ToolTarget): Any = when (tool) {
     EditorTool.Audio -> AudioRoute
-    EditorTool.Text -> TextRoute
+    EditorTool.Text -> TextRoute(target.projectId, target.clipId, target.playheadUs)
     EditorTool.Filters -> FiltersRoute(target.projectId, target.clipId, target.playheadUs)
     EditorTool.Transitions -> TransitionsRoute(target.projectId, target.clipId, target.playheadUs)
     EditorTool.Captions -> CaptionsSetupRoute
