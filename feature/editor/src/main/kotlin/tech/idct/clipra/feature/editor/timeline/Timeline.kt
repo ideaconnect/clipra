@@ -105,6 +105,7 @@ fun Timeline(
     actions: TimelineActions,
     modifier: Modifier = Modifier,
     filmstrip: @Composable (clip: Clip, widthDp: Float, heightDp: Float) -> Unit = { _, _, _ -> },
+    waveforms: WaveformLoader? = null,
 ) {
     val colors = ClipraTheme.colors
     val density = LocalDensity.current
@@ -174,6 +175,7 @@ fun Timeline(
                                     locked = layer.locked,
                                     actions = actions,
                                     filmstrip = filmstrip,
+                                    waveforms = waveforms,
                                 )
                             }
                             project.cuts().filter { it.layerId == layer.id }.forEach { cut ->
@@ -309,6 +311,7 @@ private fun ClipBlock(
     locked: Boolean,
     actions: TimelineActions,
     filmstrip: @Composable (Clip, Float, Float) -> Unit,
+    waveforms: WaveformLoader?,
 ) {
     val colors = ClipraTheme.colors
     val density = LocalDensity.current
@@ -413,21 +416,27 @@ private fun ClipBlock(
             filmstrip(clip, width, laneHeight - strip)
         }
         if (sound) {
-            AudioStrip(
+            SoundWave(
+                loader = waveforms,
+                project = project,
+                clip = clip,
+                muted = clip.audio.volume == 0f,
                 modifier = Modifier
                     .align(Alignment.BottomStart)
                     .fillMaxWidth()
                     .height(TimelineGeometry.AUDIO_STRIP.dp),
-                muted = clip.audio.volume == 0f,
             )
         }
         if (clip.type == ClipType.Audio) {
-            AudioStrip(
+            SoundWave(
+                loader = waveforms,
+                project = project,
+                clip = clip,
+                muted = clip.audio.volume == 0f,
                 modifier = Modifier
                     .align(Alignment.CenterStart)
                     .fillMaxWidth()
                     .height((laneHeight * 0.55f).dp),
-                muted = clip.audio.volume == 0f,
             )
         }
         // The label and the duration badge stick to the visible left edge.
@@ -558,25 +567,6 @@ private fun TransitionMarker(
                 tint = colors.onAccent,
                 size = 14.dp,
             )
-        }
-    }
-}
-
-@Composable
-private fun AudioStrip(modifier: Modifier, muted: Boolean) {
-    val colors = ClipraTheme.colors
-    val wave = if (muted) colors.textDisabled else colors.clip.musicWave
-    Canvas(modifier = modifier.background(colors.background.copy(alpha = 0.62f))) {
-        val step = 4.dp.toPx()
-        var x = 0f
-        while (x < size.width) {
-            drawLine(
-                wave,
-                Offset(x, size.height * 0.25f),
-                Offset(x, size.height * 0.75f),
-                strokeWidth = 2.dp.toPx(),
-            )
-            x += step
         }
     }
 }

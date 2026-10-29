@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="audio_title_audio">Audio</string>
+    <string name="audio_clip_sound">%1$s · clip audio</string>
+    <string name="audio_done">Done</string>
+    <string name="audio_volume">Volume</string>
+    <string name="audio_percent">%d%%</string>
+    <string name="audio_fade_in">Fade in</string>
+    <string name="audio_fade_out">Fade out</string>
+    <string name="audio_seconds">%1$s s</string>
 </resources>

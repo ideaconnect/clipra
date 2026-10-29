@@ -82,7 +82,8 @@ Transcript(clipId, words: List<Word(text, start, end, confidence, kind: Word|Fil
 
 ## 5. Audio
 
-- Mixing: Media3 audio processing for preview and export, all layers summed, muted layers skipped.
+- Mixing: Media3 audio processing for preview and export, all layers summed, muted layers skipped. Each clip's sound goes through `ClipGain` (volume 0 to 200% and fade envelope, kept in place after seeks by the stream position Media3 passes on flush); clips turned all the way down and videos without sound add nothing.
+- Waveforms: `AudioDecoder` decodes to PCM; `Waveforms` keeps the peak of every 20 ms in the media cache. Import starts them in the background, and long sounds decode in four slices side by side.
 - Loudness: integrated loudness (EBU R128 / ITU-R BS.1770) measured per clip, gain to target (−14, −16, −23 LUFS), true-peak limiter at −1 dBTP. Use a permissively licensed implementation (for example libebur128, MIT) or our own.
 - Noise reduction: spectral gate (our own implementation).
 - AI voice cleanup: DeepFilterNet 3 exported to ONNX (an 8.0 MB download, 8.6 MB unpacked) on ONNX Runtime Mobile; RNNoise as the lite option. Processed offline per clip into a cached file, not in real time.

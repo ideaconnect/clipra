@@ -26,6 +26,7 @@ import kotlinx.coroutines.delay
 import kotlinx.serialization.Serializable
 import tech.idct.clipra.core.designsystem.placeholder.Board
 import tech.idct.clipra.core.engine.preview.PreviewPlayer
+import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
 import tech.idct.clipra.core.model.Cut
 import tech.idct.clipra.core.model.Transform
@@ -42,6 +43,7 @@ import tech.idct.clipra.feature.editor.layers.sourceSize
 import tech.idct.clipra.feature.editor.timeline.Filmstrip
 import tech.idct.clipra.feature.editor.timeline.FilmstripLoader
 import tech.idct.clipra.feature.editor.timeline.TimelineActions
+import tech.idct.clipra.feature.editor.timeline.WaveformLoader
 import kotlin.math.abs
 
 /** The editor for [projectId]; null opens the placeholder board (debug screen index). */
@@ -99,6 +101,7 @@ private fun EditorRoute(actions: EditorActions, viewModel: EditorViewModel = hil
     var liveOpacity by remember { mutableStateOf<Float?>(null) }
     val context = LocalContext.current
     val filmstrips = remember { FilmstripLoader(context.applicationContext, viewModel.mediaCache) }
+    val waveforms = remember { WaveformLoader(context.applicationContext, viewModel.mediaCache) }
     val currentState by rememberUpdatedState(state)
 
     val pickVisual =
@@ -289,6 +292,26 @@ private fun EditorRoute(actions: EditorActions, viewModel: EditorViewModel = hil
                         }
                     }
 
+                    EditorTool.Audio -> {
+                        // The selected clip, or the one on top with sound at the playhead.
+                        val sound = { c: Clip ->
+                            c.type == ClipType.Audio || (
+                                c.type == ClipType.Video &&
+                                    c.source?.let { project.asset(it.mediaId) }?.hasAudio == true
+                                )
+                        }
+                        val clip = selected?.takeIf(sound)
+                            ?: project.layers.reversed().flatMap { it.clips }
+                                .firstOrNull { sound(it) && it.contains(state.playheadUs) }
+                            ?: project.layers.flatMap { it.clips }.firstOrNull(sound)
+                        if (clip == null) {
+                            viewModel.say(EditorMessage.NeedsSound)
+                        } else {
+                            playing = false
+                            actions.onTool(tool, ToolTarget(project.id, clip.id, state.playheadUs))
+                        }
+                    }
+
                     EditorTool.Transitions -> {
                         // The cut at either end of the selected clip, or the one nearest the
                         // playhead.
@@ -357,6 +380,7 @@ private fun EditorRoute(actions: EditorActions, viewModel: EditorViewModel = hil
         filmstrip = { clip, width, height ->
             Filmstrip(filmstrips, project, clip, width, height, state.dpPerSecond)
         },
+        waveforms = waveforms,
     )
     if (layers) {
         LayersSheet(

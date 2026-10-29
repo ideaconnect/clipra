@@ -78,6 +78,7 @@ enum class EditorMessage {
     ImportFailed,
     NeedsPicture,
     NeedsCut,
+    NeedsSound,
 }
 
 @HiltViewModel

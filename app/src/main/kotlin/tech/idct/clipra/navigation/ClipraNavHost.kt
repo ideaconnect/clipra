@@ -12,6 +12,7 @@ import tech.idct.clipra.core.designsystem.gallery.DesignSystemGallery
 import tech.idct.clipra.core.designsystem.placeholder.Board
 import tech.idct.clipra.core.designsystem.placeholder.BoardPlaceholder
 import tech.idct.clipra.core.model.Layout
+import tech.idct.clipra.feature.audio.AudioActionsNavigation
 import tech.idct.clipra.feature.audio.AudioRoute
 import tech.idct.clipra.feature.audio.audioScreens
 import tech.idct.clipra.feature.captions.CaptionsSetupRoute
@@ -117,7 +118,7 @@ fun ClipraNavHost(
         effectsScreens(screen, EffectsActions(onDone = { navController.popBackStack() }))
         textScreens(screen, TextNavigationActions(onDone = { navController.popBackStack() }))
         captionsScreens(screen)
-        audioScreens(screen)
+        audioScreens(screen, AudioActionsNavigation(onDone = { navController.popBackStack() }))
         exportScreens(
             screen,
             ExportActions(
@@ -174,7 +175,7 @@ private fun NavController.open(from: Board, to: Board) {
 
 /** The screen each editor tool opens; most are placeholders until their issues land. */
 private fun toolRoute(tool: EditorTool, target: ToolTarget): Any = when (tool) {
-    EditorTool.Audio -> AudioRoute
+    EditorTool.Audio -> AudioRoute(target.projectId, target.clipId, target.playheadUs)
     EditorTool.Text -> TextRoute(target.projectId, target.clipId, target.playheadUs)
     EditorTool.Filters -> FiltersRoute(target.projectId, target.clipId, target.playheadUs)
     EditorTool.Transitions -> TransitionsRoute(target.projectId, target.clipId, target.playheadUs)

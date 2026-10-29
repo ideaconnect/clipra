@@ -14,6 +14,9 @@ class MediaCache(private val root: File) {
     /** A still for Home and the media bin. */
     fun thumbnail(mediaId: String): File = File(root, "thumbnails/$mediaId.jpg")
 
+    /** The waveform's peaks (#36), one byte per 20 ms. */
+    fun waveform(mediaId: String): File = File(root, "waveforms/$mediaId.peaks")
+
     /** One filmstrip frame per [FILMSTRIP_STEP_US] of the media, for the timeline. */
     fun filmstripFrame(mediaId: String, index: Int): File =
         File(root, "filmstrips/$mediaId/$index.jpg")

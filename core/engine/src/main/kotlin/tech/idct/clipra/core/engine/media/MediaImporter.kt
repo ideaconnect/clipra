@@ -13,22 +13,29 @@ import androidx.work.workDataOf
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import tech.idct.clipra.core.model.MediaAsset
+import tech.idct.clipra.core.model.MediaKind
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
  * Imports picked media: keeps read access to it (the photo picker and the system file picker
- * need no storage permission), inspects it, makes a thumbnail and queues the proxy. The clip is
- * editable at once; preview reads the original until the proxy is ready.
+ * need no storage permission), inspects it, makes a thumbnail and queues the proxy, and starts
+ * the waveform of anything with sound, so the timeline has it by the time it is shown. The clip
+ * is editable at once; preview reads the original until the proxy is ready.
  */
 @Singleton
 class MediaImporter @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val cache: MediaCache,
 ) {
+    private val background = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
     suspend fun import(uri: Uri): MediaAsset = withContext(Dispatchers.IO) {
         try {
             context.contentResolver.takePersistableUriPermission(
@@ -41,6 +48,12 @@ class MediaImporter @Inject constructor(
         val asset = MediaInspector.inspect(context, uri)
         Thumbnails.thumbnail(context, asset, cache)
         if (ProxyGenerator.needsProxy(asset)) ProxyWorker.enqueue(context, asset)
+        if (asset.hasAudio || asset.kind == MediaKind.Audio) {
+            background.launch {
+                val originals = ProjectMediaResolver(context, cache, forExport = true, 0)
+                runCatching { Waveforms.waveform(context, asset, cache, originals) }
+            }
+        }
         asset
     }
 }

@@ -98,7 +98,7 @@ object ProjectRender {
         val source = when (clip.type) {
             ClipType.Video -> media.source(asset)?.let {
                 val length = asset.durationUs.takeIf { d -> d > 0 } ?: Long.MAX_VALUE
-                RenderSource.Video(it, ref.inPointUs, length)
+                RenderSource.Video(it, ref.inPointUs, length, asset.hasAudio)
             }
 
             ClipType.Audio -> media.source(asset)?.let { RenderSource.Audio(it, ref.inPointUs) }
@@ -122,6 +122,7 @@ object ProjectRender {
         rate = clip.speed.rate,
         effects = clip.effects,
         mask = clip.mask,
+        audio = clip.audio,
     )
 
     /** Text renders up to twice the frame's size when scaled up. */
