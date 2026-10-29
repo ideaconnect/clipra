@@ -42,6 +42,7 @@ import tech.idct.clipra.feature.home.NewProjectActions
 import tech.idct.clipra.feature.home.NewProjectRoute
 import tech.idct.clipra.feature.home.homeScreens
 import tech.idct.clipra.feature.models.ModelsBoards
+import tech.idct.clipra.feature.models.ModelsNavigationActions
 import tech.idct.clipra.feature.models.ModelsRoute
 import tech.idct.clipra.feature.models.OnboardingRoute
 import tech.idct.clipra.feature.models.modelsScreens
@@ -144,7 +145,7 @@ fun ClipraNavHost(
                 onPro = { navController.navigate(ProRoute) },
             ),
         )
-        modelsScreens(screen)
+        modelsScreens(screen, ModelsNavigationActions(onBack = { navController.popBackStack() }))
         monetizationScreens(screen)
         composable<SettingsRoute> { screen(AppBoards.settings) }
         composable<BoardIndexRoute> {

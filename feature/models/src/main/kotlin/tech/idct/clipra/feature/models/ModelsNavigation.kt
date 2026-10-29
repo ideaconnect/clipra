@@ -1,6 +1,9 @@
 package tech.idct.clipra.feature.models
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import kotlinx.serialization.Serializable
@@ -27,8 +30,30 @@ object ModelsBoards {
     val all = listOf(onboarding, models)
 }
 
+/** Where the models screens lead; the app connects it. */
+class ModelsNavigationActions(val onBack: () -> Unit)
+
 /** Registers this module's destinations. [screen] draws a board until its real screen is built. */
-fun NavGraphBuilder.modelsScreens(screen: @Composable (Board) -> Unit) {
+fun NavGraphBuilder.modelsScreens(
+    screen: @Composable (Board) -> Unit,
+    actions: ModelsNavigationActions,
+) {
     composable<OnboardingRoute> { screen(ModelsBoards.onboarding) }
-    composable<ModelsRoute> { screen(ModelsBoards.models) }
+    composable<ModelsRoute> { ModelsDestination(actions.onBack) }
+}
+
+@Composable
+private fun ModelsDestination(onBack: () -> Unit, viewModel: ModelsViewModel = hiltViewModel()) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    ModelsScreen(
+        state = state,
+        actions = ModelsActions(
+            onBack = onBack,
+            onDownload = viewModel::download,
+            onCancel = viewModel::cancel,
+            onRemove = viewModel::remove,
+            onWifiOnly = viewModel::setWifiOnly,
+            onUseAccelerator = viewModel::setUseAccelerator,
+        ),
+    )
 }

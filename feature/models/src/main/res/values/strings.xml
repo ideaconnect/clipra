@@ -2,4 +2,27 @@
 <resources>
     <string name="models_title_onboarding">Welcome to Clipra</string>
     <string name="models_title_models">AI models</string>
+    <string name="models_storage">speech and voice models on this phone</string>
+    <string name="models_offline">Face and subject tracking is built in. Everything runs offline and nothing you edit is sent anywhere.</string>
+    <string name="models_wifi_only">Download on Wi-Fi only</string>
+    <string name="models_accelerator">Use the phone\'s NPU or GPU when it can</string>
+    <string name="models_group_captions">Captions · Whisper</string>
+    <string name="models_group_voice">Voice cleanup</string>
+    <string name="models_default">Default</string>
+    <string name="models_lite">lite</string>
+    <string name="models_get">Get</string>
+    <string name="models_retry">Retry</string>
+    <string name="models_installed">Installed</string>
+    <string name="models_built_in">Built in</string>
+    <string name="models_cancel">Cancel</string>
+    <string name="models_progress">%1$d%% of %2$s</string>
+    <string name="models_waiting_wifi">Waiting for Wi-Fi</string>
+    <string name="models_waiting_network">Waiting for a connection</string>
+    <string name="models_failed_check">Download failed its check</string>
+    <string name="models_failed_source">Source not available</string>
+    <string name="models_download_model">Download %1$s</string>
+    <string name="models_remove_model">Remove %1$s</string>
+    <string name="models_remove_title">Remove %1$s?</string>
+    <string name="models_remove_body">Its files are deleted from this phone. You can download it again at any time.</string>
+    <string name="models_remove">Remove</string>
 </resources>
