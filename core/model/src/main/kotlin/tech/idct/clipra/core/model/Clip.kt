@@ -173,3 +173,24 @@ data class Animation(val enter: String? = null, val exit: String? = null, val lo
 /** Video stabilization, strength 0 to 100 (spec section 3). */
 @Serializable
 data class Stabilization(val strength: Int = 50)
+
+/** The colours Text offers for cards and letters (Text board), as ARGB. */
+object TextColors {
+    const val BLACK = 0xFF000000
+    const val WHITE = 0xFFFFFFFF
+    const val YELLOW = 0xFFFFD23F
+    const val RED = 0xFFE5482E
+    const val BLUE = 0xFF2F4FE0
+    const val GREEN = 0xFF17795A
+
+    val palette = listOf(BLACK, WHITE, YELLOW, RED, BLUE, GREEN)
+}
+
+/** The font families text clips can use, all bundled (OFL). */
+object TextFonts {
+    const val BRICOLAGE = "Bricolage Grotesque"
+    const val GEIST = "Geist"
+    const val GEIST_MONO = "Geist Mono"
+
+    val all = listOf(BRICOLAGE, GEIST, GEIST_MONO)
+}

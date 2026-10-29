@@ -9,6 +9,7 @@ android {
 
 dependencies {
     api(project(":core:model"))
+    implementation(project(":core:fonts"))
     api(libs.androidx.media3.common)
     api(libs.androidx.media3.effect)
     api(libs.androidx.media3.exoplayer)

@@ -4,7 +4,9 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
 import tech.idct.clipra.core.engine.render.MediaResolver
+import tech.idct.clipra.core.engine.render.TextRenderer
 import tech.idct.clipra.core.model.MediaAsset
+import tech.idct.clipra.core.model.TextSpec
 
 /**
  * Finds a project's media for the engine. Preview reads the proxy when it is ready and the
@@ -24,6 +26,9 @@ class ProjectMediaResolver(
         }
         return asset.uri.takeIf { isAvailable(context, it) }
     }
+
+    override fun text(spec: TextSpec, card: Boolean, width: Int, height: Int): Bitmap =
+        TextRenderer.render(context, spec, card, width, height)
 
     override fun image(asset: MediaAsset): Bitmap? {
         if (!isAvailable(context, asset.uri)) return null

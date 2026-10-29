@@ -1,4 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="text_title_text">Tekst</string>
+    <!-- Text (#31) -->
+    <string name="text_card">Plansza</string>
+    <string name="text_overlay">Tekst</string>
+    <string name="text_subtitle">Warstwa L%1$d · %2$s - %3$s</string>
+    <string name="text_done">Gotowe</string>
+    <string name="text_label">Tekst</string>
+    <string name="text_align_start">Wyrównaj do początku</string>
+    <string name="text_align_center">Wyśrodkuj</string>
+    <string name="text_align_end">Wyrównaj do końca</string>
+    <string name="text_card_color">Kolor planszy</string>
+    <string name="text_color">Kolor tekstu</string>
+    <string name="text_color_none">Bez planszy, tekst na wideo</string>
+    <string name="text_color_black">Czarny</string>
+    <string name="text_color_white">Biały</string>
+    <string name="text_color_yellow">Żółty</string>
+    <string name="text_color_red">Czerwony</string>
+    <string name="text_color_blue">Niebieski</string>
+    <string name="text_color_green">Zielony</string>
+    <string name="text_color_custom">Własny kolor</string>
+    <string name="text_hue">Barwa</string>
+    <string name="text_shade">Jasność</string>
+    <string name="text_use_color">Użyj koloru</string>
+    <string name="text_cancel">Anuluj</string>
+    <string name="text_size">Rozmiar</string>
+    <string name="text_pixels">%d px</string>
+    <string name="text_weight_regular">Zwykły</string>
+    <string name="text_weight_medium">Średni</string>
+    <string name="text_weight_bold">Gruby</string>
+    <string name="text_weight_heavy">Ciężki</string>
 </resources>

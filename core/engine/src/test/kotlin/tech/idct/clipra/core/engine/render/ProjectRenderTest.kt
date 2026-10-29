@@ -38,6 +38,8 @@ class ProjectRenderTest {
         }
 
         override fun image(asset: MediaAsset): Bitmap? = null
+
+        override fun text(spec: TextSpec, card: Boolean, width: Int, height: Int): Bitmap? = null
     }
 
     private fun videoClip(id: String, start: Long, mediaId: String = "v") = Clip(

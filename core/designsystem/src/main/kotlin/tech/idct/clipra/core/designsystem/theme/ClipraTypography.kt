@@ -8,6 +8,7 @@ import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import tech.idct.clipra.core.designsystem.R
+import tech.idct.clipra.core.fonts.R as FontsR
 
 /**
  * Geist for UI text, Geist Mono for measurements (timecodes, sizes, resolutions, LUFS) and
@@ -16,10 +17,10 @@ import tech.idct.clipra.core.designsystem.R
  */
 object ClipraFonts {
     val Geist: FontFamily =
-        FontFamily(listOf(400, 500, 600, 700).map { variable(R.font.geist, it) })
+        FontFamily(listOf(400, 500, 600, 700).map { variable(FontsR.font.geist, it) })
 
     val GeistMono: FontFamily =
-        FontFamily(listOf(400, 500, 600, 700).map { variable(R.font.geist_mono, it) })
+        FontFamily(listOf(400, 500, 600, 700).map { variable(FontsR.font.geist_mono, it) })
 
     /**
      * Bricolage Grotesque has an optical size axis that defaults to 96. Browsers set it to the
@@ -28,7 +29,7 @@ object ClipraFonts {
     fun display(size: Float): FontFamily = FontFamily(
         listOf(700, 800).map {
             variable(
-                R.font.bricolage_grotesque,
+                FontsR.font.bricolage_grotesque,
                 it,
                 FontVariation.Setting("opsz", size.coerceIn(12f, 96f)),
                 FontVariation.width(100f),

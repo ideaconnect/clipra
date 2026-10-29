@@ -19,7 +19,14 @@ rootProject.name = "Clipra"
 
 // Modules as in docs/architecture.md, section 2.
 include(":app")
-include(":core:designsystem", ":core:model", ":core:data", ":core:engine", ":core:audio")
+include(
+    ":core:designsystem",
+    ":core:fonts",
+    ":core:model",
+    ":core:data",
+    ":core:engine",
+    ":core:audio",
+)
 include(":ml:whisper", ":ml:voice", ":ml:vision", ":ml:translate")
 include(
     ":feature:home",

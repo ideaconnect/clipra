@@ -7,3 +7,7 @@ plugins {
 android {
     namespace = "tech.idct.clipra.core.designsystem"
 }
+
+dependencies {
+    api(project(":core:fonts"))
+}

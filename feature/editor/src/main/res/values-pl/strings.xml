@@ -113,4 +113,5 @@
     <string name="editor_layers_reorder">Przeciągnij, aby przenieść warstwę L%d</string>
     <string name="editor_tool_crop">Kadruj</string>
     <string name="editor_transition_marker">Przejście między %1$s a %2$s</string>
+    <string name="editor_new_text">Twój tekst</string>
 </resources>

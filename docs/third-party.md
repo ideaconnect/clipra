@@ -21,7 +21,7 @@ Keep this list in sync with the build. Every entry needs a license that is compa
 | Play Billing Library | Clipra Pro purchase | Android Software Development Kit License |
 | Bricolage Grotesque, Geist, Geist Mono | Fonts | SIL Open Font License 1.1 |
 
-The fonts are the variable TTFs from the google/fonts repository, bundled in `core/designsystem/src/main/res/font` with their licenses in `core/designsystem/src/main/assets/licenses`:
+The fonts are the variable TTFs from the google/fonts repository, bundled in `core/fonts/src/main/res/font` (shared by the interface and the text renderer) with their licenses in `core/designsystem/src/main/assets/licenses`:
 
 | File | Source (google/fonts) | SHA-256 |
 |---|---|---|

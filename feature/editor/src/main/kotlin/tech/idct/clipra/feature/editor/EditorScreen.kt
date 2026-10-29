@@ -347,6 +347,7 @@ private fun clipTools(callbacks: EditorCallbacks): List<Tool> {
         tool(R.string.editor_tool_filters, ClipraIcons.Filters) { open(EditorTool.Filters) },
         tool(R.string.editor_tool_mask, ClipraIcons.Mask) { open(EditorTool.Masks) },
         tool(R.string.editor_tool_layer, ClipraIcons.Layers) { open(EditorTool.Layer) },
+        tool(R.string.editor_tool_text, ClipraIcons.Text) { open(EditorTool.Text) },
         tool(R.string.editor_tool_color, ClipraIcons.Color) { open(EditorTool.Color) },
         tool(R.string.editor_tool_cutout, ClipraIcons.Cutout) { open(EditorTool.Cutout) },
         tool(R.string.editor_tool_duplicate, ClipraIcons.Duplicate, callbacks.onDuplicate),
