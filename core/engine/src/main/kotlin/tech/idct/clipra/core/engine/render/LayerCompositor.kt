@@ -17,13 +17,18 @@ import androidx.media3.effect.GlEffect
 import androidx.media3.effect.GlShaderProgram
 import tech.idct.clipra.core.model.BlendMode
 import tech.idct.clipra.core.model.ClipGeometry
+import tech.idct.clipra.core.model.Effect
+import tech.idct.clipra.core.model.Filters
+import kotlin.math.cos
+import kotlin.math.roundToInt
+import kotlin.math.sin
 import tech.idct.clipra.core.model.Size as FrameSize
 
 /**
  * Draws a [RenderTimeline] as a Media3 effect. It replaces each input frame (a blank canvas from
  * the composition) with the layers at that frame's time, L1 first: video clips come from their
- * own decoders, photos and text from bitmaps, and each clip is placed by its transform and
- * blended onto the canvas with its blend mode. Gaps draw nothing, so the layers below show
+ * own decoders, photos and text from bitmaps; each clip goes through its filters, is placed by
+ * its transform and is blended onto the canvas with its blend mode. Gaps draw nothing, so the layers below show
  * through. [live] values, while set, replace the clips' own (a gesture in progress).
  *
  * Media3's own compositor blends only with alpha, and Transformer doesn't let an app replace it,
@@ -67,10 +72,16 @@ private class LayerCompositorProgram(
     private val bitmapProgram = GlProgram(Shaders.VERTEX, Shaders.CLIP_2D)
     private val blendProgram = GlProgram(Shaders.VERTEX, Shaders.BLEND)
     private val copyProgram = GlProgram(Shaders.VERTEX, Shaders.COPY)
+    private val filterProgram = GlProgram(Shaders.VERTEX, Shaders.FILTER)
+    private val blurProgram = GlProgram(Shaders.VERTEX, Shaders.BLUR)
 
     private val canvas = arrayOfNulls<Target>(2)
     private var current = 0
     private var clipTarget: Target? = null
+
+    // Pairs of textures for filtering clips, by size; sizes no clip used in a frame are freed.
+    private val effectTargets = HashMap<Long, Array<Target>>()
+    private val effectSizesUsed = HashSet<Long>()
     private val frameToleranceUs = 500_000L / timeline.frameRate
     private val flipY = FloatArray(16).apply {
         Matrix.setIdentityM(this, 0)
@@ -114,6 +125,10 @@ private class LayerCompositorProgram(
             }
         }
         releaseInactive(active)
+        effectTargets.keys.filter { it !in effectSizesUsed }.forEach { size ->
+            effectTargets.remove(size)?.forEach { it.delete() }
+        }
+        effectSizesUsed.clear()
 
         val result = canvas[current]!!
         GlUtil.focusFramebufferUsingCurrentContext(output, timeline.width, timeline.height)
@@ -136,14 +151,28 @@ private class LayerCompositorProgram(
         bitmapTextures.values.forEach { GlUtil.deleteTexture(it) }
         bitmapTextures.clear()
         (canvas + clipTarget).filterNotNull().forEach { it.delete() }
-        listOf(externalProgram, bitmapProgram, blendProgram, copyProgram).forEach { it.delete() }
+        effectTargets.values.forEach { pair -> pair.forEach { it.delete() } }
+        effectTargets.clear()
+        val programs = listOf(
+            externalProgram,
+            bitmapProgram,
+            blendProgram,
+            copyProgram,
+            filterProgram,
+            blurProgram,
+        )
+        programs.forEach { it.delete() }
         callbackThread.quitSafely()
     }
 
     private fun drawClip(clip: RenderClip, timeUs: Long) {
-        val frame = clipFrame(clip, timeUs) ?: return
+        val raw = clipFrame(clip, timeUs) ?: return
         val opacity = clip.opacityAt(timeUs, live?.opacity(clip.id) ?: clip.opacity)
         if (opacity <= 0f) return
+        val filters = (live?.effects(clip.id) ?: clip.effects).mapNotNull { effect ->
+            FilterRecipes.of(effect.type)?.takeIf { effect.strength > 0f }?.let { it to effect }
+        }
+        val frame = if (filters.isEmpty()) raw else filtered(raw, filters, timeUs)
         val (position, unit) = quadFor(clip, frame.width, frame.height)
         val program = if (frame.external) externalProgram else bitmapProgram
         if (clip.blend == BlendMode.Normal) {
@@ -181,6 +210,112 @@ private class LayerCompositorProgram(
         blendProgram.setSamplerTexIdUniform("uSrc", clipLayer.texture, 1)
         blendProgram.setIntUniform("uMode", Shaders.blendIndex(clip.blend))
         drawQuad(blendProgram, FULL_FRAME, FULL_UNIT, identity)
+    }
+
+    /**
+     * The clip's picture through [filters]: drawn upright into an effect texture (no larger than
+     * the frame), then one pass per filter, two for a blur.
+     */
+    private fun filtered(
+        frame: ClipFrame,
+        filters: List<Pair<FilterRecipe, Effect>>,
+        timeUs: Long,
+    ): ClipFrame {
+        val longest = maxOf(timeline.width, timeline.height).toFloat()
+        val scale = minOf(1f, longest / maxOf(frame.width, frame.height))
+        val width = maxOf(2, (frame.width * scale).roundToInt())
+        val height = maxOf(2, (frame.height * scale).roundToInt())
+        val key = width.toLong() shl 32 or height.toLong()
+        effectSizesUsed += key
+        val targets = effectTargets.getOrPut(key) {
+            arrayOf(Target.create(width, height), Target.create(width, height))
+        }
+        var input = 0
+        fun focus(target: Target) {
+            GlUtil.focusFramebufferUsingCurrentContext(target.fbo, target.width, target.height)
+            GLES20.glDisable(GLES20.GL_BLEND)
+        }
+        focus(targets[0])
+        GLES20.glClearColor(0f, 0f, 0f, 0f)
+        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
+        val source = if (frame.external) externalProgram else bitmapProgram
+        drawSource(source, frame, 1f, FULL_FRAME, FULL_UNIT)
+
+        for ((recipe, effect) in filters) {
+            if (recipe.blur > 0f) {
+                // Blur's strength is its radius.
+                val deviation = recipe.blur * effect.strength * minOf(width, height)
+                for (step in listOf(deviation / 4 / width to 0f, 0f to deviation / 4 / height)) {
+                    focus(targets[1 - input])
+                    blurProgram.use()
+                    blurProgram.setSamplerTexIdUniform("uTex", targets[input].texture, 0)
+                    blurProgram.setFloatsUniform("uStep", floatArrayOf(step.first, step.second))
+                    drawQuad(blurProgram, FULL_FRAME, FULL_UNIT, identity)
+                    input = 1 - input
+                }
+                continue
+            }
+            focus(targets[1 - input])
+            filterProgram.use()
+            filterProgram.setSamplerTexIdUniform("uTex", targets[input].texture, 0)
+            setFilterUniforms(recipe, effect, width, height, timeUs)
+            drawQuad(filterProgram, FULL_FRAME, FULL_UNIT, identity)
+            input = 1 - input
+        }
+        val result = targets[input]
+        return ClipFrame(result.texture, identity, width, height, external = false)
+    }
+
+    private fun setFilterUniforms(
+        recipe: FilterRecipe,
+        effect: Effect,
+        width: Int,
+        height: Int,
+        timeUs: Long,
+    ) {
+        val program = filterProgram
+        program.setFloatsUniform("uSize", floatArrayOf(width.toFloat(), height.toFloat()))
+        program.setFloatsUniform("uMatrix", recipe.matrix.toGl())
+        program.setIntUniform("uSampling", recipe.sampling.ordinal)
+        val block = (effect.params[Filters.MOSAIC_SIZE] ?: Filters.DEFAULT_MOSAIC_SIZE) *
+            minOf(width, height)
+        program.setFloatsUniform("uBlock", floatArrayOf(block / width, block / height))
+        program.setFloatUniform("uTime", timeUs / 1_000_000f)
+        program.setFloatUniform("uStrength", effect.strength.coerceIn(0f, 1f))
+        val overlay = recipe.overlay
+        val none = FloatArray(4)
+        val (kind, gradient, stops) = when (overlay) {
+            null -> Triple(0, none, emptyList())
+
+            is Overlay.Linear -> {
+                val angle = Math.toRadians(overlay.degrees.toDouble())
+                val direction = floatArrayOf(sin(angle).toFloat(), -cos(angle).toFloat(), 0f, 0f)
+                Triple(1, direction, overlay.stops)
+            }
+
+            is Overlay.Radial -> {
+                val shape = if (overlay.ellipse) 1f else 0f
+                Triple(2, floatArrayOf(overlay.x, overlay.y, shape, 0f), overlay.stops)
+            }
+
+            Overlay.GlitchLines -> Triple(3, none, emptyList())
+
+            Overlay.Scanlines -> Triple(4, none, emptyList())
+
+            Overlay.Grain -> Triple(5, none, emptyList())
+
+            Overlay.Halftone -> Triple(6, none, emptyList())
+        }
+        program.setIntUniform("uOverlay", kind)
+        program.setIntUniform("uMode", Shaders.blendIndex(overlay?.blend ?: BlendMode.Normal))
+        program.setFloatsUniform("uGradient", gradient)
+        // Four stops; fewer repeat the last one.
+        val last = stops.lastOrNull() ?: Stop(1f, 0f, 0f, 0f, 0f)
+        val padded = List(4) { stops.getOrNull(it) ?: last }
+        program.setFloatsUniform("uStops", FloatArray(4) { padded[it].position })
+        padded.forEachIndexed { i, stop ->
+            program.setFloatsUniform("uColor" + i, floatArrayOf(stop.r, stop.g, stop.b, stop.a))
+        }
     }
 
     private fun drawSource(

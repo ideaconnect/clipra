@@ -6,4 +6,45 @@
     <string name="effects_title_color">Kolor</string>
     <string name="effects_title_cutout">Wycinanie tła</string>
     <string name="effects_title_reframe">Automatyczne kadrowanie</string>
+
+    <!-- Filters (#25) -->
+    <plurals name="effects_filters_subtitle">
+        <item quantity="one">%1$s · %2$d filtr</item>
+        <item quantity="few">%1$s · %2$d filtry</item>
+        <item quantity="many">%1$s · %2$d filtrów</item>
+        <item quantity="other">%1$s · %2$d filtra</item>
+    </plurals>
+    <string name="effects_done">Gotowe</string>
+    <string name="effects_filter_strength">siła %d%%</string>
+    <string name="effects_compare">Przytrzymaj, aby porównać z oryginałem</string>
+    <string name="effects_category_all">Wszystkie</string>
+    <string name="effects_category_looks">Wygląd</string>
+    <string name="effects_category_stylized">Styl</string>
+    <string name="effects_apply_to_all">Do wszystkich</string>
+    <string name="effects_strength">Siła</string>
+    <string name="effects_filter_none">Brak</string>
+    <string name="effects_filter_vivid">Żywy</string>
+    <string name="effects_filter_warm">Ciepły</string>
+    <string name="effects_filter_cool">Chłodny</string>
+    <string name="effects_filter_cinematic">Kinowy</string>
+    <string name="effects_filter_matte">Matowy</string>
+    <string name="effects_filter_mono">Mono</string>
+    <string name="effects_filter_noir">Noir</string>
+    <string name="effects_filter_sepia">Sepia</string>
+    <string name="effects_filter_vintage">Vintage</string>
+    <string name="effects_filter_film">Film</string>
+    <string name="effects_filter_night">Noc</string>
+    <string name="effects_filter_neon">Neon</string>
+    <string name="effects_filter_pastel">Pastel</string>
+    <string name="effects_filter_mosaic">Mozaika</string>
+    <string name="effects_filter_blur">Rozmycie</string>
+    <string name="effects_filter_glitch">Glitch</string>
+    <string name="effects_filter_vhs">VHS</string>
+    <string name="effects_filter_grain">Ziarno</string>
+    <string name="effects_filter_vignette">Winieta</string>
+    <string name="effects_filter_rgb_split">Rozbicie RGB</string>
+    <string name="effects_filter_light_leak">Prześwit</string>
+    <string name="effects_filter_halftone">Raster</string>
+    <string name="effects_filter_duotone">Duotone</string>
+    <string name="effects_filter_soft_glow">Poświata</string>
 </resources>

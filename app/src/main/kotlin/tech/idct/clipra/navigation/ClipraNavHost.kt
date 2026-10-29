@@ -21,9 +21,11 @@ import tech.idct.clipra.feature.editor.EditorActions
 import tech.idct.clipra.feature.editor.EditorRoute
 import tech.idct.clipra.feature.editor.EditorTool
 import tech.idct.clipra.feature.editor.LayersRoute
+import tech.idct.clipra.feature.editor.ToolTarget
 import tech.idct.clipra.feature.editor.editorScreens
 import tech.idct.clipra.feature.effects.ColorRoute
 import tech.idct.clipra.feature.effects.CutoutRoute
+import tech.idct.clipra.feature.effects.EffectsActions
 import tech.idct.clipra.feature.effects.FiltersRoute
 import tech.idct.clipra.feature.effects.MasksRoute
 import tech.idct.clipra.feature.effects.ReframeRoute
@@ -107,10 +109,10 @@ fun ClipraNavHost(
             EditorActions(
                 onClose = { navController.popBackStack() },
                 onExport = { navController.navigate(ExportRoute(it)) },
-                onTool = { tool -> navController.navigate(toolRoute(tool)) },
+                onTool = { tool, target -> navController.navigate(toolRoute(tool, target)) },
             ),
         )
-        effectsScreens(screen)
+        effectsScreens(screen, EffectsActions(onDone = { navController.popBackStack() }))
         textScreens(screen)
         captionsScreens(screen)
         audioScreens(screen)
@@ -169,10 +171,10 @@ private fun NavController.open(from: Board, to: Board) {
 }
 
 /** The screen each editor tool opens; most are placeholders until their issues land. */
-private fun toolRoute(tool: EditorTool): Any = when (tool) {
+private fun toolRoute(tool: EditorTool, target: ToolTarget): Any = when (tool) {
     EditorTool.Audio -> AudioRoute
     EditorTool.Text -> TextRoute
-    EditorTool.Filters -> FiltersRoute
+    EditorTool.Filters -> FiltersRoute(target.projectId, target.clipId, target.playheadUs)
     EditorTool.Transitions -> TransitionsRoute
     EditorTool.Captions -> CaptionsSetupRoute
     EditorTool.Transcript -> TranscriptRoute

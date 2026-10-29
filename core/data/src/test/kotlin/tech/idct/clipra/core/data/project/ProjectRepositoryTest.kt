@@ -11,7 +11,9 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertNotSame
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -146,5 +148,25 @@ class ProjectRepositoryTest {
             AddClip(Clip("c", ClipType.Photo, 0, 1_000_000), LayerTarget.Existing("L1")),
         )
         assertEquals(EditRejected.Reason.LayerLocked, refused?.reason)
+    }
+
+    @Test
+    fun openProjectsShareOneSessionUntilTheLastRelease() = runTest {
+        val project = repository.create("Shared", Format())
+        val open = OpenProjects(repository, backgroundScope)
+        val editor = open.acquire(project.id)!!
+        val filters = open.acquire(project.id)!!
+        assertSame(editor, filters)
+        filters.edit { it.copy(name = "Renamed") }
+        assertTrue(editor.state.value.canUndo)
+
+        open.release(project.id)
+        assertSame(editor, open.acquire(project.id))
+        open.release(project.id)
+        open.release(project.id)
+        // Closed and saved; opening again starts a new session.
+        assertEquals("Renamed", repository.load(project.id)!!.name)
+        assertNotSame(editor, open.acquire(project.id))
+        assertNull(open.acquire("missing"))
     }
 }

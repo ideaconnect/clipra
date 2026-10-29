@@ -53,6 +53,37 @@ object Thumbnails {
     }
 
     /**
+     * The picture of [asset] at [sourceTimeUs] (in the asset's own time), no larger than
+     * [maxSide], read from the proxy when there is one: the still that live filter thumbnails
+     * start from. Null when the media can't be read.
+     */
+    fun still(
+        context: Context,
+        asset: MediaAsset,
+        cache: MediaCache,
+        sourceTimeUs: Long,
+        maxSide: Int,
+    ): Bitmap? {
+        if (asset.kind ==
+            MediaKind.Photo
+        ) {
+            return decodePhoto(context, Uri.parse(asset.uri), maxSide)
+        }
+        if (asset.kind != MediaKind.Video) return null
+        val proxy = cache.proxy(asset.id)
+        val uri = if (proxy.exists()) Uri.fromFile(proxy) else Uri.parse(asset.uri)
+        val size = asset.displaySize
+        val scale = if (size.width > 0 && size.height > 0) {
+            maxSide.toFloat() / maxOf(size.width, size.height)
+        } else {
+            1f
+        }
+        val width = maxOf(1, (size.width * scale).toInt())
+        val height = maxOf(1, (size.height * scale).toInt())
+        return frame(context, uri, sourceTimeUs, width, height)
+    }
+
+    /**
      * A photo decoded no larger than [maxSide] on its long side, keeping memory small, and turned
      * upright by its EXIF orientation, as galleries show it.
      */

@@ -26,6 +26,7 @@ import kotlinx.serialization.Serializable
 import tech.idct.clipra.core.designsystem.placeholder.Board
 import tech.idct.clipra.core.engine.preview.PreviewPlayer
 import tech.idct.clipra.core.model.Transform
+import tech.idct.clipra.core.model.edit.takesFilters
 import tech.idct.clipra.feature.editor.layers.LayerTab
 import tech.idct.clipra.feature.editor.layers.LayersActions
 import tech.idct.clipra.feature.editor.layers.LayersScreen
@@ -54,11 +55,17 @@ object EditorBoards {
     val all = listOf(editor, layers)
 }
 
+/**
+ * What a tool screen opens on: the project (shared through `OpenProjects`), the clip it works
+ * on, if any, and the playhead.
+ */
+data class ToolTarget(val projectId: String, val clipId: String?, val playheadUs: Long)
+
 /** Where the editor leads; the app connects it to the other features. */
 class EditorActions(
     val onClose: () -> Unit,
     val onExport: (projectId: String) -> Unit,
-    val onTool: (EditorTool) -> Unit,
+    val onTool: (EditorTool, ToolTarget) -> Unit,
 )
 
 /** Registers this module's destinations. [screen] draws a board until its real screen is built. */
@@ -240,12 +247,29 @@ private fun EditorRoute(actions: EditorActions, viewModel: EditorViewModel = hil
             onFreeze = viewModel::freeze,
             onExtract = viewModel::extractAudio,
             onTool = { tool ->
-                if (tool ==
-                    EditorTool.Layer
-                ) {
-                    openBoard(LayerTab.Blend, false)
-                } else {
-                    actions.onTool(tool)
+                when (tool) {
+                    EditorTool.Layer -> openBoard(LayerTab.Blend, false)
+
+                    EditorTool.Filters -> {
+                        // The selected clip, or the one on top at the playhead.
+                        val clip = selected?.takeIf { it.takesFilters() }
+                            ?: project.layers.reversed().flatMap { it.clips }
+                                .firstOrNull { it.takesFilters() && it.contains(state.playheadUs) }
+                            ?: project.layers.flatMap { it.clips }.firstOrNull { it.takesFilters() }
+                        if (clip == null) {
+                            viewModel.notAvailable()
+                        } else {
+                            playing = false
+                            val playhead = if (clip.contains(state.playheadUs)) {
+                                state.playheadUs
+                            } else {
+                                clip.startUs
+                            }
+                            actions.onTool(tool, ToolTarget(project.id, clip.id, playhead))
+                        }
+                    }
+
+                    else -> actions.onTool(tool, ToolTarget(project.id, null, state.playheadUs))
                 }
             },
             onLayers = { layers = true },
