@@ -70,7 +70,13 @@ object MediaInspector {
         context.contentResolver.openInputStream(uri)?.use {
             BitmapFactory.decodeStream(it, null, options)
         }
-        return base.copy(width = options.outWidth, height = options.outHeight)
+        // Stored upright, as the photo is drawn.
+        val swap = Thumbnails.swapsSides(Thumbnails.exifOrientation(context, uri))
+        return if (swap) {
+            base.copy(width = options.outHeight, height = options.outWidth)
+        } else {
+            base.copy(width = options.outWidth, height = options.outHeight)
+        }
     }
 
     private fun withAvMetadata(context: Context, uri: Uri, base: MediaAsset): MediaAsset =

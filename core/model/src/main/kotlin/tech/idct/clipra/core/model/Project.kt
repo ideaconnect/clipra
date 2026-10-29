@@ -67,7 +67,11 @@ data class MediaAsset(
     val height: Int = 0,
     val rotation: Int = 0,
     val hasAudio: Boolean = false,
-)
+) {
+    /** The picture's size as shown, after the video's rotation; zero when unknown. */
+    val displaySize: Size
+        get() = if (rotation % 180 != 0) Size(height, width) else Size(width, height)
+}
 
 @Serializable
 enum class MediaKind { Video, Photo, Audio }

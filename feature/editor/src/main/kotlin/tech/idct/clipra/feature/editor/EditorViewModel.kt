@@ -19,12 +19,14 @@ import tech.idct.clipra.core.data.project.ProjectSession
 import tech.idct.clipra.core.engine.media.MediaCache
 import tech.idct.clipra.core.engine.media.MediaImporter
 import tech.idct.clipra.core.engine.media.ProjectMediaResolver
+import tech.idct.clipra.core.model.BlendMode
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
 import tech.idct.clipra.core.model.MediaAsset
 import tech.idct.clipra.core.model.MediaKind
 import tech.idct.clipra.core.model.MediaRef
 import tech.idct.clipra.core.model.Project
+import tech.idct.clipra.core.model.Transform
 import tech.idct.clipra.core.model.edit.AddClip
 import tech.idct.clipra.core.model.edit.AddLayer
 import tech.idct.clipra.core.model.edit.DeleteClip
@@ -38,9 +40,11 @@ import tech.idct.clipra.core.model.edit.LayerTarget
 import tech.idct.clipra.core.model.edit.MoveClip
 import tech.idct.clipra.core.model.edit.MoveLayer
 import tech.idct.clipra.core.model.edit.ReplaceMedia
+import tech.idct.clipra.core.model.edit.SetBlend
 import tech.idct.clipra.core.model.edit.SetLayerHidden
 import tech.idct.clipra.core.model.edit.SetLayerLocked
 import tech.idct.clipra.core.model.edit.SetLayerMuted
+import tech.idct.clipra.core.model.edit.SetTransform
 import tech.idct.clipra.core.model.edit.SplitClip
 import tech.idct.clipra.core.model.edit.TrimClip
 import tech.idct.clipra.core.model.edit.randomId
@@ -140,6 +144,21 @@ class EditorViewModel @Inject constructor(
         edit(MoveClip(clipId, startUs, target))
 
     fun trim(clipId: String, edge: Edge, toUs: Long) = edit(TrimClip(clipId, edge, toUs))
+
+    // Layers board (#19, #20).
+
+    fun setTransform(clipId: String, transform: Transform) = edit(SetTransform(clipId, transform))
+
+    fun setBlend(clipId: String, blend: BlendMode, opacity: Float) =
+        edit(SetBlend(clipId, blend, opacity))
+
+    /** Selects the clip [layerId] shows at the playhead, if any. */
+    fun selectOnLayer(layerId: String) {
+        val project = state.value.project ?: return
+        val layer = project.layers.firstOrNull { it.id == layerId } ?: return
+        val clip = layer.clips.firstOrNull { it.contains(state.value.playheadUs) } ?: return
+        select(clip.id)
+    }
 
     // Layers.
 

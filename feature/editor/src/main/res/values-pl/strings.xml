@@ -65,4 +65,49 @@
         <item quantity="many">%d klipów</item>
         <item quantity="other">%d klipu</item>
     </plurals>
+
+    <!-- Layers board (#19, #20) -->
+    <string name="editor_layers_header">%1$s · warstwa L%2$d</string>
+    <string name="editor_layers_subtitle">%1$s · %2$s - %3$s</string>
+    <string name="editor_layers_video_audio">Wideo + dźwięk</string>
+    <string name="editor_layers_done">Gotowe</string>
+    <string name="editor_layers_tab_blend">Mieszanie</string>
+    <string name="editor_layers_tab_transform">Transformacja</string>
+    <string name="editor_layers_tab_layers">Warstwy</string>
+    <string name="editor_layers_opacity">Krycie</string>
+    <string name="editor_layers_percent">%d%%</string>
+    <string name="editor_layers_chip">%1$s · %2$d%%</string>
+    <string name="editor_blend_normal">Normalny</string>
+    <string name="editor_blend_multiply">Mnożenie</string>
+    <string name="editor_blend_screen">Ekran</string>
+    <string name="editor_blend_overlay">Nakładka</string>
+    <string name="editor_blend_soft_light">Łagodne światło</string>
+    <string name="editor_blend_hard_light">Ostre światło</string>
+    <string name="editor_blend_darken">Ciemniej</string>
+    <string name="editor_blend_lighten">Jaśniej</string>
+    <string name="editor_blend_dodge">Rozjaśnianie</string>
+    <string name="editor_blend_burn">Ściemnianie</string>
+    <string name="editor_blend_add">Dodawanie</string>
+    <string name="editor_blend_difference">Różnica</string>
+    <string name="editor_blend_exclusion">Wykluczenie</string>
+    <string name="editor_blend_hue">Barwa</string>
+    <string name="editor_blend_color">Kolor</string>
+    <string name="editor_blend_luminosity">Jasność</string>
+    <string name="editor_transform_x">Pozycja X</string>
+    <string name="editor_transform_y">Pozycja Y</string>
+    <string name="editor_transform_scale">Skala</string>
+    <string name="editor_transform_rotation">Obrót</string>
+    <string name="editor_transform_px">px</string>
+    <string name="editor_transform_fit">Dopasuj</string>
+    <string name="editor_transform_fill">Wypełnij</string>
+    <string name="editor_transform_flip">Odbij</string>
+    <string name="editor_transform_crop">Kadruj</string>
+    <string name="editor_transform_reset">Resetuj</string>
+    <string name="editor_transform_crop_hint">Przeciągnij narożniki, aby wykadrować</string>
+    <string name="editor_layers_hint">Wyższe warstwy zakrywają niższe. Każda warstwa odtwarza swój dźwięk.</string>
+    <string name="editor_layers_empty_here">Tu pusto</string>
+    <string name="editor_layers_clip_span">%1$s · %2$s-%3$s s</string>
+    <string name="editor_layers_next_clip">%1$s od %2$s s</string>
+    <string name="editor_layers_reorder">Przeciągnij, aby przenieść warstwę L%d</string>
+    <string name="editor_tool_crop">Kadruj</string>
 </resources>

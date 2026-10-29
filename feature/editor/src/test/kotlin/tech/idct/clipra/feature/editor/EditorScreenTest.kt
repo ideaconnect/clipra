@@ -114,7 +114,8 @@ class EditorScreenTest {
     private val noop = EditorCallbacks(
         onClose = {}, onExport = {}, onTool = {}, onPlayPause = {}, onUndo = {}, onRedo = {},
         onPickVisual = {}, onPickAudio = {}, onPickReplacement = {}, onSplit = {}, onDuplicate = {},
-        onDelete = {}, onFreeze = {}, onExtract = {}, onLayers = {}, onDismissMessage = {},
+        onDelete = {
+        }, onFreeze = {}, onExtract = {}, onLayers = {}, onCrop = {}, onDismissMessage = {},
         timeline = TimelineActions({}, {}, {}, { _, _, _ -> }, { _, _, _ -> }, {}),
     )
 
@@ -169,7 +170,7 @@ class EditorScreenTest {
                         onRedo = {}, onPickVisual = {}, onPickAudio = {}, onPickReplacement = {},
                         onSplit = {
                         }, onDuplicate = {}, onDelete = {}, onFreeze = {}, onExtract = {},
-                        onLayers = {}, onDismissMessage = {},
+                        onLayers = {}, onCrop = {}, onDismissMessage = {},
                         timeline = TimelineActions({
                         }, {}, { selected = it }, { _, _, _ -> }, { _, _, _ -> }, {}),
                     ),

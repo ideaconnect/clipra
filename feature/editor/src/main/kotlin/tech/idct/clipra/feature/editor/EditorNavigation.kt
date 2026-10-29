@@ -1,5 +1,6 @@
 package tech.idct.clipra.feature.editor
 
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -24,6 +25,14 @@ import kotlinx.coroutines.delay
 import kotlinx.serialization.Serializable
 import tech.idct.clipra.core.designsystem.placeholder.Board
 import tech.idct.clipra.core.engine.preview.PreviewPlayer
+import tech.idct.clipra.core.model.Transform
+import tech.idct.clipra.feature.editor.layers.LayerTab
+import tech.idct.clipra.feature.editor.layers.LayersActions
+import tech.idct.clipra.feature.editor.layers.LayersScreen
+import tech.idct.clipra.feature.editor.layers.LayersUiState
+import tech.idct.clipra.feature.editor.layers.TransformOverlay
+import tech.idct.clipra.feature.editor.layers.isVisual
+import tech.idct.clipra.feature.editor.layers.sourceSize
 import tech.idct.clipra.feature.editor.timeline.Filmstrip
 import tech.idct.clipra.feature.editor.timeline.FilmstripLoader
 import tech.idct.clipra.feature.editor.timeline.TimelineActions
@@ -69,6 +78,12 @@ private fun EditorRoute(actions: EditorActions, viewModel: EditorViewModel = hil
     val state by viewModel.state.collectAsStateWithLifecycle()
     var playing by remember { mutableStateOf(false) }
     var layers by remember { mutableStateOf(false) }
+    // The Layers board (#19, #20) over the editor, on the selected clip; null when closed.
+    var board by remember { mutableStateOf<LayerTab?>(null) }
+    var cropping by remember { mutableStateOf(false) }
+    // Values a gesture is changing, shown before they are committed as one edit.
+    var liveTransform by remember { mutableStateOf<Transform?>(null) }
+    var liveOpacity by remember { mutableStateOf<Float?>(null) }
     val context = LocalContext.current
     val filmstrips = remember { FilmstripLoader(context.applicationContext, viewModel.mediaCache) }
     val currentState by rememberUpdatedState(state)
@@ -100,6 +115,8 @@ private fun EditorRoute(actions: EditorActions, viewModel: EditorViewModel = hil
         onDispose { player.release() }
     }
     LaunchedEffect(state.project) {
+        liveTransform = null
+        liveOpacity = null
         val project = state.project ?: return@LaunchedEffect
         // Edits come in bursts while dragging; rebuild once they settle.
         delay(150)
@@ -130,6 +147,61 @@ private fun EditorRoute(actions: EditorActions, viewModel: EditorViewModel = hil
         return
     }
     val project = state.project ?: return
+    val selected = state.selectedClipId?.let { project.findClip(it)?.second }
+    val openBoard = { tab: LayerTab, crop: Boolean ->
+        selected?.let { clip ->
+            playing = false
+            // The handles need the clip on screen.
+            if (!clip.contains(state.playheadUs)) viewModel.seek(clip.startUs)
+            board = if (clip.isVisual()) tab else LayerTab.Layers
+            cropping = crop && clip.isVisual()
+        }
+    }
+    val transformLive = { clipId: String, transform: Transform ->
+        liveTransform = transform
+        player.setLiveTransform(clipId, transform)
+    }
+    val currentBoard = board
+    if (currentBoard != null && selected != null) {
+        BackHandler { board = null }
+        LayersScreen(
+            state = LayersUiState(
+                project = project,
+                clip = selected,
+                playheadUs = state.playheadUs,
+                tab = currentBoard,
+                cropping = cropping,
+                transform = liveTransform ?: selected.transform.value,
+                opacity = liveOpacity ?: selected.opacity.value,
+            ),
+            actions = LayersActions(
+                onDone = {
+                    board = null
+                    cropping = false
+                },
+                onTab = {
+                    board = it
+                    if (it != LayerTab.Transform) cropping = false
+                },
+                onCrop = { cropping = it },
+                onTransformLive = { transformLive(selected.id, it) },
+                onTransform = { viewModel.setTransform(selected.id, it) },
+                onBlend = { viewModel.setBlend(selected.id, it, selected.opacity.value) },
+                onOpacityLive = {
+                    liveOpacity = it
+                    player.setLiveOpacity(selected.id, it)
+                },
+                onOpacityDone = {
+                    liveOpacity?.let { viewModel.setBlend(selected.id, selected.blend, it) }
+                },
+                onSelectLayer = viewModel::selectOnLayer,
+                layers = layerActions(viewModel),
+            ),
+            preview = { PreviewSurface(player = player) },
+        )
+        return
+    }
+    if (currentBoard != null) board = null
     EditorScreen(
         state = state,
         playing = playing,
@@ -142,7 +214,6 @@ private fun EditorRoute(actions: EditorActions, viewModel: EditorViewModel = hil
                 viewModel.flush()
                 actions.onExport(project.id)
             },
-            onTool = actions.onTool,
             onPlayPause = {
                 if (!playing && state.playheadUs >= project.durationUs) {
                     viewModel.seek(0)
@@ -168,7 +239,17 @@ private fun EditorRoute(actions: EditorActions, viewModel: EditorViewModel = hil
             onDelete = viewModel::delete,
             onFreeze = viewModel::freeze,
             onExtract = viewModel::extractAudio,
+            onTool = { tool ->
+                if (tool ==
+                    EditorTool.Layer
+                ) {
+                    openBoard(LayerTab.Blend, false)
+                } else {
+                    actions.onTool(tool)
+                }
+            },
             onLayers = { layers = true },
+            onCrop = { openBoard(LayerTab.Transform, true) },
             onDismissMessage = viewModel::dismissMessage,
             timeline = TimelineActions(
                 onSeek = {
@@ -188,12 +269,20 @@ private fun EditorRoute(actions: EditorActions, viewModel: EditorViewModel = hil
                 },
             ),
         ),
-        preview = {
-            val selected = state.selectedClipId?.let { project.findClip(it)?.second }
-            PreviewSurface(
-                player = player,
-                showHandles = selected != null && selected.contains(state.playheadUs),
-            )
+        preview = { PreviewSurface(player = player) },
+        previewOverlay = {
+            // Handles on the selected clip while it is on screen and the preview is paused.
+            if (selected != null && selected.isVisual() && !playing &&
+                selected.contains(state.playheadUs)
+            ) {
+                TransformOverlay(
+                    transform = liveTransform ?: selected.transform.value,
+                    frame = project.format.outputSize,
+                    source = sourceSize(project, selected),
+                    onChange = { transformLive(selected.id, it) },
+                    onCommit = { viewModel.setTransform(selected.id, it) },
+                )
+            }
         },
         filmstrip = { clip, width, height ->
             Filmstrip(filmstrips, project, clip, width, height, state.dpPerSecond)
@@ -202,14 +291,17 @@ private fun EditorRoute(actions: EditorActions, viewModel: EditorViewModel = hil
     if (layers) {
         LayersSheet(
             project = project,
-            actions = LayerActions(
-                onHidden = viewModel::setHidden,
-                onMuted = viewModel::setMuted,
-                onLocked = viewModel::setLocked,
-                onMove = viewModel::moveLayer,
-                onAdd = viewModel::addLayer,
-            ),
+            playheadUs = state.playheadUs,
+            actions = layerActions(viewModel),
             onDismiss = { layers = false },
         )
     }
 }
+
+private fun layerActions(viewModel: EditorViewModel) = LayerActions(
+    onHidden = viewModel::setHidden,
+    onMuted = viewModel::setMuted,
+    onLocked = viewModel::setLocked,
+    onMove = viewModel::moveLayer,
+    onAdd = viewModel::addLayer,
+)
