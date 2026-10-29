@@ -15,6 +15,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.effect.BaseGlShaderProgram
 import androidx.media3.effect.GlEffect
 import androidx.media3.effect.GlShaderProgram
+import tech.idct.clipra.core.model.BlendMode
 import tech.idct.clipra.core.model.ClipGeometry
 import tech.idct.clipra.core.model.Size as FrameSize
 
@@ -178,7 +179,7 @@ private class LayerCompositorProgram(
         blendProgram.use()
         blendProgram.setSamplerTexIdUniform("uDst", source.texture, 0)
         blendProgram.setSamplerTexIdUniform("uSrc", clipLayer.texture, 1)
-        blendProgram.setIntUniform("uMode", clip.blend.ordinal)
+        blendProgram.setIntUniform("uMode", Shaders.blendIndex(clip.blend))
         drawQuad(blendProgram, FULL_FRAME, FULL_UNIT, identity)
     }
 

@@ -5,12 +5,7 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Matrix
 import android.graphics.Paint
-import android.opengl.GLES20
 import android.util.Log
-import androidx.annotation.OptIn
-import androidx.media3.common.util.GlUtil
-import androidx.media3.common.util.UnstableApi
-import androidx.media3.effect.BaseGlShaderProgram
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertTrue
@@ -20,9 +15,6 @@ import org.junit.runner.RunWith
 import tech.idct.clipra.core.model.Fit
 import tech.idct.clipra.core.model.Transform
 import java.io.File
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
-import kotlin.math.abs
 
 /**
  * Golden-image tests for clip transforms (#19). The compositor renders offscreen, straight into a
@@ -31,7 +23,6 @@ import kotlin.math.abs
  * size with export size. Preview and export use this same compositor, so matching at both sizes
  * means they render transforms identically.
  */
-@OptIn(UnstableApi::class)
 @RunWith(AndroidJUnit4::class)
 class TransformGoldenTest {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
@@ -97,7 +88,7 @@ class TransformGoldenTest {
         val pattern = quadrants()
         val rendered = render(single(RenderSource.Image(pattern), transform), 1080, 1920)
         val mirrored = reference(pattern, transform.copy(flipHorizontal = false), 1080, 1920)
-        assertTrue(match(mirrored, rendered, 16) < 0.98)
+        assertTrue(Offscreen.match(mirrored, rendered, 16) < 0.98)
     }
 
     @Test
@@ -124,46 +115,9 @@ class TransformGoldenTest {
         ),
     )
 
-    /** The frame at 0.5 s, drawn by the compositor in its own GL context. */
-    private fun render(timeline: RenderTimeline, width: Int, height: Int): Bitmap {
-        val sized = timeline.copy(width = width, height = height)
-        val display = GlUtil.getDefaultEglDisplay()
-        val eglContext = GlUtil.createEglContext(display)
-        GlUtil.createFocusedPlaceholderEglSurface(eglContext, display)
-        try {
-            val program = LayerCompositor(sized).toGlShaderProgram(context, false)
-                as BaseGlShaderProgram
-            program.configure(16, 16)
-            val texture = GlUtil.createTexture(width, height, false)
-            val fbo = GlUtil.createFboForTexture(texture)
-            GlUtil.focusFramebufferUsingCurrentContext(fbo, width, height)
-            program.drawFrame(0, 500_000)
-            val buffer = ByteBuffer.allocateDirect(
-                width * height * 4,
-            ).order(ByteOrder.nativeOrder())
-            GLES20.glReadPixels(
-                0,
-                0,
-                width,
-                height,
-                GLES20.GL_RGBA,
-                GLES20.GL_UNSIGNED_BYTE,
-                buffer,
-            )
-            GlUtil.checkGlError()
-            program.release()
-            GlUtil.deleteFbo(fbo)
-            GlUtil.deleteTexture(texture)
-            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-            buffer.rewind()
-            bitmap.copyPixelsFromBuffer(buffer)
-            // GL rows run bottom to top.
-            val upright = Matrix().apply { postScale(1f, -1f) }
-            return Bitmap.createBitmap(bitmap, 0, 0, width, height, upright, false)
-        } finally {
-            GlUtil.destroyEglContext(display, eglContext)
-        }
-    }
+    /** The frame at 0.5 s at [width] × [height]. */
+    private fun render(timeline: RenderTimeline, width: Int, height: Int): Bitmap =
+        Offscreen.render(context, timeline.copy(width = width, height = height), 500_000)
 
     /**
      * The expected frame: [pattern] placed by android.graphics.Matrix following Transform's
@@ -229,7 +183,7 @@ class TransformGoldenTest {
         tolerance: Int,
         share: Double,
     ) {
-        val matched = match(expected, actual, tolerance)
+        val matched = Offscreen.match(expected, actual, tolerance)
         Log.i(TAG, "$what: ${"%.4f".format(matched)} of pixels match")
         if (matched < share) {
             File(context.cacheDir, "golden-$what-expected.png").outputStream().use {
@@ -240,25 +194,6 @@ class TransformGoldenTest {
             }
         }
         assertTrue("$what: only ${"%.4f".format(matched)} of pixels match", matched >= share)
-    }
-
-    /** The share of pixels within [tolerance] on every channel. */
-    private fun match(expected: Bitmap, actual: Bitmap, tolerance: Int): Double {
-        val count = expected.width * expected.height
-        val a = IntArray(count).also {
-            expected.getPixels(it, 0, expected.width, 0, 0, expected.width, expected.height)
-        }
-        val b = IntArray(count).also {
-            actual.getPixels(it, 0, actual.width, 0, 0, actual.width, actual.height)
-        }
-        var close = 0
-        for (i in 0 until count) {
-            val near = abs(Color.red(a[i]) - Color.red(b[i])) <= tolerance &&
-                abs(Color.green(a[i]) - Color.green(b[i])) <= tolerance &&
-                abs(Color.blue(a[i]) - Color.blue(b[i])) <= tolerance
-            if (near) close++
-        }
-        return close.toDouble() / count
     }
 
     private companion object {

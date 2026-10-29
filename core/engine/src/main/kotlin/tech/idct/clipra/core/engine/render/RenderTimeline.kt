@@ -1,6 +1,7 @@
 package tech.idct.clipra.core.engine.render
 
 import android.graphics.Bitmap
+import tech.idct.clipra.core.model.BlendMode
 import tech.idct.clipra.core.model.Transform
 
 /**
@@ -62,6 +63,3 @@ sealed interface RenderSource {
     /** Sound only (music, voiceover): no picture. */
     data class Audio(val path: String, val inPointUs: Long = 0) : RenderSource
 }
-
-/** The spike's blend modes; the full set of 16 comes with M2-blend. */
-enum class BlendMode { Normal, Multiply, Screen }

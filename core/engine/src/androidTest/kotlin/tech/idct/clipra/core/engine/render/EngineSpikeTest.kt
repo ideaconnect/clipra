@@ -29,6 +29,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import tech.idct.clipra.core.model.BlendMode
 import tech.idct.clipra.core.model.ClipGeometry
 import tech.idct.clipra.core.model.Fit
 import tech.idct.clipra.core.model.Transform

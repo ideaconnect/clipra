@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import tech.idct.clipra.core.model.BlendMode
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
 import tech.idct.clipra.core.model.Format
@@ -17,7 +18,6 @@ import tech.idct.clipra.core.model.Resolution
 import tech.idct.clipra.core.model.TextSpec
 import tech.idct.clipra.core.model.edit.LayerTarget
 import tech.idct.clipra.core.model.edit.MoveClip
-import tech.idct.clipra.core.model.BlendMode as ModelBlend
 
 class ProjectRenderTest {
     private val video =
@@ -56,7 +56,7 @@ class ProjectRenderTest {
             Layer(
                 "L2",
                 hidden = true,
-                clips = listOf(videoClip("b", 1_000_000).copy(blend = ModelBlend.Screen)),
+                clips = listOf(videoClip("b", 1_000_000).copy(blend = BlendMode.Screen)),
             ),
             Layer(
                 "L3",
