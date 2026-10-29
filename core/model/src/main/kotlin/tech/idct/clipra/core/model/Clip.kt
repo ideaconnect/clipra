@@ -1,6 +1,8 @@
 package tech.idct.clipra.core.model
 
 import kotlinx.serialization.Serializable
+import kotlin.math.pow
+import kotlin.math.roundToInt
 
 /**
  * One item on a layer. [startUs] and [durationUs] place it on the project timeline; [source]
@@ -141,7 +143,10 @@ data class ColorGrade(
     val lutStrength: Float = 1f,
 )
 
-/** Per-clip sound: volume 0 to 2 (200%), fades, and the loudness target in LUFS. */
+/**
+ * Per-clip sound: volume 0 to 2 (200%), fades, the loudness target in LUFS and AI voice
+ * cleanup.
+ */
 @Serializable
 data class AudioSettings(
     val volume: Float = 1f,
@@ -153,8 +158,37 @@ data class AudioSettings(
     val measuredLufs: Float? = null,
     val truePeakDb: Float? = null,
     val noiseReduction: Float? = null,
-    val voiceCleanup: Float? = null,
+    /** AI voice cleanup (#39), or null to keep the sound as recorded. */
+    val voiceCleanup: VoiceCleanup? = null,
 )
+
+/** Which network cleans up a voice (#39): DeepFilterNet 3 (downloaded) or RNNoise (built in). */
+@Serializable
+enum class VoiceEngine { DeepFilterNet, RNNoise }
+
+/**
+ * AI voice cleanup (#39): the [engine] and the [strength], 0 to 1. Full strength removes all
+ * the noise the network finds; lower strengths keep some of it (see [noisyShare]).
+ */
+@Serializable
+data class VoiceCleanup(
+    val engine: VoiceEngine = VoiceEngine.DeepFilterNet,
+    val strength: Float = DEFAULT_STRENGTH,
+) {
+    /** The strength in whole percent, as the slider shows it and the cache keys it. */
+    val percent: Int get() = (strength * 100).roundToInt()
+
+    /**
+     * How much of the recorded sound is mixed back in: none at full strength, and an
+     * attenuation limit of 40 dB times the strength below it (70% keeps noise 28 dB down).
+     */
+    val noisyShare: Float
+        get() = if (percent >= 100) 0f else 10.0.pow(-2.0 * percent / 100).toFloat()
+
+    companion object {
+        const val DEFAULT_STRENGTH = 0.7f
+    }
+}
 
 /** Normalization (#37): the gain in dB that takes the clip to its target, or 0. */
 val AudioSettings.normalizeDb: Float

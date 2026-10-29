@@ -39,7 +39,10 @@ jobs:
           java-version: "17"
           cache: gradle
 
-      # The runner image already has Android SDK platform 37 and the build tools.
+      # The runner image already has Android SDK platform 37 and the build tools. Native code
+      # (RNNoise in ml:voice) builds with the NDK pinned in ml/voice/build.gradle.kts.
+      - name: Install the NDK
+        run: echo "y" | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;28.2.13676358" "cmake;3.22.1" > /dev/null
 
       - name: Check Kotlin style (ktlint)
         run: ./gradlew spotlessCheck

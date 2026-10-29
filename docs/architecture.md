@@ -87,7 +87,14 @@ Transcript(clipId, words: List<Word(text, start, end, confidence, kind: Word|Fil
 - Waveforms: `AudioDecoder` decodes to PCM; `Waveforms` keeps the peak of every 20 ms in the media cache. Import starts them in the background, and long sounds decode in four slices side by side.
 - Loudness: our own BS.1770-4 / EBU R128 meter in `core:audio` (`LoudnessMeter`: K-weighting, 400 ms blocks, -70 LUFS and -10 LU gates, true peak on 4x oversampled sound). The Audio screen measures the clip's stretch of its original media when it opens and stores the result with the clip; a mono source counts as dual mono, as the stereo export plays it. Normalizing to a target (-14, -16, -23 LUFS) adds the difference as gain in `ClipGain`, followed by a peak limiter (instant attack, 80 ms release, samples held at -1.5 dBFS so true peaks stay near -1 dBTP). A normalized clip that was trimmed is measured again the next time the Audio screen opens.
 - Noise reduction: spectral gate (our own implementation).
-- AI voice cleanup: DeepFilterNet 3 exported to ONNX (an 8.0 MB download, 8.6 MB unpacked) on ONNX Runtime Mobile; RNNoise as the lite option. Processed offline per clip into a cached file, not in real time.
+- AI voice cleanup (`ml:voice`, `VoiceCleaner` in `core:engine`). It runs offline per media, not in real time.
+  - **The engines** take mono 48 kHz in and give the same length out, sample for sample.
+    - DeepFilterNet 3 runs on ONNX Runtime from the official ONNX export (an 8.0 MB download, 8.6 MB unpacked). Its DSP is ported from libDF to Kotlin: the 960-point STFT, ERB and complex features with exponential normalization, the ERB gains, and the five-frame deep filter.
+    - The export runs whole sequences, so the sound goes through in 10 s chunks, each with 2 s before it for the recurrent layers to settle. Memory stays flat for any length.
+    - RNNoise v0.2 (xiph, BSD-3-Clause) is built in through JNI with its weights; its 960-sample delay is taken out.
+  - **The files** live in the media cache. The media's sound is decoded once to mono 48 kHz (`Resampler` when needed), and the engine cleans it once. Each strength is a mix of the two: the attenuation limit is 40 dB times the strength, so 70% keeps noise 28 dB down.
+  - **When it runs:** a WorkManager job makes the mix when the Audio screen asks for it. Export makes any mix that isn't ready before it starts, so the noisy sound never ships. The editor asks again for mixes the cache lost.
+  - **Playback:** clips play the mix in place of their own sound once it is there. The preview rebuilds when a mix becomes ready. Loudness and the After waveform follow the mix.
 - Ducking: speech activity from the transcript or a voice activity detector drives a gain envelope on other clips.
 - Beat detection: onset detection (spectral flux) on music clips, cached per media hash.
 

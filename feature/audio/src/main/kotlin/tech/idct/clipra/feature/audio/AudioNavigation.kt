@@ -54,8 +54,12 @@ fun NavGraphBuilder.audioScreens(
 private fun AudioDestination(onDone: () -> Unit, viewModel: AudioViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var liveVolume by remember { mutableStateOf<Float?>(null) }
+    var liveStrength by remember { mutableStateOf<Float?>(null) }
     BackHandler(onBack = onDone)
-    LaunchedEffect(state.project) { liveVolume = null }
+    LaunchedEffect(state.project) {
+        liveVolume = null
+        liveStrength = null
+    }
     if (state.loaded && state.clip == null) {
         LaunchedEffect(Unit) { onDone() }
         return
@@ -64,6 +68,7 @@ private fun AudioDestination(onDone: () -> Unit, viewModel: AudioViewModel = hil
     AudioScreen(
         state = state,
         volume = liveVolume ?: clip.audio.volume,
+        strength = liveStrength,
         actions = AudioActions(
             onBack = onDone,
             onVolume = { liveVolume = it },
@@ -72,6 +77,11 @@ private fun AudioDestination(onDone: () -> Unit, viewModel: AudioViewModel = hil
             },
             onAudio = viewModel::setAudio,
             onLoudnessTarget = viewModel::setLoudnessTarget,
+            onVoice = viewModel::setVoiceOn,
+            onEngine = viewModel::chooseEngine,
+            onStrength = { liveStrength = it },
+            onStrengthDone = { liveStrength?.let(viewModel::setVoiceStrength) },
+            onApplyToAll = viewModel::applyVoiceToAll,
         ),
     )
 }

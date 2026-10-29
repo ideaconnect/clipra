@@ -9,9 +9,9 @@ Keep this list in sync with the build. Every entry needs a license that is compa
 | Hilt / Dagger | Dependency injection | Apache-2.0 |
 | whisper.cpp | Speech to text runtime | MIT |
 | OpenAI Whisper models (ggml conversions) | Speech to text models | MIT |
-| ONNX Runtime Mobile | Runs DeepFilterNet | MIT |
-| DeepFilterNet 3 | AI voice cleanup model | MIT or Apache-2.0 (dual) |
-| RNNoise | Lite noise suppression | BSD-3-Clause |
+| ONNX Runtime (`com.microsoft.onnxruntime:onnxruntime-android` 1.31.0) | Runs DeepFilterNet 3 | MIT |
+| DeepFilterNet 3 | AI voice cleanup model, downloaded; Clipra's Kotlin port of its libDF processing (`ml:voice`) | MIT or Apache-2.0 (dual) |
+| RNNoise v0.2 | Lite voice cleanup, vendored with its weights in `ml/voice/src/main/cpp/rnnoise` (origin in `SOURCE.md`) | BSD-3-Clause |
 | libebur128 (if used) | Loudness measurement | MIT |
 | MediaPipe Tasks Vision and models | Face detection, segmentation, object detection | Apache-2.0 |
 | OpenCV (core, imgproc, video, calib3d only) | Motion tracking for Stabilize | Apache-2.0 (4.5.0 and later) |
@@ -46,7 +46,8 @@ Used to build and test the app; none of them ship in it.
 | ktlint | Kotlin style check | MIT |
 | Robolectric | Runs Android code in JVM tests | MIT |
 | Roborazzi | Screenshot tests | Apache-2.0 |
-| FFmpeg (command line, on the developer's machine) | Generated the synthetic test clips in `core/engine/src/androidTest/assets/spike/` | LGPL/GPL tool; not part of the build, and the generated clips carry no license |
+| FFmpeg (command line, on the developer's machine) | Generated the synthetic test clips in `core/engine/src/androidTest/assets/spike/` and encoded the voice test set | LGPL/GPL tool; not part of the build, and the generated clips carry no license |
+| LibriVox "Grim: The Story of a Pike", chapter 1 (archive.org `storyofapike_1304_librivox`) | 10 s of speech in the voice cleanup test set (`core/engine/src/androidTest/assets/golden/voice/`), with synthetic wind and traffic noise added | Public domain (CC0) |
 | GitHub Actions: `actions/checkout`, `actions/setup-java`, `actions/upload-artifact`, `gradle/actions/wrapper-validation` | CI (`.github/workflows/ci.yml`) | MIT |
 
 CI doesn't use `gradle/actions/setup-gradle`: since v6 its caching is a proprietary component under Gradle's terms of use. `actions/setup-java` caches Gradle instead.
