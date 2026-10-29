@@ -71,6 +71,7 @@ private fun AudioDestination(onDone: () -> Unit, viewModel: AudioViewModel = hil
                 liveVolume?.let { viewModel.setAudio(clip.audio.copy(volume = it)) }
             },
             onAudio = viewModel::setAudio,
+            onLoudnessTarget = viewModel::setLoudnessTarget,
         ),
     )
 }

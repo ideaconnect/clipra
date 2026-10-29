@@ -8,4 +8,19 @@
     <string name="audio_fade_in">Fade in</string>
     <string name="audio_fade_out">Fade out</string>
     <string name="audio_seconds">%1$s s</string>
+    <string name="audio_before">Before</string>
+    <string name="audio_after">After</string>
+    <string name="audio_lufs">%1$s LUFS</string>
+    <string name="audio_peak">peak %1$s dBTP</string>
+    <string name="audio_measuring">Measuring…</string>
+    <string name="audio_no_sound">No sound</string>
+    <string name="audio_muted">Muted</string>
+    <string name="audio_normalize">Normalize loudness</string>
+    <string name="audio_normalize_detail">Even levels, peaks capped at -1 dBTP</string>
+    <string name="audio_normalize_measuring">Measuring the clip\'s loudness…</string>
+    <string name="audio_normalize_silent">This clip has no sound to measure</string>
+    <string name="audio_target_lufs">%1$d LUFS</string>
+    <string name="audio_target_social">Social, YouTube</string>
+    <string name="audio_target_podcast">Podcast, voice</string>
+    <string name="audio_target_broadcast">Broadcast R128</string>
 </resources>
