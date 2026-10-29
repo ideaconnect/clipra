@@ -2,4 +2,27 @@
 <resources>
     <string name="models_title_onboarding">Witaj w Clipra</string>
     <string name="models_title_models">Modele AI</string>
+    <string name="models_storage">modeli mowy i głosu na tym telefonie</string>
+    <string name="models_offline">Śledzenie twarzy i obiektów jest wbudowane. Wszystko działa offline i nic, co edytujesz, nie jest nigdzie wysyłane.</string>
+    <string name="models_wifi_only">Pobieraj tylko przez Wi-Fi</string>
+    <string name="models_accelerator">Używaj NPU lub GPU telefonu, gdy to możliwe</string>
+    <string name="models_group_captions">Napisy · Whisper</string>
+    <string name="models_group_voice">Czyszczenie głosu</string>
+    <string name="models_default">Domyślny</string>
+    <string name="models_lite">lekki</string>
+    <string name="models_get">Pobierz</string>
+    <string name="models_retry">Ponów</string>
+    <string name="models_installed">Zainstalowany</string>
+    <string name="models_built_in">Wbudowany</string>
+    <string name="models_cancel">Anuluj</string>
+    <string name="models_progress">%1$d%% z %2$s</string>
+    <string name="models_waiting_wifi">Czeka na Wi-Fi</string>
+    <string name="models_waiting_network">Czeka na połączenie</string>
+    <string name="models_failed_check">Pobrany plik nie przeszedł kontroli</string>
+    <string name="models_failed_source">Źródło niedostępne</string>
+    <string name="models_download_model">Pobierz %1$s</string>
+    <string name="models_remove_model">Usuń %1$s</string>
+    <string name="models_remove_title">Usunąć %1$s?</string>
+    <string name="models_remove_body">Jego pliki zostaną usunięte z telefonu. Możesz pobrać go ponownie w każdej chwili.</string>
+    <string name="models_remove">Usuń</string>
 </resources>

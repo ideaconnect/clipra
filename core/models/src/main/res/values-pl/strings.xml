@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="models_notification_channel">Pobieranie modeli AI</string>
+    <string name="models_notification_title">Pobieranie: %1$s</string>
+</resources>

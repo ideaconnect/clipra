@@ -26,6 +26,7 @@ include(
     ":core:data",
     ":core:engine",
     ":core:audio",
+    ":core:models",
 )
 include(":ml:whisper", ":ml:voice", ":ml:vision", ":ml:translate")
 include(

@@ -27,6 +27,7 @@ core:model               Project, Layer, Clip, Effect, Keyframe, Caption, Transc
 core:data                Project repository, autosave, undo/redo, media store, settings
 core:engine              Media3 composition building, preview player, export, GL effects
 core:audio               Loudness, gates, ducking, beat detection, waveform extraction
+core:models              AI model manifest, downloads (WorkManager), verification and storage
 ml:whisper               whisper.cpp JNI, model files, transcription pipeline
 ml:voice                 DeepFilterNet 3 (ONNX Runtime), RNNoise (JNI)
 ml:vision                MediaPipe face detector, selfie segmenter, subject tracking; motion tracking for Stabilize (OpenCV)
@@ -113,7 +114,7 @@ Every model runs on the phone and comes from its official source. Clipra never h
 | RNNoise | Weights compiled in from the official xiph/rnnoise source | Built in |
 | ML Kit translation packs | Google, through ML Kit | Managed by ML Kit |
 
-Downloads run in WorkManager with a Wi-Fi-only constraint by default, resume after interruptions, are verified by SHA-256 before use, are stored in app-specific storage, and are listed on the AI models screen with their size. If a source moves or a file changes, the download fails with a clear message; the fix ships in an app update, never through another host. Every size the app shows is real: the manifest's byte count before download, the bytes on disk after, formatted with `Formatter.formatShortFileSize` (decimal units from Android 8 on, like the system's storage screens).
+Downloads run in WorkManager with a Wi-Fi-only constraint by default, resume after interruptions, are verified by SHA-256 before use, are stored in app-specific storage, and are listed on the AI models screen with their size. In `core:models`, `ModelCatalog` is the manifest and `ModelManager` gives each model's state (built in, missing, waiting, downloading, installed) from the files on disk and the download work. `ModelDownloadWorker` runs as a data sync foreground service with a progress notification. It downloads into `<model>.part` and continues it with a range request after a lost connection, a stopped worker or a restart. It checks the size and SHA-256, unpacks archives (DeepFilterNet's tar.gz, read by our own small tar reader), and only then moves the files into `files/models/<model>/` and marks them installed. A failed check deletes the partial file; a source that answers 403, 404 or 410 fails without retrying. If a source moves or a file changes, the download fails with a clear message; the fix ships in an app update, never through another host. Every size the app shows is real: the manifest's byte count before download, the bytes on disk after, formatted with `Formatter.formatShortFileSize` (decimal units from Android 8 on, like the system's storage screens).
 
 ## 7. Export
 
@@ -132,7 +133,7 @@ Downloads run in WorkManager with a Wi-Fi-only constraint by default, resume aft
 ## 9. Privacy and permissions
 
 - No analytics SDK by default. If crash reporting is added it must be opt-in and must not send media or transcripts.
-- Photo Picker for media import (no broad storage permission). Microphone only when recording a voiceover. Notifications for export progress.
+- Photo Picker for media import (no broad storage permission). Microphone only when recording a voiceover. Notifications for export and model download progress. `INTERNET` is declared by `core:models` for the downloads (and later by the ad and billing SDKs).
 - Network: model downloads straight from the official sources (Hugging Face, GitHub, Google), ads (free users), billing. Those hosts see an ordinary download request (IP address, user agent) and nothing about the user's media; the privacy policy names them.
 
 ## 10. Testing
