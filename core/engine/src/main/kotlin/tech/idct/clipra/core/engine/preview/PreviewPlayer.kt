@@ -15,6 +15,7 @@ import tech.idct.clipra.core.engine.render.CompositionFactory
 import tech.idct.clipra.core.engine.render.LiveEdits
 import tech.idct.clipra.core.engine.render.MediaResolver
 import tech.idct.clipra.core.engine.render.ProjectRender
+import tech.idct.clipra.core.model.Effect
 import tech.idct.clipra.core.model.Format
 import tech.idct.clipra.core.model.MediaAsset
 import tech.idct.clipra.core.model.Project
@@ -86,6 +87,12 @@ class PreviewPlayer(private val context: Context, cache: MediaCache) {
      */
     fun setLiveTransform(clipId: String, transform: Transform) {
         live.setTransform(clipId, transform)
+        redraw()
+    }
+
+    /** Like [setLiveTransform], for the filter strength and hold-to-compare; null restores. */
+    fun setLiveEffects(clipId: String, effects: List<Effect>?) {
+        live.setEffects(clipId, effects)
         redraw()
     }
 

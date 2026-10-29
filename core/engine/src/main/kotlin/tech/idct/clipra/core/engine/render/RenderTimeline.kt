@@ -2,6 +2,7 @@ package tech.idct.clipra.core.engine.render
 
 import android.graphics.Bitmap
 import tech.idct.clipra.core.model.BlendMode
+import tech.idct.clipra.core.model.Effect
 import tech.idct.clipra.core.model.Transform
 
 /**
@@ -40,6 +41,8 @@ data class RenderClip(
     val fadeInUs: Long = 0,
     /** Source time per timeline time: 1 plays normally, 0 holds the first frame (freeze). */
     val rate: Double = 1.0,
+    /** Filters, in order (#25); effects the compositor doesn't draw yet are skipped. */
+    val effects: List<Effect> = emptyList(),
 ) {
     val endUs: Long get() = startUs + durationUs
 

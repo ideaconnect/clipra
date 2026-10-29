@@ -6,4 +6,43 @@
     <string name="effects_title_color">Color</string>
     <string name="effects_title_cutout">Cutout</string>
     <string name="effects_title_reframe">Auto-reframe</string>
+
+    <!-- Filters (#25) -->
+    <plurals name="effects_filters_subtitle">
+        <item quantity="one">%1$s · %2$d filter</item>
+        <item quantity="other">%1$s · %2$d filters</item>
+    </plurals>
+    <string name="effects_done">Done</string>
+    <string name="effects_filter_strength">%d%% strength</string>
+    <string name="effects_compare">Hold to compare with the original</string>
+    <string name="effects_category_all">All</string>
+    <string name="effects_category_looks">Looks</string>
+    <string name="effects_category_stylized">Stylized</string>
+    <string name="effects_apply_to_all">Apply to all</string>
+    <string name="effects_strength">Strength</string>
+    <string name="effects_filter_none">None</string>
+    <string name="effects_filter_vivid">Vivid</string>
+    <string name="effects_filter_warm">Warm</string>
+    <string name="effects_filter_cool">Cool</string>
+    <string name="effects_filter_cinematic">Cinematic</string>
+    <string name="effects_filter_matte">Matte</string>
+    <string name="effects_filter_mono">Mono</string>
+    <string name="effects_filter_noir">Noir</string>
+    <string name="effects_filter_sepia">Sepia</string>
+    <string name="effects_filter_vintage">Vintage</string>
+    <string name="effects_filter_film">Film</string>
+    <string name="effects_filter_night">Night</string>
+    <string name="effects_filter_neon">Neon</string>
+    <string name="effects_filter_pastel">Pastel</string>
+    <string name="effects_filter_mosaic">Mosaic</string>
+    <string name="effects_filter_blur">Blur</string>
+    <string name="effects_filter_glitch">Glitch</string>
+    <string name="effects_filter_vhs">VHS</string>
+    <string name="effects_filter_grain">Grain</string>
+    <string name="effects_filter_vignette">Vignette</string>
+    <string name="effects_filter_rgb_split">RGB split</string>
+    <string name="effects_filter_light_leak">Light leak</string>
+    <string name="effects_filter_halftone">Halftone</string>
+    <string name="effects_filter_duotone">Duotone</string>
+    <string name="effects_filter_soft_glow">Soft glow</string>
 </resources>

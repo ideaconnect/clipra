@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import tech.idct.clipra.core.data.di.ApplicationScope
-import tech.idct.clipra.core.data.project.ProjectRepository
+import tech.idct.clipra.core.data.project.OpenProjects
 import tech.idct.clipra.core.data.project.ProjectSession
 import tech.idct.clipra.core.engine.media.MediaCache
 import tech.idct.clipra.core.engine.media.MediaImporter
@@ -71,7 +71,7 @@ enum class EditorMessage { LayerLocked, NoRoom, CantSplitHere, NotAvailable, Imp
 @HiltViewModel
 class EditorViewModel @Inject constructor(
     @param:ApplicationContext private val context: Context,
-    private val projects: ProjectRepository,
+    private val projects: OpenProjects,
     private val importer: MediaImporter,
     val mediaCache: MediaCache,
     @param:ApplicationScope private val appScope: CoroutineScope,
@@ -85,7 +85,7 @@ class EditorViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            val opened = projectId?.let { projects.open(it, appScope) }
+            val opened = projectId?.let { projects.acquire(it) }
             session = opened
             if (opened == null) {
                 mutableState.update { it.copy(loaded = true) }
@@ -123,6 +123,9 @@ class EditorViewModel @Inject constructor(
     }
 
     fun dismissMessage() = mutableState.update { it.copy(message = null) }
+
+    /** Says a tool has nothing to work on yet, such as Filters in a project without pictures. */
+    fun notAvailable() = mutableState.update { it.copy(message = EditorMessage.NotAvailable) }
 
     fun undo() = session?.undo()
 
@@ -214,7 +217,7 @@ class EditorViewModel @Inject constructor(
 
     override fun onCleared() {
         // The session saves in the app's scope, so the last edits are kept after the editor goes.
-        session?.let { open -> appScope.launch { open.close() } }
+        if (session != null && projectId != null) appScope.launch { projects.release(projectId) }
     }
 
     private fun onSelected(command: (String) -> EditCommand) {

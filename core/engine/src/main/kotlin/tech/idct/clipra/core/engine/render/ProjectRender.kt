@@ -70,6 +70,7 @@ object ProjectRender {
             blend = clip.blend,
             opacity = clip.opacity.value,
             rate = clip.speed.rate,
+            effects = clip.effects,
         )
     }
 

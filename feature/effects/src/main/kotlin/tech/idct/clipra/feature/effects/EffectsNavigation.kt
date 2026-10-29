@@ -3,11 +3,18 @@ package tech.idct.clipra.feature.effects
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
+import androidx.navigation.toRoute
 import kotlinx.serialization.Serializable
 import tech.idct.clipra.core.designsystem.placeholder.Board
+import tech.idct.clipra.feature.effects.filters.FiltersDestination
 
+/** Filters on [clipId] of [projectId]; no project opens the placeholder board (screen index). */
 @Serializable
-data object FiltersRoute
+data class FiltersRoute(
+    val projectId: String? = null,
+    val clipId: String? = null,
+    val playheadUs: Long = 0,
+)
 
 @Serializable
 data object TransitionsRoute
@@ -31,7 +38,7 @@ object EffectsBoards {
     val filters = Board(
         id = "Filters",
         title = R.string.effects_title_filters,
-        route = FiltersRoute,
+        route = FiltersRoute(),
     )
     val transitions = Board(
         id = "Transitions",
@@ -50,9 +57,18 @@ object EffectsBoards {
     val all = listOf(filters, transitions, masks, color, cutout, reframe)
 }
 
+/** Where the effect screens lead; the app connects it. */
+class EffectsActions(val onDone: () -> Unit)
+
 /** Registers this module's destinations. [screen] draws a board until its real screen is built. */
-fun NavGraphBuilder.effectsScreens(screen: @Composable (Board) -> Unit) {
-    composable<FiltersRoute> { screen(EffectsBoards.filters) }
+fun NavGraphBuilder.effectsScreens(screen: @Composable (Board) -> Unit, actions: EffectsActions) {
+    composable<FiltersRoute> { entry ->
+        if (entry.toRoute<FiltersRoute>().projectId == null) {
+            screen(EffectsBoards.filters)
+        } else {
+            FiltersDestination(onDone = actions.onDone)
+        }
+    }
     composable<TransitionsRoute> { screen(EffectsBoards.transitions) }
     composable<MasksRoute> { screen(EffectsBoards.masks) }
     composable<ColorRoute> { screen(EffectsBoards.color) }

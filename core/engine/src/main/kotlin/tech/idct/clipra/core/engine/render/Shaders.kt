@@ -61,23 +61,22 @@ internal object Shaders {
         }
     """
 
-    /**
-     * Blends a clip layer (uSrc, straight alpha) onto the canvas (uDst) with one of the 16 blend
-     * modes, numbered by [blendIndex]. The formulas are those of the W3C Compositing
-     * and Blending spec (b the canvas, s the clip); Hue, Color and Luminosity work on luminosity
-     * and saturation as it defines them. Where the clip is transparent the canvas is unchanged.
-     */
-    const val BLEND = """
+    private const val PRECISION = """
         #ifdef GL_FRAGMENT_PRECISION_HIGH
         precision highp float;
         #else
         precision mediump float;
         #endif
-        uniform sampler2D uDst;
-        uniform sampler2D uSrc;
-        uniform int uMode;
-        varying vec2 vTex;
+    """
 
+    /**
+     * The 16 blend modes as `blendColor(b, s)` for the mode in `uMode`, numbered by
+     * [blendIndex]. The formulas are those of the W3C Compositing and Blending spec (b the
+     * backdrop, s the source); Hue, Color and Luminosity work on luminosity and saturation as it
+     * defines them.
+     */
+    private const val BLEND_FUNCTIONS = """
+        uniform int uMode;
         float overlay(float b, float s) {
             return b <= 0.5 ? 2.0 * b * s : 1.0 - 2.0 * (1.0 - b) * (1.0 - s);
         }
@@ -141,11 +140,164 @@ internal object Shaders {
             return s;
         }
 
+    """
+
+    /**
+     * Blends a clip layer (uSrc, straight alpha) onto the canvas (uDst) with one of the 16 blend
+     * modes. Where the clip is transparent the canvas is unchanged.
+     */
+    const val BLEND = PRECISION + BLEND_FUNCTIONS + """
+        uniform sampler2D uDst;
+        uniform sampler2D uSrc;
+        varying vec2 vTex;
         void main() {
             vec4 d = texture2D(uDst, vTex);
             vec4 s = texture2D(uSrc, vTex);
             vec3 c = mix(d.rgb, clamp(blendColor(d.rgb, s.rgb), 0.0, 1.0), s.a);
             gl_FragColor = vec4(c, s.a + d.a * (1.0 - s.a));
+        }
+    """
+
+    /**
+     * One filter (#25) on a clip's picture (straight alpha, upright): it samples the input
+     * (plain, in mosaic blocks, with the colours split, or glitched), applies the CSS filter
+     * functions as one colour matrix, blends an overlay (gradient or pattern) on top with
+     * `uMode`, and mixes the result with the input by strength. `FilterRecipes` sets the
+     * uniforms; positions in the overlay are in fractions of the picture, y down, as in CSS.
+     */
+    const val FILTER = PRECISION + BLEND_FUNCTIONS + """
+        uniform sampler2D uTex;
+        uniform vec2 uSize;
+        uniform mat4 uMatrix;
+        uniform int uSampling;
+        uniform vec2 uBlock;
+        uniform float uTime;
+        uniform int uOverlay;
+        uniform vec4 uGradient;
+        uniform vec4 uStops;
+        uniform vec4 uColor0;
+        uniform vec4 uColor1;
+        uniform vec4 uColor2;
+        uniform vec4 uColor3;
+        uniform float uStrength;
+        varying vec2 vTex;
+
+        float hash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+
+        vec4 split(vec2 uv, float d) {
+            vec4 c = texture2D(uTex, uv);
+            c.r = texture2D(uTex, uv - vec2(d, 0.0)).r;
+            c.b = texture2D(uTex, uv + vec2(d, 0.0)).b;
+            return c;
+        }
+
+        vec4 sampleInput(vec2 uv) {
+            if (uSampling == 1) return texture2D(uTex, (floor(uv / uBlock) + 0.5) * uBlock);
+            if (uSampling == 2) return split(uv, 0.006);
+            if (uSampling == 3) {
+                // Some of 24 bands slide sideways with split colours, changing 8 times a second.
+                float band = floor((1.0 - uv.y) * 24.0);
+                float tick = floor(uTime * 8.0);
+                float shift = hash(vec2(band, tick)) > 0.7
+                    ? (hash(vec2(tick, band)) - 0.5) * 0.08 : 0.0;
+                vec2 p = vec2(uv.x + shift, uv.y);
+                return shift != 0.0 ? split(p, 0.01) : texture2D(uTex, p);
+            }
+            if (uSampling == 4) return split(uv, -0.003);
+            return texture2D(uTex, uv);
+        }
+
+        vec4 premultiplied(vec4 c) { return vec4(c.rgb * c.a, c.a); }
+
+        // Up to four stops, interpolated premultiplied as CSS does.
+        vec4 gradientAt(float t) {
+            vec4 c0 = premultiplied(uColor0);
+            vec4 c1 = premultiplied(uColor1);
+            vec4 c2 = premultiplied(uColor2);
+            vec4 c3 = premultiplied(uColor3);
+            vec4 p = c3;
+            if (t <= uStops.x) {
+                p = c0;
+            } else if (t <= uStops.y) {
+                p = mix(c0, c1, (t - uStops.x) / max(uStops.y - uStops.x, 1e-5));
+            } else if (t <= uStops.z) {
+                p = mix(c1, c2, (t - uStops.y) / max(uStops.z - uStops.y, 1e-5));
+            } else if (t <= uStops.w) {
+                p = mix(c2, c3, (t - uStops.z) / max(uStops.w - uStops.z, 1e-5));
+            }
+            return p.a > 0.0 ? vec4(p.rgb / p.a, p.a) : vec4(0.0);
+        }
+
+        vec4 overlayColor(vec2 uv) {
+            if (uOverlay == 1) {
+                // Linear: the gradient line runs corner to corner at its angle.
+                vec2 dir = uGradient.xy;
+                float span = abs(uSize.x * dir.x) + abs(uSize.y * dir.y);
+                return gradientAt(dot((uv - 0.5) * uSize, dir) / span + 0.5);
+            }
+            if (uOverlay == 2) {
+                // Radial, reaching the farthest corner.
+                vec2 c = uGradient.xy;
+                if (uGradient.z > 0.5) {
+                    vec2 radii = max(c, 1.0 - c);
+                    return gradientAt(length((uv - c) / radii) / sqrt(2.0));
+                }
+                vec2 far = max(c, 1.0 - c) * uSize;
+                return gradientAt(length((uv - c) * uSize) / length(far));
+            }
+            if (uOverlay == 3) {
+                float f = fract(uv.y * 16.0);
+                if (f >= 0.4 && f < 0.5333) return vec4(0.0, 1.0, 0.918, 0.5);
+                if (f >= 0.8667) return vec4(1.0, 0.0, 0.361, 0.5);
+                return vec4(0.0);
+            }
+            if (uOverlay == 4) {
+                return fract(uv.y * 80.0) < 0.3333 ? vec4(0.0, 0.0, 0.0, 0.4) : vec4(0.0);
+            }
+            if (uOverlay == 5) {
+                float n = hash(floor(uv * uSize) + fract(uTime * 7.31) * 113.0);
+                return vec4(vec3(n), 0.35);
+            }
+            if (uOverlay == 6) {
+                float cell = min(uSize.x, uSize.y) / 30.0;
+                vec2 local = mod(uv * uSize, cell) - cell * 0.5;
+                float d = length(local) / cell;
+                return vec4(0.0, 0.0, 0.0, 0.6 * (1.0 - smoothstep(0.24, 0.34, d)));
+            }
+            return vec4(0.0);
+        }
+
+        void main() {
+            vec4 original = texture2D(uTex, vTex);
+            vec4 c = sampleInput(vTex);
+            vec3 rgb = clamp((uMatrix * vec4(c.rgb, 1.0)).rgb, 0.0, 1.0);
+            if (uOverlay != 0) {
+                vec4 o = overlayColor(vec2(vTex.x, 1.0 - vTex.y));
+                rgb = mix(rgb, clamp(blendColor(rgb, o.rgb), 0.0, 1.0), o.a);
+            }
+            float alpha = mix(original.a, c.a, uStrength);
+            gl_FragColor = vec4(mix(original.rgb, rgb, uStrength), alpha);
+        }
+    """
+
+    /**
+     * One direction of a Gaussian blur: 25 taps `uStep` apart (a quarter of the deviation), out
+     * to three deviations.
+     */
+    const val BLUR = PRECISION + """
+        uniform sampler2D uTex;
+        uniform vec2 uStep;
+        varying vec2 vTex;
+        void main() {
+            vec4 sum = vec4(0.0);
+            float total = 0.0;
+            for (int i = -12; i <= 12; i++) {
+                float x = float(i) * 0.25;
+                float w = exp(-0.5 * x * x);
+                sum += texture2D(uTex, vTex + uStep * float(i)) * w;
+                total += w;
+            }
+            gl_FragColor = sum / total;
         }
     """
 
