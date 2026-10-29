@@ -7,7 +7,7 @@ Keep this list in sync with the build. Every entry needs a license that is compa
 | AndroidX (Activity, Navigation, Room, DataStore, WorkManager, Hilt extensions), Jetpack Compose with Material 3, Media3 | UI, navigation, storage, background work, media engine | Apache-2.0 |
 | Kotlin, kotlinx.coroutines, kotlinx.serialization | Language, async, JSON | Apache-2.0 |
 | Hilt / Dagger | Dependency injection | Apache-2.0 |
-| whisper.cpp | Speech to text runtime | MIT |
+| whisper.cpp v1.9.5 (ggml-org/whisper.cpp, release tarball checked with SHA-256 at build time) | Speech to text runtime (`ml:whisper`) | MIT |
 | OpenAI Whisper models (ggml conversions) | Speech to text models | MIT |
 | ONNX Runtime (`com.microsoft.onnxruntime:onnxruntime-android` 1.31.0) | Runs DeepFilterNet 3 | MIT |
 | DeepFilterNet 3 | AI voice cleanup model, downloaded; Clipra's Kotlin port of its libDF processing (`ml:voice`) | MIT or Apache-2.0 (dual) |
@@ -47,7 +47,8 @@ Used to build and test the app; none of them ship in it.
 | Robolectric | Runs Android code in JVM tests | MIT |
 | Roborazzi | Screenshot tests | Apache-2.0 |
 | FFmpeg (command line, on the developer's machine) | Generated the synthetic test clips in `core/engine/src/androidTest/assets/spike/` and encoded the voice test set | LGPL/GPL tool; not part of the build, and the generated clips carry no license |
-| LibriVox "Grim: The Story of a Pike", chapter 1 (archive.org `storyofapike_1304_librivox`) | 10 s of speech in the voice cleanup test set (`core/engine/src/androidTest/assets/golden/voice/`), with synthetic wind and traffic noise added | Public domain (CC0) |
+| LibriVox "Faraon", volume 2, chapter 1 (archive.org `faraon2_1605_librivox`) | 42 s of Polish speech for the whisper spike (`ml/whisper/src/androidTest/assets/`) | Public domain |
+| LibriVox "Grim: The Story of a Pike", chapter 1 (archive.org `storyofapike_1304_librivox`) | 10 s of speech in the voice cleanup test set (`core/engine/src/androidTest/assets/golden/voice/`), with synthetic wind and traffic noise added, and 42 s of English for the whisper spike | Public domain (CC0) |
 | GitHub Actions: `actions/checkout`, `actions/setup-java`, `actions/upload-artifact`, `gradle/actions/wrapper-validation` | CI (`.github/workflows/ci.yml`) | MIT |
 
 CI doesn't use `gradle/actions/setup-gradle`: since v6 its caching is a proprietary component under Gradle's terms of use. `actions/setup-java` caches Gradle instead.

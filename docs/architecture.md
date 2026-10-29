@@ -102,7 +102,7 @@ Transcript(clipId, words: List<Word(text, start, end, confidence, kind: Word|Fil
 
 | Feature | Runtime and model | Notes |
 |---|---|---|
-| Captions, transcript | whisper.cpp (MIT) via JNI; Whisper ggml models (MIT): tiny 78 MB, base 148 MB, small 488 MB, large-v3-turbo q5_0 574 MB | Word timestamps, language detection, translate-to-English task. Long audio is chunked; progress and cancel supported **(spike: real-time factor on mid-range devices)** |
+| Captions, transcript | whisper.cpp (MIT) via JNI; Whisper ggml models (MIT): tiny 78 MB, base 148 MB, small 488 MB, large-v3-turbo q5_0 574 MB | Word timestamps, language detection, translate-to-English task. whisper.cpp v1.9.5 is built from its official release (SHA-256 checked) in `ml:whisper`. The spike (`docs/spikes/whisper.md`) recommends Base as the default and Small for Polish, one `whisper_full` call per clip (long media split at silences near 10 minutes), and token timestamps with cuts snapped to silence. Phone measurements are still pending. |
 | Filler and pause detection | Rules on Whisper word output | Filler list per language, pause threshold from the UI |
 | Voice cleanup | DeepFilterNet 3 (MIT or Apache-2.0) on ONNX Runtime (MIT); RNNoise (BSD-3) | See audio |
 | Face follow, reframe | MediaPipe Tasks Vision face detector (Apache-2.0) | Smoothed track, keyframes written into the clip |
