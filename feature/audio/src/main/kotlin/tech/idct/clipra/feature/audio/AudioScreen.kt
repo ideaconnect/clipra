@@ -65,6 +65,7 @@ import tech.idct.clipra.core.model.ClipType
 import tech.idct.clipra.core.model.LoudnessTargets
 import tech.idct.clipra.core.model.VoiceCleanup
 import tech.idct.clipra.core.model.VoiceEngine
+import tech.idct.clipra.core.model.mediaRangeOf
 import tech.idct.clipra.core.model.normalizeDb
 import tech.idct.clipra.core.models.ModelCatalog
 import tech.idct.clipra.core.models.ModelStatus
@@ -356,7 +357,6 @@ private fun CompareCard(
     val gain = ClipGain(audio.volume, audio.fadeInUs, audio.fadeOutUs, clip.durationUs)
     val normalize = 10f.pow(audio.normalizeDb / 20)
     val ceiling = if (audio.loudnessTarget != null) PEAK_CEILING else Float.MAX_VALUE
-    val inPointUs = clip.source?.inPointUs ?: 0
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -393,15 +393,16 @@ private fun CompareCard(
         ) {
             val middle = size.height / 2
             val step = 4.8.dp.toPx()
-            val usPerPx = clip.durationUs * clip.speed.rate / size.width
             val clipUsPerPx = clip.durationUs / size.width
             val shown = if (after) cleaned ?: waveform else waveform
             val bars = FloatArray((size.width / step).toInt()) { bar ->
                 val x = bar * step
-                val peak = shown?.peakBetween(
-                    inPointUs + (x * usPerPx).toLong(),
-                    inPointUs + ((x + step) * usPerPx).toLong(),
-                ) ?: 0f
+                // The media under this bar, at the clip's speed (#22).
+                val media = clip.mediaRangeOf(
+                    (x * clipUsPerPx).toLong(),
+                    ((x + step) * clipUsPerPx).toLong(),
+                )
+                val peak = media?.let { shown?.peakBetween(it.first, it.last) } ?: 0f
                 if (after) {
                     minOf(peak * gain.gainAt((x * clipUsPerPx).toLong()) * normalize, ceiling)
                 } else {

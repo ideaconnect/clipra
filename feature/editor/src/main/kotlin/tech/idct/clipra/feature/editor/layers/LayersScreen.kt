@@ -237,7 +237,7 @@ fun LayersScreen(
 }
 
 @Composable
-private fun DoneButton(onClick: () -> Unit) {
+internal fun DoneButton(onClick: () -> Unit) {
     val colors = ClipraTheme.colors
     Surface(
         onClick = onClick,
@@ -483,7 +483,7 @@ private fun AddLayerButton(onClick: () -> Unit) {
  * The selected tile has an accent border on a warm fill.
  */
 @Composable
-private fun Option(
+internal fun Option(
     label: String,
     selected: Boolean,
     onClick: () -> Unit,
@@ -643,7 +643,7 @@ internal fun normalizeDegrees(degrees: Float): Float {
     return value
 }
 
-private val PREVIEW_HEIGHT = 340.dp
+internal val PREVIEW_HEIGHT = 340.dp
 private const val MIN_SCALE_PERCENT = 1f
 private const val MAX_SCALE_PERCENT = 2000f
 

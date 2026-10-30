@@ -18,6 +18,7 @@ import tech.idct.clipra.core.engine.media.Waveform
 import tech.idct.clipra.core.engine.media.Waveforms
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.Project
+import tech.idct.clipra.core.model.mediaRangeOf
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.sqrt
 
@@ -63,13 +64,14 @@ internal fun SoundWave(
             return@Canvas
         }
         val step = 3.dp.toPx()
-        val usPerPx = clip.durationUs * clip.speed.rate / size.width
+        val usPerPx = clip.durationUs / size.width
         var x = 0f
         while (x < size.width) {
-            val from = source.inPointUs + (x * usPerPx).toLong()
-            val to = source.inPointUs + ((x + step) * usPerPx).toLong()
+            // The media under this step, at the clip's speed (#22).
+            val media = clip.mediaRangeOf((x * usPerPx).toLong(), ((x + step) * usPerPx).toLong())
+            val peak = media?.let { current.peakBetween(it.first, it.last) } ?: 0f
             // A square root lifts quiet speech so it reads at a glance.
-            val half = maxOf(0.5f.dp.toPx(), sqrt(current.peakBetween(from, to)) * middle)
+            val half = maxOf(0.5f.dp.toPx(), sqrt(peak) * middle)
             drawLine(color, Offset(x, middle - half), Offset(x, middle + half), 2.dp.toPx())
             x += step
         }

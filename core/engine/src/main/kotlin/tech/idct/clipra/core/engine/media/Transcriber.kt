@@ -104,7 +104,7 @@ class Transcriber @Inject constructor(
     ): Transcript {
         val ref = clip.source!!
         val fromUs = ref.inPointUs
-        val toUs = fromUs + (clip.durationUs * clip.speed.rate).toLong()
+        val toUs = ref.outPointUs
         val wav = File(context.cacheDir, "transcribe/${clip.id}.wav")
         wav.parentFile?.mkdirs()
         try {

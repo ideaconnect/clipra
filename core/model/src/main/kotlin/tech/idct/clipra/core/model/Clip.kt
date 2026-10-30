@@ -50,7 +50,19 @@ enum class ClipType { Video, Photo, TextCard, Text, Caption, Audio, Adjustment }
 data class MediaRef(val mediaId: String, val inPointUs: Long = 0, val outPointUs: Long)
 
 @Serializable
-data class Speed(val rate: Double = 1.0, val reverse: Boolean = false, val ramp: String? = null)
+data class Speed(
+    val rate: Double = 1.0,
+    val reverse: Boolean = false,
+    /** A ramp preset (`SpeedCurve.ramps`) or `SpeedCurve.CUSTOM`; null for a constant speed. */
+    val ramp: String? = null,
+    /** A Custom ramp's speeds, start to end. */
+    val custom: List<Float>? = null,
+    /** The part of the ramp the clip plays, in fractions of it (#22). */
+    val rampFrom: Float = 0f,
+    val rampTo: Float = 1f,
+    /** How many even steps the whole ramp plays in (`SpeedCurve.stepsFor`). */
+    val rampSteps: Int = 32,
+)
 
 /**
  * Where a clip sits: [x] and [y] move its centre in fractions of the frame (0 = centred),

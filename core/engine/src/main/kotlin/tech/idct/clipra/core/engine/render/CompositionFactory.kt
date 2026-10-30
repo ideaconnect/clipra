@@ -7,11 +7,15 @@ import android.net.Uri
 import androidx.annotation.OptIn
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
+import androidx.media3.common.SpeedParameters
+import androidx.media3.common.audio.SpeedProvider
+import androidx.media3.common.util.ExperimentalApi
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.transformer.Composition
 import androidx.media3.transformer.EditedMediaItem
 import androidx.media3.transformer.EditedMediaItemSequence
 import androidx.media3.transformer.Effects
+import tech.idct.clipra.core.model.SpeedCurve
 import tech.idct.clipra.core.model.normalizeDb
 import java.io.File
 
@@ -24,7 +28,7 @@ import java.io.File
  * sequence per layer that has video clips, with gaps where the layer is silent; Media3 mixes the
  * sequences.
  */
-@OptIn(UnstableApi::class)
+@OptIn(UnstableApi::class, ExperimentalApi::class)
 object CompositionFactory {
     fun create(
         context: Context,
@@ -62,10 +66,12 @@ object CompositionFactory {
         durationUs: Long,
     ): EditedMediaItemSequence? {
         if (layer.muted) return null
-        // A held frame (rate 0) is silent; other speeds play their sound with M2-speed. Clips
-        // turned all the way down (such as a video whose sound was extracted) add nothing.
+        // A held frame (rate 0) and a reversed clip are silent; other speeds and ramps play
+        // their sound at the clip's speed with its pitch kept (#22). Clips turned all the way
+        // down (such as a video whose sound was extracted) add nothing.
         val clips = layer.clips.filter {
-            it.soundSource() != null && it.rate > 0 && it.audio.volume > 0f
+            it.soundSource() != null && it.audio.volume > 0f && !it.speed.reverse &&
+                (it.speed.rate > 0 || it.speed.ramp != null)
         }.sortedBy { it.startUs }
         if (clips.isEmpty()) return null
         val sequence = EditedMediaItemSequence.Builder(setOf(C.TRACK_TYPE_AUDIO))
@@ -77,12 +83,13 @@ object CompositionFactory {
             // outgoing clip ends.
             val start = maxOf(clip.startUs, position)
             if (start >= clip.endUs) continue
+            val skipUs = clip.sourceOffsetAt(start)
             val item = MediaItem.Builder()
                 .setUri(MediaSources.uri(path))
                 .setClippingConfiguration(
                     MediaItem.ClippingConfiguration.Builder()
-                        .setStartPositionUs(inPointUs + (start - clip.startUs))
-                        .setEndPositionUs(inPointUs + clip.durationUs)
+                        .setStartPositionUs(inPointUs + skipUs)
+                        .setEndPositionUs(inPointUs + clip.sourceSpanUs)
                         .build(),
                 )
                 .build()
@@ -95,13 +102,14 @@ object CompositionFactory {
                 offsetUs = start - clip.startUs,
                 normalizeDb = clip.audio.normalizeDb,
             )
-            sequence.addItem(
-                EditedMediaItem.Builder(item)
-                    .setRemoveVideo(true)
-                    .setDurationUs(fileDurationUs(context, path))
-                    .setEffects(Effects(listOf(gain), emptyList()))
-                    .build(),
-            )
+            val edited = EditedMediaItem.Builder(item)
+                .setRemoveVideo(true)
+                .setDurationUs(fileDurationUs(context, path))
+                .setEffects(Effects(listOf(gain), emptyList()))
+            if (clip.speed.ramp != null || clip.speed.rate != 1.0) {
+                edited.setSpeed(SpeedParameters(ClipSpeed(clip, skipUs), true))
+            }
+            sequence.addItem(edited.build())
             position = clip.endUs
         }
         if (position < durationUs) sequence.addGap(durationUs - position)
@@ -144,4 +152,19 @@ object CompositionFactory {
         }
         return file
     }
+}
+
+/**
+ * A clip's speed (#22) for Media3, in the media time of its clipped item, which starts [skipUs]
+ * into the clip's media.
+ */
+@OptIn(UnstableApi::class)
+private class ClipSpeed(private val clip: RenderClip, private val skipUs: Long) : SpeedProvider {
+    override fun getSpeed(timeUs: Long): Float =
+        SpeedCurve.mediaSpeedAt(clip.speed, clip.sourceSpanUs, skipUs + timeUs).toFloat()
+
+    override fun getNextSpeedChangeTimeUs(timeUs: Long): Long =
+        SpeedCurve.nextSpeedChangeUs(clip.speed, clip.sourceSpanUs, skipUs + timeUs)
+            ?.let { it - skipUs }
+            ?: C.TIME_UNSET
 }

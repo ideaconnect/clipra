@@ -258,5 +258,5 @@ private fun toolRoute(tool: EditorTool, target: ToolTarget): Any = when (tool) {
     EditorTool.Cutout -> CutoutRoute
     EditorTool.Reframe -> ReframeRoute
     EditorTool.Masks -> MasksRoute(target.projectId, target.clipId, target.playheadUs)
-    EditorTool.Layer -> LayersRoute
+    EditorTool.Layer, EditorTool.Speed -> LayersRoute
 }

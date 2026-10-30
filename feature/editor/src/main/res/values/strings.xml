@@ -42,6 +42,8 @@
     <string name="editor_tool_duplicate">Duplicate</string>
     <string name="editor_tool_delete">Delete</string>
     <string name="editor_tool_freeze">Freeze</string>
+    <string name="editor_tool_speed">Speed</string>
+    <string name="editor_tool_reverse">Reverse</string>
     <string name="editor_tool_extract">Extract</string>
     <string name="editor_tool_replace">Replace</string>
     <string name="editor_message_locked">That layer is locked</string>
@@ -121,4 +123,21 @@
     <string name="editor_keyframe_delete_at">Delete keyframe at %1$s</string>
     <string name="editor_easing_ease">Ease in-out</string>
     <string name="editor_easing_linear">Linear</string>
+    <!-- Speed board (#22) -->
+    <string name="editor_speed_header">%1$s · speed</string>
+    <string name="editor_speed_constant">Constant</string>
+    <string name="editor_speed_ramp">Speed ramp</string>
+    <string name="editor_speed_ramp_montage">Montage</string>
+    <string name="editor_speed_ramp_hero">Hero</string>
+    <string name="editor_speed_ramp_bullet">Bullet</string>
+    <string name="editor_speed_ramp_flash_in">Flash in</string>
+    <string name="editor_speed_ramp_flash_out">Flash out</string>
+    <string name="editor_speed_ramp_custom">Custom</string>
+    <string name="editor_speed_custom_start">Start</string>
+    <string name="editor_speed_custom_middle">Middle</string>
+    <string name="editor_speed_custom_end">End</string>
+    <string name="editor_speed_value">%1$s×</string>
+    <string name="editor_speed_reverse">Reverse</string>
+    <string name="editor_speed_reverse_detail">Plays the clip backwards, without its sound.</string>
+    <string name="editor_speed_pitch">Pitch is kept when speed changes.</string>
 </resources>

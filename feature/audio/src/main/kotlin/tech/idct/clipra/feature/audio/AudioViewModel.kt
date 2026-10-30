@@ -263,7 +263,7 @@ class AudioViewModel @Inject constructor(
             withContext(Dispatchers.Default) {
                 val media = ProjectMediaResolver(context, cache, forExport = true, maxImageSide = 0)
                 val original = media.source(asset) ?: return@withContext null
-                val endUs = source.inPointUs + (clip.durationUs * clip.speed.rate).toLong()
+                val endUs = source.outPointUs
                 fun measure(path: String) = runCatching {
                     Loudness.measure(context, path, source.inPointUs, endUs)
                 }.getOrNull()

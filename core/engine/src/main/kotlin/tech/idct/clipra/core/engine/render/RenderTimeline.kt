@@ -10,8 +10,11 @@ import tech.idct.clipra.core.model.Keyframe
 import tech.idct.clipra.core.model.Keyframed
 import tech.idct.clipra.core.model.Keyframes
 import tech.idct.clipra.core.model.Mask
+import tech.idct.clipra.core.model.Speed
+import tech.idct.clipra.core.model.SpeedCurve
 import tech.idct.clipra.core.model.Transform
 import tech.idct.clipra.core.model.at
+import kotlin.math.roundToLong
 
 /**
  * What the layer compositor draws: the output format and the layers, L1 (bottom) first. Each
@@ -71,8 +74,13 @@ data class RenderClip(
     val blend: BlendMode = BlendMode.Normal,
     val opacity: Float = 1f,
     val fadeInUs: Long = 0,
-    /** Source time per timeline time: 1 plays normally, 0 holds the first frame (freeze). */
-    val rate: Double = 1.0,
+    /**
+     * How the clip's media plays (#22): its speed or ramp, forwards or reversed, over
+     * [sourceSpanUs] of media from the source's in point (by default what its length plays at a
+     * constant speed). Rate 0 holds the first frame (freeze).
+     */
+    val speed: Speed = Speed(),
+    val sourceSpanUs: Long = (durationUs * speed.rate).roundToLong(),
     /** Filters, in order (#25); effects the compositor doesn't draw yet are skipped. */
     val effects: List<Effect> = emptyList(),
     /** Limits one of the effects to a region of the picture (#27). */
@@ -108,6 +116,10 @@ data class RenderClip(
         mask?.let { Keyframed(it, maskKeyframes).at(timeUs - keyframeOriginUs, Keyframes::mask) }
 
     fun isActiveAt(timeUs: Long): Boolean = timeUs in startUs until endUs
+
+    /** The media offset from the source's in point that plays at [timeUs] (timeline time). */
+    fun sourceOffsetAt(timeUs: Long): Long =
+        SpeedCurve.sourceOffset(speed, sourceSpanUs, timeUs - startUs)
 
     /** Opacity at [timeUs], including the dissolve in, starting from [base]. */
     fun opacityAt(timeUs: Long, base: Float = opacity): Float {

@@ -42,6 +42,8 @@
     <string name="editor_tool_duplicate">Duplikuj</string>
     <string name="editor_tool_delete">Usuń</string>
     <string name="editor_tool_freeze">Stopklatka</string>
+    <string name="editor_tool_speed">Prędkość</string>
+    <string name="editor_tool_reverse">Odwróć</string>
     <string name="editor_tool_extract">Wyodrębnij</string>
     <string name="editor_tool_replace">Zamień</string>
     <string name="editor_message_locked">Ta warstwa jest zablokowana</string>
@@ -123,4 +125,21 @@
     <string name="editor_keyframe_delete_at">Usuń klatkę kluczową w %1$s</string>
     <string name="editor_easing_ease">Łagodnie</string>
     <string name="editor_easing_linear">Liniowo</string>
+    <!-- Speed board (#22) -->
+    <string name="editor_speed_header">%1$s · prędkość</string>
+    <string name="editor_speed_constant">Stała</string>
+    <string name="editor_speed_ramp">Rampa prędkości</string>
+    <string name="editor_speed_ramp_montage">Montaż</string>
+    <string name="editor_speed_ramp_hero">Bohater</string>
+    <string name="editor_speed_ramp_bullet">Pocisk</string>
+    <string name="editor_speed_ramp_flash_in">Szybkie wejście</string>
+    <string name="editor_speed_ramp_flash_out">Szybkie wyjście</string>
+    <string name="editor_speed_ramp_custom">Własna</string>
+    <string name="editor_speed_custom_start">Początek</string>
+    <string name="editor_speed_custom_middle">Środek</string>
+    <string name="editor_speed_custom_end">Koniec</string>
+    <string name="editor_speed_value">%1$s×</string>
+    <string name="editor_speed_reverse">Odwróć</string>
+    <string name="editor_speed_reverse_detail">Odtwarza klip od końca, bez dźwięku.</string>
+    <string name="editor_speed_pitch">Wysokość dźwięku nie zmienia się przy zmianie prędkości.</string>
 </resources>

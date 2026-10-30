@@ -68,6 +68,9 @@ enum class EditorTool {
     Reframe,
     Masks,
     Layer,
+
+    /** The Speed board (#22) for the selected clip. */
+    Speed,
 }
 
 /** Everything the editor screen can ask for. */
@@ -85,6 +88,8 @@ class EditorCallbacks(
     val onDuplicate: () -> Unit,
     val onDelete: () -> Unit,
     val onFreeze: () -> Unit,
+    /** Plays the selected clip backwards, or forwards again (#22). */
+    val onReverse: () -> Unit = {},
     val onExtract: () -> Unit,
     val onLayers: () -> Unit,
     val onCrop: () -> Unit,
@@ -354,14 +359,15 @@ private fun mainTools(callbacks: EditorCallbacks, onAdd: () -> Unit): List<Tool>
 }
 
 /**
- * With a clip selected. Speed, Stabilize, Linked and Reverse join when their issues land (M2,
- * M7), so every tool shown does something.
+ * With a clip selected. Stabilize and Linked join when their issues land (M7), so every tool
+ * shown does something.
  */
 @Composable
 private fun clipTools(callbacks: EditorCallbacks): List<Tool> {
     val open = callbacks.onTool
     return listOf(
         tool(R.string.editor_tool_split, ClipraIcons.Split, callbacks.onSplit),
+        tool(R.string.editor_tool_speed, ClipraIcons.Speed) { open(EditorTool.Speed) },
         tool(R.string.editor_tool_audio, ClipraIcons.Audio) { open(EditorTool.Audio) },
         tool(R.string.editor_tool_filters, ClipraIcons.Filters) { open(EditorTool.Filters) },
         tool(R.string.editor_tool_mask, ClipraIcons.Mask) { open(EditorTool.Masks) },
@@ -373,6 +379,7 @@ private fun clipTools(callbacks: EditorCallbacks): List<Tool> {
         tool(R.string.editor_tool_delete, ClipraIcons.Delete, callbacks.onDelete),
         tool(R.string.editor_tool_crop, ClipraIcons.Crop, callbacks.onCrop),
         tool(R.string.editor_tool_freeze, ClipraIcons.Freeze, callbacks.onFreeze),
+        tool(R.string.editor_tool_reverse, ClipraIcons.Reverse, callbacks.onReverse),
         tool(R.string.editor_tool_extract, ClipraIcons.Music, callbacks.onExtract),
         tool(R.string.editor_tool_replace, ClipraIcons.Replace, callbacks.onPickReplacement),
     )

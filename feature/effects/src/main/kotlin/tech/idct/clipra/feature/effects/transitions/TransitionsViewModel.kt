@@ -38,6 +38,7 @@ import tech.idct.clipra.core.model.Transitions
 import tech.idct.clipra.core.model.cutAfter
 import tech.idct.clipra.core.model.edit.ApplyTransitionToAll
 import tech.idct.clipra.core.model.edit.SetTransition
+import tech.idct.clipra.core.model.mediaTimeAt
 import tech.idct.clipra.core.model.transitionOn
 import tech.idct.clipra.feature.effects.common.THUMBNAIL_GRID
 import tech.idct.clipra.feature.effects.common.centreCrop
@@ -184,7 +185,7 @@ class TransitionsViewModel @Inject constructor(
     private fun still(project: Project, clip: Clip, offsetUs: Long, side: Int): Bitmap? {
         val source = clip.source ?: return null
         val asset = project.asset(source.mediaId) ?: return null
-        val timeUs = source.inPointUs + (offsetUs.coerceAtLeast(0) * clip.speed.rate).toLong()
+        val timeUs = clip.mediaTimeAt(offsetUs.coerceAtLeast(0)) ?: return null
         return Thumbnails.still(context, asset, mediaCache, timeUs, side)
     }
 

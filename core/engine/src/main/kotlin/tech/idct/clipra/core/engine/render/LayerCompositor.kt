@@ -558,7 +558,7 @@ private class LayerCompositorProgram(
         // In a transition the clip runs on past its end or starts early; outside the file the
         // nearest frame holds.
         val frameUs = 1_000_000L / timeline.frameRate
-        val sourceTimeUs = (source.inPointUs + ((timeUs - clip.startUs) * clip.rate).toLong())
+        val sourceTimeUs = (source.inPointUs + clip.sourceOffsetAt(timeUs))
             .coerceIn(0, maxOf(0, source.durationUs - frameUs))
         if (!video.frameAt(sourceTimeUs, frameToleranceUs)) return null
         return ClipFrame(video.textureId, video.textureMatrix, video.width, video.height, true)
