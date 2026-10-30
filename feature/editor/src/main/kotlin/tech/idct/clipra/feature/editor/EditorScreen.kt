@@ -71,6 +71,9 @@ enum class EditorTool {
 
     /** The Speed board (#22) for the selected clip. */
     Speed,
+
+    /** The effect stack (#29) of the selected clip. */
+    Effects,
 }
 
 /** Everything the editor screen can ask for. */
@@ -370,6 +373,7 @@ private fun clipTools(callbacks: EditorCallbacks): List<Tool> {
         tool(R.string.editor_tool_speed, ClipraIcons.Speed) { open(EditorTool.Speed) },
         tool(R.string.editor_tool_audio, ClipraIcons.Audio) { open(EditorTool.Audio) },
         tool(R.string.editor_tool_filters, ClipraIcons.Filters) { open(EditorTool.Filters) },
+        tool(R.string.editor_tool_effects, ClipraIcons.Effects) { open(EditorTool.Effects) },
         tool(R.string.editor_tool_mask, ClipraIcons.Mask) { open(EditorTool.Masks) },
         tool(R.string.editor_tool_layer, ClipraIcons.Layers) { open(EditorTool.Layer) },
         tool(R.string.editor_tool_text, ClipraIcons.Text) { open(EditorTool.Text) },

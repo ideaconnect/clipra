@@ -146,4 +146,21 @@
         <item quantity="one">Paste to %d clip</item>
         <item quantity="other">Paste to %d clips</item>
     </plurals>
+    <!-- Effect stack (#29) -->
+    <string name="effects_stack_title">Effect stack</string>
+    <plurals name="effects_stack_subtitle">
+        <item quantity="one">%1$s · %2$d effect</item>
+        <item quantity="other">%1$s · %2$d effects</item>
+    </plurals>
+    <string name="effects_stack_empty">No effects yet. Add one, and add more to stack them: each applies on top of the ones before.</string>
+    <string name="effects_stack_look">Look: %1$s</string>
+    <string name="effects_stack_masked">masked</string>
+    <string name="effects_stack_block">Block</string>
+    <string name="effects_stack_percent">%1$d%%</string>
+    <string name="effects_stack_up">Move up</string>
+    <string name="effects_stack_down">Move down</string>
+    <string name="effects_stack_remove">Remove</string>
+    <string name="effects_stack_add">+ Add effect</string>
+    <string name="effects_stack_copy">Copy</string>
+    <string name="effects_stack_paste">Paste</string>
 </resources>

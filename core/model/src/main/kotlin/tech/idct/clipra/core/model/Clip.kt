@@ -114,12 +114,16 @@ enum class BlendMode {
     Luminosity,
 }
 
-/** A filter or stylized effect by id ("vivid", "mosaic"), with its strength and parameters. */
+/**
+ * A filter or stylized effect by id ("vivid", "mosaic"), with its strength and parameters. A
+ * clip's effects apply in order (#29); a disabled one stays in the stack but draws nothing.
+ */
 @Serializable
 data class Effect(
     val type: String,
     val strength: Float = 0.8f,
     val params: Map<String, Float> = emptyMap(),
+    val enabled: Boolean = true,
 )
 
 /**

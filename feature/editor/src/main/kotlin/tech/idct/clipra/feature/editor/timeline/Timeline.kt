@@ -451,6 +451,23 @@ private fun ClipBlock(
             missing,
             modifier = Modifier.padding(start = (inset + 5).dp, top = 4.dp),
         )
+        // How many effects the clip stacks (#29), at the visible right edge.
+        if (clip.effects.isNotEmpty() && width >= FX_MIN_WIDTH) {
+            val visibleRight = 2 * geometry.playheadX + TimelineGeometry.GUTTER
+            val endInset = (x + width - visibleRight).coerceIn(0f, width - FX_MIN_WIDTH)
+            Text(
+                text = stringResource(R.string.editor_timeline_fx, clip.effects.size),
+                style = ClipraTheme.typography.clipLabel,
+                color = colors.onAccent,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(end = (endInset + 6).dp, top = 4.dp)
+                    .clip(RoundedCornerShape(5.dp))
+                    .background(colors.accent)
+                    .padding(horizontal = 5.dp, vertical = 1.dp)
+                    .testTag("fx:${clip.id}"),
+            )
+        }
         if (selected) {
             Text(
                 text = formatClipDuration(clip.durationUs + geometry.duration(trimEnd - trimStart)),
@@ -512,6 +529,9 @@ private fun ClipBlock(
 }
 
 private const val HANDLE_WIDTH = 12f
+
+/** Clips narrower than this, in dp, have no room for the FX badge. */
+private const val FX_MIN_WIDTH = 90f
 
 private const val MARKER_SIZE = 12f
 

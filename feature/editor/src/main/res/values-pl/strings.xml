@@ -43,6 +43,8 @@
     <string name="editor_tool_delete">Usuń</string>
     <string name="editor_tool_freeze">Stopklatka</string>
     <string name="editor_tool_speed">Prędkość</string>
+    <string name="editor_tool_effects">Efekty</string>
+    <string name="editor_timeline_fx">FX %1$d</string>
     <string name="editor_tool_reverse">Odwróć</string>
     <string name="editor_tool_extract">Wyodrębnij</string>
     <string name="editor_tool_replace">Zamień</string>

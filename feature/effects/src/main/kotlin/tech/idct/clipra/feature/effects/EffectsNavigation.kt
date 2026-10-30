@@ -9,6 +9,7 @@ import tech.idct.clipra.core.designsystem.placeholder.Board
 import tech.idct.clipra.feature.effects.color.ColorDestination
 import tech.idct.clipra.feature.effects.filters.FiltersDestination
 import tech.idct.clipra.feature.effects.masks.MasksDestination
+import tech.idct.clipra.feature.effects.stack.EffectStackDestination
 import tech.idct.clipra.feature.effects.transitions.TransitionsDestination
 
 /** Filters on [clipId] of [projectId]; no project opens the placeholder board (screen index). */
@@ -45,6 +46,10 @@ data class ColorRoute(
     val clipId: String? = null,
     val playheadUs: Long = 0,
 )
+
+/** The effect stack of [clipId] in [projectId] (#29). */
+@Serializable
+data class EffectStackRoute(val projectId: String, val clipId: String, val playheadUs: Long = 0)
 
 @Serializable
 data object CutoutRoute
@@ -111,6 +116,7 @@ fun NavGraphBuilder.effectsScreens(screen: @Composable (Board) -> Unit, actions:
             ColorDestination(onDone = actions.onDone)
         }
     }
+    composable<EffectStackRoute> { EffectStackDestination(onDone = actions.onDone) }
     composable<CutoutRoute> { screen(EffectsBoards.cutout) }
     composable<ReframeRoute> { screen(EffectsBoards.reframe) }
 }
