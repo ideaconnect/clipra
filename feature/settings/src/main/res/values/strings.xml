@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_title">Settings</string>
+    <string name="settings_pro">Clipra Pro</string>
+    <string name="settings_pro_detail">No ads when you export · one payment</string>
+    <string name="settings_pro_detail_price">No ads when you export · %1$s, one payment</string>
+    <string name="settings_pro_owned">You’re Pro</string>
+    <string name="settings_pro_owned_detail">No ads when you export. Thank you for supporting Clipra.</string>
+    <string name="settings_restoring">Checking Google Play…</string>
+    <string name="settings_export_defaults">Export defaults</string>
+    <string name="settings_codec">Codec</string>
+    <string name="settings_quality">Quality</string>
+    <string name="settings_quality_smaller">Smaller</string>
+    <string name="settings_quality_recommended">Recommended</string>
+    <string name="settings_quality_high">High</string>
+    <string name="settings_captions">Captions</string>
+    <string name="settings_captions_burn_in">Burn in</string>
+    <string name="settings_captions_srt">Separate .srt</string>
+    <string name="settings_captions_off">Off</string>
+    <string name="settings_export_note">A project’s first export starts with these. Resolution and frame rate follow the project’s format.</string>
+    <string name="settings_storage">Storage</string>
+    <string name="settings_cache">Proxies and caches</string>
+    <string name="settings_clear">Clear</string>
+    <string name="settings_cache_note">Clearing never touches your projects or exported videos. Clipra makes previews again when it needs them.</string>
+    <string name="settings_cache_exporting">An export is running and reads these files. Clear them when it has finished.</string>
+    <string name="settings_clear_title">Clear proxies and caches?</string>
+    <string name="settings_clear_body">Your projects and exported videos stay. Previews, waveforms and cleaned voices are made again when a project needs them.</string>
+    <string name="settings_cancel">Cancel</string>
+    <string name="settings_models">AI models</string>
+    <string name="settings_privacy">Privacy</string>
+    <string name="settings_on_device">On this phone</string>
+    <string name="settings_on_device_detail">Your media, transcripts and edits never leave this phone.</string>
+    <string name="settings_about">About</string>
+    <string name="settings_licenses">Open-source licenses</string>
+    <string name="settings_version">Version</string>
+</resources>

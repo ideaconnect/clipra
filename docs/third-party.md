@@ -29,6 +29,8 @@ The fonts are the variable TTFs from the google/fonts repository, bundled in `co
 | `geist_mono.ttf` | `ofl/geistmono/GeistMono[wght].ttf` at 9e25e2b | `d00e590b8eb3a59acc329b2d044fd143ae935090b7da33199ebee27cc7de8196` |
 | `bricolage_grotesque.ttf` | `ofl/bricolagegrotesque/BricolageGrotesque[opsz,wdth,wght].ttf` at 6ce172f | `413e7357809ddd12fd80a96a8a396de0e401638d4acd3cb3e37532f0472ac682` |
 
+Settings > Open-source licenses lists these components and shows their license texts, kept in `feature/settings/src/main/assets/licenses` (Apache-2.0 from apache.org; the MIT and BSD texts from whisper.cpp v1.9.5, ONNX Runtime v1.31.0, DeepFilterNet at the pinned model commit and the vendored RNNoise) and, for the fonts, `core/designsystem/src/main/assets/licenses`.
+
 The icons are drawn from the design's own SVGs (`design/static/`), so they carry no third-party license.
 
 Models come from their official sources only, pinned to a revision and checked with SHA-256; the sources are listed in `docs/architecture.md`, section 6.

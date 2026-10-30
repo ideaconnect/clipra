@@ -51,6 +51,7 @@ dependencies {
     implementation(project(":feature:audio"))
     implementation(project(":feature:export"))
     implementation(project(":feature:models"))
+    implementation(project(":feature:settings"))
     implementation(project(":monetization"))
 
     implementation(libs.androidx.activity.compose)

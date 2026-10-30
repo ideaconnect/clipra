@@ -10,11 +10,9 @@ import tech.idct.clipra.feature.effects.EffectsBoards
 import tech.idct.clipra.feature.export.ExportBoards
 import tech.idct.clipra.feature.home.HomeBoards
 import tech.idct.clipra.feature.models.ModelsBoards
+import tech.idct.clipra.feature.settings.SettingsRoute
 import tech.idct.clipra.feature.text.TextBoards
 import tech.idct.clipra.monetization.MonetizationBoards
-
-@Serializable
-data object SettingsRoute
 
 @Serializable
 data object BoardIndexRoute
@@ -24,7 +22,7 @@ data object DesignSystemRoute
 
 /** Destinations of the app module itself. */
 internal object AppBoards {
-    /** Settings has no board in the design yet (M11-settings). */
+    /** Settings has no board in the design; it is built from the design system (#74). */
     val settings = Board(
         id = "Settings",
         title = R.string.app_title_settings,

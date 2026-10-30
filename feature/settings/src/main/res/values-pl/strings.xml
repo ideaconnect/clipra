@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_title">Ustawienia</string>
+    <string name="settings_pro">Clipra Pro</string>
+    <string name="settings_pro_detail">Bez reklam przy eksporcie · jedna płatność</string>
+    <string name="settings_pro_detail_price">Bez reklam przy eksporcie · %1$s, jedna płatność</string>
+    <string name="settings_pro_owned">Masz Pro</string>
+    <string name="settings_pro_owned_detail">Bez reklam przy eksporcie. Dziękujemy za wsparcie Clipry.</string>
+    <string name="settings_restoring">Sprawdzanie w Google Play…</string>
+    <string name="settings_export_defaults">Domyślne ustawienia eksportu</string>
+    <string name="settings_codec">Kodek</string>
+    <string name="settings_quality">Jakość</string>
+    <string name="settings_quality_smaller">Mniejszy</string>
+    <string name="settings_quality_recommended">Zalecana</string>
+    <string name="settings_quality_high">Wysoka</string>
+    <string name="settings_captions">Napisy</string>
+    <string name="settings_captions_burn_in">Wtopione</string>
+    <string name="settings_captions_srt">Osobny .srt</string>
+    <string name="settings_captions_off">Wyłączone</string>
+    <string name="settings_export_note">Od tych ustawień zaczyna się pierwszy eksport projektu. Rozdzielczość i liczba klatek wynikają z formatu projektu.</string>
+    <string name="settings_storage">Pamięć</string>
+    <string name="settings_cache">Proxy i pamięć podręczna</string>
+    <string name="settings_clear">Wyczyść</string>
+    <string name="settings_cache_note">Czyszczenie nigdy nie usuwa projektów ani wyeksportowanych filmów. Clipra odtworzy podglądy, gdy będą potrzebne.</string>
+    <string name="settings_cache_exporting">Trwa eksport, który korzysta z tych plików. Wyczyść je po jego zakończeniu.</string>
+    <string name="settings_clear_title">Wyczyścić proxy i pamięć podręczną?</string>
+    <string name="settings_clear_body">Projekty i wyeksportowane filmy zostają. Podglądy, przebiegi dźwięku i oczyszczone głosy powstaną ponownie, gdy projekt będzie ich potrzebował.</string>
+    <string name="settings_cancel">Anuluj</string>
+    <string name="settings_models">Modele AI</string>
+    <string name="settings_privacy">Prywatność</string>
+    <string name="settings_on_device">Na tym telefonie</string>
+    <string name="settings_on_device_detail">Twoje nagrania, transkrypcje i zmiany nigdy nie opuszczają tego telefonu.</string>
+    <string name="settings_about">O aplikacji</string>
+    <string name="settings_licenses">Licencje open source</string>
+    <string name="settings_version">Wersja</string>
+</resources>

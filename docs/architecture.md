@@ -40,6 +40,7 @@ feature:captions         Caption setup, editing, edit by text
 feature:audio            Audio screen
 feature:export           Export settings, progress, saved screen
 feature:models           AI models screen, onboarding downloads
+feature:settings         Settings: Clipra Pro and Restore, export defaults, storage, privacy, licenses
 monetization             Ads (GMA Next-Gen + UMP), billing (Play Billing), entitlement
 ```
 
