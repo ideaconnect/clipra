@@ -18,7 +18,7 @@ Keep this list in sync with the build. Every entry needs a license that is compa
 | ML Kit Translation | Offline translation | Google APIs Terms of Service |
 | Google Mobile Ads Next-Gen SDK | Interstitial ads | Google terms |
 | Google User Messaging Platform SDK | Ad consent | Google terms |
-| Play Billing Library | Clipra Pro purchase | Android Software Development Kit License |
+| Play Billing Library (`com.android.billingclient:billing-ktx` 9.1.0) | Clipra Pro purchase (`monetization`) | Android Software Development Kit License |
 | Bricolage Grotesque, Geist, Geist Mono | Fonts | SIL Open Font License 1.1 |
 
 The fonts are the variable TTFs from the google/fonts repository, bundled in `core/fonts/src/main/res/font` (shared by the interface and the text renderer) with their licenses in `core/designsystem/src/main/assets/licenses`:

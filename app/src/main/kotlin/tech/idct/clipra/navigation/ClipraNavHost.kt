@@ -40,6 +40,7 @@ import tech.idct.clipra.feature.export.ExportProgressRoute
 import tech.idct.clipra.feature.export.ExportRoute
 import tech.idct.clipra.feature.export.exportScreens
 import tech.idct.clipra.feature.home.HomeActions
+import tech.idct.clipra.feature.home.MainRoute
 import tech.idct.clipra.feature.home.NewProjectActions
 import tech.idct.clipra.feature.home.NewProjectRoute
 import tech.idct.clipra.feature.home.homeScreens
@@ -52,6 +53,7 @@ import tech.idct.clipra.feature.text.TextNavigationActions
 import tech.idct.clipra.feature.text.TextRoute
 import tech.idct.clipra.feature.text.textScreens
 import tech.idct.clipra.monetization.MonetizationBoards
+import tech.idct.clipra.monetization.MonetizationNavigationActions
 import tech.idct.clipra.monetization.ProRoute
 import tech.idct.clipra.monetization.monetizationScreens
 
@@ -165,7 +167,19 @@ fun ClipraNavHost(
             ),
         )
         modelsScreens(screen, ModelsNavigationActions(onBack = { navController.popBackStack() }))
-        monetizationScreens(screen)
+        monetizationScreens(
+            screen,
+            MonetizationNavigationActions(
+                onClose = { navController.popBackStack() },
+                onBackToProjects = {
+                    if (!navController.popBackStack<MainRoute>(inclusive = false)) {
+                        navController.navigate(MainRoute) {
+                            popUpTo<ProRoute> { inclusive = true }
+                        }
+                    }
+                },
+            ),
+        )
         composable<SettingsRoute> { screen(AppBoards.settings) }
         composable<BoardIndexRoute> {
             BoardIndex(
