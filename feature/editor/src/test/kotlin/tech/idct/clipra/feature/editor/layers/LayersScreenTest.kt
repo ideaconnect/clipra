@@ -112,8 +112,8 @@ class LayersScreenTest {
     private val committed = mutableListOf<Transform>()
     private val blends = mutableListOf<BlendMode>()
 
-    private fun show(tab: LayerTab, cropping: Boolean = false) {
-        Locale.setDefault(Locale.US)
+    private fun show(tab: LayerTab, cropping: Boolean = false, locale: Locale = Locale.US) {
+        Locale.setDefault(locale)
         compose.setContent {
             ClipraTheme {
                 LayersScreen(
@@ -169,6 +169,14 @@ class LayersScreenTest {
         assertTrue(committed.last().flipHorizontal)
         compose.onNodeWithTag("transform-fill").performClick()
         assertEquals(Transform(fit = Fit.Fill), committed.last())
+    }
+
+    /** The design state in Polish, to see that every label fits (#76). */
+    @Test
+    @Config(qualifiers = "pl-w390dp-h844dp-xhdpi")
+    fun transformTabInPolish() {
+        show(LayerTab.Transform, locale = Locale.forLanguageTag("pl-PL"))
+        compose.onRoot().captureRoboImage(roborazziOptions = options)
     }
 
     @Test

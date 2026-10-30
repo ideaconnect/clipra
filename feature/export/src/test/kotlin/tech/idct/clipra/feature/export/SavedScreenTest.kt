@@ -64,6 +64,32 @@ class SavedScreenTest {
         )
     }
 
+    /** The design state in Polish, to see that every label fits (#76). */
+    @Test
+    @Config(qualifiers = "pl-w390dp-h844dp-xhdpi")
+    fun savedInPolish() {
+        Locale.setDefault(Locale.forLanguageTag("pl-PL"))
+        compose.setContent {
+            ClipraTheme {
+                SavedScreen(
+                    saved,
+                    showPro = true,
+                    proPrice = "10,00 zł",
+                    onShare = {},
+                    onOpenGallery = {},
+                    onPro = {},
+                    onBackToEditing = {},
+                    preview = {},
+                )
+            }
+        }
+        compose.onRoot().captureRoboImage(
+            roborazziOptions = RoborazziOptions(
+                compareOptions = RoborazziOptions.CompareOptions(changeThreshold = 0.001f),
+            ),
+        )
+    }
+
     @Test
     fun shareOpensTheSystemShareSheetWithTheVideo() {
         val app = ApplicationProvider.getApplicationContext<Application>()

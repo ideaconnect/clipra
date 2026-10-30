@@ -9,7 +9,7 @@
     <string name="export_codec_h264">Działa wszędzie</string>
     <string name="export_codec_hevc">Mniejsze pliki</string>
     <string name="export_codec_av1">Najmniejsze pliki</string>
-    <string name="export_codec_unavailable">Brak w tym telefonie</string>
+    <string name="export_codec_unavailable">Niedostępny</string>
     <string name="export_quality">Jakość</string>
     <string name="export_quality_smaller">Mniejszy</string>
     <string name="export_quality_recommended">Zalecana</string>
@@ -19,7 +19,7 @@
     <string name="export_captions_srt">Osobny .srt</string>
     <string name="export_captions_off">Wyłączone</string>
     <string name="export_project_line">%1$s · %2$s · %3$s</string>
-    <string name="export_estimate">Szacowany rozmiar</string>
+    <string name="export_estimate">Rozmiar</string>
     <string name="export_megabytes">%1$s MB</string>
     <string name="export_rate">%1$s Mb/s · %2$s</string>
     <string name="export_to_gallery">Eksportuj do Galerii</string>
@@ -54,7 +54,7 @@
     <string name="export_notification_done">Zapisano w Galerii</string>
     <string name="export_notification_failed">Eksport się nie zakończył</string>
     <string name="export_share">Udostępnij</string>
-    <string name="export_open_gallery">Otwórz Galerię</string>
+    <string name="export_open_gallery">Galeria</string>
     <string name="export_pro_title">Następnym razem eksportuj bez reklam</string>
     <string name="export_pro_subtitle">Clipra Pro · jedna płatność</string>
     <string name="export_play">Odtwórz</string>

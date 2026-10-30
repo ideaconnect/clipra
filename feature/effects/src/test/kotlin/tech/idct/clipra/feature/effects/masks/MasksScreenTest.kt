@@ -67,8 +67,8 @@ class MasksScreenTest {
     private val shapes = mutableListOf<MaskShape>()
     private val masks = mutableListOf<Mask>()
 
-    private fun show(mask: Mask) {
-        Locale.setDefault(Locale.US)
+    private fun show(mask: Mask, locale: Locale = Locale.US) {
+        Locale.setDefault(locale)
         val project = project(mask)
         compose.setContent {
             ClipraTheme {
@@ -108,6 +108,14 @@ class MasksScreenTest {
         assertEquals(listOf(MaskShape.Rectangle), shapes)
         compose.onNodeWithTag("mask-invert").performClick()
         assertTrue(masks.last().invert)
+    }
+
+    /** The design state in Polish, to see that every label fits (#76). */
+    @Test
+    @Config(qualifiers = "pl-w390dp-h844dp-xhdpi")
+    fun ovalOverTheFaceInPolish() {
+        show(oval, locale = Locale.forLanguageTag("pl-PL"))
+        compose.onRoot().captureRoboImage(roborazziOptions = options)
     }
 
     @Test

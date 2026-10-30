@@ -264,7 +264,7 @@ private fun name(project: Project, clip: Clip): String =
         ?: clip.text?.text.orEmpty()
 
 /** "0.6": tenths of a second. */
-private fun seconds(us: Long): String = String.format(Locale.ROOT, "%.1f", us / 1_000_000.0)
+private fun seconds(us: Long): String = String.format(Locale.getDefault(), "%.1f", us / 1_000_000.0)
 
 /** A transition's name; null is None. */
 @Composable

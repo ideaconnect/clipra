@@ -3,7 +3,7 @@
     <string name="editor_title_editor">Edytor</string>
     <string name="editor_title_layers">Warstwy</string>
     <string name="editor_export">Eksportuj</string>
-    <string name="editor_format_line">%1$s · %2$s · %3$d kl./s · podgląd</string>
+    <string name="editor_format_line">%1$s · %2$s · %3$d fps · proxy</string>
     <string name="editor_play">Odtwórz</string>
     <string name="editor_pause">Wstrzymaj</string>
     <string name="editor_undo">Cofnij</string>
@@ -71,7 +71,7 @@
     <!-- Layers board (#19, #20) -->
     <string name="editor_layers_header">%1$s · warstwa L%2$d</string>
     <string name="editor_layers_subtitle">%1$s · %2$s - %3$s</string>
-    <string name="editor_layers_video_audio">Wideo + dźwięk</string>
+    <string name="editor_layers_video_audio">Wideo+dźwięk</string>
     <string name="editor_layers_done">Gotowe</string>
     <string name="editor_layers_tab_blend">Mieszanie</string>
     <string name="editor_layers_tab_transform">Transformacja</string>

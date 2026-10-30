@@ -410,4 +410,4 @@ private fun length(us: Long, clock: Boolean = false): String {
     return String.format(Locale.ROOT, pattern, minutes, seconds, tenths)
 }
 
-private fun seconds(us: Long) = String.format(Locale.ROOT, "%.1f", us / 1e6)
+private fun seconds(us: Long) = String.format(Locale.getDefault(), "%.1f", us / 1e6)

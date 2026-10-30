@@ -88,6 +88,15 @@ class ModelsScreenTest {
         assertEquals(listOf(ModelCatalog.deepFilterNet), removed)
     }
 
+    /** The design state in Polish, to see that every label fits (#76). */
+    @Test
+    @Config(qualifiers = "pl-w390dp-h844dp-xhdpi")
+    fun modelsWithTheirRealSizesInPolish() {
+        Locale.setDefault(Locale.forLanguageTag("pl-PL"))
+        compose.setContent { ClipraTheme { ModelsScreen(designState, actions) } }
+        compose.onRoot().captureRoboImage(roborazziOptions = options)
+    }
+
     @Test
     fun downloadsShowProgressWaitingAndFailures() {
         Locale.setDefault(Locale.US)

@@ -43,8 +43,11 @@ class OnboardingScreenTest {
     private var skipped = 0
 
     /** The screen with its choices kept here, as the view model keeps them. */
-    private fun show(initial: OnboardingUiState = OnboardingUiState()) {
-        Locale.setDefault(Locale.US)
+    private fun show(
+        initial: OnboardingUiState = OnboardingUiState(),
+        locale: Locale = Locale.US,
+    ) {
+        Locale.setDefault(locale)
         compose.setContent {
             var state by remember { mutableStateOf(initial) }
             ClipraTheme {
@@ -83,6 +86,14 @@ class OnboardingScreenTest {
         compose.onNodeWithTag("onboarding-skip").performClick()
         assertEquals(1, started)
         assertEquals(1, skipped)
+    }
+
+    /** The design state in Polish, to see that every label fits (#76). */
+    @Test
+    @Config(qualifiers = "pl-w390dp-h844dp-xhdpi")
+    fun onboardingAsDesignedInPolish() {
+        show(locale = Locale.forLanguageTag("pl-PL"))
+        compose.onRoot().captureRoboImage(roborazziOptions = options)
     }
 
     @Test

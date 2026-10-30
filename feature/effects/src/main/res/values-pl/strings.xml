@@ -73,7 +73,7 @@
     <string name="effects_transition_push">Wypchnięcie</string>
     <string name="effects_transition_zoom_in">Przybliżenie</string>
     <string name="effects_transition_zoom_out">Oddalenie</string>
-    <string name="effects_transition_whip_pan">Szybka panorama</string>
+    <string name="effects_transition_whip_pan">Panorama</string>
     <string name="effects_transition_spin">Obrót</string>
     <string name="effects_transition_shake">Wstrząs</string>
     <string name="effects_transition_cube">Sześcian</string>

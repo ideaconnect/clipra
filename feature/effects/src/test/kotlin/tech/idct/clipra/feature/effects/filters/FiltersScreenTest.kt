@@ -75,8 +75,8 @@ class FiltersScreenTest {
     private val picked = mutableListOf<String?>()
     private var category = FilterCategory.All
 
-    private fun show(category: FilterCategory = FilterCategory.All) {
-        Locale.setDefault(Locale.US)
+    private fun show(category: FilterCategory = FilterCategory.All, locale: Locale = Locale.US) {
+        Locale.setDefault(locale)
         compose.setContent {
             ClipraTheme {
                 FiltersScreen(
@@ -120,6 +120,14 @@ class FiltersScreenTest {
         assertEquals(listOf("noir", null), picked)
         compose.onNodeWithTag("category:Looks").performClick()
         assertEquals(FilterCategory.Looks, category)
+    }
+
+    /** The design state in Polish, to see that every label fits (#76). */
+    @Test
+    @Config(qualifiers = "pl-w390dp-h844dp-xhdpi")
+    fun allFiltersInPolish() {
+        show(locale = Locale.forLanguageTag("pl-PL"))
+        compose.onRoot().captureRoboImage(roborazziOptions = options)
     }
 
     @Test

@@ -56,8 +56,8 @@ class SettingsScreenTest {
         version = "0.1.0 (1)",
     )
 
-    private fun show(state: SettingsUiState) {
-        Locale.setDefault(Locale.US)
+    private fun show(state: SettingsUiState, locale: Locale = Locale.US) {
+        Locale.setDefault(locale)
         compose.setContent { ClipraTheme { SettingsScreen(state, actions) } }
     }
 
@@ -79,6 +79,14 @@ class SettingsScreenTest {
         compose.onNodeWithTag("settings-licenses").performScrollTo().performClick()
         assertEquals(listOf("pro", "restore", "models", "privacy", "licenses"), calls)
         assertEquals(listOf(ExportSettings(codec = VideoCodec.HEVC)), defaults)
+    }
+
+    /** The design state in Polish, to see that every label fits (#76). */
+    @Test
+    @Config(qualifiers = "pl-w390dp-h844dp-xhdpi")
+    fun settingsForAFreeUserInPolish() {
+        show(free, locale = Locale.forLanguageTag("pl-PL"))
+        compose.onRoot().captureRoboImage(roborazziOptions = options)
     }
 
     @Test

@@ -10,13 +10,13 @@
     <string name="captions_voiceover">Lektor</string>
     <string name="captions_all_tracks">Wszystkie ścieżki</string>
     <string name="captions_language">Język mowy</string>
-    <string name="captions_auto_detect">Wykryj automatycznie</string>
+    <string name="captions_auto_detect">Automatycznie</string>
     <string name="captions_translate">Tłumacz\nna angielski</string>
     <string name="captions_model">Model Whisper</string>
-    <string name="captions_model_tiny">Najszybszy, słabszy przy akcentach i szumie</string>
-    <string name="captions_model_base">Dobry kompromis dla większości telefonów</string>
+    <string name="captions_model_tiny">Najszybszy, słabszy przy szumie</string>
+    <string name="captions_model_base">Dobry kompromis</string>
     <string name="captions_model_small">Dokładniejszy, kilka razy wolniejszy</string>
-    <string name="captions_model_turbo">Skwantyzowany. Najdokładniejszy, flagowe telefony</string>
+    <string name="captions_model_turbo">Najdokładniejszy, flagowe telefony</string>
     <string name="captions_recommended">Polecany</string>
     <string name="captions_get">Pobierz</string>
     <string name="captions_installed">Zainstalowany</string>
@@ -59,7 +59,7 @@
     <string name="captions_play_edited">Odtwórz wersję po cięciach</string>
     <string name="captions_cut_fillers">Wytnij wtrącenia</string>
     <string name="captions_cut_pauses">Wytnij pauzy</string>
-    <string name="captions_fillers_found">Znaleziono: %1$d</string>
+    <string name="captions_fillers_found">Wykryto %1$d</string>
     <string name="captions_long_pauses">Dłuższe niż %2$s s: %1$d</string>
     <string name="captions_pauses_longer">Pauzy dłuższe niż</string>
     <string name="captions_seconds">%1$s s</string>

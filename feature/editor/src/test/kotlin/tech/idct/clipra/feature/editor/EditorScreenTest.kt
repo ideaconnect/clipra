@@ -154,6 +154,30 @@ class EditorScreenTest {
         compose.onRoot().captureRoboImage(roborazziOptions = options)
     }
 
+    /** The design state in Polish, to see that every label fits (#76). */
+    @Test
+    @Config(qualifiers = "pl-w390dp-h844dp-xhdpi")
+    fun editorWithASelectedClipInPolish() {
+        Locale.setDefault(Locale.forLanguageTag("pl-PL"))
+        compose.setContent {
+            ClipraTheme {
+                EditorScreen(
+                    state = EditorUiState(
+                        project = project,
+                        loaded = true,
+                        canUndo = true,
+                        selectedClipId = "sunset",
+                        playheadUs = 7_120_000,
+                    ),
+                    playing = false,
+                    callbacks = noop,
+                    preview = {},
+                )
+            }
+        }
+        compose.onRoot().captureRoboImage(roborazziOptions = options)
+    }
+
     @Test
     fun selectingAClipSwapsTheTools() {
         var selected by mutableStateOf<String?>(null)

@@ -541,7 +541,7 @@ internal fun levelsAfter(measured: Loudness.Measurement?, audio: AudioSettings):
     return Levels(measured.lufs + gain, limited)
 }
 
-private fun decibels(value: Float) = String.format(Locale.ROOT, "%.1f", value)
+private fun decibels(value: Float) = String.format(Locale.getDefault(), "%.1f", value)
 
 private val TARGETS = listOf(
     LoudnessTargets.SOCIAL to R.string.audio_target_social,
@@ -606,6 +606,6 @@ private fun FadeField(
     }
 }
 
-private fun seconds(us: Long) = String.format(Locale.ROOT, "%.1f", us / 1_000_000.0)
+private fun seconds(us: Long) = String.format(Locale.getDefault(), "%.1f", us / 1_000_000.0)
 
 private val FADES = listOf(0L, 250_000L, 500_000L, 1_000_000L, 1_500_000L, 2_000_000L, 3_000_000L)
