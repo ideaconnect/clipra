@@ -50,6 +50,8 @@ import tech.idct.clipra.feature.editor.layers.isVisual
 import tech.idct.clipra.feature.editor.layers.sourceSize
 import tech.idct.clipra.feature.editor.speed.SpeedActions
 import tech.idct.clipra.feature.editor.speed.SpeedScreen
+import tech.idct.clipra.feature.editor.stabilize.StabilizeActions
+import tech.idct.clipra.feature.editor.stabilize.StabilizeScreen
 import tech.idct.clipra.feature.editor.timeline.Filmstrip
 import tech.idct.clipra.feature.editor.timeline.FilmstripLoader
 import tech.idct.clipra.feature.editor.timeline.TimelineActions
@@ -107,6 +109,7 @@ private fun EditorRoute(actions: EditorActions, viewModel: EditorViewModel = hil
     // The Layers board (#19, #20) over the editor, on the selected clip; null when closed.
     var board by remember { mutableStateOf<LayerTab?>(null) }
     var speedBoard by remember { mutableStateOf(false) }
+    var stabilizeBoard by remember { mutableStateOf(false) }
     var animateBoard by remember { mutableStateOf(false) }
     var cropping by remember { mutableStateOf(false) }
     // Values a gesture is changing, shown before they are committed as one edit.
@@ -227,6 +230,26 @@ private fun EditorRoute(actions: EditorActions, viewModel: EditorViewModel = hil
         return
     }
     if (speedBoard) speedBoard = false
+    if (stabilizeBoard && selected != null) {
+        BackHandler { stabilizeBoard = false }
+        val analysis by remember(selected.id, selected.stabilize != null, selected.source) {
+            viewModel.stabilizeAnalysis(selected)
+        }.collectAsStateWithLifecycle(null)
+        StabilizeScreen(
+            project = project,
+            clip = selected,
+            analysis = analysis,
+            actions = StabilizeActions(
+                onDone = { stabilizeBoard = false },
+                onStabilize = { viewModel.setStabilize(selected.id, it) },
+                onCancel = { viewModel.cancelStabilize(selected.id) },
+                onRetry = { viewModel.retryStabilize(selected.id) },
+            ),
+            preview = { PreviewSurface(player = player) },
+        )
+        return
+    }
+    if (stabilizeBoard) stabilizeBoard = false
     if (animateBoard && selected != null) {
         BackHandler { animateBoard = false }
         AnimateScreen(
@@ -366,6 +389,14 @@ private fun EditorRoute(actions: EditorActions, viewModel: EditorViewModel = hil
                     EditorTool.Speed -> if (selected?.hasSpeed() == true) {
                         playing = false
                         speedBoard = true
+                    } else {
+                        viewModel.say(EditorMessage.NotAvailable)
+                    }
+
+                    EditorTool.Stabilize -> if (selected?.type == ClipType.Video) {
+                        playing = false
+                        if (!selected.contains(state.playheadUs)) viewModel.seek(selected.startUs)
+                        stabilizeBoard = true
                     } else {
                         viewModel.say(EditorMessage.NotAvailable)
                     }

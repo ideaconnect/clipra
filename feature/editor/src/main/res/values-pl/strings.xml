@@ -43,6 +43,7 @@
     <string name="editor_tool_delete">Usuń</string>
     <string name="editor_tool_freeze">Stopklatka</string>
     <string name="editor_tool_speed">Prędkość</string>
+    <string name="editor_tool_stabilize">Stabilizacja</string>
     <string name="editor_tool_effects">Efekty</string>
     <string name="editor_timeline_fx">FX %1$d</string>
     <string name="editor_tool_reverse">Odwróć</string>
@@ -144,6 +145,19 @@
     <string name="editor_speed_reverse">Odwróć</string>
     <string name="editor_speed_reverse_detail">Odtwarza klip od końca, bez dźwięku.</string>
     <string name="editor_speed_pitch">Wysokość dźwięku nie zmienia się przy zmianie prędkości.</string>
+
+    <!-- Stabilize sheet (#54) -->
+    <string name="editor_stabilize_header">%1$s · stabilizacja</string>
+    <string name="editor_stabilize_switch">Stabilizacja</string>
+    <string name="editor_stabilize_switch_detail">Wygładza drgania z ręki, na tym urządzeniu.</string>
+    <string name="editor_stabilize_strength">Siła</string>
+    <string name="editor_stabilize_crop">Przycięcie</string>
+    <string name="editor_stabilize_crop_value">%1$d%%</string>
+    <string name="editor_stabilize_analysing">Analiza ruchu kamery · %1$d%%</string>
+    <string name="editor_stabilize_failed">Nie udało się przeanalizować tego klipu.</string>
+    <string name="editor_stabilize_retry">Spróbuj ponownie</string>
+    <string name="editor_stabilize_cancel">Anuluj</string>
+    <string name="editor_stabilize_detail">Większa siła to płynniejszy obraz i większe przycięcie: klip jest powiększany tylko tyle, by nie było widać krawędzi. Do końca analizy klip odtwarza się tak, jak został nagrany.</string>
     <!-- Animate board (#33) -->
     <string name="editor_tool_animate">Animuj</string>
     <string name="editor_animate_header">%1$s · animacja</string>

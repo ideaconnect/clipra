@@ -702,6 +702,8 @@ internal object Shaders {
         uniform float uSimilarity;
         uniform float uSmoothness;
         uniform float uSpill;
+        // Stabilization (#54): where the mask, made on the frame as shot, reads from.
+        uniform mat4 uMaskMatrix;
         varying vec2 vTex;
 
         const vec3 LUMA = vec3(0.2126, 0.7152, 0.0722);
@@ -720,7 +722,8 @@ internal object Shaders {
                 rgb = mix(rgb, vec3(y), uSpill * tint);
             } else {
                 // The mask's first row is the top of the picture.
-                float m = texture2D(uMask, vec2(vTex.x, 1.0 - vTex.y)).r;
+                vec2 shot = (uMaskMatrix * vec4(vTex, 0.0, 1.0)).xy;
+                float m = texture2D(uMask, vec2(shot.x, 1.0 - shot.y)).r;
                 float centre = 0.5 + 0.15 * uRefine;
                 float width = 0.3 - 0.22 * uRefine;
                 float firm = smoothstep(centre - width, centre + width, m);

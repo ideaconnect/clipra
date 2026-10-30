@@ -11,6 +11,7 @@ import tech.idct.clipra.core.model.FaceSample
 import tech.idct.clipra.core.model.FaceTracking
 import tech.idct.clipra.core.model.MediaAsset
 import tech.idct.clipra.core.model.MediaKind
+import tech.idct.clipra.core.model.Stabilizing
 import tech.idct.clipra.core.model.mediaTimeAt
 import tech.idct.clipra.ml.vision.Face
 import tech.idct.clipra.ml.vision.FaceDetector
@@ -21,7 +22,8 @@ import kotlin.math.hypot
 /**
  * Follow face (#52) on the device: the face detector looks at a clip ten times a second (in its
  * media, from the proxy when there is one) and follows the face nearest the one before.
- * `FaceTracking` then fills the gaps and smooths the path. Nothing leaves the device.
+ * `FaceTracking` then fills the gaps and smooths the path. On a steadied clip (#54) the faces are
+ * moved where the steadied picture shows them. Nothing leaves the device.
  */
 @Singleton
 class FaceTracks @Inject constructor(
@@ -91,10 +93,18 @@ class FaceTracks @Inject constructor(
             onProgress(1f)
             // Follow the face in clip order.
             var last: FaceBox? = null
+            val motion = Stabilizer.cached(cache.stabilize(asset.id))
+            val steadied = motion?.over(clip)
             times.mapIndexed { i, timeUs ->
                 val box = pick(faces[wanted[i]].orEmpty(), last)
                 if (box != null) last = box
-                FaceSample(timeUs, box)
+                val shown = if (box != null && steadied != null) {
+                    val mediaUs = clip.mediaTimeAt(timeUs) ?: 0
+                    Stabilizing.steady(box, steadied.at(mediaUs), steadied.zoom, motion.aspect)
+                } else {
+                    box
+                }
+                FaceSample(timeUs, shown)
             }
         } finally {
             retriever.release()

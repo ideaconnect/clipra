@@ -37,6 +37,9 @@ class ProjectMediaResolver(
     override fun cutout(asset: MediaAsset): CutoutMasks? =
         CutoutMasks.cached(cache.cutout(asset.id))
 
+    override fun cameraMotion(asset: MediaAsset): CameraMotion? =
+        Stabilizer.cached(cache.stabilize(asset.id))
+
     override fun text(spec: TextSpec, card: Boolean, width: Int, height: Int): Bitmap =
         TextRenderer.render(context, spec, card, width, height)
 

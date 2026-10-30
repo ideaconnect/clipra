@@ -333,6 +333,8 @@ data class ReplaceMedia(val clipId: String, val mediaId: String) : EditCommand {
                 },
             ),
             speed = Speed(),
+            // Stabilization (#54) is for video only.
+            stabilize = clip.stabilize?.takeIf { type == ClipType.Video },
         )
         return project.replaceClip(replaced)
     }
