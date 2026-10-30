@@ -3,6 +3,7 @@ package tech.idct.clipra.core.engine.render
 import android.graphics.Bitmap
 import tech.idct.clipra.core.model.AudioSettings
 import tech.idct.clipra.core.model.BlendMode
+import tech.idct.clipra.core.model.CellRect
 import tech.idct.clipra.core.model.Easing
 import tech.idct.clipra.core.model.Effect
 import tech.idct.clipra.core.model.Mask
@@ -79,6 +80,8 @@ data class RenderClip(
      * lined up with the source from its start.
      */
     val voicePath: String? = null,
+    /** The mosaic cell (#17) the clip is laid out in and cut to; null for the whole frame. */
+    val cell: CellRect? = null,
 ) {
     val endUs: Long get() = startUs + durationUs
 

@@ -26,6 +26,7 @@ import kotlinx.coroutines.delay
 import kotlinx.serialization.Serializable
 import tech.idct.clipra.core.designsystem.placeholder.Board
 import tech.idct.clipra.core.engine.preview.PreviewPlayer
+import tech.idct.clipra.core.model.Cells
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
 import tech.idct.clipra.core.model.Cut
@@ -205,6 +206,7 @@ private fun EditorRoute(actions: EditorActions, viewModel: EditorViewModel = hil
                 onCrop = { cropping = it },
                 onTransformLive = { transformLive(selected.id, it) },
                 onTransform = { viewModel.setTransform(selected.id, it) },
+                onCell = { viewModel.setCell(selected.id, it) },
                 onBlend = { viewModel.setBlend(selected.id, it, selected.opacity.value) },
                 onOpacityLive = {
                     liveOpacity = it
@@ -385,6 +387,7 @@ private fun EditorRoute(actions: EditorActions, viewModel: EditorViewModel = hil
                     source = sourceSize(project, selected),
                     onChange = { transformLive(selected.id, it) },
                     onCommit = { viewModel.setTransform(selected.id, it) },
+                    cell = Cells.rect(project.format, selected.cell),
                 )
             }
         },

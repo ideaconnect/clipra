@@ -1,6 +1,7 @@
 package tech.idct.clipra.feature.editor.layers
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -53,6 +54,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import tech.idct.clipra.core.designsystem.ClipraTheme
+import tech.idct.clipra.core.designsystem.component.ClipraChip
 import tech.idct.clipra.core.designsystem.component.ClipraIcon
 import tech.idct.clipra.core.designsystem.component.HeaderNavigation
 import tech.idct.clipra.core.designsystem.component.LabelledSlider
@@ -63,9 +65,11 @@ import tech.idct.clipra.core.designsystem.component.SegmentedStyle
 import tech.idct.clipra.core.designsystem.icon.ClipraIcons
 import tech.idct.clipra.core.designsystem.theme.ClipraDimens
 import tech.idct.clipra.core.model.BlendMode
+import tech.idct.clipra.core.model.Cells
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
 import tech.idct.clipra.core.model.Fit
+import tech.idct.clipra.core.model.Layout
 import tech.idct.clipra.core.model.MediaKind
 import tech.idct.clipra.core.model.Project
 import tech.idct.clipra.core.model.Size
@@ -101,6 +105,8 @@ class LayersActions(
     val onOpacityDone: () -> Unit,
     val onSelectLayer: (layerId: String) -> Unit,
     val layers: LayerActions,
+    /** Puts the clip into a mosaic cell (#17), or over the whole frame with null. */
+    val onCell: (Int?) -> Unit = {},
 )
 
 /**
@@ -177,6 +183,7 @@ fun LayersScreen(
                         blendLabel(clip.blend),
                         (state.opacity * 100).roundToInt(),
                     ),
+                    cell = Cells.rect(format, clip.cell),
                 )
             }
         }
@@ -205,7 +212,13 @@ fun LayersScreen(
         ) {
             when (tab) {
                 LayerTab.Blend -> BlendTab(clip.blend, state.opacity, actions)
-                LayerTab.Transform -> TransformTab(state, project.format.outputSize, actions)
+
+                LayerTab.Transform -> {
+                    // In a mosaic cell (#17), positions are in the cell's pixels.
+                    val cell = Cells.rect(project.format, clip.cell)
+                    TransformTab(state, Cells.size(project.format.outputSize, cell), actions)
+                }
+
                 LayerTab.Layers -> LayersTab(state, layer.id, actions)
             }
         }
@@ -282,6 +295,8 @@ private fun BlendTab(blend: BlendMode, opacity: Float, actions: LayersActions) {
 private fun TransformTab(state: LayersUiState, frame: Size, actions: LayersActions) {
     val transform = state.transform
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        val layout = state.project.format.layout
+        if (layout != Layout.Single) CellPicker(layout.cells, state.clip.cell, actions.onCell)
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             NumberField(
                 label = stringResource(R.string.editor_transform_x),
@@ -619,3 +634,36 @@ internal fun normalizeDegrees(degrees: Float): Float {
 private val PREVIEW_HEIGHT = 340.dp
 private const val MIN_SCALE_PERCENT = 1f
 private const val MAX_SCALE_PERCENT = 2000f
+
+/** Which mosaic cell the clip is in (#17): the whole frame, or cell 1 to [cells]. */
+@Composable
+private fun CellPicker(cells: Int, cell: Int?, onCell: (Int?) -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+            .testTag("transform-cells"),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = stringResource(R.string.editor_transform_cell),
+            style = ClipraTheme.typography.label,
+            color = ClipraTheme.colors.textSecondary,
+        )
+        ClipraChip(
+            label = stringResource(R.string.editor_transform_whole_frame),
+            selected = cell == null,
+            onClick = { onCell(null) },
+            modifier = Modifier.testTag("cell-frame"),
+        )
+        (0 until cells).forEach { index ->
+            ClipraChip(
+                label = "${index + 1}",
+                selected = cell?.mod(cells) == index,
+                onClick = { onCell(index) },
+                modifier = Modifier.testTag("cell-$index"),
+            )
+        }
+    }
+}

@@ -40,6 +40,7 @@ import tech.idct.clipra.core.designsystem.component.LabelledSlider
 import tech.idct.clipra.core.designsystem.component.PrimaryButton
 import tech.idct.clipra.core.designsystem.component.ScreenHeader
 import tech.idct.clipra.core.designsystem.icon.ClipraIcons
+import tech.idct.clipra.core.model.Cells
 import tech.idct.clipra.core.model.Filters
 import tech.idct.clipra.core.model.Mask
 import tech.idct.clipra.core.model.MaskShape
@@ -134,6 +135,7 @@ fun MasksScreen(
                     chip = chipText(mask, outputShortSide),
                     onChange = actions.onMaskLive,
                     onCommit = actions.onMask,
+                    cell = Cells.rect(project.format, clip.cell),
                 )
             }
         }

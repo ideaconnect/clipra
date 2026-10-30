@@ -7,12 +7,14 @@ import org.junit.Test
 import tech.idct.clipra.core.model.BlendMode
 import tech.idct.clipra.core.model.CaptionSpec
 import tech.idct.clipra.core.model.CaptionStyle
+import tech.idct.clipra.core.model.CellRect
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
 import tech.idct.clipra.core.model.Easing
 import tech.idct.clipra.core.model.Format
 import tech.idct.clipra.core.model.FrameRate
 import tech.idct.clipra.core.model.Layer
+import tech.idct.clipra.core.model.Layout
 import tech.idct.clipra.core.model.MediaAsset
 import tech.idct.clipra.core.model.MediaKind
 import tech.idct.clipra.core.model.MediaRef
@@ -198,5 +200,23 @@ class ProjectRenderTest {
             ),
         )
         assertEquals(1, ProjectRender.timeline(still, resolver).layers[0].clips.size)
+    }
+
+    @Test
+    fun clipsInMosaicCellsCarryTheirCells() {
+        val mosaic = project.copy(
+            format = project.format.copy(layout = Layout.Grid2x2),
+            layers = listOf(
+                Layer("L1", clips = listOf(videoClip("a", 0).copy(cell = 3))),
+                Layer("L2", clips = listOf(videoClip("b", 0))),
+            ),
+        )
+        val clips = ProjectRender.timeline(mosaic, resolver).layers.flatMap { it.clips }
+        assertEquals(CellRect(0.5f, 0.5f, 0.5f, 0.5f), clips.first { it.id == "a" }.cell)
+        // No cell: the whole frame.
+        assertEquals(null, clips.first { it.id == "b" }.cell)
+        // A Single layout ignores the cell.
+        val single = ProjectRender.timeline(mosaic.copy(format = project.format), resolver)
+        assertEquals(null, single.layers.first().clips.single().cell)
     }
 }

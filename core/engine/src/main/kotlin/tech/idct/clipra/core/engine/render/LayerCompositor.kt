@@ -17,6 +17,8 @@ import androidx.media3.effect.BaseGlShaderProgram
 import androidx.media3.effect.GlEffect
 import androidx.media3.effect.GlShaderProgram
 import tech.idct.clipra.core.model.BlendMode
+import tech.idct.clipra.core.model.CellRect
+import tech.idct.clipra.core.model.Cells
 import tech.idct.clipra.core.model.ClipGeometry
 import tech.idct.clipra.core.model.Effect
 import tech.idct.clipra.core.model.Filters
@@ -199,6 +201,8 @@ private class LayerCompositorProgram(
         val opacity: Float,
         val position: FloatArray,
         val unit: FloatArray,
+        /** The mosaic cell (#17) the picture is cut to, or null. */
+        val cell: CellRect?,
     )
 
     private fun prepare(clip: RenderClip, timeUs: Long): Prepared? {
@@ -211,7 +215,7 @@ private class LayerCompositorProgram(
         val mask = live?.mask(clip.id) ?: clip.mask
         val frame = if (filters.isEmpty()) raw else filtered(raw, filters, mask, timeUs)
         val (position, unit) = quadFor(clip, frame.width, frame.height)
-        return Prepared(frame, opacity, position, unit)
+        return Prepared(frame, opacity, position, unit, clip.cell)
     }
 
     /** Draws [prepared] alone into [target], over transparency. */
@@ -222,7 +226,26 @@ private class LayerCompositorProgram(
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
         if (prepared == null) return
         val program = if (prepared.frame.external) externalProgram else bitmapProgram
-        drawSource(program, prepared.frame, prepared.opacity, prepared.position, prepared.unit)
+        inCell(prepared.cell) {
+            drawSource(program, prepared.frame, prepared.opacity, prepared.position, prepared.unit)
+        }
+    }
+
+    /** Runs [draw] cut to [cell] (#17): nothing of the clip shows outside its cell. */
+    private inline fun inCell(cell: CellRect?, draw: () -> Unit) {
+        if (cell == null) {
+            draw()
+            return
+        }
+        val left = (cell.left * timeline.width).roundToInt()
+        val right = ((cell.left + cell.width) * timeline.width).roundToInt()
+        // GL counts rows from the bottom.
+        val bottom = ((1 - cell.top - cell.height) * timeline.height).roundToInt()
+        val top = ((1 - cell.top) * timeline.height).roundToInt()
+        GLES20.glEnable(GLES20.GL_SCISSOR_TEST)
+        GLES20.glScissor(left, bottom, right - left, top - bottom)
+        draw()
+        GLES20.glDisable(GLES20.GL_SCISSOR_TEST)
     }
 
     private fun drawClip(clip: RenderClip, timeUs: Long) {
@@ -239,7 +262,15 @@ private class LayerCompositorProgram(
                 GLES20.GL_ONE_MINUS_SRC_ALPHA,
             )
             val program = if (prepared.frame.external) externalProgram else bitmapProgram
-            drawSource(program, prepared.frame, prepared.opacity, prepared.position, prepared.unit)
+            inCell(prepared.cell) {
+                drawSource(
+                    program,
+                    prepared.frame,
+                    prepared.opacity,
+                    prepared.position,
+                    prepared.unit,
+                )
+            }
             GLES20.glDisable(GLES20.GL_BLEND)
             return
         }
@@ -574,11 +605,13 @@ private class LayerCompositorProgram(
     ): Pair<FloatArray, FloatArray> {
         val transform = live?.transform(clip.id) ?: clip.transform
         val frameSize = FrameSize(timeline.width, timeline.height)
+        // In a mosaic cell (#17), the cell is the clip's frame.
+        val origin = Cells.origin(frameSize, clip.cell)
         val corners = ClipGeometry.corners(
             transform,
-            frameSize,
+            Cells.size(frameSize, clip.cell),
             FrameSize(sourceWidth, sourceHeight),
-        )
+        ).map { it.copy(x = it.x + origin.x, y = it.y + origin.y) }
         val position = FloatArray(16)
         listOf(corners[2], corners[3], corners[0], corners[1]).forEachIndexed { i, corner ->
             position[i * 4] = corner.x / timeline.width * 2 - 1

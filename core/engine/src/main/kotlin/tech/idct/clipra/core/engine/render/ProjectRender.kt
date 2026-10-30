@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import tech.idct.clipra.core.model.Background
 import tech.idct.clipra.core.model.CaptionSpec
 import tech.idct.clipra.core.model.CaptionStyle
+import tech.idct.clipra.core.model.Cells
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
 import tech.idct.clipra.core.model.MediaAsset
@@ -55,11 +56,14 @@ object ProjectRender {
         background = backgroundColor(project.format.background),
         layers = project.layers.map { layer ->
             val clips = layer.clips.flatMap { clip ->
-                if (clip.type == ClipType.Caption) {
+                val rendered = if (clip.type == ClipType.Caption) {
                     captionClips(clip, media, width, height)
                 } else {
                     listOfNotNull(renderClip(project, clip, media, width, height))
                 }
+                // A clip in a mosaic cell is laid out in it and cut to it (#17).
+                val cell = Cells.rect(project.format, clip.cell)
+                if (cell == null) rendered else rendered.map { it.copy(cell = cell) }
             }
             RenderLayer(
                 clips = clips,
