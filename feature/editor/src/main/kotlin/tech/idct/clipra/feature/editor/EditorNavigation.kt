@@ -1,5 +1,7 @@
 package tech.idct.clipra.feature.editor
 
+import android.Manifest
+import android.content.pm.PackageManager
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -15,6 +17,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -51,6 +54,7 @@ import tech.idct.clipra.feature.editor.timeline.Filmstrip
 import tech.idct.clipra.feature.editor.timeline.FilmstripLoader
 import tech.idct.clipra.feature.editor.timeline.TimelineActions
 import tech.idct.clipra.feature.editor.timeline.WaveformLoader
+import tech.idct.clipra.feature.editor.voiceover.VoiceoverActions
 import kotlin.math.abs
 
 /** The editor for [projectId]; null opens the placeholder board (debug screen index). */
@@ -125,10 +129,24 @@ private fun EditorRoute(actions: EditorActions, viewModel: EditorViewModel = hil
         rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) {
             it?.let(viewModel::replace)
         }
+    // The microphone is asked for only when a voiceover starts recording (#41).
+    val askMicrophone =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            if (granted) {
+                viewModel.startRecording()
+            } else {
+                viewModel.say(
+                    EditorMessage.NeedsMicrophone,
+                )
+            }
+        }
+    val recording = state.voiceover?.recording == true
 
     // Saves when the app goes to the background, so a killed app loses nothing (#10).
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
         playing = false
+        // A voiceover keeps what was recorded (the microphone stops in the background).
+        viewModel.stopRecording()
         viewModel.flush()
     }
 
@@ -166,6 +184,12 @@ private fun EditorRoute(actions: EditorActions, viewModel: EditorViewModel = hil
         // Coalesce the seeks of a fast scrub.
         delay(16)
         player.seekTo(state.playheadUs)
+    }
+    // While a voiceover records (#41), the project plays along without sound, so the speaker
+    // doesn't get into the recording.
+    LaunchedEffect(recording) {
+        player.setVolume(if (recording) 0f else 1f)
+        playing = recording
     }
 
     if (state.loaded && state.project == null) {
@@ -274,6 +298,13 @@ private fun EditorRoute(actions: EditorActions, viewModel: EditorViewModel = hil
         return
     }
     if (currentBoard != null) board = null
+    if (state.voiceover != null) {
+        BackHandler {
+            if (recording) viewModel.stopRecording() else viewModel.closeVoiceover()
+        }
+    }
+    // While recording, the timeline stays as it is; the playhead follows the recording.
+    val whenNotRecording = { action: () -> Unit -> if (!recording) action() }
     EditorScreen(
         state = state,
         playing = playing,
@@ -286,7 +317,8 @@ private fun EditorRoute(actions: EditorActions, viewModel: EditorViewModel = hil
                 viewModel.flush()
                 actions.onExport(project.id)
             },
-            onPlayPause = {
+            onPlayPause = play@{
+                if (recording) return@play
                 if (!playing && state.playheadUs >= project.durationUs) {
                     viewModel.seek(0)
                     player.seekTo(0)
@@ -426,15 +458,39 @@ private fun EditorRoute(actions: EditorActions, viewModel: EditorViewModel = hil
                 playing = false
                 state.selectedClipId?.let(viewModel::toggleKeyframe)
             },
+            onVoiceover = {
+                playing = false
+                viewModel.openVoiceover()
+            },
+            voiceover = VoiceoverActions(
+                onRecord = {
+                    val granted = ContextCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.RECORD_AUDIO,
+                    ) == PackageManager.PERMISSION_GRANTED
+                    if (granted) {
+                        viewModel.startRecording()
+                    } else {
+                        askMicrophone.launch(Manifest.permission.RECORD_AUDIO)
+                    }
+                },
+                onStop = viewModel::stopRecording,
+                onDiscard = viewModel::discardRecording,
+                onClose = viewModel::closeVoiceover,
+            ),
             timeline = TimelineActions(
                 onSeek = {
-                    playing = false
-                    viewModel.seek(it)
+                    whenNotRecording {
+                        playing = false
+                        viewModel.seek(it)
+                    }
                 },
                 onZoom = viewModel::zoom,
-                onSelect = viewModel::select,
-                onMove = viewModel::move,
-                onTrim = viewModel::trim,
+                onSelect = { whenNotRecording { viewModel.select(it) } },
+                onMove = { id, start, target ->
+                    whenNotRecording { viewModel.move(id, start, target) }
+                },
+                onTrim = { id, edge, to -> whenNotRecording { viewModel.trim(id, edge, to) } },
                 onMoveKeyframe = viewModel::moveKeyframe,
                 onTransition = { fromClipId ->
                     project.cutAfter(fromClipId)?.let { cut ->

@@ -50,6 +50,8 @@ import tech.idct.clipra.feature.editor.layers.isVisual
 import tech.idct.clipra.feature.editor.timeline.Timeline
 import tech.idct.clipra.feature.editor.timeline.TimelineActions
 import tech.idct.clipra.feature.editor.timeline.formatTimecode
+import tech.idct.clipra.feature.editor.voiceover.VoiceoverActions
+import tech.idct.clipra.feature.editor.voiceover.VoiceoverPanel
 import kotlin.math.abs
 
 /** Tools that open another feature's screen; the app connects them. */
@@ -103,6 +105,9 @@ class EditorCallbacks(
     val timeline: TimelineActions,
     /** Adds a keyframe to the selected clip at the playhead, or deletes the one there (#21). */
     val onKeyframe: () -> Unit = {},
+    /** Opens the voiceover panel (#41). */
+    val onVoiceover: () -> Unit = {},
+    val voiceover: VoiceoverActions = VoiceoverActions({}, {}, {}, {}),
 )
 
 /**
@@ -175,7 +180,12 @@ fun EditorScreen(
                 waveforms = waveforms,
                 beats = state.beats,
             )
-            Tools(state.selectedClipId != null, callbacks)
+            val voiceover = state.voiceover
+            if (voiceover != null) {
+                VoiceoverPanel(voiceover, callbacks.voiceover)
+            } else {
+                Tools(state.selectedClipId != null, callbacks)
+            }
         }
         SnackbarHost(
             snackbar,
@@ -335,6 +345,17 @@ private fun Tools(clipSelected: Boolean, callbacks: EditorCallbacks) {
                     callbacks.onPickAudio()
                 },
             )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.editor_add_voiceover)) },
+                onClick = {
+                    adding = false
+                    callbacks.onVoiceover()
+                },
+                leadingIcon = {
+                    ClipraIcon(icon = ClipraIcons.Microphone, contentDescription = null)
+                },
+                modifier = Modifier.testTag("add-voiceover"),
+            )
         }
     }
 }
@@ -403,4 +424,6 @@ private fun EditorMessage.textRes(): Int = when (this) {
     EditorMessage.NeedsPicture -> R.string.editor_message_needs_picture
     EditorMessage.NeedsCut -> R.string.editor_message_needs_cut
     EditorMessage.NeedsSound -> R.string.editor_message_needs_sound
+    EditorMessage.NeedsMicrophone -> R.string.editor_message_needs_microphone
+    EditorMessage.MicrophoneUnavailable -> R.string.editor_message_mic_unavailable
 }

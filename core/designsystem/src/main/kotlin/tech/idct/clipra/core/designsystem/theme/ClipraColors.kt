@@ -42,6 +42,7 @@ data class ClipraColors(
     val clip: ClipColors,
     val feature: FeatureColors,
     val ad: AdColors,
+    val record: RecordColors,
     /** The custom colour swatch (Text board): a colour wheel. */
     val colorWheel: List<Color> = listOf(
         Color(0xFFFF5A36),
@@ -79,6 +80,10 @@ data class FeatureColors(val captions: Color, val text: Color, val mosaic: Color
 /** The ad slots: black, with a light "Ad" badge. */
 @Immutable
 data class AdColors(val background: Color, val badgeBackground: Color, val badgeText: Color)
+
+/** Recording a voiceover (TabletAudio board): the red Record button and its dot. */
+@Immutable
+data class RecordColors(val background: Color, val border: Color, val text: Color, val dot: Color)
 
 val ClipraDarkColors = ClipraColors(
     background = Color(0xFF0D0D0F),
@@ -141,5 +146,11 @@ val ClipraDarkColors = ClipraColors(
         background = Color(0xFF000000),
         badgeBackground = Color(0xFFF4F3EF),
         badgeText = Color(0xFF000000),
+    ),
+    record = RecordColors(
+        background = Color(0xFF3A1414),
+        border = Color(0xFF6B2424),
+        text = Color(0xFFFFB4A8),
+        dot = Color(0xFFFF5A4A),
     ),
 )

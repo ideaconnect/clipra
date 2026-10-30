@@ -51,7 +51,11 @@ internal fun SoundWave(
     modifier: Modifier = Modifier,
 ) {
     val colors = ClipraTheme.colors
-    val color = if (muted) colors.textDisabled else colors.clip.musicWave
+    val color = when {
+        muted -> colors.textDisabled
+        project.isVoiceover(clip) -> colors.clip.voiceWave
+        else -> colors.clip.musicWave
+    }
     val source = clip.source
     val wave by produceState<Waveform?>(null, loader, source?.mediaId) {
         if (loader != null && source != null) value = loader.waveform(project, source.mediaId)

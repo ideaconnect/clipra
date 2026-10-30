@@ -40,6 +40,11 @@ class ProjectFiles(private val directory: File, private val json: ProjectJson = 
         File(directory, id).deleteRecursively()
     }
 
+    /** The ids of every project with a document. */
+    fun ids(): List<String> = directory.listFiles().orEmpty()
+        .filter { File(it, DOCUMENT).exists() }
+        .map { it.name }
+
     private companion object {
         const val DOCUMENT = "project.json"
     }

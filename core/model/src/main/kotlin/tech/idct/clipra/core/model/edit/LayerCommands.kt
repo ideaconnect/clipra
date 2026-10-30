@@ -71,6 +71,22 @@ data class AddClip(val clip: Clip, val target: LayerTarget) : EditCommand {
 }
 
 /**
+ * Adds a sound at its time on the first unlocked layer above the main one that is free for its
+ * whole length, or on a new layer on top: an imported sound, or a voiceover recorded at the
+ * playhead (#41).
+ */
+class AddSound(private val clip: Clip, private val newLayerId: () -> String = ::randomId) :
+    EditCommand {
+    override fun apply(project: Project): Project {
+        val free = project.layers.drop(1).firstOrNull { layer ->
+            !layer.locked && layer.clips.none { it.overlaps(clip) }
+        }
+        val target = free?.let { LayerTarget.Existing(it.id) } ?: LayerTarget.NewOnTop(newLayerId())
+        return AddClip(clip, target).apply(project)
+    }
+}
+
+/**
  * Moves a clip in time and, optionally, to another layer: a higher layer makes it cover what's
  * below. Dropping it above the top layer ([LayerTarget.NewOnTop]) creates a layer. Linked clips
  * move by the same time.

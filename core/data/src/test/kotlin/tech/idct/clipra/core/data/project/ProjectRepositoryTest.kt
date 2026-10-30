@@ -28,6 +28,8 @@ import tech.idct.clipra.core.model.ClipType
 import tech.idct.clipra.core.model.Format
 import tech.idct.clipra.core.model.Layer
 import tech.idct.clipra.core.model.Layout
+import tech.idct.clipra.core.model.MediaAsset
+import tech.idct.clipra.core.model.MediaKind
 import tech.idct.clipra.core.model.Resolution
 import tech.idct.clipra.core.model.edit.AddClip
 import tech.idct.clipra.core.model.edit.EditRejected
@@ -168,5 +170,32 @@ class ProjectRepositoryTest {
         assertEquals("Renamed", repository.load(project.id)!!.name)
         assertNotSame(editor, open.acquire(project.id))
         assertNull(open.acquire("missing"))
+    }
+
+    /** A voiceover (#41) goes with the last project that uses it. */
+    @Test
+    fun recordingsGoWithTheLastProjectUsingThem() = runTest {
+        val recordings = folder.newFolder("recordings")
+        val voice = File(recordings, "a.m4a").apply { writeText("voice") }
+        val picked = File(recordings, "picked.m4a").apply { writeText("not recorded") }
+        val project = repository.create("Voiceover", Format())
+        repository.save(
+            project.copy(
+                media = listOf(
+                    MediaAsset("a", voice.toURI().toString(), MediaKind.Audio, recorded = true),
+                    MediaAsset("p", picked.toURI().toString(), MediaKind.Audio),
+                ),
+            ),
+        )
+        val copy = repository.duplicate(project.id, "Voiceover copy")!!
+
+        repository.delete(project.id)
+        // The copy still plays it.
+        assertTrue(voice.exists())
+
+        repository.delete(copy.id)
+        assertFalse(voice.exists())
+        // Media picked from the phone is never deleted.
+        assertTrue(picked.exists())
     }
 }

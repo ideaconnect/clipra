@@ -69,6 +69,8 @@ data class MediaAsset(
     val height: Int = 0,
     val rotation: Int = 0,
     val hasAudio: Boolean = false,
+    /** A voiceover recorded in Clipra (#41), kept in the app's own storage. */
+    val recorded: Boolean = false,
 ) {
     /** The picture's size as shown, after the video's rotation; zero when unknown. */
     val displaySize: Size

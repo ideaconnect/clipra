@@ -9,6 +9,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,6 +18,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import tech.idct.clipra.core.data.di.ApplicationScope
@@ -24,9 +27,12 @@ import tech.idct.clipra.core.data.project.ProjectSession
 import tech.idct.clipra.core.engine.media.MediaCache
 import tech.idct.clipra.core.engine.media.MediaImporter
 import tech.idct.clipra.core.engine.media.ProjectMediaResolver
+import tech.idct.clipra.core.engine.media.Recording
 import tech.idct.clipra.core.engine.media.SoundAnalyzer
 import tech.idct.clipra.core.engine.media.VoiceCleaner
+import tech.idct.clipra.core.engine.media.VoiceRecorder
 import tech.idct.clipra.core.model.Animation
+import tech.idct.clipra.core.model.AudioSettings
 import tech.idct.clipra.core.model.BlendMode
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
@@ -40,8 +46,10 @@ import tech.idct.clipra.core.model.TextColors
 import tech.idct.clipra.core.model.TextFonts
 import tech.idct.clipra.core.model.TextSpec
 import tech.idct.clipra.core.model.Transform
-import tech.idct.clipra.core.model.edit.AddClip
+import tech.idct.clipra.core.model.VoiceCleanup
+import tech.idct.clipra.core.model.VoiceEngine
 import tech.idct.clipra.core.model.edit.AddLayer
+import tech.idct.clipra.core.model.edit.AddSound
 import tech.idct.clipra.core.model.edit.AddText
 import tech.idct.clipra.core.model.edit.AddToMosaic
 import tech.idct.clipra.core.model.edit.DeleteClip
@@ -88,6 +96,19 @@ data class EditorUiState(
     val message: EditorMessage? = null,
     /** Beat markers (#40): each clip's beats on the timeline, for clips that show them. */
     val beats: Map<String, List<Long>> = emptyMap(),
+    /** The voiceover panel (#41), while it is open. */
+    val voiceover: VoiceoverState? = null,
+)
+
+/**
+ * The voiceover panel (#41): ready, recording (for how long, with the meter's last levels in
+ * dBFS, oldest first), or placing what was recorded.
+ */
+data class VoiceoverState(
+    val recording: Boolean = false,
+    val elapsedUs: Long = 0,
+    val levels: List<Float> = emptyList(),
+    val saving: Boolean = false,
 )
 
 /** A short note for the user after an edit was refused or media couldn't be read. */
@@ -100,6 +121,8 @@ enum class EditorMessage {
     NeedsPicture,
     NeedsCut,
     NeedsSound,
+    NeedsMicrophone,
+    MicrophoneUnavailable,
 }
 
 @HiltViewModel
@@ -110,12 +133,18 @@ class EditorViewModel @Inject constructor(
     val mediaCache: MediaCache,
     private val voices: VoiceCleaner,
     private val analyzer: SoundAnalyzer,
+    private val recorder: VoiceRecorder,
     @param:ApplicationScope private val appScope: CoroutineScope,
     savedState: SavedStateHandle,
 ) : ViewModel() {
     private val projectId: String? = savedState.get<String>("projectId")
     private var session: ProjectSession? = null
     private val mutableState = MutableStateFlow(EditorUiState())
+
+    /** The voiceover being recorded (#41), where it started, and its meter. */
+    private var recording: Recording? = null
+    private var recordingStartUs = 0L
+    private var meter: Job? = null
 
     val state: StateFlow<EditorUiState> = mutableState.asStateFlow()
 
@@ -222,6 +251,113 @@ class EditorViewModel @Inject constructor(
         edit(MoveClip(clipId, startUs, target))
 
     fun trim(clipId: String, edge: Edge, toUs: Long) = edit(TrimClip(clipId, edge, toUs))
+
+    // Voiceover (#41).
+
+    fun openVoiceover() =
+        mutableState.update { it.copy(voiceover = VoiceoverState(), selectedClipId = null) }
+
+    fun closeVoiceover() {
+        if (recording == null) mutableState.update { it.copy(voiceover = null) }
+    }
+
+    /** Starts recording at the playhead. The editor holds RECORD_AUDIO by now. */
+    fun startRecording() {
+        if (recording != null || state.value.voiceover?.saving == true) return
+        val started = try {
+            recorder.start()
+        } catch (_: Exception) {
+            return say(EditorMessage.MicrophoneUnavailable)
+        }
+        recording = started
+        recordingStartUs = state.value.playheadUs
+        mutableState.update { it.copy(voiceover = VoiceoverState(recording = true)) }
+        meter = viewModelScope.launch {
+            while (isActive) {
+                delay(METER_INTERVAL_MS)
+                val level = started.peakDb()
+                mutableState.update { state ->
+                    val panel = state.voiceover ?: return@update state
+                    state.copy(
+                        voiceover = panel.copy(
+                            elapsedUs = started.elapsedUs,
+                            levels = (panel.levels + level).takeLast(METER_LEVELS),
+                        ),
+                    )
+                }
+            }
+        }
+    }
+
+    /**
+     * Stops and places the voiceover where recording started, on the first free layer above the
+     * main one, with AI voice cleanup on: it runs in the background while editing goes on.
+     */
+    fun stopRecording() {
+        val active = recording ?: return
+        recording = null
+        meter?.cancel()
+        val file = active.stop()
+        if (file == null) {
+            mutableState.update { it.copy(voiceover = VoiceoverState()) }
+            return
+        }
+        mutableState.update { it.copy(voiceover = VoiceoverState(saving = true)) }
+        val startUs = recordingStartUs
+        viewModelScope.launch {
+            val name = voiceoverName(state.value.project)
+            val asset = try {
+                importer.importRecording(file, name)
+            } catch (_: Exception) {
+                file.delete()
+                mutableState.update {
+                    it.copy(voiceover = null, message = EditorMessage.ImportFailed)
+                }
+                return@launch
+            }
+            val clip = voiceoverClip(asset, startUs)
+            edit { project -> AddSound(clip).apply(project.withAsset(asset)) }
+            mutableState.update { state ->
+                val placed = state.project?.findClip(clip.id) != null
+                state.copy(voiceover = null, selectedClipId = clip.id.takeIf { placed })
+            }
+        }
+    }
+
+    /** Throws the recording away, or closes the panel. */
+    fun discardRecording() {
+        meter?.cancel()
+        recording?.cancel()
+        recording = null
+        mutableState.update { it.copy(voiceover = null) }
+    }
+
+    private fun voiceoverClip(asset: MediaAsset, startUs: Long): Clip {
+        val engine = if (voices.isAvailable(VoiceEngine.DeepFilterNet)) {
+            VoiceEngine.DeepFilterNet
+        } else {
+            VoiceEngine.RNNoise
+        }
+        val length = asset.durationUs.coerceAtLeast(MIN_VOICEOVER_US)
+        return Clip(
+            id = randomId(),
+            type = ClipType.Audio,
+            startUs = startUs,
+            durationUs = length,
+            source = MediaRef(asset.id, 0, length),
+            audio = AudioSettings(voiceCleanup = VoiceCleanup(engine)),
+        )
+    }
+
+    /** "voiceover.m4a", then "voiceover 2.m4a" and on, in the project. */
+    private fun voiceoverName(project: Project?): String {
+        val number = (project?.media?.count { it.recorded } ?: 0) + 1
+        return if (number == 1) {
+            context.getString(R.string.editor_voiceover_file)
+        } else {
+            context.getString(R.string.editor_voiceover_file_n, number)
+        }
+    }
 
     // Layers board (#19, #20).
 
@@ -330,6 +466,8 @@ class EditorViewModel @Inject constructor(
     }
 
     override fun onCleared() {
+        // Lets go of the microphone; the editor stops a recording itself (back, background).
+        recording?.cancel()
         // The session saves in the app's scope, so the last edits are kept after the editor goes.
         if (session != null && projectId != null) appScope.launch { projects.release(projectId) }
     }
@@ -355,13 +493,7 @@ class EditorViewModel @Inject constructor(
         if (asset.kind == MediaKind.Audio) {
             val start = state.value.playheadUs
             val clip = Clip(randomId(), type, start, duration, MediaRef(asset.id, 0, outPoint))
-            val free = withAsset.layers.drop(1).firstOrNull { layer ->
-                !layer.locked &&
-                    layer.clips.none { it.startUs < clip.endUs && clip.startUs < it.endUs }
-            }
-            val target =
-                free?.let { LayerTarget.Existing(it.id) } ?: LayerTarget.NewOnTop(randomId())
-            return AddClip(clip, target).apply(withAsset)
+            return AddSound(clip).apply(withAsset)
         }
         // After the main layer's clips, or into the next empty mosaic cell (#17).
         val clip = Clip(randomId(), type, 0, duration, MediaRef(asset.id, 0, outPoint))
@@ -389,5 +521,12 @@ class EditorViewModel @Inject constructor(
     private companion object {
         const val PHOTO_DURATION_US = 3_000_000L
         const val TEXT_DURATION_US = 3_000_000L
+        const val METER_INTERVAL_MS = 50L
+
+        /** About two seconds of levels on the meter. */
+        const val METER_LEVELS = 40
+
+        /** A voiceover is never shorter than a clip can be. */
+        const val MIN_VOICEOVER_US = 100_000L
     }
 }
