@@ -53,4 +53,27 @@
     <string name="captions_bottom">Dół</string>
     <string name="captions_play">Odtwórz</string>
     <string name="captions_pause">Wstrzymaj</string>
+    <string name="captions_ripple">Cięcia przesuwają każdą warstwę</string>
+    <string name="captions_length">Długość</string>
+    <string name="captions_no_cuts">Brak cięć</string>
+    <string name="captions_play_edited">Odtwórz wersję po cięciach</string>
+    <string name="captions_cut_fillers">Wytnij wtrącenia</string>
+    <string name="captions_cut_pauses">Wytnij pauzy</string>
+    <string name="captions_fillers_found">Znaleziono: %1$d</string>
+    <string name="captions_long_pauses">Dłuższe niż %2$s s: %1$d</string>
+    <string name="captions_pauses_longer">Pauzy dłuższe niż</string>
+    <string name="captions_seconds">%1$s s</string>
+    <string name="captions_pause_token">pauza %1$s s</string>
+    <string name="captions_restore_all">Przywróć wszystko</string>
+    <string name="captions_no_transcript">Najpierw utwórz transkrypcję mowy, potem tnij po słowach.</string>
+    <string name="captions_cut">Cięcie</string>
+    <string name="captions_filler_sample">yyy</string>
+    <string name="captions_filler">Wtrącenie</string>
+    <string name="captions_tap_word">Dotknij słowa, by je wyciąć lub przywrócić</string>
+    <plurals name="captions_cuts">
+        <item quantity="one">%1$d cięcie · krócej o %2$s s</item>
+        <item quantity="few">%1$d cięcia · krócej o %2$s s</item>
+        <item quantity="many">%1$d cięć · krócej o %2$s s</item>
+        <item quantity="other">%1$d cięcia · krócej o %2$s s</item>
+    </plurals>
 </resources>

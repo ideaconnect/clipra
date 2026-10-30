@@ -130,7 +130,12 @@ fun ClipraNavHost(
                         popUpTo<CaptionsSetupRoute> { inclusive = true }
                     }
                 },
-                onEditByText = { navController.navigate(TranscriptRoute) },
+                onEditByText = { id -> navController.navigate(TranscriptRoute(id)) },
+                onAutoCaptions = { id ->
+                    navController.navigate(CaptionsSetupRoute(id)) {
+                        popUpTo<TranscriptRoute> { inclusive = true }
+                    }
+                },
             ),
         )
         audioScreens(screen, AudioActionsNavigation(onDone = { navController.popBackStack() }))
@@ -196,7 +201,7 @@ private fun toolRoute(tool: EditorTool, target: ToolTarget): Any = when (tool) {
     EditorTool.Transitions -> TransitionsRoute(target.projectId, target.clipId, target.playheadUs)
     EditorTool.Captions -> CaptionsSetupRoute(target.projectId)
     EditorTool.CaptionsEdit -> CaptionsEditRoute(target.projectId)
-    EditorTool.Transcript -> TranscriptRoute
+    EditorTool.Transcript -> TranscriptRoute(target.projectId)
     EditorTool.Color -> ColorRoute
     EditorTool.Cutout -> CutoutRoute
     EditorTool.Reframe -> ReframeRoute
