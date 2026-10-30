@@ -4,7 +4,7 @@ import androidx.compose.ui.unit.dp
 
 /** Sizes of design/tokens.json ("size") and design/design-system.md ("Layout"). */
 object ClipraDimens {
-    val TouchTarget = 44.dp
+    val TouchTarget = 48.dp
     val PrimaryButtonHeight = 56.dp
     val SecondaryButtonHeight = 48.dp
     val SegmentHeight = 44.dp

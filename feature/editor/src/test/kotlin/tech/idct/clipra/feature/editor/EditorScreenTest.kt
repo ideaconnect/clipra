@@ -1,10 +1,14 @@
 package tech.idct.clipra.feature.editor
 
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -12,6 +16,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.unit.Density
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.RoborazziOptions
 import com.github.takahirom.roborazzi.captureRoboImage
@@ -129,6 +134,34 @@ class EditorScreenTest {
         compareOptions = RoborazziOptions.CompareOptions(changeThreshold = 0.001f),
     )
 
+    /** With the system font at 200% (#75), Export, play and the clip tools stay on screen. */
+    @Test
+    fun editorWithLargeFonts() {
+        Locale.setDefault(Locale.US)
+        compose.setContent {
+            val density = LocalDensity.current
+            CompositionLocalProvider(LocalDensity provides Density(density.density, 2f)) {
+                ClipraTheme {
+                    EditorScreen(
+                        state = EditorUiState(
+                            project = project,
+                            loaded = true,
+                            selectedClipId = "sunset",
+                            playheadUs = 7_120_000,
+                        ),
+                        playing = false,
+                        callbacks = noop,
+                        preview = {},
+                    )
+                }
+            }
+        }
+        compose.onNodeWithTag("export").assertIsDisplayed()
+        compose.onNodeWithTag("play").assertIsDisplayed()
+        compose.onNodeWithTag("clip-tools").assertIsDisplayed()
+        compose.onRoot().captureRoboImage(roborazziOptions = options)
+    }
+
     @Test
     fun editorWithASelectedClip() {
         Locale.setDefault(Locale.US)
@@ -152,10 +185,9 @@ class EditorScreenTest {
         compose.onNodeWithTag("undo").assertIsEnabled()
         compose.onNodeWithTag("redo").assertIsNotEnabled()
         compose.onNodeWithTag("timecode").assertExists()
-        // TalkBack: type, name, duration, layer and state.
-        compose.onNodeWithContentDescription(
-            "Video sunset.mp4, 9.2s, layer L3, selected",
-        ).assertExists()
+        // TalkBack: type, name, duration and layer, then "selected" from the state.
+        compose.onNodeWithContentDescription("Video sunset.mp4, 9.2s, layer L3")
+            .assertIsSelected()
         compose.onRoot().captureRoboImage(roborazziOptions = options)
     }
 

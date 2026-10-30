@@ -23,7 +23,7 @@ private val LocalClipraShapes = staticCompositionLocalOf { ClipraShapes() }
  * The Clipra theme: the colours, type and shapes of design/tokens.json. Screens read them through
  * [ClipraTheme.colors], [ClipraTheme.typography] and [ClipraTheme.shapes], never as raw values.
  * Material components get the same palette and fonts, and every interactive component keeps a
- * 44 dp touch area.
+ * 48 dp touch area.
  */
 @Composable
 fun ClipraTheme(content: @Composable () -> Unit) {

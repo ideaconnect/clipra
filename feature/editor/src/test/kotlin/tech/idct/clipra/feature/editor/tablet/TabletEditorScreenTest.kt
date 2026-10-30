@@ -14,6 +14,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.RoborazziOptions
 import com.github.takahirom.roborazzi.captureRoboImage
@@ -230,8 +231,8 @@ class TabletEditorScreenTest {
         compose.onNodeWithText("+18").assertExists()
         compose.onRoot().captureRoboImage(roborazziOptions = options)
 
-        compose.onNodeWithText("Warm film").performClick()
-        compose.onNodeWithTag("color-auto").performClick()
+        compose.onNodeWithText("Warm film").performScrollTo().performClick()
+        compose.onNodeWithTag("color-auto").performScrollTo().performClick()
         assertEquals(listOf("color:builtin:warm_film", "auto"), calls)
     }
 

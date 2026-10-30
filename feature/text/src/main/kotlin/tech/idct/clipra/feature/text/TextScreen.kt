@@ -400,7 +400,7 @@ private fun Swatches(
             style = ClipraTheme.typography.sectionLabel,
             color = colors.textSecondary,
         )
-        // 44 dp targets side by side; eight fit a 390 dp phone, and more scroll.
+        // 48 dp targets side by side; seven fit a 390 dp phone, and more scroll.
         Row(modifier = Modifier.horizontalScroll(rememberScrollState()).testTag(tag)) {
             if (allowNone) {
                 Swatch(

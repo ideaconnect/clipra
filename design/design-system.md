@@ -32,7 +32,7 @@ Values are in `tokens.json`. This page explains how they are used. Units: phone 
 | Secondary button | 48 to 52 high, radius 14, `#1F1F23` fill or 1.5 `#3A3A40` outline |
 | Segmented control | Container `#17171A` radius 14 with 4 padding; segments 44 high radius 10; selected segment accent fill (or `#F4F3EF` fill with dark text for tabs) |
 | Choice card | 56 to 74 high, radius 14, 1.5 border; selected border accent and fill `#221F12` |
-| Chip | 36 to 40 high pill; selected accent fill or `#221F12` fill with accent border. Visible chips may be 32 to 36 high but must keep a 44 dp touch area |
+| Chip | 36 to 40 high pill; selected accent fill or `#221F12` fill with accent border. Visible chips may be 32 to 36 high but must keep a 48 dp touch area |
 | Switch | Track 48×28 (44×26 compact), knob 22; on = accent track and dark knob; off = `#2A2A30` track and `#B4B3BB` knob. Always `role=switch` semantics |
 | Slider | Accent active track, label on the left (60 to 80 wide), value on the right in Geist Mono |
 | Card | `#17171A`, radius 16, 12 to 14 padding |
@@ -54,7 +54,7 @@ Values are in `tokens.json`. This page explains how they are used. Units: phone 
 
 ## Accessibility
 
-- Touch targets at least 44 dp on phone. Visible controls can be smaller only if the touch area is extended (Material's 48 dp minimum is the long-term target, including tablet, where some controls are currently 32 to 36 dp).
+- Touch targets at least 48 dp (Material's minimum), on phone and tablet (#75). Visible controls can be smaller only if the touch area is extended. The timeline's 28 dp lanes are the exception, so six layers fit; every clip can also be picked from the Layers list.
 - Text contrast at least 4.5:1, including 11 to 12 pt grey labels. The palette above passes on its backgrounds.
 - Every icon-only control has a content description. Timeline clips announce type, name, duration, layer and linked or selected state.
 - Disabled options (for example AV1 when the device has no encoder) stay visible, are announced as unavailable, and explain why.

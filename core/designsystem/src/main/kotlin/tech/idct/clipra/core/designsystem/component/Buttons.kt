@@ -50,7 +50,7 @@ fun ClipraIcon(
 
 /**
  * The main action of a screen: 56 dp, accent fill, 16/700 text, optional icons. [compact] is the
- * 40 dp version for headers, such as Export in the editor; it keeps a 44 dp touch area.
+ * 40 dp version for headers, such as Export in the editor; it keeps a 48 dp touch area.
  */
 @Composable
 fun PrimaryButton(
@@ -124,7 +124,7 @@ fun SecondaryButton(
 }
 
 /**
- * A text action, such as "Models" on the on-device card, with a 44 dp touch area. Accent by
+ * A text action, such as "Models" on the on-device card, with a 48 dp touch area. Accent by
  * default; [color] gives, for example, the danger colour of "Cancel export".
  */
 @Composable
@@ -156,7 +156,7 @@ fun TextAction(
     }
 }
 
-/** A 44 dp icon-only button, as in headers and the player bar. */
+/** A 48 dp icon-only button, as in headers and the player bar. */
 @Composable
 fun IconAction(
     @DrawableRes icon: Int,
