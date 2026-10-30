@@ -23,6 +23,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.Serializable
+import tech.idct.clipra.core.designsystem.component.ReadableWidth
 import tech.idct.clipra.core.designsystem.placeholder.Board
 import tech.idct.clipra.core.engine.export.ExportManager
 import tech.idct.clipra.core.engine.export.ExportState
@@ -86,15 +87,17 @@ fun NavGraphBuilder.exportScreens(screen: @Composable (Board) -> Unit, actions: 
 private fun ExportRoute(actions: ExportActions, viewModel: ExportViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val project = state.project ?: return
-    ExportScreen(
-        project = project,
-        settings = state.settings,
-        support = state.support,
-        onChange = viewModel::change,
-        onExport = { viewModel.start(actions.onStarted) },
-        onBack = actions.onBack,
-        ads = if (state.pro) null else ExportAdsLine(state.proPrice, actions.onPro),
-    )
+    ReadableWidth {
+        ExportScreen(
+            project = project,
+            settings = state.settings,
+            support = state.support,
+            onChange = viewModel::change,
+            onExport = { viewModel.start(actions.onStarted) },
+            onBack = actions.onBack,
+            ads = if (state.pro) null else ExportAdsLine(state.proPrice, actions.onPro),
+        )
+    }
 }
 
 @Composable
@@ -127,18 +130,20 @@ private fun ExportProgressRoute(
         viewModel.setVisible(true)
         onPauseOrDispose { viewModel.setVisible(false) }
     }
-    ExportProgressScreen(
-        state = state,
-        onKeepEditing = actions.onKeepEditing,
-        onPause = viewModel::pause,
-        onResume = viewModel::resume,
-        onCancel = {
-            viewModel.cancel()
-            actions.onKeepEditing()
-        },
-        finished = finishAd == true,
-        onSeeVideo = { context.findActivity()?.let { viewModel.seeVideo(it, actions.onDone) } },
-    )
+    ReadableWidth {
+        ExportProgressScreen(
+            state = state,
+            onKeepEditing = actions.onKeepEditing,
+            onPause = viewModel::pause,
+            onResume = viewModel::resume,
+            onCancel = {
+                viewModel.cancel()
+                actions.onKeepEditing()
+            },
+            finished = finishAd == true,
+            onSeeVideo = { context.findActivity()?.let { viewModel.seeVideo(it, actions.onDone) } },
+        )
+    }
 }
 
 @HiltViewModel
@@ -169,15 +174,17 @@ private fun SavedRoute(
     }
     val context = LocalContext.current
     val uri = Uri.parse(saved.uri)
-    SavedScreen(
-        saved = saved,
-        showPro = !pro,
-        proPrice = proPrice,
-        onShare = { shareVideo(context, uri) },
-        onOpenGallery = { openInGallery(context, uri) },
-        onPro = actions.onPro,
-        onBackToEditing = actions.onKeepEditing,
-    )
+    ReadableWidth {
+        SavedScreen(
+            saved = saved,
+            showPro = !pro,
+            proPrice = proPrice,
+            onShare = { shareVideo(context, uri) },
+            onOpenGallery = { openInGallery(context, uri) },
+            onPro = actions.onPro,
+            onBackToEditing = actions.onKeepEditing,
+        )
+    }
 }
 
 private tailrec fun Context.findActivity(): Activity? = when (this) {

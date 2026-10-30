@@ -63,6 +63,7 @@ import tech.idct.clipra.core.designsystem.component.SecondaryButton
 import tech.idct.clipra.core.designsystem.component.Segment
 import tech.idct.clipra.core.designsystem.component.SegmentedControl
 import tech.idct.clipra.core.designsystem.component.SegmentedStyle
+import tech.idct.clipra.core.designsystem.component.ToolScaffold
 import tech.idct.clipra.core.designsystem.icon.ClipraIcons
 import tech.idct.clipra.core.model.Cells
 import tech.idct.clipra.core.model.ClipGeometry
@@ -118,39 +119,28 @@ fun ColorScreen(
     val asset = clip.source?.let { project.asset(it.mediaId) }
     var tab by rememberSaveable { mutableStateOf(initialTab) }
     var range by rememberSaveable { mutableStateOf(initialRange) }
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(colors.background)
-            .safeDrawingPadding()
-            .testTag("screen:Color"),
-    ) {
-        ScreenHeader(
-            title = stringResource(R.string.effects_color_title),
-            subtitle = stringResource(
-                R.string.effects_color_subtitle,
-                asset?.displayName.orEmpty(),
-                project.layers.indexOf(layer) + 1,
-            ),
-            navigation = HeaderNavigation.Back,
-            onNavigate = actions.onBack,
-            actions = {
-                PrimaryButton(
-                    text = stringResource(R.string.effects_done),
-                    onClick = actions.onBack,
-                    compact = true,
-                    modifier = Modifier.testTag("color-done"),
-                )
-            },
-        )
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(PREVIEW_HEIGHT)
-                .clipToBounds()
-                .background(colors.ad.background),
-            contentAlignment = Alignment.Center,
-        ) {
+    ToolScaffold(
+        header = {
+            ScreenHeader(
+                title = stringResource(R.string.effects_color_title),
+                subtitle = stringResource(
+                    R.string.effects_color_subtitle,
+                    asset?.displayName.orEmpty(),
+                    project.layers.indexOf(layer) + 1,
+                ),
+                navigation = HeaderNavigation.Back,
+                onNavigate = actions.onBack,
+                actions = {
+                    PrimaryButton(
+                        text = stringResource(R.string.effects_done),
+                        onClick = actions.onBack,
+                        compact = true,
+                        modifier = Modifier.testTag("color-done"),
+                    )
+                },
+            )
+        },
+        preview = {
             val ratio = project.format.ratio
             Box(
                 modifier = Modifier
@@ -163,58 +153,67 @@ fun ColorScreen(
                 preview()
             }
             SplitOverlay(state, asset?.displaySize ?: Size(0, 0), split, actions.onSplit)
-        }
-        SegmentedControl(
-            segments = listOf(
-                Segment(stringResource(R.string.effects_color_tab_adjust)),
-                Segment(stringResource(R.string.effects_color_tab_hsl)),
-                Segment(stringResource(R.string.effects_color_tab_lut)),
-            ),
-            selectedIndex = tab.ordinal,
-            onSelect = { tab = ColorTab.entries[it] },
-            style = SegmentedStyle.Tabs,
-            modifier = Modifier
-                .padding(start = 16.dp, end = 16.dp, top = 12.dp)
-                .fillMaxWidth()
-                .testTag("color-tabs"),
-        )
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp)
-                .padding(top = 8.dp, bottom = 8.dp),
-        ) {
-            when (tab) {
-                ColorTab.Adjust -> AdjustTab(grade, actions)
-                ColorTab.Hsl -> HslTab(grade, range, { range = it }, actions)
-                ColorTab.Lut -> LutTab(state, grade, actions)
+        },
+        controls = { fill ->
+            SegmentedControl(
+                segments = listOf(
+                    Segment(stringResource(R.string.effects_color_tab_adjust)),
+                    Segment(stringResource(R.string.effects_color_tab_hsl)),
+                    Segment(stringResource(R.string.effects_color_tab_lut)),
+                ),
+                selectedIndex = tab.ordinal,
+                onSelect = { tab = ColorTab.entries[it] },
+                style = SegmentedStyle.Tabs,
+                modifier = Modifier
+                    .padding(start = 16.dp, end = 16.dp, top = 12.dp)
+                    .fillMaxWidth()
+                    .testTag("color-tabs"),
+            )
+            Column(
+                modifier = fill
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp)
+                    .padding(top = 8.dp, bottom = 8.dp),
+            ) {
+                when (tab) {
+                    ColorTab.Adjust -> AdjustTab(grade, actions)
+                    ColorTab.Hsl -> HslTab(grade, range, { range = it }, actions)
+                    ColorTab.Lut -> LutTab(state, grade, actions)
+                }
             }
-        }
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .padding(top = 8.dp, bottom = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            SecondaryButton(
-                text = stringResource(R.string.effects_color_auto),
-                onClick = actions.onAuto,
+        },
+        previewHeight = PREVIEW_HEIGHT,
+        modifier = modifier
+            .fillMaxSize()
+            .background(colors.background)
+            .safeDrawingPadding()
+            .testTag("screen:Color"),
+        bottom = {
+            Row(
                 modifier = Modifier
-                    .weight(1f)
-                    .testTag("color-auto"),
-            )
-            SecondaryButton(
-                text = stringResource(R.string.effects_color_reset),
-                onClick = actions.onReset,
-                modifier = Modifier
-                    .weight(1f)
-                    .testTag("color-reset"),
-            )
-            PasteButton(state.pasteTargets, actions.onPaste, Modifier.weight(1.45f))
-        }
-    }
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .padding(top = 8.dp, bottom = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                SecondaryButton(
+                    text = stringResource(R.string.effects_color_auto),
+                    onClick = actions.onAuto,
+                    modifier = Modifier
+                        .weight(1f)
+                        .testTag("color-auto"),
+                )
+                SecondaryButton(
+                    text = stringResource(R.string.effects_color_reset),
+                    onClick = actions.onReset,
+                    modifier = Modifier
+                        .weight(1f)
+                        .testTag("color-reset"),
+                )
+                PasteButton(state.pasteTargets, actions.onPaste, Modifier.weight(1.45f))
+            }
+        },
+    )
 }
 
 /** "Before" and "After" either side of a divider across the clip, dragged sideways. */

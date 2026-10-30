@@ -36,6 +36,7 @@ import tech.idct.clipra.core.designsystem.component.LabelledSlider
 import tech.idct.clipra.core.designsystem.component.ScreenHeader
 import tech.idct.clipra.core.designsystem.component.SecondaryButton
 import tech.idct.clipra.core.designsystem.component.SwitchRow
+import tech.idct.clipra.core.designsystem.component.ToolScaffold
 import tech.idct.clipra.core.model.CameraStep
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.Project
@@ -89,33 +90,23 @@ fun StabilizeScreen(
     val colors = ClipraTheme.colors
     val type = ClipraTheme.typography
     val settings = clip.stabilize
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(colors.background)
-            .safeDrawingPadding()
-            .testTag("screen:Stabilize"),
-    ) {
-        ScreenHeader(
-            title = stringResource(R.string.editor_stabilize_header, displayName(project, clip)),
-            subtitle = stringResource(
-                R.string.editor_layers_subtitle,
-                typeName(clip.type),
-                formatTimecode(clip.startUs),
-                formatTimecode(clip.endUs),
-            ),
-            navigation = HeaderNavigation.Back,
-            onNavigate = actions.onDone,
-            actions = { DoneButton(actions.onDone) },
-        )
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(PREVIEW_HEIGHT)
-                .clipToBounds()
-                .background(colors.ad.background),
-            contentAlignment = Alignment.Center,
-        ) {
+    val title = stringResource(R.string.editor_stabilize_header, displayName(project, clip))
+    ToolScaffold(
+        header = {
+            ScreenHeader(
+                title = title,
+                subtitle = stringResource(
+                    R.string.editor_layers_subtitle,
+                    typeName(clip.type),
+                    formatTimecode(clip.startUs),
+                    formatTimecode(clip.endUs),
+                ),
+                navigation = HeaderNavigation.Back,
+                onNavigate = actions.onDone,
+                actions = { DoneButton(actions.onDone) },
+            )
+        },
+        preview = {
             val format = project.format
             Box(
                 modifier = Modifier
@@ -127,81 +118,88 @@ fun StabilizeScreen(
             ) {
                 preview()
             }
-        }
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp)
-                .padding(top = 14.dp, bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            SwitchRow(
-                title = stringResource(R.string.editor_stabilize_switch),
-                subtitle = stringResource(R.string.editor_stabilize_switch_detail),
-                checked = settings != null,
-                onCheckedChange = { actions.onStabilize(if (it) Stabilization() else null) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("stabilize-switch"),
-            )
-            val committed = settings?.strength ?: Stabilization().strength
-            var strength by remember(committed) { mutableIntStateOf(committed) }
-            LabelledSlider(
-                label = stringResource(R.string.editor_stabilize_strength),
-                value = strength.toFloat(),
-                onValueChange = { strength = it.roundToInt() },
-                onValueChangeFinished = { actions.onStabilize(Stabilization(strength)) },
-                valueText = strength.toString(),
-                valueRange = 0f..100f,
-                enabled = settings != null,
-                labelWidth = 72.dp,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("stabilize-strength"),
-            )
-            when (analysis) {
-                null -> Unit
+        },
+        controls = { fill ->
+            Column(
+                modifier = fill
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp)
+                    .padding(top = 14.dp, bottom = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                SwitchRow(
+                    title = stringResource(R.string.editor_stabilize_switch),
+                    subtitle = stringResource(R.string.editor_stabilize_switch_detail),
+                    checked = settings != null,
+                    onCheckedChange = { actions.onStabilize(if (it) Stabilization() else null) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("stabilize-switch"),
+                )
+                val committed = settings?.strength ?: Stabilization().strength
+                var strength by remember(committed) { mutableIntStateOf(committed) }
+                LabelledSlider(
+                    label = stringResource(R.string.editor_stabilize_strength),
+                    value = strength.toFloat(),
+                    onValueChange = { strength = it.roundToInt() },
+                    onValueChangeFinished = { actions.onStabilize(Stabilization(strength)) },
+                    valueText = strength.toString(),
+                    valueRange = 0f..100f,
+                    enabled = settings != null,
+                    labelWidth = 72.dp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("stabilize-strength"),
+                )
+                when (analysis) {
+                    null -> Unit
 
-                is StabilizeAnalysis.Ready -> {
-                    val crop = remember(analysis, strength) {
-                        Stabilizing.stabilize(analysis.steps, strength, analysis.aspect).crop
+                    is StabilizeAnalysis.Ready -> {
+                        val crop = remember(analysis, strength) {
+                            Stabilizing.stabilize(analysis.steps, strength, analysis.aspect).crop
+                        }
+                        CropReadout(crop)
                     }
-                    CropReadout(crop)
-                }
 
-                StabilizeAnalysis.Waiting, is StabilizeAnalysis.Working -> {
-                    val progress = (analysis as? StabilizeAnalysis.Working)?.progress ?: 0f
-                    Status(
-                        text = stringResource(
-                            R.string.editor_stabilize_analysing,
-                            (progress * 100).roundToInt(),
-                        ),
-                    )
-                    ProgressBar(progress)
-                    SecondaryButton(
-                        text = stringResource(R.string.editor_stabilize_cancel),
-                        onClick = actions.onCancel,
-                        modifier = Modifier.testTag("stabilize-cancel"),
-                    )
-                }
+                    StabilizeAnalysis.Waiting, is StabilizeAnalysis.Working -> {
+                        val progress = (analysis as? StabilizeAnalysis.Working)?.progress ?: 0f
+                        Status(
+                            text = stringResource(
+                                R.string.editor_stabilize_analysing,
+                                (progress * 100).roundToInt(),
+                            ),
+                        )
+                        ProgressBar(progress)
+                        SecondaryButton(
+                            text = stringResource(R.string.editor_stabilize_cancel),
+                            onClick = actions.onCancel,
+                            modifier = Modifier.testTag("stabilize-cancel"),
+                        )
+                    }
 
-                StabilizeAnalysis.Failed -> {
-                    Status(text = stringResource(R.string.editor_stabilize_failed))
-                    SecondaryButton(
-                        text = stringResource(R.string.editor_stabilize_retry),
-                        onClick = actions.onRetry,
-                        modifier = Modifier.testTag("stabilize-retry"),
-                    )
+                    StabilizeAnalysis.Failed -> {
+                        Status(text = stringResource(R.string.editor_stabilize_failed))
+                        SecondaryButton(
+                            text = stringResource(R.string.editor_stabilize_retry),
+                            onClick = actions.onRetry,
+                            modifier = Modifier.testTag("stabilize-retry"),
+                        )
+                    }
                 }
+                Text(
+                    text = stringResource(R.string.editor_stabilize_detail),
+                    style = type.caption,
+                    color = colors.textSecondary,
+                )
             }
-            Text(
-                text = stringResource(R.string.editor_stabilize_detail),
-                style = type.caption,
-                color = colors.textSecondary,
-            )
-        }
-    }
+        },
+        previewHeight = PREVIEW_HEIGHT,
+        modifier = modifier
+            .fillMaxSize()
+            .background(colors.background)
+            .safeDrawingPadding()
+            .testTag("screen:Stabilize"),
+    )
 }
 
 /** The share of the picture the zoom crops away, so no edge shows. */

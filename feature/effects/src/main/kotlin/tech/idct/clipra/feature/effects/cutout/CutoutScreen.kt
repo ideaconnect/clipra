@@ -60,6 +60,7 @@ import tech.idct.clipra.core.designsystem.component.Segment
 import tech.idct.clipra.core.designsystem.component.SegmentedControl
 import tech.idct.clipra.core.designsystem.component.SegmentedStyle
 import tech.idct.clipra.core.designsystem.component.TextAction
+import tech.idct.clipra.core.designsystem.component.ToolScaffold
 import tech.idct.clipra.core.designsystem.icon.ClipraIcons
 import tech.idct.clipra.core.designsystem.theme.ClipraDimens
 import tech.idct.clipra.core.model.Behind
@@ -106,43 +107,32 @@ fun CutoutScreen(
     val asset = clip.source?.let { project.asset(it.mediaId) }
     val key = cutout.key
     var picking by remember { mutableStateOf(initialPicking) }
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(colors.background)
-            .safeDrawingPadding()
-            .testTag("screen:Cutout"),
-    ) {
-        ScreenHeader(
-            title = stringResource(R.string.effects_title_cutout),
-            subtitle = stringResource(
-                if (key != null) {
-                    R.string.effects_cutout_subtitle_chroma
-                } else {
-                    R.string.effects_cutout_subtitle
+    ToolScaffold(
+        header = {
+            ScreenHeader(
+                title = stringResource(R.string.effects_title_cutout),
+                subtitle = stringResource(
+                    if (key != null) {
+                        R.string.effects_cutout_subtitle_chroma
+                    } else {
+                        R.string.effects_cutout_subtitle
+                    },
+                    asset?.displayName.orEmpty(),
+                    project.layers.indexOf(layer) + 1,
+                ),
+                navigation = HeaderNavigation.Back,
+                onNavigate = actions.onBack,
+                actions = {
+                    PrimaryButton(
+                        text = stringResource(R.string.effects_done),
+                        onClick = actions.onBack,
+                        compact = true,
+                        modifier = Modifier.testTag("cutout-done"),
+                    )
                 },
-                asset?.displayName.orEmpty(),
-                project.layers.indexOf(layer) + 1,
-            ),
-            navigation = HeaderNavigation.Back,
-            onNavigate = actions.onBack,
-            actions = {
-                PrimaryButton(
-                    text = stringResource(R.string.effects_done),
-                    onClick = actions.onBack,
-                    compact = true,
-                    modifier = Modifier.testTag("cutout-done"),
-                )
-            },
-        )
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(PREVIEW_HEIGHT)
-                .clipToBounds()
-                .background(colors.ad.background),
-            contentAlignment = Alignment.Center,
-        ) {
+            )
+        },
+        preview = {
             val ratio = project.format.ratio
             Box(
                 modifier = Modifier
@@ -182,70 +172,77 @@ fun CutoutScreen(
                     )
                 }
             }
-        }
-        SegmentedControl(
-            segments = listOf(
-                Segment(stringResource(R.string.effects_cutout_mode_ai)),
-                Segment(stringResource(R.string.effects_cutout_mode_chroma)),
-            ),
-            selectedIndex = if (key != null) 1 else 0,
-            onSelect = { actions.onChroma(it == 1) },
-            style = SegmentedStyle.Tabs,
-            modifier = Modifier
-                .padding(start = 16.dp, end = 16.dp, top = 12.dp)
-                .fillMaxWidth()
-                .testTag("cutout-mode"),
-        )
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp)
-                .padding(top = 16.dp, bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Text(
-                text = stringResource(R.string.effects_cutout_behind),
-                style = type.sectionLabel,
-                color = colors.textSecondary,
+        },
+        controls = { fill ->
+            SegmentedControl(
+                segments = listOf(
+                    Segment(stringResource(R.string.effects_cutout_mode_ai)),
+                    Segment(stringResource(R.string.effects_cutout_mode_chroma)),
+                ),
+                selectedIndex = if (key != null) 1 else 0,
+                onSelect = { actions.onChroma(it == 1) },
+                style = SegmentedStyle.Tabs,
+                modifier = Modifier
+                    .padding(start = 16.dp, end = 16.dp, top = 12.dp)
+                    .fillMaxWidth()
+                    .testTag("cutout-mode"),
             )
-            Row(
-                modifier = Modifier.selectableGroup(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            Column(
+                modifier = fill
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp)
+                    .padding(top = 16.dp, bottom = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                BEHIND.forEach { (behind, label) ->
-                    BehindOption(
-                        label = stringResource(label),
-                        selected = cutout.behind == behind,
-                        onClick = { actions.onCutout(cutout.copy(behind = behind)) },
-                        modifier = Modifier
-                            .weight(1f)
-                            .testTag("behind:${behind.name}"),
-                    )
-                }
-            }
-            if (cutout.behind == Behind.Color) {
-                Swatches(cutout.color) { actions.onCutout(cutout.copy(color = it)) }
-            }
-            if (key != null) {
-                KeyPanel(
-                    cutout,
-                    key,
-                    onPicking = { picking = !picking },
-                    canPick = state.original != null,
-                    actions = actions,
+                Text(
+                    text = stringResource(R.string.effects_cutout_behind),
+                    style = type.sectionLabel,
+                    color = colors.textSecondary,
                 )
-            } else {
-                PersonPanel(cutout, actions)
+                Row(
+                    modifier = Modifier.selectableGroup(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    BEHIND.forEach { (behind, label) ->
+                        BehindOption(
+                            label = stringResource(label),
+                            selected = cutout.behind == behind,
+                            onClick = { actions.onCutout(cutout.copy(behind = behind)) },
+                            modifier = Modifier
+                                .weight(1f)
+                                .testTag("behind:${behind.name}"),
+                        )
+                    }
+                }
+                if (cutout.behind == Behind.Color) {
+                    Swatches(cutout.color) { actions.onCutout(cutout.copy(color = it)) }
+                }
+                if (key != null) {
+                    KeyPanel(
+                        cutout,
+                        key,
+                        onPicking = { picking = !picking },
+                        canPick = state.original != null,
+                        actions = actions,
+                    )
+                } else {
+                    PersonPanel(cutout, actions)
+                }
+                TextAction(
+                    text = stringResource(R.string.effects_cutout_remove),
+                    onClick = actions.onRemove,
+                    color = colors.textSecondary,
+                    modifier = Modifier.testTag("cutout-remove"),
+                )
             }
-            TextAction(
-                text = stringResource(R.string.effects_cutout_remove),
-                onClick = actions.onRemove,
-                color = colors.textSecondary,
-                modifier = Modifier.testTag("cutout-remove"),
-            )
-        }
-    }
+        },
+        previewHeight = PREVIEW_HEIGHT,
+        modifier = modifier
+            .fillMaxSize()
+            .background(colors.background)
+            .safeDrawingPadding()
+            .testTag("screen:Cutout"),
+    )
 }
 
 /** Edge refine and Hair detail for the person cutout. */

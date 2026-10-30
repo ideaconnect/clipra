@@ -13,6 +13,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import kotlinx.serialization.Serializable
+import tech.idct.clipra.core.designsystem.component.ReadableWidth
 import tech.idct.clipra.core.designsystem.placeholder.Board
 
 /** The sound of [clipId] in [projectId]; no project opens the placeholder board (screen index). */
@@ -69,32 +70,34 @@ private fun AudioDestination(onDone: () -> Unit, viewModel: AudioViewModel = hil
         return
     }
     val clip = state.clip ?: return
-    AudioScreen(
-        state = state,
-        volume = liveVolume ?: clip.audio.volume,
-        strength = liveStrength,
-        noiseStrength = liveNoise,
-        duckingDepth = liveDuck,
-        actions = AudioActions(
-            onBack = onDone,
-            onVolume = { liveVolume = it },
-            onVolumeDone = {
-                liveVolume?.let { viewModel.setAudio(clip.audio.copy(volume = it)) }
-            },
-            onAudio = viewModel::setAudio,
-            onLoudnessTarget = viewModel::setLoudnessTarget,
-            onVoice = viewModel::setVoiceOn,
-            onEngine = viewModel::chooseEngine,
-            onStrength = { liveStrength = it },
-            onStrengthDone = { liveStrength?.let(viewModel::setVoiceStrength) },
-            onApplyToAll = viewModel::applyVoiceToAll,
-            onNoise = viewModel::setNoiseOn,
-            onNoiseStrength = { liveNoise = it },
-            onNoiseStrengthDone = { liveNoise?.let(viewModel::setNoiseStrength) },
-            onDucking = viewModel::setDucking,
-            onDuckingDepth = { liveDuck = it },
-            onDuckingDepthDone = { liveDuck?.let(viewModel::setDuckingDepth) },
-            onBeats = viewModel::setBeats,
-        ),
-    )
+    ReadableWidth {
+        AudioScreen(
+            state = state,
+            volume = liveVolume ?: clip.audio.volume,
+            strength = liveStrength,
+            noiseStrength = liveNoise,
+            duckingDepth = liveDuck,
+            actions = AudioActions(
+                onBack = onDone,
+                onVolume = { liveVolume = it },
+                onVolumeDone = {
+                    liveVolume?.let { viewModel.setAudio(clip.audio.copy(volume = it)) }
+                },
+                onAudio = viewModel::setAudio,
+                onLoudnessTarget = viewModel::setLoudnessTarget,
+                onVoice = viewModel::setVoiceOn,
+                onEngine = viewModel::chooseEngine,
+                onStrength = { liveStrength = it },
+                onStrengthDone = { liveStrength?.let(viewModel::setVoiceStrength) },
+                onApplyToAll = viewModel::applyVoiceToAll,
+                onNoise = viewModel::setNoiseOn,
+                onNoiseStrength = { liveNoise = it },
+                onNoiseStrengthDone = { liveNoise?.let(viewModel::setNoiseStrength) },
+                onDucking = viewModel::setDucking,
+                onDuckingDepth = { liveDuck = it },
+                onDuckingDepthDone = { liveDuck?.let(viewModel::setDuckingDepth) },
+                onBeats = viewModel::setBeats,
+            ),
+        )
+    }
 }

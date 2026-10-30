@@ -12,6 +12,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import kotlinx.serialization.Serializable
+import tech.idct.clipra.core.designsystem.component.ReadableWidth
 
 @Serializable
 data object SettingsRoute
@@ -36,7 +37,9 @@ class SettingsNavigationActions(
 fun NavGraphBuilder.settingsScreens(actions: SettingsNavigationActions) {
     composable<SettingsRoute> { SettingsDestination(actions) }
     composable<LicensesRoute> {
-        LicensesScreen(onBack = actions.onBack, onLicense = actions.onLicense)
+        ReadableWidth {
+            LicensesScreen(onBack = actions.onBack, onLicense = actions.onLicense)
+        }
     }
     composable<LicenseRoute> { entry ->
         val route = entry.toRoute<LicenseRoute>()
@@ -51,19 +54,21 @@ private fun SettingsDestination(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    SettingsScreen(
-        state = state,
-        actions = SettingsActions(
-            onBack = actions.onBack,
-            onPro = actions.onPro,
-            onRestore = viewModel::restore,
-            onExportDefaults = viewModel::setExportDefaults,
-            onClearCache = viewModel::clearCache,
-            onModels = actions.onModels,
-            onAdPrivacy = { context.findActivity()?.let(viewModel::adPrivacy) },
-            onLicenses = actions.onLicenses,
-        ),
-    )
+    ReadableWidth {
+        SettingsScreen(
+            state = state,
+            actions = SettingsActions(
+                onBack = actions.onBack,
+                onPro = actions.onPro,
+                onRestore = viewModel::restore,
+                onExportDefaults = viewModel::setExportDefaults,
+                onClearCache = viewModel::clearCache,
+                onModels = actions.onModels,
+                onAdPrivacy = { context.findActivity()?.let(viewModel::adPrivacy) },
+                onLicenses = actions.onLicenses,
+            ),
+        )
+    }
 }
 
 private tailrec fun Context.findActivity(): Activity? = when (this) {

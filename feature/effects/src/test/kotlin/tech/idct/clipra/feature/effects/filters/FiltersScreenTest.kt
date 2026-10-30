@@ -5,6 +5,7 @@ import android.graphics.Canvas
 import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.Shader
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -20,6 +21,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import tech.idct.clipra.core.designsystem.ClipraTheme
+import tech.idct.clipra.core.designsystem.adaptive.LocalWindowLayout
+import tech.idct.clipra.core.designsystem.adaptive.WindowLayout
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
 import tech.idct.clipra.core.model.Effect
@@ -75,30 +78,36 @@ class FiltersScreenTest {
     private val picked = mutableListOf<String?>()
     private var category = FilterCategory.All
 
-    private fun show(category: FilterCategory = FilterCategory.All, locale: Locale = Locale.US) {
+    private fun show(
+        category: FilterCategory = FilterCategory.All,
+        locale: Locale = Locale.US,
+        layout: WindowLayout = WindowLayout.Phone,
+    ) {
         Locale.setDefault(locale)
         compose.setContent {
             ClipraTheme {
-                FiltersScreen(
-                    state = FiltersUiState(
-                        project = project,
-                        clip = clip,
-                        loaded = true,
-                        category = category,
-                        thumbnails = thumbnails,
-                    ),
-                    strength = 0.8f,
-                    actions = FiltersActions(
-                        onBack = {},
-                        onCategory = { this.category = it },
-                        onPick = { picked += it },
-                        onStrength = {},
-                        onStrengthDone = {},
-                        onCompare = {},
-                        onApplyToAll = {},
-                    ),
-                    preview = {},
-                )
+                CompositionLocalProvider(LocalWindowLayout provides layout) {
+                    FiltersScreen(
+                        state = FiltersUiState(
+                            project = project,
+                            clip = clip,
+                            loaded = true,
+                            category = category,
+                            thumbnails = thumbnails,
+                        ),
+                        strength = 0.8f,
+                        actions = FiltersActions(
+                            onBack = {},
+                            onCategory = { this.category = it },
+                            onPick = { picked += it },
+                            onStrength = {},
+                            onStrengthDone = {},
+                            onCompare = {},
+                            onApplyToAll = {},
+                        ),
+                        preview = {},
+                    )
+                }
             }
         }
     }
@@ -127,6 +136,15 @@ class FiltersScreenTest {
     @Config(qualifiers = "pl-w390dp-h844dp-xhdpi")
     fun allFiltersInPolish() {
         show(locale = Locale.forLanguageTag("pl-PL"))
+        compose.onRoot().captureRoboImage(roborazziOptions = options)
+    }
+
+    /** On a tablet (#70) the preview fills the left and the filters sit beside it. */
+    @Test
+    @Config(qualifiers = "w1280dp-h800dp-land-mdpi")
+    fun allFiltersOnATablet() {
+        show(layout = WindowLayout.Tablet)
+        compose.onNodeWithTag("filter:mosaic").assertIsSelected()
         compose.onRoot().captureRoboImage(roborazziOptions = options)
     }
 

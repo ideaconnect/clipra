@@ -29,6 +29,7 @@ import tech.idct.clipra.core.designsystem.component.ChipStyle
 import tech.idct.clipra.core.designsystem.component.ClipraChip
 import tech.idct.clipra.core.designsystem.component.HeaderNavigation
 import tech.idct.clipra.core.designsystem.component.ScreenHeader
+import tech.idct.clipra.core.designsystem.component.ToolScaffold
 import tech.idct.clipra.core.model.Animation
 import tech.idct.clipra.core.model.Animations
 import tech.idct.clipra.core.model.Clip
@@ -58,33 +59,22 @@ fun AnimateScreen(
     modifier: Modifier = Modifier,
 ) {
     val colors = ClipraTheme.colors
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(colors.background)
-            .safeDrawingPadding()
-            .testTag("screen:Animate"),
-    ) {
-        ScreenHeader(
-            title = stringResource(R.string.editor_animate_header, displayName(project, clip)),
-            subtitle = stringResource(
-                R.string.editor_layers_subtitle,
-                typeName(clip.type),
-                formatTimecode(clip.startUs),
-                formatTimecode(clip.endUs),
-            ),
-            navigation = HeaderNavigation.Back,
-            onNavigate = actions.onDone,
-            actions = { DoneButton(actions.onDone) },
-        )
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(PREVIEW_HEIGHT)
-                .clipToBounds()
-                .background(colors.ad.background),
-            contentAlignment = Alignment.Center,
-        ) {
+    ToolScaffold(
+        header = {
+            ScreenHeader(
+                title = stringResource(R.string.editor_animate_header, displayName(project, clip)),
+                subtitle = stringResource(
+                    R.string.editor_layers_subtitle,
+                    typeName(clip.type),
+                    formatTimecode(clip.startUs),
+                    formatTimecode(clip.endUs),
+                ),
+                navigation = HeaderNavigation.Back,
+                onNavigate = actions.onDone,
+                actions = { DoneButton(actions.onDone) },
+            )
+        },
+        preview = {
             val format = project.format
             Box(
                 modifier = Modifier
@@ -96,16 +86,23 @@ fun AnimateScreen(
             ) {
                 preview()
             }
-        }
-        AnimateControls(
-            clip = clip,
-            onAnimation = actions.onAnimation,
-            modifier = Modifier
-                .weight(1f)
-                .verticalScroll(rememberScrollState())
-                .padding(top = 14.dp, bottom = 16.dp),
-        )
-    }
+        },
+        controls = { fill ->
+            AnimateControls(
+                clip = clip,
+                onAnimation = actions.onAnimation,
+                modifier = fill
+                    .verticalScroll(rememberScrollState())
+                    .padding(top = 14.dp, bottom = 16.dp),
+            )
+        },
+        previewHeight = PREVIEW_HEIGHT,
+        modifier = modifier
+            .fillMaxSize()
+            .background(colors.background)
+            .safeDrawingPadding()
+            .testTag("screen:Animate"),
+    )
 }
 
 /**
