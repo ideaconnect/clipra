@@ -34,6 +34,9 @@ class ProjectMediaResolver(
         return asset.uri.takeIf { isAvailable(context, it) }
     }
 
+    override fun cutout(asset: MediaAsset): CutoutMasks? =
+        CutoutMasks.cached(cache.cutout(asset.id))
+
     override fun text(spec: TextSpec, card: Boolean, width: Int, height: Int): Bitmap =
         TextRenderer.render(context, spec, card, width, height)
 

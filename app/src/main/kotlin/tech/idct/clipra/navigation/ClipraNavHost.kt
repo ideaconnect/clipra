@@ -256,7 +256,7 @@ private fun toolRoute(tool: EditorTool, target: ToolTarget): Any = when (tool) {
     EditorTool.CaptionsEdit -> CaptionsEditRoute(target.projectId)
     EditorTool.Transcript -> TranscriptRoute(target.projectId)
     EditorTool.Color -> ColorRoute(target.projectId, target.clipId, target.playheadUs)
-    EditorTool.Cutout -> CutoutRoute
+    EditorTool.Cutout -> CutoutRoute(target.projectId, target.clipId, target.playheadUs)
     EditorTool.Reframe -> ReframeRoute
     EditorTool.Masks -> MasksRoute(target.projectId, target.clipId, target.playheadUs)
     EditorTool.Effects -> EffectStackRoute(target.projectId, target.clipId!!, target.playheadUs)

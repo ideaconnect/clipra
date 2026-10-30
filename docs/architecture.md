@@ -30,7 +30,7 @@ core:audio               Loudness, gates, ducking, beat detection, waveform extr
 core:models              AI model manifest, downloads (WorkManager), verification and storage
 ml:whisper               whisper.cpp JNI, model files, transcription pipeline
 ml:voice                 DeepFilterNet 3 (ONNX Runtime), RNNoise (JNI)
-ml:vision                MediaPipe face detector, selfie segmenter, subject tracking; motion tracking for Stabilize (OpenCV)
+ml:vision                MediaPipe models on LiteRT: selfie segmenter, face detector, subject tracking; motion tracking for Stabilize (OpenCV)
 ml:translate             ML Kit on-device translation
 feature:home             Home, new project
 feature:editor           Timeline, preview, tools, inspector (phone and tablet)
@@ -114,11 +114,17 @@ Transcript(clipId, words: List<Word(text, start, end, confidence, kind: Word|Fil
 | Captions, transcript | whisper.cpp (MIT) via JNI; Whisper ggml models (MIT): tiny 78 MB, base 148 MB, small 488 MB, large-v3-turbo q5_0 574 MB | Word timestamps, language detection, translate-to-English task. whisper.cpp v1.9.5 is built from its official release (SHA-256 checked) in `ml:whisper`. The spike (`docs/spikes/whisper.md`) recommends Base as the default and Small for Polish, one `whisper_full` call per clip (long media split at silences near 10 minutes), and token timestamps with cuts snapped to silence. Phone measurements are still pending. `Transcriber` (`core:engine`, #44) does that per clip: from the clip's cleaned voice when there is one, at 16 kHz mono. `WordTiming` then moves word edges to the pauses around them (within 100 ms of the speech onsets on the test clip), and fillers are marked per language. `TranscriptionWorker` (`feature:captions`) runs it in the background with progress, cancel and a notification, and stores the transcripts (in each clip's media time) with the project as one undo step. |
 | Filler and pause detection | Rules on Whisper word output | Filler list per language, pause threshold from the UI |
 | Voice cleanup | DeepFilterNet 3 (MIT or Apache-2.0) on ONNX Runtime (MIT); RNNoise (BSD-3) | See audio |
-| Face follow, reframe | MediaPipe Tasks Vision face detector (Apache-2.0) | Smoothed track, keyframes written into the clip |
-| Person cutout | MediaPipe image segmenter, selfie model (about 33 ms per frame on a Pixel 6 per Google's docs) | Temporal smoothing, edge refine |
+| Face follow, reframe | MediaPipe face detector model (Apache-2.0) on LiteRT | Smoothed track, keyframes written into the clip |
+| Person cutout | MediaPipe selfie segmenter model (Apache-2.0, 256 × 256) on LiteRT (Apache-2.0) | Masks per frame, steadied and cached; see below |
 | Subject follow | MediaPipe object detector plus a simple tracker | Fallback to face, then centre |
 | Translation | ML Kit on-device translation (Google terms) | Language packs downloaded on demand; non-English pairs pivot through English |
 | Stabilization | No model: corner tracking (pyramidal Lucas-Kanade) and per-frame camera motion with RANSAC, using OpenCV (Apache-2.0, trimmed build) | Analysed on the proxy in the background and cached per media hash; the smoothed path is rendered by a per-frame matrix effect with one zoom per clip, in preview and export. No gyro data or learned model in v1 |
+
+**MediaPipe models run on LiteRT, not MediaPipe Tasks (#50).** The Tasks libraries send usage events (task name, app version) through Google's datatransport to Clearcut, with no switch to turn them off; that is network traffic the product doesn't allow. LiteRT (`com.google.ai.edge.litert:litert`, the TensorFlow Lite runtime) has no telemetry and runs the same official model files, so `ml:vision` does the small pre- and post-processing itself (for the selfie segmenter: the picture squeezed to 256 × 256, RGB in 0 to 1, a confidence per pixel out).
+
+**Person cutout (#50).**
+- **Masks.** `Cutouts` (`core:engine`) runs `SelfieSegmenter` (`ml:vision`) over every frame of a media's proxy (one mask for a photo), upright, in a WorkManager job, with progress. Each mask is steadied by the last (`CutoutMath.smooth`): small changes mostly keep the last value, changes over 0.35 (someone moving) are taken at once. The masks go into `cutout/<media>.masks` in the cache: 8-bit confidences on the 256 × 256 grid, deflated per frame, indexed by media time, with each frame's person coverage (for "Person found"). Export makes masks that aren't ready first.
+- **Drawing.** The compositor uploads the clip's mask for its media time as a luminance texture and runs `Shaders.CUTOUT` after the grade and the filters. It keeps a pixel as `CutoutMath.alpha` says: a firm edge a little inside the model's 50 % line, narrower as Edge refine goes up, and the unsure fringe (hair) partly kept by Hair detail. Behind the person go the layers under the clip (Layer below, Clear), a strong blur of the clip itself (3 % of the short side), or a colour. Preview and export draw it the same way; masks don't depend on the output size.
 
 Every model runs on the phone and comes from its official source. Clipra never hosts or mirrors model files. The app carries a manifest with each file's URL, pinned to a fixed revision (never `main` or `latest`), its size and its SHA-256.
 
@@ -126,7 +132,7 @@ Every model runs on the phone and comes from its official source. Clipra never h
 |---|---|---|
 | Whisper ggml: tiny, base, small, large-v3-turbo q5_0 | Hugging Face `ggerganov/whisper.cpp`, the repository whisper.cpp's own download script uses | Downloaded, pinned to a commit |
 | DeepFilterNet 3 (`DeepFilterNet3_onnx.tar.gz`) | GitHub `Rikorose/DeepFilterNet`, `models/` folder | Downloaded, pinned to a release tag |
-| MediaPipe face detector, selfie segmenter, object detector | Google's MediaPipe model storage (`storage.googleapis.com/mediapipe-models`), versioned paths | Built into the APK (or an install-time asset pack), checked at build time |
+| MediaPipe face detector, selfie segmenter, object detector | Google's MediaPipe model storage (`storage.googleapis.com/mediapipe-models`), versioned paths | Built into the APK, downloaded and checked with SHA-256 at build time (`ml:vision`'s `downloadVisionModels`; the selfie segmenter `float16/1`, 249,537 bytes) |
 | RNNoise | Weights compiled in from the official xiph/rnnoise source | Built in |
 | ML Kit translation packs | Google, through ML Kit | Managed by ML Kit |
 

@@ -169,4 +169,23 @@
     <string name="effects_stack_add">+ Dodaj efekt</string>
     <string name="effects_stack_copy">Kopiuj</string>
     <string name="effects_stack_paste">Wklej</string>
+    <string name="effects_cutout_subtitle">%1$s · L%2$d · AI wycina osoby</string>
+    <string name="effects_cutout_finding">Szukanie osób %1$d%%</string>
+    <string name="effects_cutout_found">Znaleziono osobę</string>
+    <string name="effects_cutout_not_found">Nie znaleziono osoby</string>
+    <string name="effects_cutout_behind">Za postacią pokaż</string>
+    <string name="effects_cutout_layer_below">Warstwa</string>
+    <string name="effects_cutout_blur">Rozmycie</string>
+    <string name="effects_cutout_clear">Nic</string>
+    <string name="effects_cutout_color">Kolor</string>
+    <string name="effects_cutout_edge">Krawędź</string>
+    <string name="effects_cutout_hair">Detale włosów</string>
+    <string name="effects_cutout_note">Znajduje osoby na telefonie, klatka po klatce. Bez zielonego tła.</string>
+    <string name="effects_cutout_remove">Usuń wycięcie</string>
+    <string name="effects_cutout_green">Zielony</string>
+    <string name="effects_cutout_blue">Niebieski</string>
+    <string name="effects_cutout_black">Czarny</string>
+    <string name="effects_cutout_white">Biały</string>
+    <string name="effects_cutout_yellow">Żółty</string>
+    <string name="effects_cutout_red">Czerwony</string>
 </resources>

@@ -9,6 +9,7 @@ import androidx.media3.common.util.ExperimentalApi
 import androidx.media3.common.util.Size
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.transformer.CompositionPlayer
+import tech.idct.clipra.core.engine.media.CutoutMasks
 import tech.idct.clipra.core.engine.media.MediaCache
 import tech.idct.clipra.core.engine.media.ProjectMediaResolver
 import tech.idct.clipra.core.engine.render.CompositionFactory
@@ -19,6 +20,7 @@ import tech.idct.clipra.core.model.Animations
 import tech.idct.clipra.core.model.CaptionSpec
 import tech.idct.clipra.core.model.ColorGrade
 import tech.idct.clipra.core.model.CubeLut
+import tech.idct.clipra.core.model.Cutout
 import tech.idct.clipra.core.model.Effect
 import tech.idct.clipra.core.model.Format
 import tech.idct.clipra.core.model.Mask
@@ -149,6 +151,12 @@ class PreviewPlayer(private val context: Context, cache: MediaCache) {
         redraw()
     }
 
+    /** Shows [clipId] with [cutout]'s settings while a slider moves (#50); null goes back. */
+    fun setLiveCutout(clipId: String, cutout: Cutout?) {
+        live.setCutout(clipId, cutout)
+        redraw()
+    }
+
     /** Shows [clipId] ungraded left of [split] (a share of its width); null shows it all graded. */
     fun setColorSplit(clipId: String, split: Float?) {
         if (split == null) splits.remove(clipId) else splits[clipId] = split
@@ -228,6 +236,8 @@ class PreviewPlayer(private val context: Context, cache: MediaCache) {
         private val luts = HashMap<String, CubeLut?>()
 
         override fun speech(asset: MediaAsset): List<LongRange>? = inner.speech(asset)
+
+        override fun cutout(asset: MediaAsset): CutoutMasks? = inner.cutout(asset)
 
         override fun lut(id: String): CubeLut? = luts.getOrPut(id) { inner.lut(id) }
     }

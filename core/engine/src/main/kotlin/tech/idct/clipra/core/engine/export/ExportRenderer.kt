@@ -24,6 +24,7 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import tech.idct.clipra.core.engine.media.Cutouts
 import tech.idct.clipra.core.engine.media.MediaCache
 import tech.idct.clipra.core.engine.media.ProjectMediaResolver
 import tech.idct.clipra.core.engine.media.SoundAnalyzer
@@ -65,6 +66,7 @@ class ExportRenderer(
     private val context: Context,
     private val cache: MediaCache,
     private val voices: VoiceCleaner? = null,
+    private val cutouts: Cutouts? = null,
 ) {
     /** The rendered file, before it is published. */
     data class Rendered(val file: File, val width: Int, val height: Int)
@@ -81,6 +83,7 @@ class ExportRenderer(
     ): Rendered {
         val size = settings.outputSize(project)
         voices?.let { prepareVoices(it, project) }
+        cutouts?.let { prepareCutouts(it, project) }
         val media = ProjectMediaResolver(
             context,
             cache,
@@ -244,6 +247,17 @@ class ExportRenderer(
                 val asset = clip.source?.let { project.asset(it.mediaId) } ?: continue
                 ensureActive()
                 analyzer.prepareSpeech(asset)
+            }
+        }
+
+    /** The person masks (#50) of every cut-out clip, made now where the background work hasn't. */
+    private suspend fun prepareCutouts(cutouts: Cutouts, project: Project) =
+        withContext(Dispatchers.Default) {
+            for (clip in project.layers.flatMap { it.clips }) {
+                if (clip.cutout == null) continue
+                val asset = clip.source?.let { project.asset(it.mediaId) } ?: continue
+                ensureActive()
+                cutouts.prepare(asset) { !isActive }
             }
         }
 

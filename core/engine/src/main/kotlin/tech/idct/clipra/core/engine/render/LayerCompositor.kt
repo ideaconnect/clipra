@@ -16,6 +16,8 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.effect.BaseGlShaderProgram
 import androidx.media3.effect.GlEffect
 import androidx.media3.effect.GlShaderProgram
+import tech.idct.clipra.core.engine.media.CutoutMasks
+import tech.idct.clipra.core.model.Behind
 import tech.idct.clipra.core.model.BlendMode
 import tech.idct.clipra.core.model.CellRect
 import tech.idct.clipra.core.model.Cells
@@ -23,6 +25,7 @@ import tech.idct.clipra.core.model.ClipGeometry
 import tech.idct.clipra.core.model.ColorGrade
 import tech.idct.clipra.core.model.ColorMath
 import tech.idct.clipra.core.model.CubeLut
+import tech.idct.clipra.core.model.Cutout
 import tech.idct.clipra.core.model.Effect
 import tech.idct.clipra.core.model.Filters
 import tech.idct.clipra.core.model.HueRange
@@ -94,6 +97,11 @@ private class LayerCompositorProgram(
     private val blurProgram = GlProgram(Shaders.VERTEX, Shaders.BLUR)
     private val transitionProgram = GlProgram(Shaders.VERTEX, Shaders.TRANSITION)
     private val gradeProgram = GlProgram(Shaders.VERTEX, Shaders.GRADE)
+    private val cutoutProgram = GlProgram(Shaders.VERTEX, Shaders.CUTOUT)
+
+    /** Each cut-out clip's mask texture (#50) and the frame it holds. */
+    private val maskTextures = HashMap<String, MaskTexture>()
+    private val maskBytes = ByteArray(CutoutMasks.SIZE * CutoutMasks.SIZE)
 
     // LUTs (#28) as textures, by table; a few hundred kilobytes each.
     private val lutTextures = HashMap<CubeLut, LutTexture>()
@@ -207,8 +215,11 @@ private class LayerCompositorProgram(
             blurProgram,
             transitionProgram,
             gradeProgram,
+            cutoutProgram,
         )
         programs.forEach { it.delete() }
+        maskTextures.values.forEach { GlUtil.deleteTexture(it.id) }
+        maskTextures.clear()
         callbackThread.quitSafely()
     }
 
@@ -241,10 +252,15 @@ private class LayerCompositorProgram(
         val grading = (liveColor?.grade ?: clip.color)?.takeIf { !it.isNeutral }?.let {
             Grading(it, if (liveColor != null) liveColor.lut else clip.lut, live?.split(clip.id))
         }
-        val frame = if (filters.isEmpty() && grading == null) {
+        // The person cutout (#50) comes last, over the graded and filtered picture.
+        val cutout = clip.cutout?.let { cut ->
+            val settings = live?.cutout(clip.id) ?: cut.settings
+            Cutting(clip.id, settings, cut.masks, mediaTimeAt(clip, timeUs))
+        }
+        val frame = if (filters.isEmpty() && grading == null && cutout == null) {
             raw
         } else {
-            filtered(raw, filters, mask, timeUs, grading)
+            filtered(raw, filters, mask, timeUs, grading, cutout)
         }
         val (position, unit) = quadFor(clip, motion.transform, frame.width, frame.height)
         return Prepared(frame, opacity, position, unit, clip.cell)
@@ -372,6 +388,24 @@ private class LayerCompositorProgram(
     /** A grade to draw (#28), its LUT, and where the before and after divide (or null). */
     private class Grading(val grade: ColorGrade, val lut: CubeLut?, val split: Float?)
 
+    /** A cutout to draw (#50): its settings and masks, at [mediaUs] of the clip's media. */
+    private class Cutting(
+        val clipId: String,
+        val settings: Cutout,
+        val masks: CutoutMasks,
+        val mediaUs: Long,
+    )
+
+    /** A clip's mask texture and the frame of its masks it holds. */
+    private class MaskTexture(val id: Int, var frame: Int, var masks: CutoutMasks)
+
+    /** The media time a clip shows at [timeUs]: a photo has one picture. */
+    private fun mediaTimeAt(clip: RenderClip, timeUs: Long): Long =
+        when (val source = clip.source) {
+            is RenderSource.Video -> source.inPointUs + clip.sourceOffsetAt(timeUs)
+            else -> 0
+        }
+
     /** A LUT's slices in a grid of tiles, [columns] across and [rows] down. */
     private class LutTexture(val id: Int, val columns: Int, val rows: Int)
 
@@ -386,6 +420,7 @@ private class LayerCompositorProgram(
         mask: Mask?,
         timeUs: Long,
         grading: Grading?,
+        cutout: Cutting? = null,
     ): ClipFrame {
         val longest = maxOf(timeline.width, timeline.height).toFloat()
         val scale = minOf(1f, longest / maxOf(frame.width, frame.height))
@@ -457,8 +492,81 @@ private class LayerCompositorProgram(
             )
             current = next
         }
+        if (cutout != null) {
+            val blurred = (current + 2) % 3
+            if (cutout.settings.behind == Behind.Blur) {
+                // A strong blur of the clip itself goes behind the person.
+                val across = (current + 1) % 3
+                val deviation = BEHIND_BLUR * minOf(width, height)
+                blur(targets[current], targets[across], deviation / 4 / width, 0f)
+                blur(targets[across], targets[blurred], 0f, deviation / 4 / height)
+            }
+            val next = (current + 1) % 3
+            focus(targets[next])
+            cutoutPass(targets[current], targets[blurred], cutout)
+            current = next
+        }
         val result = targets[current]
         return ClipFrame(result.texture, identity, width, height, external = false)
+    }
+
+    /** The cutout pass (#50) into the focused target, as `CutoutMath.alpha` keeps a pixel. */
+    private fun cutoutPass(input: Target, blurred: Target, cutout: Cutting) {
+        val settings = cutout.settings
+        val program = cutoutProgram
+        program.use()
+        program.setSamplerTexIdUniform("uTex", input.texture, 0)
+        program.setSamplerTexIdUniform("uMask", maskTexture(cutout), 1)
+        program.setSamplerTexIdUniform("uBlurred", blurred.texture, 2)
+        val behind = when (settings.behind) {
+            Behind.LayerBelow, Behind.Clear -> 0
+            Behind.Blur -> 1
+            Behind.Color -> 2
+        }
+        program.setIntUniform("uBehind", behind)
+        val color = settings.color.toInt()
+        program.setFloatsUniform(
+            "uColor",
+            floatArrayOf(
+                Color.red(color) / 255f,
+                Color.green(color) / 255f,
+                Color.blue(color) / 255f,
+            ),
+        )
+        program.setFloatUniform("uRefine", settings.edgeRefine)
+        program.setFloatUniform("uHair", settings.hairDetail)
+        drawQuad(program, FULL_FRAME, FULL_UNIT, identity)
+    }
+
+    /** The clip's mask at its media time, uploaded when the frame changes. */
+    private fun maskTexture(cutout: Cutting): Int {
+        val masks = cutout.masks
+        val frame = masks.indexAt(cutout.mediaUs)
+        val held = maskTextures[cutout.clipId]
+        if (held != null && held.frame == frame && held.masks === masks) return held.id
+        masks.frame(frame, maskBytes)
+        val id = held?.id ?: GlUtil.generateTexture()
+        GlUtil.bindTexture(GLES20.GL_TEXTURE_2D, id, GLES20.GL_LINEAR)
+        GLES20.glPixelStorei(GLES20.GL_UNPACK_ALIGNMENT, 1)
+        GLES20.glTexImage2D(
+            GLES20.GL_TEXTURE_2D,
+            0,
+            GLES20.GL_LUMINANCE,
+            CutoutMasks.SIZE,
+            CutoutMasks.SIZE,
+            0,
+            GLES20.GL_LUMINANCE,
+            GLES20.GL_UNSIGNED_BYTE,
+            ByteBuffer.wrap(maskBytes),
+        )
+        GlUtil.checkGlError()
+        if (held == null) {
+            maskTextures[cutout.clipId] = MaskTexture(id, frame, masks)
+        } else {
+            held.frame = frame
+            held.masks = masks
+        }
+        return id
     }
 
     /** The grade pass (#28) into the focused target, as `ColorMath` grades a pixel. */
@@ -730,6 +838,9 @@ private class LayerCompositorProgram(
     }
 
     private fun releaseInactive(active: Set<String>) {
+        maskTextures.keys.filter { it !in active }.forEach {
+            maskTextures.remove(it)?.let { texture -> GlUtil.deleteTexture(texture.id) }
+        }
         videoSources.keys.filter { it !in active }.forEach { videoSources.remove(it)?.release() }
         bitmapTextures.keys.filter { it !in active }.forEach {
             bitmapTextures.remove(it)?.let { id -> GlUtil.deleteTexture(id) }
@@ -800,5 +911,8 @@ private class LayerCompositorProgram(
     private companion object {
         val FULL_FRAME: FloatArray = GlUtil.getNormalizedCoordinateBounds()
         val FULL_UNIT: FloatArray = GlUtil.getTextureCoordinateBounds()
+
+        /** The blur behind a cut-out person (#50), as a share of the picture's short side. */
+        const val BEHIND_BLUR = 0.03f
     }
 }

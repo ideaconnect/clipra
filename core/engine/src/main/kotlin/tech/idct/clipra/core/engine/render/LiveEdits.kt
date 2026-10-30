@@ -2,6 +2,7 @@ package tech.idct.clipra.core.engine.render
 
 import tech.idct.clipra.core.model.ColorGrade
 import tech.idct.clipra.core.model.CubeLut
+import tech.idct.clipra.core.model.Cutout
 import tech.idct.clipra.core.model.Effect
 import tech.idct.clipra.core.model.Mask
 import tech.idct.clipra.core.model.Transform
@@ -20,6 +21,14 @@ class LiveEdits {
     private val masks = ConcurrentHashMap<String, Mask>()
     private val colors = ConcurrentHashMap<String, LiveColor>()
     private val splits = ConcurrentHashMap<String, Float>()
+    private val cutouts = ConcurrentHashMap<String, Cutout>()
+
+    /** The cutout's settings while the Cutout board's sliders move (#50). */
+    fun cutout(clipId: String): Cutout? = cutouts[clipId]
+
+    fun setCutout(clipId: String, cutout: Cutout?) {
+        if (cutout == null) cutouts.remove(clipId) else cutouts[clipId] = cutout
+    }
 
     /** A grade being changed (#28), with its LUT already read. */
     class LiveColor(val grade: ColorGrade, val lut: CubeLut?)
