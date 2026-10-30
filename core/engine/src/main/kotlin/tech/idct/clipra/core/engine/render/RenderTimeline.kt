@@ -180,6 +180,12 @@ sealed interface RenderSource {
 
     /** Sound only (music, voiceover): no picture. */
     data class Audio(val path: String, val inPointUs: Long = 0) : RenderSource
+
+    /**
+     * An adjustment clip (#23): no picture of its own; its grade and effects apply to the layers
+     * below it.
+     */
+    data object Adjustment : RenderSource
 }
 
 /**

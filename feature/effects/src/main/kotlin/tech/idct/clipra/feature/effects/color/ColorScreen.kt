@@ -74,6 +74,7 @@ import tech.idct.clipra.core.model.HueRange
 import tech.idct.clipra.core.model.Size
 import tech.idct.clipra.core.model.transformAt
 import tech.idct.clipra.feature.effects.R
+import tech.idct.clipra.feature.effects.common.clipLabel
 import tech.idct.clipra.feature.effects.masks.FrameBox
 import kotlin.math.roundToInt
 
@@ -125,7 +126,7 @@ fun ColorScreen(
                 title = stringResource(R.string.effects_color_title),
                 subtitle = stringResource(
                     R.string.effects_color_subtitle,
-                    asset?.displayName.orEmpty(),
+                    clipLabel(project, clip),
                     project.layers.indexOf(layer) + 1,
                 ),
                 navigation = HeaderNavigation.Back,

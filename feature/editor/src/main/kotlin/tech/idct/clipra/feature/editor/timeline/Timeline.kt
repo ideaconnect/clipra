@@ -537,6 +537,16 @@ private fun ClipBlock(
             .size(width.dp, laneHeight.dp)
             .clip(shape)
             .background(fill)
+            // Adjustment clips (#23) are a hatch with a border, as in the design system.
+            .then(
+                if (clip.type == ClipType.Adjustment) {
+                    Modifier
+                        .hatch(colors.clip.adjustmentStripeB)
+                        .border(1.dp, colors.clip.adjustmentBorder, shape)
+                } else {
+                    Modifier
+                },
+            )
             .then(if (selected) Modifier.border(2.dp, colors.accent, shape) else Modifier)
             .then(if (linked) Modifier.dashedOutline(colors.accent) else Modifier)
             .semantics(mergeDescendants = true) {
@@ -879,12 +889,13 @@ private fun TransitionMarker(
 @Composable
 private fun ClipLabel(clip: Clip, project: Project, missing: Boolean, modifier: Modifier) {
     val colors = ClipraTheme.colors
-    val name = if (missing) {
-        stringResource(
-            R.string.editor_missing_media,
-        )
-    } else {
-        clipName(project, clip)
+    val name = when {
+        missing -> stringResource(R.string.editor_missing_media)
+
+        // "fx Adjustment": an adjustment clip (#23) has no media to name it.
+        clip.type == ClipType.Adjustment -> stringResource(R.string.editor_adjustment_label)
+
+        else -> clipName(project, clip)
     }
     if (name.isEmpty()) return
     Text(
@@ -949,18 +960,38 @@ private fun clipDescription(
     )
     val name = clipName(project, clip)
     val parts = mutableListOf(
-        stringResource(
-            R.string.editor_clip_description,
-            type,
-            name,
-            formatClipDuration(clip.durationUs),
-            layerNumber,
-        ),
+        if (name.isEmpty()) {
+            stringResource(
+                R.string.editor_clip_description_unnamed,
+                type,
+                formatClipDuration(clip.durationUs),
+                layerNumber,
+            )
+        } else {
+            stringResource(
+                R.string.editor_clip_description,
+                type,
+                name,
+                formatClipDuration(clip.durationUs),
+                layerNumber,
+            )
+        },
     )
     // Selected is announced from the clip's state, so it isn't said twice.
     if (linked) parts += stringResource(R.string.editor_clip_linked)
     if (missing) parts += stringResource(R.string.editor_missing_media)
     return parts.joinToString(", ")
+}
+
+/** Diagonal stripes of [color] over the clip's fill, 6 dp apart. */
+private fun Modifier.hatch(color: Color): Modifier = drawBehind {
+    val step = 6.dp.toPx()
+    val stroke = 2.dp.toPx()
+    var x = -size.height
+    while (x < size.width) {
+        drawLine(color, Offset(x, size.height), Offset(x + size.height, 0f), stroke)
+        x += step
+    }
 }
 
 private fun Modifier.dashedOutline(color: Color): Modifier = drawBehind {

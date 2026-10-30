@@ -437,11 +437,15 @@ private fun EditorRoute(
                 EditorTool.Effects,
                 EditorTool.Cutout,
                 -> {
-                    // The selected clip, or the one on top at the playhead.
-                    val clip = selected?.takeIf { it.takesFilters() }
+                    // The selected clip, or the one on top at the playhead. A cutout needs a
+                    // picture of its own; adjustment clips (#23) have none.
+                    val fits = { c: Clip ->
+                        c.takesFilters() && (tool != EditorTool.Cutout || c.source != null)
+                    }
+                    val clip = selected?.takeIf(fits)
                         ?: project.layers.reversed().flatMap { it.clips }
-                            .firstOrNull { it.takesFilters() && it.contains(state.playheadUs) }
-                        ?: project.layers.flatMap { it.clips }.firstOrNull { it.takesFilters() }
+                            .firstOrNull { fits(it) && it.contains(state.playheadUs) }
+                        ?: project.layers.flatMap { it.clips }.firstOrNull(fits)
                     if (clip == null) {
                         viewModel.say(EditorMessage.NeedsPicture)
                     } else {
@@ -524,6 +528,7 @@ private fun EditorRoute(
             playing = false
             state.selectedClipId?.let(viewModel::toggleKeyframe)
         },
+        onAddAdjustment = { whenNotRecording { viewModel.addAdjustment() } },
         onVoiceover = {
             playing = false
             viewModel.openVoiceover()
@@ -578,8 +583,9 @@ private fun EditorRoute(
     )
     val previewOverlay: @Composable () -> Unit = {
         // Handles on the selected clip while it is on screen and the preview is paused.
-        if (selected != null && selected.isVisual() && !playing &&
-            selected.contains(state.playheadUs)
+        // An adjustment clip (#23) has no picture of its own to move.
+        if (selected != null && selected.isVisual() && selected.type != ClipType.Adjustment &&
+            !playing && selected.contains(state.playheadUs)
         ) {
             TransformOverlay(
                 transform =

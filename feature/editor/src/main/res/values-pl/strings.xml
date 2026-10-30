@@ -264,4 +264,7 @@
     <string name="editor_tablet_scale">Skala</string>
     <string name="editor_tablet_rotate">Obrót</string>
     <string name="editor_tablet_blend">Tryb</string>
+    <string name="editor_add_adjustment">Klip korekcji</string>
+    <string name="editor_adjustment_label">fx Korekcja</string>
+    <string name="editor_clip_description_unnamed">%1$s, %2$s, warstwa L%3$d</string>
 </resources>

@@ -49,6 +49,7 @@ import tech.idct.clipra.core.model.Effect
 import tech.idct.clipra.core.model.Filters
 import tech.idct.clipra.core.model.MaskShape
 import tech.idct.clipra.feature.effects.R
+import tech.idct.clipra.feature.effects.common.clipLabel
 import tech.idct.clipra.feature.effects.filters.filterName
 import kotlin.math.roundToInt
 
@@ -94,7 +95,7 @@ fun EffectStackScreen(
                 subtitle = pluralStringResource(
                     R.plurals.effects_stack_subtitle,
                     effects.size,
-                    asset?.displayName.orEmpty(),
+                    clipLabel(project, clip),
                     effects.size,
                 ),
                 navigation = HeaderNavigation.Back,

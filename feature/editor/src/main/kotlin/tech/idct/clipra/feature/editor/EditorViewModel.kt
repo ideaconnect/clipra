@@ -60,6 +60,7 @@ import tech.idct.clipra.core.model.TextSpec
 import tech.idct.clipra.core.model.Transform
 import tech.idct.clipra.core.model.VoiceCleanup
 import tech.idct.clipra.core.model.VoiceEngine
+import tech.idct.clipra.core.model.edit.AddAdjustment
 import tech.idct.clipra.core.model.edit.AddClip
 import tech.idct.clipra.core.model.edit.AddLayer
 import tech.idct.clipra.core.model.edit.AddSound
@@ -278,6 +279,21 @@ class EditorViewModel @Inject constructor(
             edges.filter { it < now - CUT_SLOP_US }.maxOrNull()
         }
         to?.let(::seek)
+    }
+
+    /**
+     * Adds an adjustment clip (#23) at the playhead, over every layer, and selects it, ready for
+     * a grade or a filter.
+     */
+    fun addAdjustment() {
+        val clip = Clip(randomId(), ClipType.Adjustment, state.value.playheadUs, ADJUSTMENT_US)
+        val opened = session ?: return
+        val refused = opened.edit(AddAdjustment(clip, randomId()))
+        if (refused == null) {
+            select(clip.id)
+        } else {
+            mutableState.update { it.copy(message = refused.toMessage()) }
+        }
     }
 
     /** Grades a picture clip (#28), from the tablet's Color tab; null takes the grade away. */
@@ -735,5 +751,8 @@ class EditorViewModel @Inject constructor(
 
         /** The side of the frame Auto looks at. */
         const val AUTO_SIDE = 256
+
+        /** A new adjustment clip's length. */
+        const val ADJUSTMENT_US = 5_000_000L
     }
 }

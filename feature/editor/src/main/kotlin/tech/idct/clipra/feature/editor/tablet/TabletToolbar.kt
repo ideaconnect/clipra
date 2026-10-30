@@ -94,6 +94,12 @@ internal fun TabletToolbar(
                 callbacks.onExtract,
             )
             ToolButton(R.string.editor_layer_add, ClipraIcons.Layers, true, actions.onAddLayer)
+            ToolButton(
+                R.string.editor_add_adjustment,
+                ClipraIcons.Effects,
+                true,
+                callbacks.onAddAdjustment,
+            )
             Box(
                 modifier = Modifier
                     .padding(horizontal = 8.dp)

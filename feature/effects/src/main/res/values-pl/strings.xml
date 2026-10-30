@@ -204,4 +204,5 @@
     <string name="effects_mask_tracking">Śledzenie twarzy %1$d%%</string>
     <string name="effects_mask_tracking_face">Śledzi twarz</string>
     <string name="effects_mask_no_face">W tym klipie nie znaleziono twarzy</string>
+    <string name="effects_adjustment_clip">Klip korekcji</string>
 </resources>
