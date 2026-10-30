@@ -57,15 +57,17 @@ data class ProUiState(
     val pending: Boolean = false,
     val busy: Boolean = false,
     val message: ProMessage? = null,
+    /** Show "Ad privacy choices": where the law requires a way to change ad consent (#62). */
+    val adPrivacyChoices: Boolean = false,
 )
 
-/** What the Pro screen can do. [onAdPrivacy] is null when no privacy options are needed. */
+/** What the Pro screen can do. */
 class ProActions(
     val onClose: () -> Unit,
     val onBuy: () -> Unit,
     val onRestore: () -> Unit,
     val onBackToProjects: () -> Unit,
-    val onAdPrivacy: (() -> Unit)?,
+    val onAdPrivacy: () -> Unit,
 )
 
 /**
@@ -139,7 +141,7 @@ private fun PhonePro(state: ProUiState, actions: ProActions) {
                 )
             }
             PaymentNote(TextAlign.Center)
-            actions.onAdPrivacy?.let { AdPrivacyLink(it) }
+            if (state.adPrivacyChoices) AdPrivacyLink(actions.onAdPrivacy)
         }
     }
 }
@@ -226,7 +228,7 @@ private fun TabletPro(state: ProUiState, actions: ProActions) {
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     Box(Modifier.weight(1f)) { PaymentNote(TextAlign.Start) }
-                    actions.onAdPrivacy?.let { AdPrivacyLink(it) }
+                    if (state.adPrivacyChoices) AdPrivacyLink(actions.onAdPrivacy)
                 }
             }
         }
@@ -421,7 +423,7 @@ private fun PaymentNote(align: TextAlign) {
     )
 }
 
-/** "Ad privacy choices": the consent form, where the ad rules need one (#62). */
+/** "Ad privacy choices": UMP's privacy options form, where the user changes ad consent. */
 @Composable
 private fun AdPrivacyLink(onClick: () -> Unit) {
     Box(

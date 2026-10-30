@@ -11,6 +11,9 @@ import kotlinx.coroutines.CoroutineScope
 import tech.idct.clipra.core.data.di.ApplicationScope
 import tech.idct.clipra.monetization.BuildConfig
 import tech.idct.clipra.monetization.Entitlement
+import tech.idct.clipra.monetization.ads.AdConsent
+import tech.idct.clipra.monetization.ads.ConsentGateway
+import tech.idct.clipra.monetization.ads.UmpConsentGateway
 import tech.idct.clipra.monetization.billing.BillingGateway
 import tech.idct.clipra.monetization.billing.PlayBillingGateway
 import tech.idct.clipra.monetization.billing.ProStore
@@ -25,6 +28,9 @@ abstract class MonetizationModule {
 
     @Binds
     abstract fun entitlement(store: ProStore): Entitlement
+
+    @Binds
+    abstract fun consentGateway(gateway: UmpConsentGateway): ConsentGateway
 
     companion object {
         @Provides
@@ -42,5 +48,10 @@ abstract class MonetizationModule {
             dataStore = dataStore,
             scope = scope,
         )
+
+        @Provides
+        @Singleton
+        fun adConsent(gateway: ConsentGateway, entitlement: Entitlement): AdConsent =
+            AdConsent(gateway, entitlement)
     }
 }
