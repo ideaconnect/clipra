@@ -138,8 +138,13 @@ object ProjectRender {
     ): RenderClip? {
         if (clip.type == ClipType.TextCard || clip.type == ClipType.Text) {
             val spec = clip.text ?: return null
-            // Drawn at the frame's size, larger when scaled up, so it stays sharp.
-            val factor = clip.transform.value.scale.coerceIn(1f, MAX_TEXT_FACTOR)
+            // Drawn at the frame's size, larger when scaled up (at its largest keyframe), so it
+            // stays sharp.
+            val largest = (
+                clip.transform.keyframes.map { it.value.scale } +
+                    clip.transform.value.scale
+                ).max()
+            val factor = largest.coerceIn(1f, MAX_TEXT_FACTOR)
             val bitmap = media.text(
                 spec,
                 card = clip.type == ClipType.TextCard,
@@ -175,6 +180,9 @@ object ProjectRender {
         transform = clip.transform.value,
         blend = clip.blend,
         opacity = clip.opacity.value,
+        transformKeyframes = clip.transform.keyframes,
+        opacityKeyframes = clip.opacity.keyframes,
+        maskKeyframes = clip.maskKeyframes,
         rate = clip.speed.rate,
         effects = clip.effects,
         mask = clip.mask,

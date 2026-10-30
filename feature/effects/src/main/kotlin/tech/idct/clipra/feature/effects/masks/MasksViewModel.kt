@@ -19,9 +19,12 @@ import tech.idct.clipra.core.model.Filters
 import tech.idct.clipra.core.model.Mask
 import tech.idct.clipra.core.model.MaskShape
 import tech.idct.clipra.core.model.Project
+import tech.idct.clipra.core.model.edit.KeyframeTarget
 import tech.idct.clipra.core.model.edit.SetEffectParam
 import tech.idct.clipra.core.model.edit.SetMask
+import tech.idct.clipra.core.model.edit.ToggleKeyframe
 import tech.idct.clipra.core.model.filter
+import tech.idct.clipra.core.model.maskAt
 import javax.inject.Inject
 
 /** What the Masks screen shows: the clip and its mask. */
@@ -29,7 +32,13 @@ data class MasksUiState(
     val project: Project? = null,
     val clip: Clip? = null,
     val loaded: Boolean = false,
+    /** Where the editor's playhead was: the mask shown and edited is the one at this moment. */
+    val playheadUs: Long = 0,
 ) {
+    /** The mask at the playhead, its keyframes applied (#21). */
+    val mask: Mask?
+        get() = clip?.let { it.maskAt(playheadUs - it.startUs) }
+
     /** The effect the mask limits: the one it names, else the clip's filter, else Mosaic. */
     val effectType: String
         get() = clip?.mask?.effect ?: clip?.filter?.type ?: DEFAULT_EFFECT
@@ -54,7 +63,7 @@ class MasksViewModel @Inject constructor(
     val playheadUs: Long = savedState["playheadUs"] ?: 0L
 
     private var session: ProjectSession? = null
-    private val mutableState = MutableStateFlow(MasksUiState())
+    private val mutableState = MutableStateFlow(MasksUiState(playheadUs = playheadUs))
 
     val state: StateFlow<MasksUiState> = mutableState.asStateFlow()
 
@@ -85,15 +94,23 @@ class MasksViewModel @Inject constructor(
             session?.edit(SetMask(clip.id, null))
             return
         }
-        val mask = (clip.mask ?: Mask(feather = DEFAULT_FEATHER)).copy(shape = shape)
+        val mask = (state.value.mask ?: Mask(feather = DEFAULT_FEATHER)).copy(shape = shape)
         val type = state.value.effectType
-        session?.edit(SetMask(clip.id, mask.copy(effect = type), addIfMissing = type))
+        session?.edit(
+            SetMask(clip.id, mask.copy(effect = type), addIfMissing = type, atUs = playheadUs),
+        )
     }
 
     /** Commits a change to the mask (a drag, a slider, Invert, Applies to). */
     fun setMask(mask: Mask) {
         val clip = state.value.clip ?: return
-        session?.edit(SetMask(clip.id, mask, addIfMissing = mask.effect))
+        session?.edit(SetMask(clip.id, mask, addIfMissing = mask.effect, atUs = playheadUs))
+    }
+
+    /** Adds a mask keyframe at the playhead, or deletes the one there (#21). */
+    fun toggleKeyframe() {
+        val clip = state.value.clip ?: return
+        session?.edit(ToggleKeyframe(clip.id, playheadUs, KeyframeTarget.Mask))
     }
 
     fun setBlockSize(size: Float) {

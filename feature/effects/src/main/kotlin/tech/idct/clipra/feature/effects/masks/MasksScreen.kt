@@ -2,6 +2,7 @@ package tech.idct.clipra.feature.effects.masks
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,9 +27,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import tech.idct.clipra.core.designsystem.ClipraTheme
@@ -41,10 +44,14 @@ import tech.idct.clipra.core.designsystem.component.PrimaryButton
 import tech.idct.clipra.core.designsystem.component.ScreenHeader
 import tech.idct.clipra.core.designsystem.icon.ClipraIcons
 import tech.idct.clipra.core.model.Cells
+import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.Filters
 import tech.idct.clipra.core.model.Mask
 import tech.idct.clipra.core.model.MaskShape
 import tech.idct.clipra.core.model.Size
+import tech.idct.clipra.core.model.keyframeAt
+import tech.idct.clipra.core.model.maskKeyframed
+import tech.idct.clipra.core.model.transformAt
 import tech.idct.clipra.feature.effects.R
 import tech.idct.clipra.feature.effects.filters.filterName
 import kotlin.math.roundToInt
@@ -58,6 +65,8 @@ class MasksActions(
     val onMaskDone: () -> Unit,
     val onBlockSizeLive: (Float) -> Unit,
     val onBlockSizeDone: () -> Unit,
+    /** Adds a mask keyframe at the playhead, or deletes the one there (#21). */
+    val onKeyframe: () -> Unit = {},
 )
 
 /**
@@ -129,7 +138,7 @@ fun MasksScreen(
             if (mask != null && shape != MaskShape.None) {
                 MaskOverlay(
                     mask = mask,
-                    transform = clip.transform.value,
+                    transform = clip.transformAt(state.playheadUs - clip.startUs),
                     frame = project.format.outputSize,
                     source = asset?.displaySize ?: Size(0, 0),
                     chip = chipText(mask, outputShortSide),
@@ -240,9 +249,61 @@ fun MasksScreen(
                             .testTag("mask-radius"),
                     )
                 }
+                MaskKeyframe(clip, state.playheadUs, actions.onKeyframe)
             }
         }
     }
+}
+
+/** "Add mask keyframe at 00:07.12" (Masks board, #21), or delete the one at the playhead. */
+@Composable
+private fun MaskKeyframe(clip: Clip, playheadUs: Long, onKeyframe: () -> Unit) {
+    val colors = ClipraTheme.colors
+    val time = playheadUs - clip.startUs
+    val keyed = clip.maskKeyframed?.keyframeAt(time) != null
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(48.dp)
+            .clip(ClipraTheme.shapes.button)
+            .border(1.5.dp, colors.accent, ClipraTheme.shapes.button)
+            .clickable(
+                role = Role.Button,
+                enabled = time in 0..clip.durationUs,
+                onClick = onKeyframe,
+            )
+            .testTag("mask-keyframe"),
+        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        ClipraIcon(
+            icon = ClipraIcons.Keyframe,
+            contentDescription = null,
+            tint = colors.accent,
+            size = 16.dp,
+        )
+        val label = if (keyed) {
+            R.string.effects_mask_keyframe_delete
+        } else {
+            R.string.effects_mask_keyframe_add
+        }
+        Text(
+            text = stringResource(label, timecode(playheadUs)),
+            style = ClipraTheme.typography.chip,
+            color = colors.accent,
+        )
+    }
+}
+
+/** 00:07.12, as the editor's transport shows the playhead. */
+private fun timecode(us: Long): String {
+    val hundredths = us / 10_000
+    return "%02d:%02d.%02d".format(
+        java.util.Locale.ROOT,
+        hundredths / 6_000,
+        hundredths / 100 % 60,
+        hundredths % 100,
+    )
 }
 
 /** "Applies to: Mosaic effect", with the clip's other filters to choose from. */

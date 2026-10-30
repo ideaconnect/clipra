@@ -101,4 +101,6 @@
     <string name="effects_mask_outside_rectangle">Outside rectangle</string>
     <string name="effects_mask_chip">%1$s · feather %2$d</string>
     <string name="effects_pixels">%d px</string>
+    <string name="effects_mask_keyframe_add">Add mask keyframe at %1$s</string>
+    <string name="effects_mask_keyframe_delete">Delete mask keyframe at %1$s</string>
 </resources>

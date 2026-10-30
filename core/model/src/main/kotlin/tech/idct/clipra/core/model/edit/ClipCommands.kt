@@ -12,6 +12,7 @@ import tech.idct.clipra.core.model.Speed
 import tech.idct.clipra.core.model.Transcript
 import tech.idct.clipra.core.model.Transform
 import tech.idct.clipra.core.model.VoiceCleanup
+import tech.idct.clipra.core.model.set
 import java.util.UUID
 import kotlin.math.roundToLong
 
@@ -76,7 +77,8 @@ class SplitClip(
             source = source?.copy(outPointUs = source.inPointUs + offset),
             caption = caption?.let { c -> c.copy(words = c.words.filter { it.startUs < cut }) },
         )
-        val right = copy(
+        // Both parts keep every keyframe (#21), so the animation goes on where it was.
+        val right = withKeyframesShifted(-cut).copy(
             id = rightId,
             startUs = atUs,
             durationUs = endUs - atUs,
@@ -150,16 +152,18 @@ data class TrimClip(val clipId: String, val edge: Edge, val toUs: Long) : EditCo
         }
         val source = clip.source
         val asset = source?.let { project.asset(it.mediaId) }
+        // Keyframes stay where they are on the timeline (#21).
+        val keyed = clip.withKeyframesShifted(clip.startUs - start)
         val trimmed = if (source == null || asset == null || asset.kind == MediaKind.Photo) {
             // A still has no source length to respect.
-            clip.copy(startUs = start, durationUs = end - start)
+            keyed.copy(startUs = start, durationUs = end - start)
         } else {
             val inPoint = source.inPointUs + clip.sourceOffset(start)
             val outPoint = source.inPointUs + clip.sourceOffset(end)
             if (inPoint < 0 || outPoint > asset.durationUs) {
                 throw EditRejected(EditRejected.Reason.OutOfRange)
             }
-            clip.copy(
+            keyed.copy(
                 startUs = start,
                 durationUs = end - start,
                 source = source.copy(inPointUs = inPoint, outPointUs = outPoint),
@@ -291,23 +295,44 @@ data class ReplaceMedia(val clipId: String, val mediaId: String) : EditCommand {
     }
 }
 
-/** Sets where a clip sits in the frame (#19); keyframes come with #21. */
-data class SetTransform(val clipId: String, val transform: Transform) : EditCommand {
+/**
+ * Sets where a clip sits in the frame (#19). At [atUs] (timeline time) on an animated clip, it
+ * sets the keyframe there, adding one if needed (#21).
+ */
+data class SetTransform(val clipId: String, val transform: Transform, val atUs: Long? = null) :
+    EditCommand {
     override fun apply(project: Project): Project {
         val (layer, clip) = project.clipWithLayer(clipId)
         layer.requireUnlocked()
-        return project.replaceClip(clip.copy(transform = clip.transform.copy(value = transform)))
+        val keyed = if (atUs == null) {
+            clip.transform.copy(value = transform)
+        } else {
+            clip.transform.set(atUs - clip.startUs, transform)
+        }
+        return project.replaceClip(clip.copy(transform = keyed))
     }
 }
 
-/** Sets how a clip blends with the layers below it and its opacity, 0 to 1 (#20). */
-data class SetBlend(val clipId: String, val blend: BlendMode, val opacity: Float) : EditCommand {
+/**
+ * Sets how a clip blends with the layers below it and its opacity, 0 to 1 (#20). At [atUs]
+ * (timeline time) on an animated clip, the opacity goes into the keyframe there (#21).
+ */
+data class SetBlend(
+    val clipId: String,
+    val blend: BlendMode,
+    val opacity: Float,
+    val atUs: Long? = null,
+) : EditCommand {
     override fun apply(project: Project): Project {
         val (layer, clip) = project.clipWithLayer(clipId)
         layer.requireUnlocked()
-        return project.replaceClip(
-            clip.copy(blend = blend, opacity = clip.opacity.copy(value = opacity.coerceIn(0f, 1f))),
-        )
+        val value = opacity.coerceIn(0f, 1f)
+        val keyed = if (atUs == null) {
+            clip.opacity.copy(value = value)
+        } else {
+            clip.opacity.set(atUs - clip.startUs, value)
+        }
+        return project.replaceClip(clip.copy(blend = blend, opacity = keyed))
     }
 }
 
