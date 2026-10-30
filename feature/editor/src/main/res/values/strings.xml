@@ -165,4 +165,19 @@
     <string name="editor_animation_bounce">Bounce</string>
     <string name="editor_animation_wave">Wave</string>
     <string name="editor_animation_glitch">Glitch in</string>
+    <string name="editor_add_voiceover">Record voiceover</string>
+    <string name="editor_clip_voiceover">Voiceover</string>
+    <string name="editor_voiceover_title">Voiceover</string>
+    <string name="editor_voiceover_record">Record voiceover</string>
+    <string name="editor_voiceover_hint">Recording lands on the first free layer at the playhead. Cleanup runs offline while you keep editing.</string>
+    <string name="editor_voiceover_recording">Recording</string>
+    <string name="editor_voiceover_stop">Stop</string>
+    <string name="editor_voiceover_discard">Discard</string>
+    <string name="editor_voiceover_saving">Placing the voiceover</string>
+    <string name="editor_voiceover_close">Close voiceover</string>
+    <string name="editor_voiceover_level">Level %1$d dB</string>
+    <string name="editor_voiceover_file">voiceover.m4a</string>
+    <string name="editor_voiceover_file_n">voiceover %1$d.m4a</string>
+    <string name="editor_message_needs_microphone">Allow the microphone to record a voiceover</string>
+    <string name="editor_message_mic_unavailable">Couldn\'t open the microphone</string>
 </resources>

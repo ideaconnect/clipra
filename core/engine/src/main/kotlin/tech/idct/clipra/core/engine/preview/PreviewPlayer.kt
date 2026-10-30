@@ -110,6 +110,11 @@ class PreviewPlayer(private val context: Context, cache: MediaCache) {
         player.playWhenReady = false
     }
 
+    /** Plays the sound at [volume], 0 to 1: silent while a voiceover is recorded (#41). */
+    fun setVolume(volume: Float) {
+        player.volume = volume
+    }
+
     fun seekTo(positionUs: Long) {
         if (hasComposition) player.seekTo(positionUs / 1_000)
     }

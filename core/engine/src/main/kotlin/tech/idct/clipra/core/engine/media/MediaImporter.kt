@@ -1,5 +1,6 @@
 package tech.idct.clipra.core.engine.media
 
+import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -20,6 +21,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import tech.idct.clipra.core.model.MediaAsset
 import tech.idct.clipra.core.model.MediaKind
+import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -37,15 +39,27 @@ class MediaImporter @Inject constructor(
     private val background = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     suspend fun import(uri: Uri): MediaAsset = withContext(Dispatchers.IO) {
-        try {
-            context.contentResolver.takePersistableUriPermission(
-                uri,
-                Intent.FLAG_GRANT_READ_URI_PERMISSION,
-            )
-        } catch (_: SecurityException) {
-            // Not every provider offers lasting access; the media then lasts as long as the grant.
+        if (uri.scheme == ContentResolver.SCHEME_CONTENT) {
+            try {
+                context.contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                )
+            } catch (_: SecurityException) {
+                // Not every provider offers lasting access; the media lasts as long as the grant.
+            }
         }
-        val asset = MediaInspector.inspect(context, uri)
+        prepare(MediaInspector.inspect(context, uri))
+    }
+
+    /** Imports a voiceover recorded into app storage (#41), named [displayName]. */
+    suspend fun importRecording(file: File, displayName: String): MediaAsset =
+        withContext(Dispatchers.IO) {
+            val asset = MediaInspector.inspect(context, Uri.fromFile(file))
+            prepare(asset.copy(kind = MediaKind.Audio, displayName = displayName, recorded = true))
+        }
+
+    private fun prepare(asset: MediaAsset): MediaAsset {
         Thumbnails.thumbnail(context, asset, cache)
         if (ProxyGenerator.needsProxy(asset)) ProxyWorker.enqueue(context, asset)
         if (asset.hasAudio || asset.kind == MediaKind.Audio) {
@@ -54,7 +68,7 @@ class MediaImporter @Inject constructor(
                 runCatching { Waveforms.waveform(context, asset, cache, originals) }
             }
         }
-        asset
+        return asset
     }
 }
 

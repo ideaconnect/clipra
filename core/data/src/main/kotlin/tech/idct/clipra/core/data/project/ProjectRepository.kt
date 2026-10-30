@@ -13,6 +13,8 @@ import tech.idct.clipra.core.model.Format
 import tech.idct.clipra.core.model.Layout
 import tech.idct.clipra.core.model.Project
 import tech.idct.clipra.core.model.Resolution
+import java.io.File
+import java.net.URI
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -84,9 +86,24 @@ class ProjectRepository @Inject constructor(
         return copy
     }
 
+    /**
+     * Deletes the project, and the voiceovers recorded for it (#41) that no other project (a
+     * duplicate) uses. When another project can't be read, its recordings may be in it: they stay.
+     */
     suspend fun delete(id: String): Unit = withContext(io) {
+        val recorded = runCatching { files.read(id) }.getOrNull()?.media.orEmpty()
+            .filter { it.recorded }
+            .map { it.uri }
+            .toSet()
         files.delete(id)
         index.delete(id)
+        if (recorded.isEmpty()) return@withContext
+        val used = runCatching {
+            files.ids().flatMap { other -> files.read(other)?.media.orEmpty() }.map { it.uri }
+        }.getOrNull() ?: return@withContext
+        for (uri in recorded - used.toSet()) {
+            runCatching { File(URI(uri)).delete() }
+        }
     }
 
     /** Opens a project for editing, saving every change through an autosaver in [scope]. */

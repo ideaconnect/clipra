@@ -5,6 +5,7 @@ import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.provider.OpenableColumns
+import android.webkit.MimeTypeMap
 import tech.idct.clipra.core.model.MediaAsset
 import tech.idct.clipra.core.model.MediaKind
 import java.security.MessageDigest
@@ -19,7 +20,11 @@ object MediaInspector {
 
     fun inspect(context: Context, uri: Uri): MediaAsset {
         val resolver = context.contentResolver
-        val mime = resolver.getType(uri).orEmpty()
+        // A file in app storage (a recording, #41) has no provider to say its type.
+        val mime = resolver.getType(uri)
+            ?: MimeTypeMap.getSingleton().getMimeTypeFromExtension(
+                MimeTypeMap.getFileExtensionFromUrl(uri.toString()),
+            ).orEmpty()
         val kind = when {
             mime.startsWith("image/") -> MediaKind.Photo
             mime.startsWith("audio/") -> MediaKind.Audio

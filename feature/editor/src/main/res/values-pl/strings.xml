@@ -167,4 +167,19 @@
     <string name="editor_animation_bounce">Odbicie</string>
     <string name="editor_animation_wave">Fala</string>
     <string name="editor_animation_glitch">Glitch</string>
+    <string name="editor_add_voiceover">Nagraj lektora</string>
+    <string name="editor_clip_voiceover">Lektor</string>
+    <string name="editor_voiceover_title">Lektor</string>
+    <string name="editor_voiceover_record">Nagraj lektora</string>
+    <string name="editor_voiceover_hint">Nagranie trafi na pierwszą wolną warstwę w miejscu odtwarzania. Oczyszczanie działa offline, gdy dalej edytujesz.</string>
+    <string name="editor_voiceover_recording">Nagrywanie</string>
+    <string name="editor_voiceover_stop">Zatrzymaj</string>
+    <string name="editor_voiceover_discard">Odrzuć</string>
+    <string name="editor_voiceover_saving">Dodawanie nagrania</string>
+    <string name="editor_voiceover_close">Zamknij lektora</string>
+    <string name="editor_voiceover_level">Poziom %1$d dB</string>
+    <string name="editor_voiceover_file">lektor.m4a</string>
+    <string name="editor_voiceover_file_n">lektor %1$d.m4a</string>
+    <string name="editor_message_needs_microphone">Zezwól na dostęp do mikrofonu, aby nagrać lektora</string>
+    <string name="editor_message_mic_unavailable">Nie udało się włączyć mikrofonu</string>
 </resources>

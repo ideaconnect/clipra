@@ -5,9 +5,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -28,7 +30,9 @@ import tech.idct.clipra.core.model.MediaRef
 import tech.idct.clipra.core.model.Project
 import tech.idct.clipra.core.model.TextSpec
 import tech.idct.clipra.feature.editor.timeline.TimelineActions
+import tech.idct.clipra.feature.editor.voiceover.VoiceoverActions
 import java.util.Locale
+import kotlin.math.roundToInt
 
 /** The phone editor with the design's layer stack (design/screens/phone/Editor.png). */
 @RunWith(AndroidJUnit4::class)
@@ -69,7 +73,8 @@ class EditorScreenTest {
         name = "Lisbon weekend",
         media = listOf(
             media("guitar", "lisbon-guitar.mp3", MediaKind.Audio),
-            media("voice", "voiceover.m4a", MediaKind.Audio),
+            // Recorded in Clipra (#41), so in the voice colours.
+            media("voice", "voiceover.m4a", MediaKind.Audio).copy(recorded = true),
             media("sunset", "sunset.mp4", MediaKind.Video),
             media("tram", "tram.mp4", MediaKind.Video),
             media("stamp", "stamp.png", MediaKind.Photo),
@@ -207,5 +212,131 @@ class EditorScreenTest {
         compose.onNodeWithTag("clip:sunset").performClick()
         assertEquals("sunset", selected)
         compose.onNodeWithTag("clip-tools").assertExists()
+    }
+
+    private fun showVoiceover(panel: VoiceoverState, actions: VoiceoverActions? = null) {
+        compose.setContent {
+            ClipraTheme {
+                EditorScreen(
+                    state = EditorUiState(
+                        project = project,
+                        loaded = true,
+                        playheadUs = 16_000_000,
+                        voiceover = panel,
+                    ),
+                    playing = panel.recording,
+                    callbacks = actions?.let {
+                        EditorCallbacks(
+                            onClose = {}, onExport = {}, onTool = {}, onPlayPause = {},
+                            onUndo = {}, onRedo = {}, onPickVisual = {}, onPickAudio = {},
+                            onPickReplacement = {}, onSplit = {}, onDuplicate = {},
+                            onDelete = {}, onFreeze = {}, onExtract = {}, onLayers = {},
+                            onCrop = {}, onDismissMessage = {},
+                            timeline = noop.timeline,
+                            voiceover = it,
+                        )
+                    } ?: noop,
+                    preview = {},
+                )
+            }
+        }
+    }
+
+    /** A meter's worth of speech-like levels, in dBFS. */
+    private val levels = List(40) { -42f + 30f * kotlin.math.abs(kotlin.math.sin(it * 0.45f)) }
+
+    /** Voiceover (#41): Record voiceover from the Add menu opens the panel in place of the tools. */
+    @Test
+    fun addRecordsAVoiceover() {
+        var opened = 0
+        compose.setContent {
+            ClipraTheme {
+                EditorScreen(
+                    state = EditorUiState(project = project, loaded = true),
+                    playing = false,
+                    callbacks = EditorCallbacks(
+                        onClose = {}, onExport = {}, onTool = {}, onPlayPause = {}, onUndo = {},
+                        onRedo = {}, onPickVisual = {}, onPickAudio = {}, onPickReplacement = {},
+                        onSplit = {}, onDuplicate = {}, onDelete = {}, onFreeze = {},
+                        onExtract = {}, onLayers = {}, onCrop = {}, onDismissMessage = {},
+                        timeline = noop.timeline,
+                        onVoiceover = { opened++ },
+                    ),
+                    preview = {},
+                )
+            }
+        }
+        compose.onNodeWithText("Add").performClick()
+        compose.onNodeWithTag("add-voiceover").performClick()
+        assertEquals(1, opened)
+    }
+
+    @Test
+    fun voiceoverReady() {
+        Locale.setDefault(Locale.US)
+        var recorded = 0
+        var closed = 0
+        showVoiceover(
+            VoiceoverState(),
+            VoiceoverActions(onRecord = { recorded++ }, onStop = {}, onDiscard = {}, onClose = {
+                closed++
+            }),
+        )
+        compose.onNodeWithTag("main-tools").assertDoesNotExist()
+        compose.onNodeWithText(
+            "Recording lands on the first free layer at the playhead. Cleanup runs offline " +
+                "while you keep editing.",
+        ).assertExists()
+        // TalkBack calls the recorded voiceover by what it is.
+        compose.onNodeWithContentDescription("Voiceover voiceover.m4a, 10.0s, layer L2")
+            .assertExists()
+        compose.onRoot().captureRoboImage(roborazziOptions = options)
+        compose.onNodeWithTag("voiceover-record").performClick()
+        compose.onNodeWithTag("voiceover-close").performClick()
+        assertEquals(1, recorded)
+        assertEquals(1, closed)
+    }
+
+    @Test
+    fun voiceoverRecording() {
+        Locale.setDefault(Locale.US)
+        var stopped = 0
+        var discarded = 0
+        showVoiceover(
+            VoiceoverState(recording = true, elapsedUs = 4_200_000, levels = levels),
+            VoiceoverActions(
+                onRecord = {},
+                onStop = { stopped++ },
+                onDiscard = { discarded++ },
+                onClose = {},
+            ),
+        )
+        compose.onNodeWithTag("voiceover-time").assertTextEquals("00:04.20")
+        compose.onNodeWithContentDescription("Level ${levels.last().roundToInt()} dB")
+            .assertExists()
+        compose.onRoot().captureRoboImage(roborazziOptions = options)
+        compose.onNodeWithTag("voiceover-stop").performClick()
+        compose.onNodeWithTag("voiceover-discard").performClick()
+        assertEquals(1, stopped)
+        assertEquals(1, discarded)
+    }
+
+    /** Every voiceover label fits in Polish (#76). */
+    @Test
+    @Config(qualifiers = "pl-w390dp-h844dp-xhdpi")
+    fun voiceoverRecordingInPolish() {
+        Locale.setDefault(Locale.forLanguageTag("pl-PL"))
+        showVoiceover(VoiceoverState(recording = true, elapsedUs = 4_200_000, levels = levels))
+        compose.onNodeWithText("Zatrzymaj").assertExists()
+        compose.onRoot().captureRoboImage(roborazziOptions = options)
+    }
+
+    @Test
+    @Config(qualifiers = "pl-w390dp-h844dp-xhdpi")
+    fun voiceoverReadyInPolish() {
+        Locale.setDefault(Locale.forLanguageTag("pl-PL"))
+        showVoiceover(VoiceoverState())
+        compose.onNodeWithText("Nagraj lektora").assertExists()
+        compose.onRoot().captureRoboImage(roborazziOptions = options)
     }
 }

@@ -214,8 +214,14 @@ class FreezeFrame(
         val before = clip.played(0, cut).source
         val frame = (if (clip.speed.reverse) before?.inPointUs else before?.outPointUs) ?: 0
         val later = layer.clips.filter { it.startUs > atUs }.map { it.id }.toSet()
+        // The detached sound (#41) holds still too: it is cut there and the rest waits.
+        val sounds = project.inStep(clip).filter { it.type == ClipType.Audio }
+        val soundLater = sounds.flatMap { sound ->
+            project.clipWithLayer(sound.id).first.clips.filter { it.startUs > atUs }.map { it.id }
+        }.toSet()
+        val moving = later + soundLater
         var edited = project.shiftClips(
-            later + later.flatMap {
+            moving + moving.flatMap {
                 project.linkedPartners(it)
             },
             durationUs,
@@ -229,6 +235,19 @@ class FreezeFrame(
                 startUs = atUs + durationUs,
             )
             edited = edited.replaceClip(left).updateLayer(layer.id) { it.withClip(right) }
+            val soundRights = sounds.map { sound ->
+                val soundLayer = project.clipWithLayer(sound.id).first.requireUnlocked()
+                val soundRight = sound.played(cut, sound.durationUs).copy(
+                    id = newId(),
+                    startUs = atUs + durationUs,
+                )
+                edited = edited.replaceClip(sound.played(0, cut))
+                    .updateLayer(soundLayer.id) { it.withClip(soundRight) }
+                soundRight.id
+            }
+            if (soundRights.isNotEmpty()) {
+                edited = edited.addLink(newId(), listOf(rightId) + soundRights)
+            }
         }
         // The still holds the clip as it looks at the cut.
         val still = clip.copy(
@@ -446,14 +465,20 @@ data class SetSpeed(val clipId: String, val speed: Speed) : EditCommand {
         }
         val duration = SpeedCurve.timelineDuration(fresh, span).coerceAtLeast(MIN_CLIP_US)
         val delta = duration - clip.durationUs
-        val later = layer.clips.filter { it.startUs >= clip.endUs }.map { it.id }.toSet()
-        val withPartners = later + later.flatMap { project.linkedPartners(it) } - clipId
-        val changed = clip.copy(speed = fresh, durationUs = duration)
+        // A detached sound (#41), or the video it came from, keeps in step at the same speed.
+        val together = listOf(clip) + project.inStep(clip)
+        val ids = together.map { it.id }.toSet()
+        val later = together.flatMap { piece ->
+            val pieceLayer = project.clipWithLayer(piece.id).first.requireUnlocked()
+            pieceLayer.clips.filter { it.startUs >= piece.endUs }.map { it.id }
+        }.toSet()
+        val withPartners = later + later.flatMap { project.linkedPartners(it) } - ids
+        val changed = together.map { it.copy(speed = fresh, durationUs = duration) }
         // Make room first when the clip gets longer; close up after when it gets shorter.
         return if (delta > 0) {
-            project.shiftClips(withPartners, delta).replaceClip(changed)
+            changed.fold(project.shiftClips(withPartners, delta)) { p, c -> p.replaceClip(c) }
         } else {
-            project.replaceClip(changed).shiftClips(withPartners, delta)
+            changed.fold(project) { p, c -> p.replaceClip(c) }.shiftClips(withPartners, delta)
         }
     }
 }

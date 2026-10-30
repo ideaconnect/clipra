@@ -335,7 +335,7 @@ private fun ClipBlock(
 
     val x = geometry.x(clip.startUs) + dragX + trimStart
     val width = (geometry.width(clip.durationUs) - trimStart + trimEnd).coerceAtLeast(8f)
-    val fill = clipColor(clip.type)
+    val fill = clipColor(clip.type, project.isVoiceover(clip))
     val shape = RoundedCornerShape(7.dp)
     val description = clipDescription(project, clip, layerNumber, selected, linked, missing)
     val thresholdUs = geometry.duration(8f)
@@ -711,9 +711,14 @@ private fun ClipLabel(clip: Clip, project: Project, missing: Boolean, modifier: 
     )
 }
 
+/** A voiceover recorded in Clipra (#41), drawn in the voice colours. */
+internal fun Project.isVoiceover(clip: Clip): Boolean =
+    clip.type == ClipType.Audio && clip.source?.let { asset(it.mediaId) }?.recorded == true
+
 @Composable
-private fun clipColor(type: ClipType): Color {
+private fun clipColor(type: ClipType, voice: Boolean): Color {
     val clip = ClipraTheme.colors.clip
+    if (voice) return clip.voice
     return when (type) {
         ClipType.Video -> ClipraTheme.colors.surfaceRaised
         ClipType.Photo -> clip.photo
@@ -737,10 +742,19 @@ private fun clipDescription(
     val type = stringResource(
         when (clip.type) {
             ClipType.Video -> R.string.editor_clip_video
+
             ClipType.Photo -> R.string.editor_clip_photo
+
             ClipType.TextCard, ClipType.Text -> R.string.editor_clip_text
+
             ClipType.Caption -> R.string.editor_clip_caption
-            ClipType.Audio -> R.string.editor_clip_audio
+
+            ClipType.Audio -> if (project.isVoiceover(clip)) {
+                R.string.editor_clip_voiceover
+            } else {
+                R.string.editor_clip_audio
+            }
+
             ClipType.Adjustment -> R.string.editor_clip_adjustment
         },
     )

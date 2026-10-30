@@ -1,6 +1,7 @@
 package tech.idct.clipra.core.model.edit
 
 import tech.idct.clipra.core.model.Clip
+import tech.idct.clipra.core.model.ClipType
 import tech.idct.clipra.core.model.LinkGroup
 import tech.idct.clipra.core.model.Project
 
@@ -10,6 +11,20 @@ import tech.idct.clipra.core.model.Project
 /** The other clips in [clipId]'s link groups. */
 fun Project.linkedPartners(clipId: String): Set<String> =
     links.filter { clipId in it.clipIds }.flatMap { it.clipIds }.toSet() - clipId
+
+/**
+ * [clip]'s detached sound, or the video a detached sound came from (#41): linked partners of
+ * the same media that play in step with it (same start, length, media span and speed). A speed
+ * change keeps them in step. Trims don't change what plays when, so a partner trimmed apart (a
+ * J or L cut) stays in sync but no longer counts as in step.
+ */
+internal fun Project.inStep(clip: Clip): List<Clip> = linkedPartners(clip.id)
+    .mapNotNull { findClip(it)?.second }
+    .filter {
+        (it.type == ClipType.Audio || it.type == ClipType.Video) && it.source != null &&
+            it.source == clip.source && it.startUs == clip.startUs &&
+            it.durationUs == clip.durationUs && it.speed == clip.speed
+    }
 
 /** Shifts [clipIds] by [deltaUs] on their own layers, refusing overlaps and locked layers. */
 internal fun Project.shiftClips(clipIds: Set<String>, deltaUs: Long): Project {

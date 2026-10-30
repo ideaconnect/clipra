@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- VoiceRecorderTest (#41) records from the microphone; the app asks for it in the editor. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+</manifest>
