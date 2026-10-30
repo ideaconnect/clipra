@@ -72,6 +72,8 @@ class CaptionsSetupActions(
     val onOptions: (CaptionOptions) -> Unit,
     val onGenerate: () -> Unit,
     val onCancel: () -> Unit,
+    /** Captions from an .srt file instead (#46). */
+    val onImportSrt: () -> Unit = {},
 )
 
 /**
@@ -446,12 +448,13 @@ private fun GenerateBar(state: CaptionsSetupUiState, actions: CaptionsSetupActio
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         val note = when {
+            state.importFailed -> R.string.captions_unreadable_srt
             state.sources.isEmpty() && state.loaded -> R.string.captions_no_sources
             transcription is TranscriptionState.Failed && !running -> R.string.captions_failed
             else -> null
         }
         if (note != null) {
-            val failed = transcription is TranscriptionState.Failed
+            val failed = transcription is TranscriptionState.Failed || state.importFailed
             Text(
                 text = stringResource(note),
                 style = ClipraTheme.typography.caption,
@@ -473,6 +476,13 @@ private fun GenerateBar(state: CaptionsSetupUiState, actions: CaptionsSetupActio
                 onClick = actions.onCancel,
                 color = colors.textSecondary,
                 modifier = Modifier.testTag("captions-cancel"),
+            )
+        } else {
+            TextAction(
+                text = stringResource(R.string.captions_import_srt_instead),
+                onClick = actions.onImportSrt,
+                color = colors.textSecondary,
+                modifier = Modifier.testTag("captions-import-srt"),
             )
         }
     }

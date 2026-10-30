@@ -74,4 +74,29 @@
         <item quantity="one">%1$d cut · %2$s s shorter</item>
         <item quantity="other">%1$d cuts · %2$s s shorter</item>
     </plurals>
+    <string name="captions_edit_word">Edit word</string>
+    <string name="captions_word">Word</string>
+    <string name="captions_split_here">Split caption here</string>
+    <string name="captions_merge_next">Merge with next</string>
+    <string name="captions_save">Save</string>
+    <string name="captions_search">Search and replace</string>
+    <string name="captions_search_close">Close search</string>
+    <string name="captions_find">Find</string>
+    <string name="captions_replace_with">Replace with</string>
+    <string name="captions_replace_all">Replace all</string>
+    <plurals name="captions_matches">
+        <item quantity="one">%1$d match</item>
+        <item quantity="other">%1$d matches</item>
+    </plurals>
+    <string name="captions_save_srt">Save .srt</string>
+    <string name="captions_import_srt">Import .srt</string>
+    <string name="captions_saved_srt">Captions saved</string>
+    <plurals name="captions_imported">
+        <item quantity="one">Imported %1$d caption</item>
+        <item quantity="other">Imported %1$d captions</item>
+    </plurals>
+    <string name="captions_unreadable_srt">Couldn\'t read captions from that file</string>
+    <string name="captions_not_here">Can\'t do that here</string>
+    <string name="captions_locked">That layer is locked</string>
+    <string name="captions_import_srt_instead">Import .srt instead</string>
 </resources>

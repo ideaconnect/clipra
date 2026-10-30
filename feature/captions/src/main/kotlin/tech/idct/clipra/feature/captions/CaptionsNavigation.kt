@@ -1,6 +1,8 @@
 package tech.idct.clipra.feature.captions
 
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -121,6 +123,9 @@ private fun CaptionsSetupDestination(
     viewModel: CaptionsSetupViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val importSrt = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) {
+        it?.let(viewModel::importSrt)
+    }
     BackHandler(onBack = onBack)
     LaunchedEffect(viewModel) { viewModel.done.collect { onTranscribed() } }
     CaptionsSetupScreen(
@@ -135,6 +140,7 @@ private fun CaptionsSetupDestination(
             onOptions = viewModel::setOptions,
             onGenerate = viewModel::generate,
             onCancel = viewModel::cancel,
+            onImportSrt = { importSrt.launch(SrtFiles.types) },
         ),
     )
 }
@@ -151,6 +157,13 @@ private fun CaptionsEditDestination(
     val player = remember { PreviewPlayer(context, viewModel.mediaCache) }
     var playing by remember { mutableStateOf(false) }
     var liveScale by remember { mutableStateOf<Float?>(null) }
+    // .srt files the user picks (#46).
+    val saveSrt = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument(SrtFiles.MIME),
+    ) { uri -> uri?.let(viewModel::saveSrt) }
+    val importSrt = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) {
+        it?.let(viewModel::importSrt)
+    }
     DisposableEffect(player) {
         player.onEnded = { playing = false }
         onDispose { player.release() }
@@ -187,6 +200,13 @@ private fun CaptionsEditDestination(
                 player.seekTo(it)
             },
             onEditByText = onEditByText,
+            onEditWord = viewModel::editWord,
+            onSplit = viewModel::split,
+            onMerge = viewModel::merge,
+            onReplaceAll = viewModel::replaceAll,
+            onSaveSrt = { state.project?.let { saveSrt.launch(SrtFiles.fileName(it)) } },
+            onImportSrt = { importSrt.launch(SrtFiles.types) },
+            onDismissMessage = viewModel::dismissMessage,
         ),
         preview = {
             VideoSurface(

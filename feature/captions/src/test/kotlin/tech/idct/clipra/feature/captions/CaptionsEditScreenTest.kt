@@ -4,11 +4,15 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.RoborazziOptions
 import com.github.takahirom.roborazzi.captureRoboImage
@@ -155,6 +159,138 @@ class CaptionsEditScreenTest {
                 )
             }
         }
+        compose.onRoot().captureRoboImage(roborazziOptions = options)
+    }
+
+    private class Calls {
+        val words = mutableListOf<Triple<String, Int, String>>()
+        val splits = mutableListOf<Pair<String, Int>>()
+        val merges = mutableListOf<String>()
+        val replaced = mutableListOf<Pair<String, String>>()
+        var saved = 0
+        var imported = 0
+    }
+
+    private fun show(
+        calls: Calls = Calls(),
+        pick: WordPick? = null,
+        find: String? = null,
+        message: CaptionsMessage? = null,
+        locale: Locale = Locale.US,
+    ) {
+        Locale.setDefault(locale)
+        compose.setContent {
+            ClipraTheme {
+                CaptionsEditScreen(
+                    state = CaptionsEditUiState(
+                        project,
+                        loaded = true,
+                        playheadUs = 8_300_000,
+                        message = message,
+                    ),
+                    scale = null,
+                    actions = CaptionsEditActions(
+                        onDone = {},
+                        onStyle = {},
+                        onPosition = {},
+                        onScale = {},
+                        onScaleDone = {},
+                        onSeek = {},
+                        onEditByText = {},
+                        onEditWord = { id, i, text -> calls.words += Triple(id, i, text) },
+                        onSplit = { id, i -> calls.splits += id to i },
+                        onMerge = { calls.merges += it },
+                        onReplaceAll = { find, with -> calls.replaced += find to with },
+                        onSaveSrt = { calls.saved++ },
+                        onImportSrt = { calls.imported++ },
+                    ),
+                    preview = {
+                        Box(
+                            Modifier
+                                .fillMaxSize()
+                                .background(ClipraTheme.colors.surfaceRaised),
+                        )
+                    },
+                    initialPick = pick,
+                    initialFind = find,
+                )
+            }
+        }
+    }
+
+    /** #46: tap a word to retype it, split the caption there or merge it with the next. */
+    @Test
+    fun editingAWord() {
+        val calls = Calls()
+        show(calls, pick = WordPick("c3", 7))
+        compose.onNodeWithTag("word-input").assertTextContains("Alfama")
+        compose.onRoot().captureRoboImage(roborazziOptions = options)
+        compose.onNodeWithTag("word-input").performTextReplacement("Alfama!")
+        compose.onNodeWithTag("word-save").performClick()
+        assertEquals(listOf(Triple("c3", 7, "Alfama!")), calls.words)
+
+        compose.onNodeWithTag("word:c4:4").performScrollTo().performClick()
+        compose.onNodeWithTag("word-split").performClick()
+        assertEquals(listOf("c4" to 4), calls.splits)
+        compose.onNodeWithTag("word:c4:4").performScrollTo().performClick()
+        compose.onNodeWithTag("word-merge").performClick()
+        assertEquals(listOf("c4"), calls.merges)
+
+        // The first word of the last caption can neither split nor merge.
+        compose.onNodeWithTag("word:c5:0").performScrollTo().performClick()
+        compose.onNodeWithTag("word-split").assertDoesNotExist()
+        compose.onNodeWithTag("word-merge").assertDoesNotExist()
+    }
+
+    @Test
+    fun wordsToCheckOpenTheFirst() {
+        show()
+        compose.onNodeWithTag("captions-check").performClick()
+        compose.onNodeWithTag("word-input").assertTextContains("Alfama")
+    }
+
+    @Test
+    fun searchAndReplace() {
+        val calls = Calls()
+        show(calls, find = "the")
+        // "The light", "the tram", "then the train", "the weather" (twice).
+        compose.onNodeWithText("6 matches").assertExists()
+        compose.onRoot().captureRoboImage(roborazziOptions = options)
+        compose.onNodeWithTag("search-replace").performTextReplacement("a")
+        compose.onNodeWithTag("search-replace-all").performClick()
+        assertEquals(listOf("the" to "a"), calls.replaced)
+
+        compose.onNodeWithTag("search-find").performTextReplacement("Porto")
+        compose.onNodeWithText("0 matches").assertExists()
+        compose.onNodeWithTag("search-replace-all").assertIsNotEnabled()
+        compose.onNodeWithTag("search-close").performClick()
+        compose.onNodeWithTag("captions-search").assertDoesNotExist()
+    }
+
+    @Test
+    fun savingAndImportingSrt() {
+        val calls = Calls()
+        show(calls, message = CaptionsMessage.Imported(5))
+        compose.onNodeWithText("Imported 5 captions").assertExists()
+        compose.onNodeWithTag("captions-save-srt").performClick()
+        compose.onNodeWithTag("captions-import-srt").performClick()
+        assertEquals(1, calls.saved)
+        assertEquals(1, calls.imported)
+    }
+
+    @Test
+    @Config(qualifiers = "pl-w390dp-h844dp-xhdpi")
+    fun searchAndReplaceInPolish() {
+        show(find = "the", locale = Locale.forLanguageTag("pl-PL"))
+        compose.onNodeWithText("6 wystąpień").assertExists()
+        compose.onRoot().captureRoboImage(roborazziOptions = options)
+    }
+
+    @Test
+    @Config(qualifiers = "pl-w390dp-h844dp-xhdpi")
+    fun editingAWordInPolish() {
+        show(pick = WordPick("c3", 7), locale = Locale.forLanguageTag("pl-PL"))
+        compose.onNodeWithText("Podziel napis tutaj").assertExists()
         compose.onRoot().captureRoboImage(roborazziOptions = options)
     }
 }
