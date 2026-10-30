@@ -11,7 +11,8 @@ data class SetCutout(val clipId: String, val cutout: Cutout?) : EditCommand {
     override fun apply(project: Project): Project {
         val (layer, clip) = project.clipWithLayer(clipId)
         layer.requireUnlocked()
-        if (!clip.takesFilters()) {
+        // A cutout needs a picture of its own; an adjustment clip has none.
+        if (!clip.takesFilters() || clip.source == null) {
             throw EditRejected(EditRejected.Reason.OutOfRange)
         }
         return project.replaceClip(

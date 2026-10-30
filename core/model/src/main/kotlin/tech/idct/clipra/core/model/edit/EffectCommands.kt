@@ -44,8 +44,12 @@ data class ApplyFilterToAll(val type: String?, val strength: Float) : EditComman
     )
 }
 
-/** Clips with a picture of their own: videos and photos. */
-fun Clip.takesFilters(): Boolean = type == ClipType.Video || type == ClipType.Photo
+/**
+ * Clips that take a grade, filters, effects and masks: videos and photos, and adjustment clips
+ * (#23), which apply them to the layers below.
+ */
+fun Clip.takesFilters(): Boolean =
+    type == ClipType.Video || type == ClipType.Photo || type == ClipType.Adjustment
 
 /**
  * The clip with [type] as its first filter, in that filter's place in the stack (#29); null

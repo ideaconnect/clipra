@@ -59,6 +59,7 @@ import tech.idct.clipra.core.model.keyframeAt
 import tech.idct.clipra.core.model.maskKeyframed
 import tech.idct.clipra.core.model.transformAt
 import tech.idct.clipra.feature.effects.R
+import tech.idct.clipra.feature.effects.common.clipLabel
 import tech.idct.clipra.feature.effects.filters.filterName
 import kotlin.math.roundToInt
 
@@ -106,7 +107,7 @@ fun MasksScreen(
                 subtitle = stringResource(
                     R.string.effects_mask_subtitle,
                     stringResource(R.string.effects_mask_effect, effectName),
-                    asset?.displayName.orEmpty(),
+                    clipLabel(project, clip),
                 ),
                 navigation = HeaderNavigation.Back,
                 onNavigate = actions.onBack,

@@ -198,4 +198,5 @@
     <string name="effects_mask_tracking">Tracking face %1$d%%</string>
     <string name="effects_mask_tracking_face">Tracking face</string>
     <string name="effects_mask_no_face">No face found in this clip</string>
+    <string name="effects_adjustment_clip">Adjustment clip</string>
 </resources>

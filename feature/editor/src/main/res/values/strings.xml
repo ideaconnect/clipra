@@ -260,4 +260,7 @@
     <string name="editor_tablet_scale">Scale</string>
     <string name="editor_tablet_rotate">Rotate</string>
     <string name="editor_tablet_blend">Blend</string>
+    <string name="editor_add_adjustment">Adjustment clip</string>
+    <string name="editor_adjustment_label">fx Adjustment</string>
+    <string name="editor_clip_description_unnamed">%1$s, %2$s, layer L%3$d</string>
 </resources>

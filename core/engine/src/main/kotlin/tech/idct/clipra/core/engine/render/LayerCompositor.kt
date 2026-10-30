@@ -173,7 +173,11 @@ private class LayerCompositorProgram(
                 }
                 if (!clip.isActiveAt(presentationTimeUs)) continue
                 active += clip.id
-                drawClip(clip, presentationTimeUs)
+                if (clip.source == RenderSource.Adjustment) {
+                    drawAdjustment(clip, presentationTimeUs)
+                } else {
+                    drawClip(clip, presentationTimeUs)
+                }
             }
         }
         releaseInactive(active)
@@ -341,6 +345,47 @@ private class LayerCompositorProgram(
         // Other modes read the canvas: draw the clip alone, then blend it into the other canvas.
         drawAlone(clipTarget!!, prepared)
         blendLayer(clip.blend)
+    }
+
+    /**
+     * An adjustment clip (#23): its grade and effects run over everything drawn so far (the
+     * layers below it), and the result goes back over them at the clip's opacity, in its cell,
+     * so a fade in or out eases the look in and out. A mask limits the effects as on any clip.
+     */
+    private fun drawAdjustment(clip: RenderClip, timeUs: Long) {
+        val keyed = live?.opacity(clip.id) ?: clip.keyedOpacityAt(timeUs)
+        val opacity = clip.opacityAt(timeUs, keyed)
+        if (opacity <= 0f) return
+        val stack = live?.effects(clip.id) ?: clip.effects
+        val filters = stack.filter { it.enabled }.mapNotNull { effect ->
+            FilterRecipes.of(effect.type)?.takeIf { effect.strength > 0f }?.let { it to effect }
+        }
+        val liveColor = live?.color(clip.id)
+        val grading = (liveColor?.grade ?: clip.color)?.takeIf { !it.isNeutral }?.let {
+            Grading(it, if (liveColor != null) liveColor.lut else clip.lut, live?.split(clip.id))
+        }
+        if (filters.isEmpty() && grading == null) return
+        val below = canvas[current]!!
+        val mask = live?.mask(clip.id) ?: clip.maskAt(timeUs)
+        val adjusted = filtered(
+            ClipFrame(below.texture, identity, below.width, below.height, false),
+            filters,
+            mask,
+            timeUs,
+            grading,
+        )
+        GlUtil.focusFramebufferUsingCurrentContext(below.fbo, below.width, below.height)
+        GLES20.glEnable(GLES20.GL_BLEND)
+        GLES20.glBlendFuncSeparate(
+            GLES20.GL_SRC_ALPHA,
+            GLES20.GL_ONE_MINUS_SRC_ALPHA,
+            GLES20.GL_ONE,
+            GLES20.GL_ONE_MINUS_SRC_ALPHA,
+        )
+        inCell(clip.cell) {
+            drawSource(bitmapProgram, adjusted, opacity, FULL_FRAME, FULL_UNIT)
+        }
+        GLES20.glDisable(GLES20.GL_BLEND)
     }
 
     /**
@@ -873,7 +918,7 @@ private class LayerCompositorProgram(
             is RenderSource.Video -> videoFrame(clip, source, timeUs)
             is RenderSource.Image -> imageFrame(clip, source.bitmap)
             is RenderSource.Drawn -> drawnFrame(clip, source)
-            is RenderSource.Audio -> null
+            is RenderSource.Audio, RenderSource.Adjustment -> null
         }
 
     private fun videoFrame(clip: RenderClip, source: RenderSource.Video, timeUs: Long): ClipFrame? {

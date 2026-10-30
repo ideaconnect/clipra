@@ -110,6 +110,8 @@ class EditorCallbacks(
     val onKeyframe: () -> Unit = {},
     /** Opens the voiceover panel (#41). */
     val onVoiceover: () -> Unit = {},
+    /** Adds an adjustment clip (#23) at the playhead. */
+    val onAddAdjustment: () -> Unit = {},
     val voiceover: VoiceoverActions = VoiceoverActions({}, {}, {}, {}),
 )
 
@@ -358,6 +360,17 @@ private fun Tools(clipSelected: Boolean, callbacks: EditorCallbacks) {
                     ClipraIcon(icon = ClipraIcons.Microphone, contentDescription = null)
                 },
                 modifier = Modifier.testTag("add-voiceover"),
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.editor_add_adjustment)) },
+                onClick = {
+                    adding = false
+                    callbacks.onAddAdjustment()
+                },
+                leadingIcon = {
+                    ClipraIcon(icon = ClipraIcons.Effects, contentDescription = null)
+                },
+                modifier = Modifier.testTag("add-adjustment"),
             )
         }
     }

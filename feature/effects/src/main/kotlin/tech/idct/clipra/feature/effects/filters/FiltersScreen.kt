@@ -59,6 +59,7 @@ import tech.idct.clipra.feature.effects.R
 import tech.idct.clipra.feature.effects.common.PICKER_COLUMNS
 import tech.idct.clipra.feature.effects.common.PickerCategory
 import tech.idct.clipra.feature.effects.common.PickerTile
+import tech.idct.clipra.feature.effects.common.clipLabel
 import kotlin.math.roundToInt
 
 /** What the Filters screen can do. */
@@ -89,7 +90,7 @@ fun FiltersScreen(
     val project = state.project ?: return
     val clip = state.clip ?: return
     val selected = clip.filter?.type
-    val assetName = clip.source?.let { project.asset(it.mediaId) }?.displayName.orEmpty()
+    val assetName = clipLabel(project, clip)
     ToolScaffold(
         header = {
             ScreenHeader(

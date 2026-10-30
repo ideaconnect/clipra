@@ -303,6 +303,8 @@ object ProjectRender {
             ) ?: return null
             return renderClipOf(clip, RenderSource.Image(bitmap))
         }
+        // An adjustment clip (#23) grades and filters the layers below it.
+        if (clip.type == ClipType.Adjustment) return renderClipOf(clip, RenderSource.Adjustment)
         val ref = clip.source ?: return null
         val asset = project.asset(ref.mediaId) ?: return null
         val source = when (clip.type) {
@@ -315,7 +317,7 @@ object ProjectRender {
 
             ClipType.Photo -> media.image(asset)?.let { RenderSource.Image(it) }
 
-            // Captions and adjustment clips come with M6 and M2.
+            // Captions are drawn by captionClips; text and adjustments above.
             else -> null
         } ?: return null
         // Cleaned up (#39) and noise reduced (#38), once that is ready.
