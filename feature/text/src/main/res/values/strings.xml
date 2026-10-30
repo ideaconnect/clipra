@@ -30,4 +30,18 @@
     <string name="text_weight_medium">Medium</string>
     <string name="text_weight_bold">Bold</string>
     <string name="text_weight_heavy">Heavy</string>
+    <!-- Text effects (#32) -->
+    <string name="text_effect">Text effect</string>
+    <string name="text_effect_none">None</string>
+    <string name="text_effect_outline">Outline</string>
+    <string name="text_effect_shadow">Shadow</string>
+    <string name="text_effect_glow">Glow</string>
+    <string name="text_effect_neon">Neon</string>
+    <string name="text_effect_box">Box</string>
+    <string name="text_effect_gradient">Gradient</string>
+    <string name="text_effect_extrude">Extrude</string>
+    <string name="text_effect_glitch">Glitch</string>
+    <string name="text_effect_hollow">Hollow</string>
+    <string name="text_effect_retro">Retro</string>
+    <string name="text_effect_marker">Marker</string>
 </resources>

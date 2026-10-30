@@ -9,6 +9,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.RoborazziOptions
 import com.github.takahirom.roborazzi.captureRoboImage
@@ -98,6 +99,18 @@ class TextScreenTest {
         assertEquals(TextColors.YELLOW, specs.last().background)
         compose.onNodeWithTag("text-align").performClick()
         assertEquals(TextAlign.End, specs.last().align)
+    }
+
+    /** The 12 text effects (#32), drawn by the clip's renderer; Retro as in the design. */
+    @Test
+    fun textEffects() {
+        show(card.copy(text = "Day two", effect = "retro"))
+        compose.onNodeWithTag("effect:retro").performScrollTo().assertIsSelected()
+        compose.onNodeWithTag("text-effects").captureRoboImage(roborazziOptions = options)
+        compose.onNodeWithTag("effect:neon").performClick()
+        assertEquals("neon", specs.last().effect)
+        compose.onNodeWithTag("effect:none").performClick()
+        assertEquals(null, specs.last().effect)
     }
 
     /** The design state in Polish, to see that every label fits (#76). */
