@@ -1,6 +1,7 @@
 package tech.idct.clipra.core.engine.render
 
 import android.graphics.Bitmap
+import tech.idct.clipra.core.engine.media.CutoutMasks
 import tech.idct.clipra.core.model.Animations
 import tech.idct.clipra.core.model.Background
 import tech.idct.clipra.core.model.CaptionSpec
@@ -39,6 +40,9 @@ interface MediaResolver {
 
     /** Where [asset] speaks (#40), in microseconds of the media, once that is known. */
     fun speech(asset: MediaAsset): List<LongRange>? = null
+
+    /** The person masks of [asset] (#50), once they are made. */
+    fun cutout(asset: MediaAsset): CutoutMasks? = null
 
     /** The LUT with [id] (#28): a built-in one, or an imported `.cube` file; null if gone. */
     fun lut(id: String): CubeLut? = Luts.builtIn(id)
@@ -317,10 +321,19 @@ object ProjectRender {
         } else {
             null
         }
-        return renderClipOf(clip, source, voice)
+        // Cut out (#50) once the masks are made; the whole picture shows until then.
+        val cutout = clip.cutout?.let { settings ->
+            media.cutout(asset)?.let { RenderCutout(settings, it) }
+        }
+        return renderClipOf(clip, source, voice, cutout)
     }
 
-    private fun renderClipOf(clip: Clip, source: RenderSource, voice: String? = null) = RenderClip(
+    private fun renderClipOf(
+        clip: Clip,
+        source: RenderSource,
+        voice: String? = null,
+        cutout: RenderCutout? = null,
+    ) = RenderClip(
         id = clip.id,
         startUs = clip.startUs,
         durationUs = clip.durationUs,
@@ -340,6 +353,7 @@ object ProjectRender {
         mask = clip.mask,
         audio = clip.audio,
         voicePath = voice,
+        cutout = cutout,
     )
 
     /** Text renders up to twice the frame's size when scaled up. */

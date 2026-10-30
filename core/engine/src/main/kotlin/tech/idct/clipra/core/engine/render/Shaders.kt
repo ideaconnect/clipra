@@ -682,6 +682,40 @@ internal object Shaders {
         }
     """
 
+    /**
+     * Person cutout (#50): the clip's picture (uTex, upright) keeps what the person mask (uMask,
+     * 256 × 256 confidences, top row first) says is a person, as `CutoutMath.alpha` works it out
+     * line by line. Behind the person (uBehind): 0 lets the layers under the clip show (straight
+     * alpha), 1 puts the blurred copy in uBlurred there, 2 the colour uColor.
+     */
+    const val CUTOUT = PRECISION + """
+        uniform sampler2D uTex;
+        uniform sampler2D uMask;
+        uniform sampler2D uBlurred;
+        uniform int uBehind;
+        uniform vec3 uColor;
+        uniform float uRefine;
+        uniform float uHair;
+        varying vec2 vTex;
+        void main() {
+            vec4 picture = texture2D(uTex, vTex);
+            // The mask's first row is the top of the picture.
+            float m = texture2D(uMask, vec2(vTex.x, 1.0 - vTex.y)).r;
+            float centre = 0.5 + 0.15 * uRefine;
+            float width = 0.3 - 0.22 * uRefine;
+            float firm = smoothstep(centre - width, centre + width, m);
+            float soft = smoothstep(0.08, 0.6, m);
+            float a = max(firm, soft * uHair);
+            if (uBehind == 0) {
+                gl_FragColor = vec4(picture.rgb, picture.a * a);
+            } else if (uBehind == 1) {
+                gl_FragColor = vec4(mix(texture2D(uBlurred, vTex).rgb, picture.rgb, a), picture.a);
+            } else {
+                gl_FragColor = vec4(mix(uColor, picture.rgb, a), picture.a);
+            }
+        }
+    """
+
     /** Copies the canvas to the output. */
     const val COPY = """
         precision mediump float;

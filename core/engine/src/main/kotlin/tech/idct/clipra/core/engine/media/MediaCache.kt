@@ -65,12 +65,18 @@ class MediaCache(private val root: File) {
     /** The beats of [mediaId] (#40): its tempo, then a beat per line, in microseconds. */
     fun beats(mediaId: String): File = File(root, "analysis/$mediaId.beats")
 
+    /** The person masks of [mediaId] (#50), frame by frame (see `CutoutMasks`). */
+    fun cutout(mediaId: String): File = File(root, "cutout/$mediaId.masks")
+
     /** The waveform of a voice [mix]. */
     fun voiceWaveform(mix: File): File = File(mix.path.removeSuffix(".wav") + ".peaks")
 
     private val voiceChanges = MutableStateFlow(0)
 
-    /** Changes each time a cleaned voice is ready, so the preview can pick it up. */
+    /**
+     * Changes each time a cleaned voice, an analysis or person masks (#50) are ready, so the
+     * preview can pick them up.
+     */
     val voiceVersion: StateFlow<Int> = voiceChanges.asStateFlow()
 
     internal fun voiceReady() = voiceChanges.update { it + 1 }

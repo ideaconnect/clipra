@@ -7,6 +7,7 @@ import androidx.navigation.toRoute
 import kotlinx.serialization.Serializable
 import tech.idct.clipra.core.designsystem.placeholder.Board
 import tech.idct.clipra.feature.effects.color.ColorDestination
+import tech.idct.clipra.feature.effects.cutout.CutoutDestination
 import tech.idct.clipra.feature.effects.filters.FiltersDestination
 import tech.idct.clipra.feature.effects.masks.MasksDestination
 import tech.idct.clipra.feature.effects.stack.EffectStackDestination
@@ -51,8 +52,13 @@ data class ColorRoute(
 @Serializable
 data class EffectStackRoute(val projectId: String, val clipId: String, val playheadUs: Long = 0)
 
+/** The person cutout of [clipId] in [projectId] (#50); no project opens the placeholder board. */
 @Serializable
-data object CutoutRoute
+data class CutoutRoute(
+    val projectId: String? = null,
+    val clipId: String? = null,
+    val playheadUs: Long = 0,
+)
 
 @Serializable
 data object ReframeRoute
@@ -73,7 +79,7 @@ object EffectsBoards {
     )
     val masks = Board(id = "Masks", title = R.string.effects_title_masks, route = MasksRoute())
     val color = Board(id = "Color", title = R.string.effects_title_color, route = ColorRoute())
-    val cutout = Board(id = "Cutout", title = R.string.effects_title_cutout, route = CutoutRoute)
+    val cutout = Board(id = "Cutout", title = R.string.effects_title_cutout, route = CutoutRoute())
     val reframe = Board(
         id = "Reframe",
         title = R.string.effects_title_reframe,
@@ -117,6 +123,12 @@ fun NavGraphBuilder.effectsScreens(screen: @Composable (Board) -> Unit, actions:
         }
     }
     composable<EffectStackRoute> { EffectStackDestination(onDone = actions.onDone) }
-    composable<CutoutRoute> { screen(EffectsBoards.cutout) }
+    composable<CutoutRoute> { entry ->
+        if (entry.toRoute<CutoutRoute>().projectId == null) {
+            screen(EffectsBoards.cutout)
+        } else {
+            CutoutDestination(onDone = actions.onDone)
+        }
+    }
     composable<ReframeRoute> { screen(EffectsBoards.reframe) }
 }

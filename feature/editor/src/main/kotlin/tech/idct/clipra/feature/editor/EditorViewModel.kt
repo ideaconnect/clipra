@@ -24,6 +24,7 @@ import kotlinx.coroutines.withContext
 import tech.idct.clipra.core.data.di.ApplicationScope
 import tech.idct.clipra.core.data.project.OpenProjects
 import tech.idct.clipra.core.data.project.ProjectSession
+import tech.idct.clipra.core.engine.media.Cutouts
 import tech.idct.clipra.core.engine.media.MediaCache
 import tech.idct.clipra.core.engine.media.MediaImporter
 import tech.idct.clipra.core.engine.media.ProjectMediaResolver
@@ -134,6 +135,7 @@ class EditorViewModel @Inject constructor(
     private val voices: VoiceCleaner,
     private val analyzer: SoundAnalyzer,
     private val recorder: VoiceRecorder,
+    private val cutouts: Cutouts,
     @param:ApplicationScope private val appScope: CoroutineScope,
     savedState: SavedStateHandle,
 ) : ViewModel() {
@@ -163,7 +165,11 @@ class EditorViewModel @Inject constructor(
             }
             opened.state.collect { session ->
                 // Cleaned voices (#39) the cache lost, or that were asked for elsewhere.
-                appScope.launch(Dispatchers.IO) { voices.requestAll(session.project) }
+                appScope.launch(Dispatchers.IO) {
+                    voices.requestAll(session.project)
+                    // Person masks (#50) the cache lost.
+                    cutouts.requestAll(session.project)
+                }
                 mutableState.update { state ->
                     state.copy(
                         project = session.project,

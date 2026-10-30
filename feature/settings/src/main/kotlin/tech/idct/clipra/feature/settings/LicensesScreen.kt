@@ -49,6 +49,8 @@ val OpenSourceComponents = listOf(
     OpenSourceComponent("Hilt and Dagger", "Apache-2.0", "licenses/Apache-2.0.txt"),
     OpenSourceComponent("whisper.cpp", "MIT", "licenses/MIT-whisper.cpp.txt"),
     OpenSourceComponent("ONNX Runtime", "MIT", "licenses/MIT-ONNXRuntime.txt"),
+    OpenSourceComponent("LiteRT", "Apache-2.0", "licenses/Apache-2.0.txt"),
+    OpenSourceComponent("MediaPipe selfie segmenter", "Apache-2.0", "licenses/Apache-2.0.txt"),
     OpenSourceComponent("DeepFilterNet", "MIT", "licenses/MIT-DeepFilterNet.txt"),
     OpenSourceComponent("RNNoise", "BSD-3-Clause", "licenses/BSD-3-Clause-RNNoise.txt"),
     OpenSourceComponent("Bricolage Grotesque", "OFL-1.1", "licenses/OFL-BricolageGrotesque.txt"),

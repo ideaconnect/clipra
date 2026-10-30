@@ -163,4 +163,23 @@
     <string name="effects_stack_add">+ Add effect</string>
     <string name="effects_stack_copy">Copy</string>
     <string name="effects_stack_paste">Paste</string>
+    <string name="effects_cutout_subtitle">%1$s · L%2$d · AI person cutout</string>
+    <string name="effects_cutout_finding">Finding people %1$d%%</string>
+    <string name="effects_cutout_found">Person found</string>
+    <string name="effects_cutout_not_found">No person found</string>
+    <string name="effects_cutout_behind">Show behind the subject</string>
+    <string name="effects_cutout_layer_below">Layer below</string>
+    <string name="effects_cutout_blur">Blur</string>
+    <string name="effects_cutout_clear">Clear</string>
+    <string name="effects_cutout_color">Color</string>
+    <string name="effects_cutout_edge">Edge refine</string>
+    <string name="effects_cutout_hair">Hair detail</string>
+    <string name="effects_cutout_note">Finds people on the phone, frame by frame. No green screen needed.</string>
+    <string name="effects_cutout_remove">Remove cutout</string>
+    <string name="effects_cutout_green">Green</string>
+    <string name="effects_cutout_blue">Blue</string>
+    <string name="effects_cutout_black">Black</string>
+    <string name="effects_cutout_white">White</string>
+    <string name="effects_cutout_yellow">Yellow</string>
+    <string name="effects_cutout_red">Red</string>
 </resources>

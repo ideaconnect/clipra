@@ -370,7 +370,12 @@ private fun EditorRoute(actions: EditorActions, viewModel: EditorViewModel = hil
                         viewModel.say(EditorMessage.NotAvailable)
                     }
 
-                    EditorTool.Filters, EditorTool.Masks, EditorTool.Color, EditorTool.Effects -> {
+                    EditorTool.Filters,
+                    EditorTool.Masks,
+                    EditorTool.Color,
+                    EditorTool.Effects,
+                    EditorTool.Cutout,
+                    -> {
                         // The selected clip, or the one on top at the playhead.
                         val clip = selected?.takeIf { it.takesFilters() }
                             ?: project.layers.reversed().flatMap { it.clips }

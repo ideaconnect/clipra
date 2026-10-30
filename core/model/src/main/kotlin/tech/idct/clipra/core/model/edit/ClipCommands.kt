@@ -284,6 +284,7 @@ class ExtractAudio(private val clipId: String, private val newId: () -> String =
             mask = null,
             color = null,
             stabilize = null,
+            cutout = null,
         )
         val above = project.layers.drop(project.layerIndexOf(layer.id) + 1)
         val free = above.firstOrNull { candidate ->

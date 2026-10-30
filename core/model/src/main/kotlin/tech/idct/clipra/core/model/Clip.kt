@@ -31,6 +31,8 @@ data class Clip(
     val caption: CaptionSpec? = null,
     val animation: Animation? = null,
     val stabilize: Stabilization? = null,
+    /** Person cutout (#50): the background behind the people in the picture goes. */
+    val cutout: Cutout? = null,
     /**
      * The mosaic cell the clip is drawn in (#17), numbered as `Cells` numbers them; null for the
      * whole frame. It is ignored in a Single layout.
@@ -315,6 +317,43 @@ data class Animation(
     val loop: String? = null,
 ) {
     val isEmpty: Boolean get() = enter == null && exit == null && loop == null
+}
+
+/** What shows behind a cut-out subject (#50, Cutout board). */
+@Serializable
+enum class Behind {
+    /** The layers under the clip, as through a hole. */
+    LayerBelow,
+
+    /** A blurred copy of the clip itself. */
+    Blur,
+
+    /** Nothing: see-through, like Layer below when nothing is under the clip. */
+    Clear,
+
+    /** A solid [Cutout.color]. */
+    Color,
+}
+
+/**
+ * Person cutout (#50): on-device AI finds the people in every frame and the rest of the picture
+ * goes, with [behind] showing there instead. [edgeRefine] (0 to 1) makes the edge firmer and
+ * tighter; [hairDetail] (0 to 1) keeps the faint fringe the model is unsure of, such as hair.
+ * See `CutoutMath`.
+ */
+@Serializable
+data class Cutout(
+    val behind: Behind = Behind.LayerBelow,
+    val edgeRefine: Float = DEFAULT_EDGE_REFINE,
+    val hairDetail: Float = DEFAULT_HAIR_DETAIL,
+    /** ARGB, for [Behind.Color]. */
+    val color: Long = TextColors.GREEN,
+) {
+    companion object {
+        /** The Cutout board's defaults (40 and 70). */
+        const val DEFAULT_EDGE_REFINE = 0.4f
+        const val DEFAULT_HAIR_DETAIL = 0.7f
+    }
 }
 
 /** Video stabilization, strength 0 to 100 (spec section 3). */

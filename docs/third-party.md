@@ -13,7 +13,9 @@ Keep this list in sync with the build. Every entry needs a license that is compa
 | DeepFilterNet 3 | AI voice cleanup model, downloaded; Clipra's Kotlin port of its libDF processing (`ml:voice`) | MIT or Apache-2.0 (dual) |
 | RNNoise v0.2 | Lite voice cleanup, vendored with its weights in `ml/voice/src/main/cpp/rnnoise` (origin in `SOURCE.md`) | BSD-3-Clause |
 | libebur128 (if used) | Loudness measurement | MIT |
-| MediaPipe Tasks Vision and models | Face detection, segmentation, object detection | Apache-2.0 |
+| LiteRT (`com.google.ai.edge.litert:litert` 2.3.0, with `litert-api`) | Runs the MediaPipe vision models (`ml:vision`); no telemetry | Apache-2.0 |
+| MediaPipe selfie segmenter (`image_segmenter/selfie_segmenter/float16/1`, built into the APK, SHA-256 checked at build time) | Person cutout | Apache-2.0 |
+| MediaPipe face detector and object detector models | Face follow, reframe (planned) | Apache-2.0 |
 | OpenCV (core, imgproc, video, calib3d only) | Motion tracking for Stabilize | Apache-2.0 (4.5.0 and later) |
 | ML Kit Translation | Offline translation | Google APIs Terms of Service |
 | Google Mobile Ads Next-Gen SDK (`com.google.android.libraries.ads.mobile.sdk:ads-mobile-sdk` 1.5.0, with Play services, Cronet, Gson, Guava, OkHttp and Tink, all Apache-2.0 or BSD) | Export interstitials (`monetization`) | Google Mobile Ads SDK terms |

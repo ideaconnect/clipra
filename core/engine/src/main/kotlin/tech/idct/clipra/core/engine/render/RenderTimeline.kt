@@ -1,6 +1,7 @@
 package tech.idct.clipra.core.engine.render
 
 import android.graphics.Bitmap
+import tech.idct.clipra.core.engine.media.CutoutMasks
 import tech.idct.clipra.core.model.Animation
 import tech.idct.clipra.core.model.Animations
 import tech.idct.clipra.core.model.AudioSettings
@@ -8,6 +9,7 @@ import tech.idct.clipra.core.model.BlendMode
 import tech.idct.clipra.core.model.CellRect
 import tech.idct.clipra.core.model.ColorGrade
 import tech.idct.clipra.core.model.CubeLut
+import tech.idct.clipra.core.model.Cutout
 import tech.idct.clipra.core.model.Easing
 import tech.idct.clipra.core.model.Effect
 import tech.idct.clipra.core.model.Keyframe
@@ -116,6 +118,8 @@ data class RenderClip(
     val maskKeyframes: List<Keyframe<Mask>> = emptyList(),
     /** Where clip time starts: the clip's start, kept by the pieces a caption is drawn in. */
     val keyframeOriginUs: Long = startUs,
+    /** The person cutout (#50) with its masks, once they are made. */
+    val cutout: RenderCutout? = null,
 ) {
     val endUs: Long get() = startUs + durationUs
 
@@ -174,6 +178,9 @@ sealed interface RenderSource {
     /** Sound only (music, voiceover): no picture. */
     data class Audio(val path: String, val inPointUs: Long = 0) : RenderSource
 }
+
+/** A person cutout (#50): its settings and the masks of the clip's media. */
+class RenderCutout(val settings: Cutout, val masks: CutoutMasks)
 
 /**
  * A voice a clip ducks under (#40): where it speaks, in microseconds from the clip's start on the
