@@ -219,6 +219,13 @@ data class AudioSettings(
     val noiseReduction: Float? = null,
     /** AI voice cleanup (#39), or null to keep the sound as recorded. */
     val voiceCleanup: VoiceCleanup? = null,
+    /**
+     * Ducking (#40): while this clip speaks, every other clip drops by this many dB (3 to 24);
+     * null for none.
+     */
+    val ducking: Float? = null,
+    /** Beat markers (#40) on this clip, which cuts snap to. */
+    val beats: Boolean = false,
 )
 
 /** Which network cleans up a voice (#39): DeepFilterNet 3 (downloaded) or RNNoise (built in). */
@@ -342,4 +349,50 @@ object NoiseReduction {
 
     /** A strength in whole percent, as the slider shows it and the cache keys it. */
     fun percent(strength: Float): Int = (strength * 100).roundToInt()
+}
+
+/**
+ * Ducking (#40): how far other clips are down while a voice speaks. They go down just before the
+ * voice starts ([LEAD_US], over [ATTACK_US], so they are fully down 10 ms into the speech) and
+ * come back over [RELEASE_US] after it stops, in an S-curve so the change is smooth.
+ */
+object Ducking {
+    const val DEFAULT_DB = 12f
+    const val MIN_DB = 3f
+    const val MAX_DB = 24f
+    const val LEAD_US = 50_000L
+    const val ATTACK_US = 60_000L
+    const val RELEASE_US = 300_000L
+
+    /** How far down (0 to 1 of the depth) a clip is at [timeUs] for speech in [speech]. */
+    fun weight(timeUs: Long, speech: List<LongRange>): Float {
+        var weight = 0f
+        for (range in speech) {
+            val start = range.first - LEAD_US
+            val w = when {
+                timeUs < start -> 0f
+
+                timeUs < start + ATTACK_US -> smooth((timeUs - start).toFloat() / ATTACK_US)
+
+                timeUs <= range.last -> 1f
+
+                timeUs < range.last + RELEASE_US -> smooth(
+                    1 - (timeUs - range.last).toFloat() / RELEASE_US,
+                )
+
+                else -> 0f
+            }
+            if (w > weight) weight = w
+            if (weight >= 1f) break
+        }
+        return weight
+    }
+
+    /** The gain at [timeUs] for speech in [speech], [depthDb] down at most. */
+    fun gain(timeUs: Long, speech: List<LongRange>, depthDb: Float): Float {
+        val w = weight(timeUs, speech)
+        return if (w <= 0f) 1f else 10f.pow(-depthDb * w / 20)
+    }
+
+    private fun smooth(x: Float): Float = x * x * (3 - 2 * x)
 }

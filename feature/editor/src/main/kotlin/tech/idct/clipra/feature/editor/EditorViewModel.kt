@@ -12,14 +12,19 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import tech.idct.clipra.core.data.di.ApplicationScope
 import tech.idct.clipra.core.data.project.OpenProjects
 import tech.idct.clipra.core.data.project.ProjectSession
 import tech.idct.clipra.core.engine.media.MediaCache
 import tech.idct.clipra.core.engine.media.MediaImporter
 import tech.idct.clipra.core.engine.media.ProjectMediaResolver
+import tech.idct.clipra.core.engine.media.SoundAnalyzer
 import tech.idct.clipra.core.engine.media.VoiceCleaner
 import tech.idct.clipra.core.model.Animation
 import tech.idct.clipra.core.model.BlendMode
@@ -65,6 +70,7 @@ import tech.idct.clipra.core.model.edit.SplitClip
 import tech.idct.clipra.core.model.edit.ToggleKeyframe
 import tech.idct.clipra.core.model.edit.TrimClip
 import tech.idct.clipra.core.model.edit.randomId
+import tech.idct.clipra.core.model.timelineAt
 import tech.idct.clipra.feature.editor.timeline.TimelineGeometry
 import javax.inject.Inject
 
@@ -80,6 +86,8 @@ data class EditorUiState(
     val missingMedia: Set<String> = emptySet(),
     val importing: Boolean = false,
     val message: EditorMessage? = null,
+    /** Beat markers (#40): each clip's beats on the timeline, for clips that show them. */
+    val beats: Map<String, List<Long>> = emptyMap(),
 )
 
 /** A short note for the user after an edit was refused or media couldn't be read. */
@@ -101,6 +109,7 @@ class EditorViewModel @Inject constructor(
     private val importer: MediaImporter,
     val mediaCache: MediaCache,
     private val voices: VoiceCleaner,
+    private val analyzer: SoundAnalyzer,
     @param:ApplicationScope private val appScope: CoroutineScope,
     savedState: SavedStateHandle,
 ) : ViewModel() {
@@ -117,6 +126,11 @@ class EditorViewModel @Inject constructor(
             if (opened == null) {
                 mutableState.update { it.copy(loaded = true) }
                 return@launch
+            }
+            // Beat markers (#40) follow the project and each finished analysis.
+            launch {
+                combine(opened.state.map { it.project }, mediaCache.voiceVersion) { p, _ -> p }
+                    .collectLatest { loadBeats(it) }
             }
             opened.state.collect { session ->
                 // Cleaned voices (#39) the cache lost, or that were asked for elsewhere.
@@ -152,6 +166,28 @@ class EditorViewModel @Inject constructor(
     }
 
     fun dismissMessage() = mutableState.update { it.copy(message = null) }
+
+    /**
+     * The beats (#40) of every clip with beat markers on, on the timeline: from the cache, found
+     * now where they are missing (once per media).
+     */
+    private suspend fun loadBeats(project: Project) {
+        val shown = project.layers.flatMap {
+            it.clips
+        }.filter { it.audio.beats && it.source != null }
+        val beats = withContext(Dispatchers.IO) {
+            shown.associate { clip ->
+                val media = clip.source!!
+                val asset = project.asset(media.mediaId)
+                val found = asset?.let { analyzer.beats(it) ?: analyzer.prepareBeats(it) }
+                clip.id to found?.timesUs.orEmpty()
+                    .filter { it in media.inPointUs..media.outPointUs }
+                    .mapNotNull { clip.timelineAt(it) }
+                    .filter { it in clip.startUs..clip.endUs }
+            }
+        }
+        mutableState.update { it.copy(beats = beats) }
+    }
 
     /** Shows [message], such as why a tool has nothing to work on yet. */
     fun say(message: EditorMessage) = mutableState.update { it.copy(message = message) }

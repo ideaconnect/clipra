@@ -7,6 +7,7 @@ import androidx.media3.common.audio.AudioProcessor.AudioFormat
 import androidx.media3.common.audio.BaseAudioProcessor
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.common.util.Util
+import tech.idct.clipra.core.model.Ducking
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import kotlin.math.abs
@@ -20,7 +21,8 @@ import kotlin.math.roundToInt
  * loudness normalization (#37). With normalization, a limiter keeps peaks under the
  * -1 dBTP ceiling: it pulls the level down at once and lets it back over [RELEASE_US]. The media
  * item may start [offsetUs] into the clip (when a transition gives the earlier clip the
- * overlap). After a seek, the position comes from the stream metadata, so fades stay in place.
+ * overlap). It goes down while the voices it [ducks] under speak (#40). After a seek, the
+ * position comes from the stream metadata, so fades stay in place.
  */
 @OptIn(UnstableApi::class)
 class ClipGain(
@@ -30,6 +32,8 @@ class ClipGain(
     private val durationUs: Long,
     private val offsetUs: Long = 0,
     private val normalizeDb: Float = 0f,
+    /** Voices the clip ducks under (#40). */
+    private val ducks: List<RenderDuck> = emptyList(),
 ) : BaseAudioProcessor() {
     private var frames = 0L
     private val normalize = 10.0.pow(normalizeDb / 20.0).toFloat()
@@ -42,7 +46,10 @@ class ClipGain(
         val fadingIn = if (fadeInUs > 0) (timeUs.toFloat() / fadeInUs).coerceIn(0f, 1f) else 1f
         val left = durationUs - timeUs
         val fadingOut = if (fadeOutUs > 0) (left.toFloat() / fadeOutUs).coerceIn(0f, 1f) else 1f
-        return volume * fadingIn * fadingOut
+        // The voice that takes it furthest down decides.
+        var ducked = 1f
+        for (duck in ducks) ducked = minOf(ducked, Ducking.gain(timeUs, duck.speech, duck.depthDb))
+        return volume * fadingIn * fadingOut * ducked
     }
 
     override fun onConfigure(inputAudioFormat: AudioFormat): AudioFormat {
@@ -50,7 +57,7 @@ class ClipGain(
         if (encoding != C.ENCODING_PCM_16BIT && encoding != C.ENCODING_PCM_FLOAT) {
             throw AudioProcessor.UnhandledAudioFormatException(inputAudioFormat)
         }
-        val active = volume != 1f || fadeInUs > 0 || fadeOutUs > 0 || limit
+        val active = volume != 1f || fadeInUs > 0 || fadeOutUs > 0 || limit || ducks.isNotEmpty()
         release = 1f - exp(-1.0 / (RELEASE_US / 1e6 * inputAudioFormat.sampleRate)).toFloat()
         return if (active) inputAudioFormat else AudioFormat.NOT_SET
     }

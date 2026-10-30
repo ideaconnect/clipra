@@ -101,6 +101,7 @@ object CompositionFactory {
                 durationUs = clip.durationUs,
                 offsetUs = start - clip.startUs,
                 normalizeDb = clip.audio.normalizeDb,
+                ducks = clip.ducks,
             )
             val edited = EditedMediaItem.Builder(item)
                 .setRemoveVideo(true)

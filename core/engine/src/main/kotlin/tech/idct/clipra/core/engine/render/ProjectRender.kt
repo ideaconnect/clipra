@@ -15,6 +15,7 @@ import tech.idct.clipra.core.model.Project
 import tech.idct.clipra.core.model.TextSpec
 import tech.idct.clipra.core.model.VoiceCleanup
 import tech.idct.clipra.core.model.cuts
+import tech.idct.clipra.core.model.timelineAt
 
 /**
  * Where the engine reads a project's media: proxies for preview, originals for export. Returns
@@ -35,6 +36,9 @@ interface MediaResolver {
 
     /** A caption (#45) at [width] × [height] with word [current] spoken (-1: none). */
     fun caption(caption: CaptionSpec, current: Int, width: Int, height: Int): Bitmap? = null
+
+    /** Where [asset] speaks (#40), in microseconds of the media, once that is known. */
+    fun speech(asset: MediaAsset): List<LongRange>? = null
 
     /** The LUT with [id] (#28): a built-in one, or an imported `.cube` file; null if gone. */
     fun lut(id: String): CubeLut? = Luts.builtIn(id)
@@ -62,40 +66,82 @@ object ProjectRender {
         width: Int = project.format.outputSize.width,
         height: Int = project.format.outputSize.height,
         frameRate: Int = project.format.frameRate.fps,
-    ): RenderTimeline = RenderTimeline(
-        width = width,
-        height = height,
-        frameRate = frameRate,
-        // At least one frame, so an empty project still renders its background.
-        durationUs = maxOf(project.durationUs, 1_000_000L / frameRate),
-        background = backgroundColor(project.format.background),
-        layers = project.layers.map { layer ->
-            val clips = layer.clips.flatMap { clip ->
-                val rendered = if (clip.type == ClipType.Caption) {
-                    captionClips(clip, media, width, height)
-                } else if (clip.isText() && clip.animation?.let { it.enter ?: it.exit } != null) {
-                    animatedTextClips(project, clip, media, width, height, frameRate)
-                } else {
-                    listOfNotNull(renderClip(project, clip, media, width, height))
+    ): RenderTimeline = voicesOf(project, media).let { voices ->
+        RenderTimeline(
+            width = width,
+            height = height,
+            frameRate = frameRate,
+            // At least one frame, so an empty project still renders its background.
+            durationUs = maxOf(project.durationUs, 1_000_000L / frameRate),
+            background = backgroundColor(project.format.background),
+            layers = project.layers.map { layer ->
+                val clips = layer.clips.flatMap { clip ->
+                    val rendered = if (clip.type == ClipType.Caption) {
+                        captionClips(clip, media, width, height)
+                    } else if (clip.animatesText()) {
+                        animatedTextClips(project, clip, media, width, height, frameRate)
+                    } else {
+                        listOfNotNull(renderClip(project, clip, media, width, height))
+                    }
+                    // A clip in a mosaic cell is laid out in it and cut to it (#17).
+                    val cell = Cells.rect(project.format, clip.cell)
+                    // Its grade's LUT (#28), read once.
+                    val lut = clip.color?.lut?.let(media::lut)
+                    // The voices it ducks under (#40).
+                    val ducks = ducksFor(project, clip, voices)
+                    if (cell == null && lut == null && ducks.isEmpty()) {
+                        rendered
+                    } else {
+                        rendered.map { it.copy(cell = cell, lut = lut, ducks = ducks) }
+                    }
                 }
-                // A clip in a mosaic cell is laid out in it and cut to it (#17).
-                val cell = Cells.rect(project.format, clip.cell)
-                // Its grade's LUT (#28), read once.
-                val lut = clip.color?.lut?.let(media::lut)
-                if (cell == null && lut == null) {
-                    rendered
-                } else {
-                    rendered.map { it.copy(cell = cell, lut = lut) }
-                }
-            }
-            RenderLayer(
-                clips = clips,
-                hidden = layer.hidden,
-                muted = layer.muted,
-                transitions = transitions(project, layer.id, clips.map { it.id }.toSet()),
-            )
-        },
+                RenderLayer(
+                    clips = clips,
+                    hidden = layer.hidden,
+                    muted = layer.muted,
+                    transitions = transitions(project, layer.id, clips.map { it.id }.toSet()),
+                )
+            },
+        )
+    }
+
+    /** A voice that ducks the others (#40): its speech on the timeline. */
+    private class Voice(
+        val clipId: String,
+        val mediaId: String,
+        val speech: List<LongRange>,
+        val depthDb: Float,
     )
+
+    /** Every clip set to duck the others, with its speech mapped onto the timeline. */
+    private fun voicesOf(project: Project, media: MediaResolver): List<Voice> =
+        project.layers.filter { !it.muted }.flatMap { it.clips }.mapNotNull { clip ->
+            val depth = clip.audio.ducking ?: return@mapNotNull null
+            val ref = clip.source ?: return@mapNotNull null
+            val asset = project.asset(ref.mediaId) ?: return@mapNotNull null
+            val speech = media.speech(asset) ?: return@mapNotNull null
+            val onTimeline = speech.mapNotNull { range ->
+                val a = clip.timelineAt(range.first) ?: return@mapNotNull null
+                val b = clip.timelineAt(range.last) ?: return@mapNotNull null
+                val from = maxOf(minOf(a, b), clip.startUs)
+                val to = minOf(maxOf(a, b), clip.endUs)
+                if (to > from) from..to else null
+            }
+            Voice(clip.id, ref.mediaId, onTimeline, depth)
+        }
+
+    /** The voices [clip] ducks under: every other one, not of its own media, in its time. */
+    private fun ducksFor(project: Project, clip: Clip, voices: List<Voice>): List<RenderDuck> {
+        if (clip.type != ClipType.Audio && clip.type != ClipType.Video) return emptyList()
+        return voices.filter { it.clipId != clip.id && it.mediaId != clip.source?.mediaId }
+            .mapNotNull { voice ->
+                val local = voice.speech.filter {
+                    it.last >= clip.startUs && it.first <= clip.endUs
+                }
+                    .map { (it.first - clip.startUs)..(it.last - clip.startUs) }
+                if (local.isEmpty()) null else RenderDuck(local, voice.depthDb)
+            }
+    }
 
     /** The layer's transitions whose cut is still there, between clips that render. */
     private fun transitions(project: Project, layerId: String, rendered: Set<String>) =
@@ -221,6 +267,9 @@ object ProjectRender {
     }
 
     private fun Clip.isText() = type == ClipType.Text || type == ClipType.TextCard
+
+    /** A text clip with an animation in or out (#33), drawn a frame at a time. */
+    private fun Clip.animatesText() = isText() && animation?.let { it.enter ?: it.exit } != null
 
     private fun renderClip(
         project: Project,

@@ -45,6 +45,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -110,6 +111,8 @@ fun Timeline(
     modifier: Modifier = Modifier,
     filmstrip: @Composable (clip: Clip, widthDp: Float, heightDp: Float) -> Unit = { _, _, _ -> },
     waveforms: WaveformLoader? = null,
+    /** Beat markers (#40): each clip's beats on the timeline; cuts snap to them. */
+    beats: Map<String, List<Long>> = emptyMap(),
 ) {
     val colors = ClipraTheme.colors
     val density = LocalDensity.current
@@ -180,6 +183,7 @@ fun Timeline(
                                     actions = actions,
                                     filmstrip = filmstrip,
                                     waveforms = waveforms,
+                                    beats = beats,
                                 )
                             }
                             project.cuts().filter { it.layerId == layer.id }.forEach { cut ->
@@ -316,9 +320,11 @@ private fun ClipBlock(
     actions: TimelineActions,
     filmstrip: @Composable (Clip, Float, Float) -> Unit,
     waveforms: WaveformLoader?,
+    beats: Map<String, List<Long>> = emptyMap(),
 ) {
     val colors = ClipraTheme.colors
     val density = LocalDensity.current
+    val beatsUs = remember(beats) { beats.values.flatten() }
     var dragX by remember { mutableFloatStateOf(0f) }
     var dragY by remember { mutableFloatStateOf(0f) }
     var trimStart by remember { mutableFloatStateOf(0f) }
@@ -370,7 +376,12 @@ private fun ClipBlock(
                     onDragEnd = {
                         val g = currentGeometry
                         val wanted = currentClip.startUs + g.duration(dragX)
-                        val targets = Snapping.targets(project, g.playheadUs, currentClip.id)
+                        val targets = Snapping.targets(
+                            project,
+                            g.playheadUs,
+                            currentClip.id,
+                            beatsUs,
+                        )
                         val start = Snapping.snapMove(
                             wanted,
                             currentClip.durationUs,
@@ -451,6 +462,22 @@ private fun ClipBlock(
             missing,
             modifier = Modifier.padding(start = (inset + 5).dp, top = 4.dp),
         )
+        // Beat markers (#40): a tick at each beat along the top.
+        beats[clip.id]?.takeIf { it.isNotEmpty() }?.let { times ->
+            Canvas(
+                modifier = Modifier.fillMaxWidth().height(BEAT_TICK.dp).testTag("beats:${clip.id}"),
+            ) {
+                for (time in times) {
+                    val x =
+                        (time - clip.startUs) / 1_000_000f * geometry.dpPerSecond * density.density
+                    drawRect(
+                        color = colors.clip.beatMarker,
+                        topLeft = Offset(x - 1.dp.toPx(), 0f),
+                        size = Size(2.dp.toPx(), size.height),
+                    )
+                }
+            }
+        }
         // How many effects the clip stacks (#29), at the visible right edge.
         if (clip.effects.isNotEmpty() && width >= FX_MIN_WIDTH) {
             val visibleRight = 2 * geometry.playheadX + TimelineGeometry.GUTTER
@@ -495,7 +522,7 @@ private fun ClipBlock(
             ) { offsetDp ->
                 val to = Snapping.snap(
                     clip.startUs + time + geometry.duration(offsetDp),
-                    Snapping.targets(project, geometry.playheadUs, clip.id),
+                    Snapping.targets(project, geometry.playheadUs, clip.id, beatsUs),
                     thresholdUs,
                 )
                 actions.onMoveKeyframe(clip.id, time, to - clip.startUs)
@@ -506,7 +533,7 @@ private fun ClipBlock(
             if (done) {
                 val to = Snapping.snap(
                     clip.startUs + geometry.duration(trimStart),
-                    Snapping.targets(project, geometry.playheadUs, clip.id),
+                    Snapping.targets(project, geometry.playheadUs, clip.id, beatsUs),
                     thresholdUs,
                 )
                 trimStart = 0f
@@ -518,7 +545,7 @@ private fun ClipBlock(
             if (done) {
                 val to = Snapping.snap(
                     clip.endUs + geometry.duration(trimEnd),
-                    Snapping.targets(project, geometry.playheadUs, clip.id),
+                    Snapping.targets(project, geometry.playheadUs, clip.id, beatsUs),
                     thresholdUs,
                 )
                 trimEnd = 0f
@@ -529,6 +556,9 @@ private fun ClipBlock(
 }
 
 private const val HANDLE_WIDTH = 12f
+
+/** How tall a beat tick is, in dp. */
+private const val BEAT_TICK = 5f
 
 /** Clips narrower than this, in dp, have no room for the FX badge. */
 private const val FX_MIN_WIDTH = 90f

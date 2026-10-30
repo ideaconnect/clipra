@@ -289,6 +289,47 @@ class AudioScreenTest {
         assertEquals(listOf(false), switches)
     }
 
+    /** Ducking and beat markers (#40): on at 12 dB, and the tempo once it is known. */
+    @Test
+    fun duckingAndBeats() {
+        Locale.setDefault(Locale.US)
+        val ducked = mutableListOf<Boolean>()
+        val beats = mutableListOf<Boolean>()
+        val voice = clip.copy(audio = clip.audio.copy(ducking = 12f, beats = true))
+        compose.setContent {
+            ClipraTheme {
+                AudioScreen(
+                    state = AudioUiState(
+                        project,
+                        voice,
+                        waveform,
+                        loaded = true,
+                        voice = VoiceUiState(bpm = 96f),
+                    ),
+                    volume = 1f,
+                    actions = AudioActions(
+                        {},
+                        {},
+                        {},
+                        {},
+                        {},
+                        onDucking = { ducked += it },
+                        onBeats = { beats += it },
+                    ),
+                )
+            }
+        }
+        compose.onNodeWithTag("audio-duck").performScrollTo()
+        compose.onNodeWithText("Other clips drop 12 dB while it speaks").assertExists()
+        compose.onNodeWithText("-12 dB").assertExists()
+        compose.onNodeWithText("96 BPM · cuts snap").assertExists()
+        compose.onNodeWithTag("audio-duck").captureRoboImage(roborazziOptions = options)
+        compose.onNodeWithTag("audio-duck-switch").performClick()
+        compose.onNodeWithTag("audio-beats-switch").performScrollTo().performClick()
+        assertEquals(listOf(false), ducked)
+        assertEquals(listOf(false), beats)
+    }
+
     @Test
     fun levelsAfterFollowVolumeAndNormalization() {
         val measured = Loudness.Measurement(-22.8f, -3.1f)

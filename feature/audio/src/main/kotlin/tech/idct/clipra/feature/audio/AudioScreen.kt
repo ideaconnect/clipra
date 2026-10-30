@@ -62,6 +62,7 @@ import tech.idct.clipra.core.engine.render.ClipGain
 import tech.idct.clipra.core.model.AudioSettings
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
+import tech.idct.clipra.core.model.Ducking
 import tech.idct.clipra.core.model.LoudnessTargets
 import tech.idct.clipra.core.model.NoiseReduction
 import tech.idct.clipra.core.model.VoiceCleanup
@@ -92,13 +93,19 @@ class AudioActions(
     val onNoise: (Boolean) -> Unit = {},
     val onNoiseStrength: (Float) -> Unit = {},
     val onNoiseStrengthDone: () -> Unit = {},
+    /** Ducking (#40): on or off, and its depth as the slider moves and is let go. */
+    val onDucking: (Boolean) -> Unit = {},
+    val onDuckingDepth: (Float) -> Unit = {},
+    val onDuckingDepthDone: () -> Unit = {},
+    /** Beat markers (#40) on or off. */
+    val onBeats: (Boolean) -> Unit = {},
 )
 
 /**
  * The Audio board (#36): the clip's waveform with its loudness before and after, its volume
  * (0 to 200%), its fades, loudness normalization (#37), noise reduction (#38) and AI voice
- * cleanup (#39). Ducking joins with its issue. [volume], [strength] and [noiseStrength] follow
- * their sliders while they move.
+ * cleanup (#39), ducking and beat markers (#40). [volume], [strength], [noiseStrength] and
+ * [duckingDepth] follow their sliders while they move.
  */
 @Composable
 fun AudioScreen(
@@ -108,6 +115,7 @@ fun AudioScreen(
     modifier: Modifier = Modifier,
     strength: Float? = null,
     noiseStrength: Float? = null,
+    duckingDepth: Float? = null,
 ) {
     val colors = ClipraTheme.colors
     val project = state.project ?: return
@@ -193,6 +201,8 @@ fun AudioScreen(
             NormalizeCard(audio, state.measured, state.measuring, actions.onLoudnessTarget)
             NoiseReductionCard(audio.noiseReduction, noiseStrength, state.voice.gating, actions)
             VoiceCleanupCard(audio.voiceCleanup, strength, state.voice, actions)
+            DuckingCard(audio.ducking, duckingDepth, actions)
+            BeatsCard(audio.beats, state.voice.bpm, actions.onBeats)
             SecondaryButton(
                 text = stringResource(R.string.audio_apply_all),
                 onClick = actions.onApplyToAll,
@@ -381,6 +391,92 @@ private fun NoiseReductionCard(
                 .height(44.dp)
                 .testTag("audio-noise-strength"),
         )
+    }
+}
+
+/** Ducking (#40): the switch, as the design draws it, and how far the other clips go down. */
+@Composable
+private fun DuckingCard(depth: Float?, liveDepth: Float?, actions: AudioActions) {
+    val on = depth != null
+    val db = liveDepth ?: depth ?: Ducking.DEFAULT_DB
+    SwitchCard(
+        title = stringResource(R.string.audio_duck_title),
+        detail = stringResource(R.string.audio_duck_detail, db.roundToInt()),
+        on = on,
+        onToggle = actions.onDucking,
+        tag = "audio-duck",
+    ) {
+        if (on) {
+            LabelledSlider(
+                label = stringResource(R.string.audio_duck_depth),
+                value = db,
+                onValueChange = actions.onDuckingDepth,
+                onValueChangeFinished = actions.onDuckingDepthDone,
+                valueText = stringResource(R.string.audio_duck_db, db.roundToInt()),
+                valueRange = Ducking.MIN_DB..Ducking.MAX_DB,
+                labelWidth = 80.dp,
+                modifier = Modifier
+                    .height(44.dp)
+                    .testTag("audio-duck-depth"),
+            )
+        }
+    }
+}
+
+/** Beat markers (#40): the switch, with the tempo once it is known. */
+@Composable
+private fun BeatsCard(on: Boolean, bpm: Float?, onToggle: (Boolean) -> Unit) {
+    SwitchCard(
+        title = stringResource(R.string.audio_beats_title),
+        detail = if (on && bpm != null && bpm > 0f) {
+            stringResource(R.string.audio_beats_bpm, bpm.roundToInt())
+        } else {
+            stringResource(R.string.audio_beats_detail)
+        },
+        on = on,
+        onToggle = onToggle,
+        tag = "audio-beats",
+    )
+}
+
+/** A card with a title, a line under it and a switch; the whole top row toggles. */
+@Composable
+private fun SwitchCard(
+    title: String,
+    detail: String,
+    on: Boolean,
+    onToggle: (Boolean) -> Unit,
+    tag: String,
+    content: @Composable () -> Unit = {},
+) {
+    val colors = ClipraTheme.colors
+    val type = ClipraTheme.typography
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(ClipraTheme.shapes.card)
+            .background(colors.surface)
+            .padding(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 4.dp)
+            .testTag(tag),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = ClipraDimens.TouchTarget)
+                .toggleable(value = on, role = Role.Switch, onValueChange = onToggle)
+                .testTag("$tag-switch"),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                Text(text = title, style = type.bodyStrong, color = colors.textPrimary)
+                Text(text = detail, style = type.caption, color = colors.textSecondary)
+            }
+            ClipraSwitch(checked = on, onCheckedChange = null)
+        }
+        content()
     }
 }
 

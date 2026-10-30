@@ -41,4 +41,12 @@
     <string name="audio_noise_title">Noise reduction</string>
     <string name="audio_noise_detail">Spectral gate for steady hum and hiss</string>
     <string name="audio_noise_working">Reducing noise · %1$d%%</string>
+    <!-- Ducking and beats (#40) -->
+    <string name="audio_duck_title">Duck music under this voice</string>
+    <string name="audio_duck_detail">Other clips drop %1$d dB while it speaks</string>
+    <string name="audio_duck_depth">Lower by</string>
+    <string name="audio_duck_db">-%1$d dB</string>
+    <string name="audio_beats_title">Beat markers</string>
+    <string name="audio_beats_detail">Marks the beat; cuts snap to it</string>
+    <string name="audio_beats_bpm">%1$d BPM · cuts snap</string>
 </resources>

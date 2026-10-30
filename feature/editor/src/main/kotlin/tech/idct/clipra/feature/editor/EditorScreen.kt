@@ -173,6 +173,7 @@ fun EditorScreen(
                     .fillMaxWidth(),
                 filmstrip = filmstrip,
                 waveforms = waveforms,
+                beats = state.beats,
             )
             Tools(state.selectedClipId != null, callbacks)
         }

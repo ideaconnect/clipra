@@ -60,6 +60,9 @@ class ProjectMediaResolver(
     override fun caption(caption: CaptionSpec, current: Int, width: Int, height: Int): Bitmap =
         CaptionRenderer.render(context, caption, current, width, height)
 
+    override fun speech(asset: MediaAsset): List<LongRange>? =
+        SoundAnalyzer.readSpeech(cache, asset.id)
+
     override fun lut(id: String): CubeLut? = Luts.builtIn(id) ?: LutLibrary.of(context).lut(id)
 
     override fun image(asset: MediaAsset): Bitmap? {

@@ -25,12 +25,14 @@ import tech.idct.clipra.core.data.project.ProjectSession
 import tech.idct.clipra.core.engine.media.Loudness
 import tech.idct.clipra.core.engine.media.MediaCache
 import tech.idct.clipra.core.engine.media.ProjectMediaResolver
+import tech.idct.clipra.core.engine.media.SoundAnalyzer
 import tech.idct.clipra.core.engine.media.VoiceCleaner
 import tech.idct.clipra.core.engine.media.Waveform
 import tech.idct.clipra.core.engine.media.Waveforms
 import tech.idct.clipra.core.model.AudioSettings
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
+import tech.idct.clipra.core.model.Ducking
 import tech.idct.clipra.core.model.MediaAsset
 import tech.idct.clipra.core.model.NoiseReduction
 import tech.idct.clipra.core.model.Project
@@ -70,6 +72,8 @@ data class VoiceUiState(
     val cleanedWaveform: Waveform? = null,
     /** Noise reduction's progress (#38) while it runs. */
     val gating: Float? = null,
+    /** The clip's tempo (#40) once its beats are found; 0 when it has no steady pulse. */
+    val bpm: Float? = null,
 )
 
 @HiltViewModel
@@ -78,6 +82,7 @@ class AudioViewModel @Inject constructor(
     private val projects: OpenProjects,
     private val cache: MediaCache,
     private val voices: VoiceCleaner,
+    private val analyzer: SoundAnalyzer,
     private val models: ModelManager,
     @param:ApplicationScope private val appScope: CoroutineScope,
     savedState: SavedStateHandle,
@@ -185,6 +190,36 @@ class AudioViewModel @Inject constructor(
         process(clip.audio.copy(noiseReduction = strength))
     }
 
+    /** Turns ducking (#40) on, at 12 dB, or off; on, the clip's speech is found. */
+    fun setDucking(on: Boolean) {
+        val clip = state.value.clip ?: return
+        setAudio(clip.audio.copy(ducking = if (on) Ducking.DEFAULT_DB else null))
+        if (on) {
+            asset()?.let { asset ->
+                appScope.launch(Dispatchers.IO) { analyzer.prepareSpeech(asset) }
+            }
+        }
+    }
+
+    /** How far the other clips go down (3 to 24 dB), when the slider is let go. */
+    fun setDuckingDepth(db: Float) {
+        val clip = state.value.clip ?: return
+        if (clip.audio.ducking == null) return
+        val whole = kotlin.math.round(db).coerceIn(Ducking.MIN_DB, Ducking.MAX_DB)
+        setAudio(clip.audio.copy(ducking = whole))
+    }
+
+    /** Turns beat markers (#40) on or off; on, the clip's beats are found. */
+    fun setBeats(on: Boolean) {
+        val clip = state.value.clip ?: return
+        setAudio(clip.audio.copy(beats = on))
+        if (on) {
+            asset()?.let { asset ->
+                appScope.launch(Dispatchers.IO) { analyzer.prepareBeats(asset) }
+            }
+        }
+    }
+
     /** Commits [audio] and starts the cleanup and noise reduction it asks for. */
     private fun process(audio: AudioSettings) {
         setAudio(audio)
@@ -246,6 +281,8 @@ class AudioViewModel @Inject constructor(
             .collectLatest { (_, processing) ->
                 val project = state.value.project ?: return@collectLatest
                 loadCleanedWaveform(processing.first, processing.second)
+                val bpm = asset()?.let { analyzer.beats(it)?.bpm }
+                mutableState.update { it.copy(voice = it.voice.copy(bpm = bpm)) }
                 measure(project)
             }
     }
