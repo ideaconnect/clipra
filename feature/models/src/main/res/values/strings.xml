@@ -25,4 +25,23 @@
     <string name="models_remove_title">Remove %1$s?</string>
     <string name="models_remove_body">Its files are deleted from this phone. You can download it again at any time.</string>
     <string name="models_remove">Remove</string>
+    <string name="models_onboarding_brand">Clipra</string>
+    <string name="models_onboarding_promise">No account.\nNo upload.</string>
+    <string name="models_onboarding_no_watermark">No watermark.</string>
+    <string name="models_onboarding_body">Clipra edits and runs its AI right on this phone. Your footage stays with you.</string>
+    <string name="models_onboarding_captions">Captions and editing by text, even in flight mode</string>
+    <string name="models_onboarding_voice">Voice cleanup that removes wind and traffic</string>
+    <string name="models_onboarding_faces">Face blur and reframing that follow people</string>
+    <string name="models_onboarding_download_now">Download now</string>
+    <string name="models_onboarding_base">Captions</string>
+    <string name="models_onboarding_base_detail">Whisper Base · good on most phones</string>
+    <string name="models_onboarding_cleanup">Voice cleanup</string>
+    <string name="models_onboarding_cleanup_detail">DeepFilterNet 3</string>
+    <string name="models_onboarding_small">More accurate captions</string>
+    <string name="models_onboarding_small_detail">Whisper Small · slower</string>
+    <string name="models_onboarding_total_wifi">Downloads %1$s over Wi-Fi. Change this any time in AI models.</string>
+    <string name="models_onboarding_total">Downloads %1$s. Change this any time in AI models.</string>
+    <string name="models_onboarding_nothing">Nothing to download now. Get models any time in AI models.</string>
+    <string name="models_onboarding_start">Start editing</string>
+    <string name="models_onboarding_skip">Skip downloads for now</string>
 </resources>

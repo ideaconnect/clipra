@@ -70,6 +70,8 @@ fun ClipraNavHost(
     openExport: Int = 0,
     /** Called the first time the projects show in this run, after onboarding. */
     onProjectsShown: () -> Unit = {},
+    /** The first run starts at onboarding; later runs at the projects. */
+    onboarded: Boolean = false,
 ) {
     LaunchedEffect(navController) {
         navController.currentBackStackEntryFlow.first { it.destination.hasRoute<MainRoute>() }
@@ -90,7 +92,10 @@ fun ClipraNavHost(
             },
         )
     }
-    NavHost(navController = navController, startDestination = OnboardingRoute) {
+    NavHost(
+        navController = navController,
+        startDestination = if (onboarded) MainRoute else OnboardingRoute,
+    ) {
         homeScreens(
             HomeActions(
                 onNewProject = { navController.navigate(NewProjectRoute()) },
@@ -174,7 +179,17 @@ fun ClipraNavHost(
                 onPro = { navController.navigate(ProRoute) },
             ),
         )
-        modelsScreens(screen, ModelsNavigationActions(onBack = { navController.popBackStack() }))
+        modelsScreens(
+            screen,
+            ModelsNavigationActions(
+                onBack = { navController.popBackStack() },
+                onOnboarded = {
+                    navController.navigate(MainRoute) {
+                        popUpTo<OnboardingRoute> { inclusive = true }
+                    }
+                },
+            ),
+        )
         monetizationScreens(
             screen,
             MonetizationNavigationActions(

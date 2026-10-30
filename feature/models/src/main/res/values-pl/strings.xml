@@ -25,4 +25,23 @@
     <string name="models_remove_title">Usunąć %1$s?</string>
     <string name="models_remove_body">Jego pliki zostaną usunięte z telefonu. Możesz pobrać go ponownie w każdej chwili.</string>
     <string name="models_remove">Usuń</string>
+    <string name="models_onboarding_brand">Clipra</string>
+    <string name="models_onboarding_promise">Bez konta.\nBez wysyłania.</string>
+    <string name="models_onboarding_no_watermark">Bez znaku wodnego.</string>
+    <string name="models_onboarding_body">Clipra edytuje i uruchamia AI na tym telefonie. Twoje nagrania zostają u Ciebie.</string>
+    <string name="models_onboarding_captions">Napisy i edycja tekstem, nawet w trybie samolotowym</string>
+    <string name="models_onboarding_voice">Czyszczenie głosu, które usuwa wiatr i hałas ulicy</string>
+    <string name="models_onboarding_faces">Rozmycie twarzy i kadrowanie, które podążają za ludźmi</string>
+    <string name="models_onboarding_download_now">Pobierz teraz</string>
+    <string name="models_onboarding_base">Napisy</string>
+    <string name="models_onboarding_base_detail">Whisper Base · dobry na większości telefonów</string>
+    <string name="models_onboarding_cleanup">Czyszczenie głosu</string>
+    <string name="models_onboarding_cleanup_detail">DeepFilterNet 3</string>
+    <string name="models_onboarding_small">Dokładniejsze napisy</string>
+    <string name="models_onboarding_small_detail">Whisper Small · wolniejszy</string>
+    <string name="models_onboarding_total_wifi">Pobierze %1$s przez Wi-Fi. Zmienisz to w każdej chwili w Modelach AI.</string>
+    <string name="models_onboarding_total">Pobierze %1$s. Zmienisz to w każdej chwili w Modelach AI.</string>
+    <string name="models_onboarding_nothing">Nic do pobrania teraz. Modele pobierzesz w każdej chwili w Modelach AI.</string>
+    <string name="models_onboarding_start">Zacznij edytować</string>
+    <string name="models_onboarding_skip">Pomiń pobieranie</string>
 </resources>

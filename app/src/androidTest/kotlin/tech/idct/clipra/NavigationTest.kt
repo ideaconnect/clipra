@@ -5,6 +5,7 @@ import android.os.Build
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
@@ -37,8 +38,11 @@ class NavigationTest {
 
     @Test
     fun everyPhoneBoardOpensFromTheScreenIndex() {
-        // First run: onboarding leads to Home, and Home (debug build) to the screen index.
-        compose.onNodeWithTag("link:Main").performClick()
+        // First run: onboarding leads to Home (a later run starts there), and Home (debug build)
+        // to the screen index.
+        if (compose.onAllNodesWithTag("onboarding-skip").fetchSemanticsNodes().isNotEmpty()) {
+            compose.onNodeWithTag("onboarding-skip").performClick()
+        }
         compose.onNodeWithTag("home").performScrollToNode(hasTestTag("link:BoardIndex"))
         compose.onNodeWithTag("link:BoardIndex").performClick()
 

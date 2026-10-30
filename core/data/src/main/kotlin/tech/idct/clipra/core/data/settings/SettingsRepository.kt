@@ -32,9 +32,17 @@ class SettingsRepository @Inject constructor(private val dataStore: DataStore<Pr
         dataStore.edit { it[USE_ACCELERATOR] = enabled }
     }
 
+    /** Onboarding is done (#73): later starts open the projects. */
+    val onboarded: Flow<Boolean> = dataStore.data.map { it[ONBOARDED] ?: false }
+
+    suspend fun setOnboarded() {
+        dataStore.edit { it[ONBOARDED] = true }
+    }
+
     private companion object {
         val WIFI_ONLY_DOWNLOADS = booleanPreferencesKey("wifi_only_downloads")
         val USE_ACCELERATOR = booleanPreferencesKey("use_accelerator")
         val CAPTION_MODEL = stringPreferencesKey("caption_model")
+        val ONBOARDED = booleanPreferencesKey("onboarded")
     }
 }
