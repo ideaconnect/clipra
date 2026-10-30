@@ -115,4 +115,10 @@
     <string name="editor_message_needs_sound">Add a clip with sound first</string>
     <string name="editor_transform_cell">Cell</string>
     <string name="editor_transform_whole_frame">Whole frame</string>
+    <string name="editor_keyframe_delete">Delete keyframe</string>
+    <string name="editor_keyframe_marker">Keyframe</string>
+    <string name="editor_keyframe_add_at">Add keyframe at %1$s</string>
+    <string name="editor_keyframe_delete_at">Delete keyframe at %1$s</string>
+    <string name="editor_easing_ease">Ease in-out</string>
+    <string name="editor_easing_linear">Linear</string>
 </resources>

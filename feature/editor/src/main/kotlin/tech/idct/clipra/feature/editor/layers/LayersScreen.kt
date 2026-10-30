@@ -1,6 +1,8 @@
 package tech.idct.clipra.feature.editor.layers
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -68,12 +70,16 @@ import tech.idct.clipra.core.model.BlendMode
 import tech.idct.clipra.core.model.Cells
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
+import tech.idct.clipra.core.model.Easing
 import tech.idct.clipra.core.model.Fit
 import tech.idct.clipra.core.model.Layout
 import tech.idct.clipra.core.model.MediaKind
 import tech.idct.clipra.core.model.Project
 import tech.idct.clipra.core.model.Size
 import tech.idct.clipra.core.model.Transform
+import tech.idct.clipra.core.model.keyframeAt
+import tech.idct.clipra.core.model.opacityAt
+import tech.idct.clipra.core.model.transformAt
 import tech.idct.clipra.feature.editor.LayerActions
 import tech.idct.clipra.feature.editor.R
 import tech.idct.clipra.feature.editor.timeline.formatTimecode
@@ -89,8 +95,9 @@ class LayersUiState(
     val playheadUs: Long,
     val tab: LayerTab,
     val cropping: Boolean,
-    val transform: Transform = clip.transform.value,
-    val opacity: Float = clip.opacity.value,
+    // At the playhead: an animated clip shows its values there (#21).
+    val transform: Transform = clip.transformAt(playheadUs - clip.startUs),
+    val opacity: Float = clip.opacityAt(playheadUs - clip.startUs),
 )
 
 /** What the Layers board can change. The "live" calls follow a gesture; the others commit. */
@@ -107,6 +114,10 @@ class LayersActions(
     val layers: LayerActions,
     /** Puts the clip into a mosaic cell (#17), or over the whole frame with null. */
     val onCell: (Int?) -> Unit = {},
+    /** Adds a keyframe at the playhead, or deletes the one there (#21). */
+    val onKeyframe: () -> Unit = {},
+    /** How the move from the keyframe at the playhead goes on (#21). */
+    val onEasing: (Easing) -> Unit = {},
 )
 
 /**
@@ -389,6 +400,7 @@ private fun TransformTab(state: LayersUiState, frame: Size, actions: LayersActio
                 raised = true,
             )
         }
+        KeyframeRow(state, actions)
         if (state.cropping) {
             Text(
                 text = stringResource(R.string.editor_transform_crop_hint),
@@ -663,6 +675,69 @@ private fun CellPicker(cells: Int, cell: Int?, onCell: (Int?) -> Unit) {
                 selected = cell?.mod(cells) == index,
                 onClick = { onCell(index) },
                 modifier = Modifier.testTag("cell-$index"),
+            )
+        }
+    }
+}
+
+/**
+ * "Add keyframe at 00:07.12" (Layers board, #21): keys the transform and the opacity at the
+ * playhead, or deletes the keyframe there; on a keyframe, how the move from it goes on.
+ */
+@Composable
+private fun KeyframeRow(state: LayersUiState, actions: LayersActions) {
+    val colors = ClipraTheme.colors
+    val clip = state.clip
+    val time = state.playheadUs - clip.startUs
+    val here = clip.transform.keyframeAt(time)?.easing ?: clip.opacity.keyframeAt(time)?.easing
+    val timecode = formatTimecode(state.playheadUs)
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp)
+                .clip(ClipraTheme.shapes.button)
+                .border(1.5.dp, colors.accent, ClipraTheme.shapes.button)
+                .clickable(role = Role.Button, enabled = time in 0..clip.durationUs) {
+                    actions.onKeyframe()
+                }
+                .testTag("layers-keyframe"),
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            ClipraIcon(
+                icon = ClipraIcons.Keyframe,
+                contentDescription = null,
+                tint = colors.accent,
+                size = 16.dp,
+            )
+            Text(
+                text = stringResource(
+                    if (here ==
+                        null
+                    ) {
+                        R.string.editor_keyframe_add_at
+                    } else {
+                        R.string.editor_keyframe_delete_at
+                    },
+                    timecode,
+                ),
+                style = ClipraTheme.typography.chip,
+                color = colors.accent,
+            )
+        }
+        if (here != null) {
+            SegmentedControl(
+                segments = listOf(
+                    Segment(stringResource(R.string.editor_easing_ease)),
+                    Segment(stringResource(R.string.editor_easing_linear)),
+                ),
+                selectedIndex = if (here == Easing.Linear) 1 else 0,
+                onSelect = { actions.onEasing(if (it == 1) Easing.Linear else Easing.EaseInOut) },
+                style = SegmentedStyle.Tabs,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("layers-easing"),
             )
         }
     }

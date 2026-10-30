@@ -44,9 +44,13 @@ import tech.idct.clipra.core.designsystem.component.ScreenHeader
 import tech.idct.clipra.core.designsystem.component.ToolStrip
 import tech.idct.clipra.core.designsystem.icon.ClipraIcons
 import tech.idct.clipra.core.model.Format
+import tech.idct.clipra.core.model.Keyframes
+import tech.idct.clipra.core.model.keyframeTimes
+import tech.idct.clipra.feature.editor.layers.isVisual
 import tech.idct.clipra.feature.editor.timeline.Timeline
 import tech.idct.clipra.feature.editor.timeline.TimelineActions
 import tech.idct.clipra.feature.editor.timeline.formatTimecode
+import kotlin.math.abs
 
 /** Tools that open another feature's screen; the app connects them. */
 enum class EditorTool {
@@ -86,6 +90,8 @@ class EditorCallbacks(
     val onCrop: () -> Unit,
     val onDismissMessage: () -> Unit,
     val timeline: TimelineActions,
+    /** Adds a keyframe to the selected clip at the playhead, or deletes the one there (#21). */
+    val onKeyframe: () -> Unit = {},
 )
 
 /**
@@ -265,12 +271,20 @@ private fun Transport(state: EditorUiState, playing: Boolean, callbacks: EditorC
                 enabled = state.canRedo,
                 modifier = Modifier.testTag("redo"),
             )
-            // Keyframes come with M2 (#21).
+            // On the selected clip at the playhead; lit when a keyframe is there (#21).
+            val selected = state.selectedClipId?.let { state.project?.findClip(it)?.second }
+            val time = selected?.let { state.playheadUs - it.startUs }
+            val keyed = selected != null && time != null &&
+                selected.keyframeTimes.any { abs(it - time) <= Keyframes.SNAP_US }
             IconAction(
                 icon = ClipraIcons.Keyframe,
-                contentDescription = stringResource(R.string.editor_keyframe),
-                onClick = {},
-                enabled = false,
+                contentDescription = stringResource(
+                    if (keyed) R.string.editor_keyframe_delete else R.string.editor_keyframe,
+                ),
+                onClick = callbacks.onKeyframe,
+                enabled = selected != null && selected.isVisual() && time in 0..selected.durationUs,
+                tint = if (keyed) colors.accent else colors.textPrimary,
+                modifier = Modifier.testTag("keyframe"),
             )
         }
     }

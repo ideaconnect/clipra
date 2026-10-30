@@ -34,6 +34,8 @@ import tech.idct.clipra.core.model.Transform
 import tech.idct.clipra.core.model.cutAfter
 import tech.idct.clipra.core.model.cuts
 import tech.idct.clipra.core.model.edit.takesFilters
+import tech.idct.clipra.core.model.opacityAt
+import tech.idct.clipra.core.model.transformAt
 import tech.idct.clipra.feature.editor.layers.LayerTab
 import tech.idct.clipra.feature.editor.layers.LayersActions
 import tech.idct.clipra.feature.editor.layers.LayersScreen
@@ -191,8 +193,9 @@ private fun EditorRoute(actions: EditorActions, viewModel: EditorViewModel = hil
                 playheadUs = state.playheadUs,
                 tab = currentBoard,
                 cropping = cropping,
-                transform = liveTransform ?: selected.transform.value,
-                opacity = liveOpacity ?: selected.opacity.value,
+                transform =
+                liveTransform ?: selected.transformAt(state.playheadUs - selected.startUs),
+                opacity = liveOpacity ?: selected.opacityAt(state.playheadUs - selected.startUs),
             ),
             actions = LayersActions(
                 onDone = {
@@ -207,7 +210,21 @@ private fun EditorRoute(actions: EditorActions, viewModel: EditorViewModel = hil
                 onTransformLive = { transformLive(selected.id, it) },
                 onTransform = { viewModel.setTransform(selected.id, it) },
                 onCell = { viewModel.setCell(selected.id, it) },
-                onBlend = { viewModel.setBlend(selected.id, it, selected.opacity.value) },
+                onBlend = {
+                    viewModel.setBlend(
+                        selected.id,
+                        it,
+                        selected.opacityAt(state.playheadUs - selected.startUs),
+                    )
+                },
+                onKeyframe = { viewModel.toggleKeyframe(selected.id) },
+                onEasing = {
+                    viewModel.setKeyframeEasing(
+                        selected.id,
+                        state.playheadUs - selected.startUs,
+                        it,
+                    )
+                },
                 onOpacityLive = {
                     liveOpacity = it
                     player.setLiveOpacity(selected.id, it)
@@ -348,6 +365,10 @@ private fun EditorRoute(actions: EditorActions, viewModel: EditorViewModel = hil
             onLayers = { layers = true },
             onCrop = { openBoard(LayerTab.Transform, true) },
             onDismissMessage = viewModel::dismissMessage,
+            onKeyframe = {
+                playing = false
+                state.selectedClipId?.let(viewModel::toggleKeyframe)
+            },
             timeline = TimelineActions(
                 onSeek = {
                     playing = false
@@ -357,6 +378,7 @@ private fun EditorRoute(actions: EditorActions, viewModel: EditorViewModel = hil
                 onSelect = viewModel::select,
                 onMove = viewModel::move,
                 onTrim = viewModel::trim,
+                onMoveKeyframe = viewModel::moveKeyframe,
                 onTransition = { fromClipId ->
                     project.cutAfter(fromClipId)?.let { cut ->
                         playing = false
@@ -382,7 +404,8 @@ private fun EditorRoute(actions: EditorActions, viewModel: EditorViewModel = hil
                 selected.contains(state.playheadUs)
             ) {
                 TransformOverlay(
-                    transform = liveTransform ?: selected.transform.value,
+                    transform =
+                    liveTransform ?: selected.transformAt(state.playheadUs - selected.startUs),
                     frame = project.format.outputSize,
                     source = sourceSize(project, selected),
                     onChange = { transformLive(selected.id, it) },

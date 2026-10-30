@@ -22,6 +22,8 @@ data class Clip(
     val blend: BlendMode = BlendMode.Normal,
     val effects: List<Effect> = emptyList(),
     val mask: Mask? = null,
+    /** The mask's keyframes (#21), in clip time; [mask] is its value without them. */
+    val maskKeyframes: List<Keyframe<Mask>> = emptyList(),
     val color: ColorGrade? = null,
     val audio: AudioSettings = AudioSettings(),
     val text: TextSpec? = null,

@@ -46,7 +46,7 @@ internal fun MasksDestination(onDone: () -> Unit, viewModel: MasksViewModel = hi
 
     MasksScreen(
         state = state,
-        mask = liveMask ?: clip.mask,
+        mask = liveMask ?: state.mask,
         blockSize = liveBlock ?: mosaic?.params?.get(Filters.MOSAIC_SIZE)
             ?: Filters.DEFAULT_MOSAIC_SIZE,
         actions = MasksActions(
@@ -67,6 +67,7 @@ internal fun MasksDestination(onDone: () -> Unit, viewModel: MasksViewModel = hi
                 }
             },
             onBlockSizeDone = { liveBlock?.let(viewModel::setBlockSize) },
+            onKeyframe = viewModel::toggleKeyframe,
         ),
         preview = {
             VideoSurface(

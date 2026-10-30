@@ -21,7 +21,9 @@ import tech.idct.clipra.core.designsystem.ClipraTheme
 import tech.idct.clipra.core.model.BlendMode
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
+import tech.idct.clipra.core.model.Easing
 import tech.idct.clipra.core.model.Fit
+import tech.idct.clipra.core.model.Keyframe
 import tech.idct.clipra.core.model.Keyframed
 import tech.idct.clipra.core.model.Layer
 import tech.idct.clipra.core.model.MediaAsset
@@ -205,5 +207,51 @@ class LayersScreenTest {
         show(LayerTab.Transform, cropping = true)
         compose.onNodeWithText("Drag the corners to crop").assertExists()
         compose.onNodeWithTag("transform-crop").assertIsSelected()
+    }
+
+    @Test
+    fun onAKeyframeTheButtonDeletesItAndOffersTheEasing() {
+        // alfama starts at 5 s; a keyframe at 2.12 s into it is at the playhead (7.12 s).
+        val keyed = alfama.copy(
+            transform = alfama.transform.copy(
+                keyframes = listOf(Keyframe(2_120_000, alfama.transform.value, Easing.Linear)),
+            ),
+        )
+        var toggled = 0
+        val easings = mutableListOf<Easing>()
+        compose.setContent {
+            ClipraTheme {
+                LayersScreen(
+                    state = LayersUiState(
+                        project = project,
+                        clip = keyed,
+                        playheadUs = 7_120_000,
+                        tab = LayerTab.Transform,
+                        cropping = false,
+                    ),
+                    actions = LayersActions(
+                        onDone = {},
+                        onTab = {},
+                        onCrop = {},
+                        onTransformLive = {},
+                        onTransform = {},
+                        onBlend = {},
+                        onOpacityLive = {},
+                        onOpacityDone = {},
+                        onSelectLayer = {},
+                        layers = LayerActions({ _, _ ->
+                        }, { _, _ -> }, { _, _ -> }, { _, _ -> }, {}),
+                        onKeyframe = { toggled++ },
+                        onEasing = { easings += it },
+                    ),
+                    preview = {},
+                )
+            }
+        }
+        compose.onNodeWithText("Delete keyframe at 00:07.12").assertExists()
+        compose.onNodeWithTag("layers-keyframe").performClick()
+        compose.onNodeWithText("Ease in-out").performClick()
+        assertEquals(1, toggled)
+        assertEquals(listOf(Easing.EaseInOut), easings)
     }
 }

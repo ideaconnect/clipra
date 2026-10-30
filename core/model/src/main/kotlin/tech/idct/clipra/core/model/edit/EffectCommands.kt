@@ -6,6 +6,8 @@ import tech.idct.clipra.core.model.Effect
 import tech.idct.clipra.core.model.Filters
 import tech.idct.clipra.core.model.Mask
 import tech.idct.clipra.core.model.Project
+import tech.idct.clipra.core.model.maskKeyframed
+import tech.idct.clipra.core.model.set
 
 // Effect commands (#25). A clip has at most one filter; picking another replaces it.
 
@@ -58,8 +60,13 @@ private fun Clip.withFilter(type: String?, strength: Float): Clip {
  * Sets a clip's mask (#27). A mask limits an effect, so when the clip has none of type
  * [addIfMissing] yet, that filter is added at the default strength in the same step.
  */
-data class SetMask(val clipId: String, val mask: Mask?, val addIfMissing: String? = null) :
-    EditCommand {
+data class SetMask(
+    val clipId: String,
+    val mask: Mask?,
+    val addIfMissing: String? = null,
+    /** On a mask with keyframes, the timeline time whose keyframe this sets (#21). */
+    val atUs: Long? = null,
+) : EditCommand {
     override fun apply(project: Project): Project {
         val (layer, clip) = project.clipWithLayer(clipId)
         layer.requireUnlocked()
@@ -69,7 +76,20 @@ data class SetMask(val clipId: String, val mask: Mask?, val addIfMissing: String
         } else {
             clip
         }
-        return project.replaceClip(withEffect.copy(mask = mask))
+        val keyed = clip.maskKeyframed
+        // Removing the mask removes its keyframes; an animated mask keeps animating.
+        val updated = when {
+            mask == null -> withEffect.copy(mask = null, maskKeyframes = emptyList())
+
+            atUs == null || keyed == null || keyed.keyframes.isEmpty() ->
+                withEffect.copy(mask = mask)
+
+            else -> {
+                val set = keyed.set(atUs - clip.startUs, mask)
+                withEffect.copy(mask = set.value, maskKeyframes = set.keyframes)
+            }
+        }
+        return project.replaceClip(updated)
     }
 }
 

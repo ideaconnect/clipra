@@ -103,4 +103,6 @@
     <string name="effects_mask_outside_rectangle">Poza prostokątem</string>
     <string name="effects_mask_chip">%1$s · wtapianie %2$d</string>
     <string name="effects_pixels">%d px</string>
+    <string name="effects_mask_keyframe_add">Dodaj klatkę kluczową maski w %1$s</string>
+    <string name="effects_mask_keyframe_delete">Usuń klatkę kluczową maski w %1$s</string>
 </resources>

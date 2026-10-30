@@ -42,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -73,6 +74,7 @@ import tech.idct.clipra.core.model.edit.LayerTarget
 import tech.idct.clipra.core.model.edit.Snapping
 import tech.idct.clipra.core.model.edit.linkedPartners
 import tech.idct.clipra.core.model.edit.randomId
+import tech.idct.clipra.core.model.keyframeTimes
 import tech.idct.clipra.core.model.transitionOn
 import tech.idct.clipra.feature.editor.R
 import kotlin.math.roundToInt
@@ -87,6 +89,8 @@ class TimelineActions(
     val onAddMedia: () -> Unit,
     /** Opens the transition on the cut after [fromClipId]. */
     val onTransition: (fromClipId: String) -> Unit = {},
+    /** Moves the selected clip's keyframes at [fromUs] to [toUs], both in clip time (#21). */
+    val onMoveKeyframe: (clipId: String, fromUs: Long, toUs: Long) -> Unit = { _, _, _ -> },
 )
 
 /**
@@ -465,6 +469,21 @@ private fun ClipBlock(
         }
     }
     if (selected && !locked && !dragging) {
+        // Keyframes on the selected clip (#21): tap one to go to it, drag it to move it.
+        clip.keyframeTimes.filter { it in 0..clip.durationUs }.forEach { time ->
+            KeyframeMarker(
+                x = geometry.x(clip.startUs + time),
+                laneHeight = laneHeight,
+                onTap = { actions.onSeek(clip.startUs + time) },
+            ) { offsetDp ->
+                val to = Snapping.snap(
+                    clip.startUs + time + geometry.duration(offsetDp),
+                    Snapping.targets(project, geometry.playheadUs, clip.id),
+                    thresholdUs,
+                )
+                actions.onMoveKeyframe(clip.id, time, to - clip.startUs)
+            }
+        }
         TrimHandle(x, laneHeight, start = true) { amount, done ->
             trimStart += amount
             if (done) {
@@ -493,6 +512,53 @@ private fun ClipBlock(
 }
 
 private const val HANDLE_WIDTH = 12f
+
+private const val MARKER_SIZE = 12f
+
+/** A keyframe on the selected clip (#21): a diamond on its lower edge, with room to grab. */
+@Composable
+private fun KeyframeMarker(
+    x: Float,
+    laneHeight: Float,
+    onTap: () -> Unit,
+    onMoved: (offsetDp: Float) -> Unit,
+) {
+    val colors = ClipraTheme.colors
+    val density = LocalDensity.current
+    var offset by remember { mutableFloatStateOf(0f) }
+    val label = stringResource(R.string.editor_keyframe_marker)
+    val touch = 28f
+    Box(
+        modifier = Modifier
+            .offset(x = (x + offset - touch / 2).dp, y = (laneHeight - touch).dp)
+            .size(touch.dp)
+            .semantics { contentDescription = label }
+            .pointerInput(Unit) { detectTapGestures(onTap = { onTap() }) }
+            .pointerInput(Unit) {
+                detectDragGestures(
+                    onDrag = { change, amount ->
+                        change.consume()
+                        offset += with(density) { amount.x.toDp().value }
+                    },
+                    onDragEnd = {
+                        onMoved(offset)
+                        offset = 0f
+                    },
+                    onDragCancel = { offset = 0f },
+                )
+            }
+            .testTag("keyframe-marker"),
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(MARKER_SIZE.dp)
+                .rotate(45f)
+                .background(colors.accent)
+                .border(1.5.dp, colors.onAccent),
+        )
+    }
+}
 
 @Composable
 private fun TrimHandle(

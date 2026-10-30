@@ -207,14 +207,15 @@ private class LayerCompositorProgram(
 
     private fun prepare(clip: RenderClip, timeUs: Long): Prepared? {
         val raw = clipFrame(clip, timeUs) ?: return null
-        val opacity = clip.opacityAt(timeUs, live?.opacity(clip.id) ?: clip.opacity)
+        // Keyframed values at this frame (#21); a gesture in progress shows its own.
+        val opacity = clip.opacityAt(timeUs, live?.opacity(clip.id) ?: clip.keyedOpacityAt(timeUs))
         if (opacity <= 0f) return null
         val filters = (live?.effects(clip.id) ?: clip.effects).mapNotNull { effect ->
             FilterRecipes.of(effect.type)?.takeIf { effect.strength > 0f }?.let { it to effect }
         }
-        val mask = live?.mask(clip.id) ?: clip.mask
+        val mask = live?.mask(clip.id) ?: clip.maskAt(timeUs)
         val frame = if (filters.isEmpty()) raw else filtered(raw, filters, mask, timeUs)
-        val (position, unit) = quadFor(clip, frame.width, frame.height)
+        val (position, unit) = quadFor(clip, timeUs, frame.width, frame.height)
         return Prepared(frame, opacity, position, unit, clip.cell)
     }
 
@@ -600,10 +601,11 @@ private class LayerCompositorProgram(
      */
     private fun quadFor(
         clip: RenderClip,
+        timeUs: Long,
         sourceWidth: Int,
         sourceHeight: Int,
     ): Pair<FloatArray, FloatArray> {
-        val transform = live?.transform(clip.id) ?: clip.transform
+        val transform = live?.transform(clip.id) ?: clip.transformAt(timeUs)
         val frameSize = FrameSize(timeline.width, timeline.height)
         // In a mosaic cell (#17), the cell is the clip's frame.
         val origin = Cells.origin(frameSize, clip.cell)

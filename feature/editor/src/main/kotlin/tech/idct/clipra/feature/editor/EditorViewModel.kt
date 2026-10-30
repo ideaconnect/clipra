@@ -24,6 +24,7 @@ import tech.idct.clipra.core.engine.media.VoiceCleaner
 import tech.idct.clipra.core.model.BlendMode
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
+import tech.idct.clipra.core.model.Easing
 import tech.idct.clipra.core.model.MediaAsset
 import tech.idct.clipra.core.model.MediaKind
 import tech.idct.clipra.core.model.MediaRef
@@ -43,17 +44,21 @@ import tech.idct.clipra.core.model.edit.EditCommand
 import tech.idct.clipra.core.model.edit.EditRejected
 import tech.idct.clipra.core.model.edit.ExtractAudio
 import tech.idct.clipra.core.model.edit.FreezeFrame
+import tech.idct.clipra.core.model.edit.KeyframeTarget
 import tech.idct.clipra.core.model.edit.LayerTarget
 import tech.idct.clipra.core.model.edit.MoveClip
+import tech.idct.clipra.core.model.edit.MoveKeyframe
 import tech.idct.clipra.core.model.edit.MoveLayer
 import tech.idct.clipra.core.model.edit.ReplaceMedia
 import tech.idct.clipra.core.model.edit.SetBlend
 import tech.idct.clipra.core.model.edit.SetCell
+import tech.idct.clipra.core.model.edit.SetKeyframeEasing
 import tech.idct.clipra.core.model.edit.SetLayerHidden
 import tech.idct.clipra.core.model.edit.SetLayerLocked
 import tech.idct.clipra.core.model.edit.SetLayerMuted
 import tech.idct.clipra.core.model.edit.SetTransform
 import tech.idct.clipra.core.model.edit.SplitClip
+import tech.idct.clipra.core.model.edit.ToggleKeyframe
 import tech.idct.clipra.core.model.edit.TrimClip
 import tech.idct.clipra.core.model.edit.randomId
 import tech.idct.clipra.feature.editor.timeline.TimelineGeometry
@@ -170,12 +175,23 @@ class EditorViewModel @Inject constructor(
 
     // Layers board (#19, #20).
 
-    fun setTransform(clipId: String, transform: Transform) = edit(SetTransform(clipId, transform))
+    /** At the playhead: an animated clip gets the change in its keyframe there (#21). */
+    fun setTransform(clipId: String, transform: Transform) =
+        edit(SetTransform(clipId, transform, atUs = state.value.playheadUs))
+
+    fun toggleKeyframe(clipId: String) =
+        edit(ToggleKeyframe(clipId, state.value.playheadUs, KeyframeTarget.Transform))
+
+    fun moveKeyframe(clipId: String, fromUs: Long, toUs: Long) =
+        edit(MoveKeyframe(clipId, fromUs, toUs))
+
+    fun setKeyframeEasing(clipId: String, atUs: Long, easing: Easing) =
+        edit(SetKeyframeEasing(clipId, atUs, easing))
 
     fun setCell(clipId: String, cell: Int?) = edit(SetCell(clipId, cell))
 
     fun setBlend(clipId: String, blend: BlendMode, opacity: Float) =
-        edit(SetBlend(clipId, blend, opacity))
+        edit(SetBlend(clipId, blend, opacity, atUs = state.value.playheadUs))
 
     /**
      * Adds text saying [words] at the playhead, for three seconds, over the video; returns its

@@ -117,4 +117,10 @@
     <string name="editor_message_needs_sound">Najpierw dodaj klip z dźwiękiem</string>
     <string name="editor_transform_cell">Pole</string>
     <string name="editor_transform_whole_frame">Cały kadr</string>
+    <string name="editor_keyframe_delete">Usuń klatkę kluczową</string>
+    <string name="editor_keyframe_marker">Klatka kluczowa</string>
+    <string name="editor_keyframe_add_at">Dodaj klatkę kluczową w %1$s</string>
+    <string name="editor_keyframe_delete_at">Usuń klatkę kluczową w %1$s</string>
+    <string name="editor_easing_ease">Łagodnie</string>
+    <string name="editor_easing_linear">Liniowo</string>
 </resources>

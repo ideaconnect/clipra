@@ -6,8 +6,12 @@ import tech.idct.clipra.core.model.BlendMode
 import tech.idct.clipra.core.model.CellRect
 import tech.idct.clipra.core.model.Easing
 import tech.idct.clipra.core.model.Effect
+import tech.idct.clipra.core.model.Keyframe
+import tech.idct.clipra.core.model.Keyframed
+import tech.idct.clipra.core.model.Keyframes
 import tech.idct.clipra.core.model.Mask
 import tech.idct.clipra.core.model.Transform
+import tech.idct.clipra.core.model.at
 
 /**
  * What the layer compositor draws: the output format and the layers, L1 (bottom) first. Each
@@ -82,8 +86,26 @@ data class RenderClip(
     val voicePath: String? = null,
     /** The mosaic cell (#17) the clip is laid out in and cut to; null for the whole frame. */
     val cell: CellRect? = null,
+    /** Keyframes (#21) of the transform, the opacity and the mask, in clip time. */
+    val transformKeyframes: List<Keyframe<Transform>> = emptyList(),
+    val opacityKeyframes: List<Keyframe<Float>> = emptyList(),
+    val maskKeyframes: List<Keyframe<Mask>> = emptyList(),
+    /** Where clip time starts: the clip's start, kept by the pieces a caption is drawn in. */
+    val keyframeOriginUs: Long = startUs,
 ) {
     val endUs: Long get() = startUs + durationUs
+
+    /** The transform at [timeUs] (timeline time), its keyframes applied. */
+    fun transformAt(timeUs: Long): Transform =
+        Keyframed(transform, transformKeyframes).at(timeUs - keyframeOriginUs, Keyframes::transform)
+
+    /** The opacity at [timeUs] from its keyframes, before any dissolve in. */
+    fun keyedOpacityAt(timeUs: Long): Float =
+        Keyframed(opacity, opacityKeyframes).at(timeUs - keyframeOriginUs, Keyframes::opacity)
+
+    /** The mask at [timeUs], its keyframes applied. */
+    fun maskAt(timeUs: Long): Mask? =
+        mask?.let { Keyframed(it, maskKeyframes).at(timeUs - keyframeOriginUs, Keyframes::mask) }
 
     fun isActiveAt(timeUs: Long): Boolean = timeUs in startUs until endUs
 
