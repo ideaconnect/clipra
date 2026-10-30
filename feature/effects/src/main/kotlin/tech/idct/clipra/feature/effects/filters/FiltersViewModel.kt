@@ -35,6 +35,7 @@ import tech.idct.clipra.core.model.Transform
 import tech.idct.clipra.core.model.edit.ApplyFilterToAll
 import tech.idct.clipra.core.model.edit.SetFilter
 import tech.idct.clipra.core.model.filter
+import tech.idct.clipra.core.model.mediaTimeAt
 import tech.idct.clipra.feature.effects.common.THUMBNAIL_GRID
 import tech.idct.clipra.feature.effects.common.centreCrop
 import tech.idct.clipra.feature.effects.common.gridCell
@@ -127,8 +128,8 @@ class FiltersViewModel @Inject constructor(
         val source = clip.source ?: return
         val asset = project.asset(source.mediaId) ?: return
         thumbnailJob = viewModelScope.launch {
-            val sourceTimeUs = source.inPointUs +
-                ((playheadUs - clip.startUs).coerceAtLeast(0) * clip.speed.rate).toLong()
+            val sourceTimeUs =
+                clip.mediaTimeAt((playheadUs - clip.startUs).coerceAtLeast(0)) ?: source.inPointUs
             val still = withContext(Dispatchers.IO) {
                 Thumbnails.still(context, asset, mediaCache, sourceTimeUs, maxOf(width, height) * 2)
                     ?.let { centreCrop(it, width, height) }

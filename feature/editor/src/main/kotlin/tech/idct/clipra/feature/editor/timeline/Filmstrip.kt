@@ -20,6 +20,7 @@ import tech.idct.clipra.core.engine.media.MediaCache
 import tech.idct.clipra.core.engine.media.Thumbnails
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.Project
+import tech.idct.clipra.core.model.mediaTimeAt
 import kotlin.math.ceil
 
 /** Filmstrip frames for the timeline, decoded once and kept in memory while the editor is open. */
@@ -61,8 +62,9 @@ fun Filmstrip(
     val count = ceil(widthDp / tile).toInt().coerceIn(1, 64)
     Row {
         repeat(count) { i ->
-            val sourceUs =
-                source.inPointUs + ((i * tile / dpPerSecond) * 1_000_000 * clip.speed.rate).toLong()
+            // The frame at the tile's start, at the clip's speed (#22).
+            val sourceUs = clip.mediaTimeAt(((i * tile / dpPerSecond) * 1_000_000).toLong())
+                ?: source.inPointUs
             val index = (sourceUs / MediaCache.FILMSTRIP_STEP_US).toInt()
             val bitmap by produceState<ImageBitmap?>(null, source.mediaId, index) {
                 value = loader.frame(project, source.mediaId, index)

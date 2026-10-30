@@ -127,10 +127,11 @@ object TextCuts {
 
     /** [word]'s stretch of the timeline in [clip], or null when the clip doesn't play it. */
     private fun timeline(clip: Clip, word: Word): LongRange? {
-        val ref = clip.source ?: return null
-        val rate = clip.speed.rate.takeIf { it > 0 } ?: return null
-        val start = clip.startUs + ((word.startUs - ref.inPointUs) / rate).roundToLong()
-        val end = clip.startUs + ((word.endUs - ref.inPointUs) / rate).roundToLong()
+        // At the clip's speed (#22); a reversed clip plays the word end first.
+        val a = clip.timelineAt(word.startUs) ?: return null
+        val b = clip.timelineAt(word.endUs) ?: return null
+        val start = minOf(a, b)
+        val end = maxOf(a, b)
         if (end <= clip.startUs || start >= clip.endUs) return null
         return start.coerceAtLeast(clip.startUs)..end.coerceAtMost(clip.endUs)
     }

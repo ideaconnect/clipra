@@ -29,6 +29,7 @@ import tech.idct.clipra.core.model.MediaAsset
 import tech.idct.clipra.core.model.MediaKind
 import tech.idct.clipra.core.model.MediaRef
 import tech.idct.clipra.core.model.Project
+import tech.idct.clipra.core.model.Speed
 import tech.idct.clipra.core.model.TextColors
 import tech.idct.clipra.core.model.TextFonts
 import tech.idct.clipra.core.model.TextSpec
@@ -56,6 +57,7 @@ import tech.idct.clipra.core.model.edit.SetKeyframeEasing
 import tech.idct.clipra.core.model.edit.SetLayerHidden
 import tech.idct.clipra.core.model.edit.SetLayerLocked
 import tech.idct.clipra.core.model.edit.SetLayerMuted
+import tech.idct.clipra.core.model.edit.SetSpeed
 import tech.idct.clipra.core.model.edit.SetTransform
 import tech.idct.clipra.core.model.edit.SplitClip
 import tech.idct.clipra.core.model.edit.ToggleKeyframe
@@ -165,6 +167,14 @@ class EditorViewModel @Inject constructor(
     fun duplicate() = onSelected { DuplicateClip(it) }
 
     fun freeze() = onSelected { FreezeFrame(it, state.value.playheadUs) }
+
+    fun setSpeed(clipId: String, speed: Speed) = edit(SetSpeed(clipId, speed))
+
+    fun reverse() {
+        val clipId = state.value.selectedClipId ?: return
+        val clip = state.value.project?.findClip(clipId)?.second ?: return
+        edit(SetSpeed(clipId, clip.speed.copy(reverse = !clip.speed.reverse)))
+    }
 
     fun extractAudio() = onSelected { ExtractAudio(it) }
 

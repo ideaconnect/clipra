@@ -5,14 +5,19 @@ import tech.idct.clipra.core.model.BlendMode
 import tech.idct.clipra.core.model.CaptionOptions
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
+import tech.idct.clipra.core.model.Keyframed
 import tech.idct.clipra.core.model.MediaKind
 import tech.idct.clipra.core.model.MediaRef
 import tech.idct.clipra.core.model.Project
 import tech.idct.clipra.core.model.Speed
+import tech.idct.clipra.core.model.SpeedCurve
 import tech.idct.clipra.core.model.Transcript
 import tech.idct.clipra.core.model.Transform
 import tech.idct.clipra.core.model.VoiceCleanup
+import tech.idct.clipra.core.model.maskAt
+import tech.idct.clipra.core.model.opacityAt
 import tech.idct.clipra.core.model.set
+import tech.idct.clipra.core.model.transformAt
 import java.util.UUID
 import kotlin.math.roundToLong
 
@@ -28,8 +33,27 @@ fun randomId(): String = UUID.randomUUID().toString()
 /** Which edge a trim moves. */
 enum class Edge { Start, End }
 
-/** The source position [timeUs] (on the timeline) plays in a clip. */
-private fun Clip.sourceOffset(timeUs: Long): Long = ((timeUs - startUs) * speed.rate).roundToLong()
+/**
+ * The clip cut down to what plays from [fromUs] to [toUs] of it (offsets from its start): its
+ * media and its window of a speed ramp (#22), forwards or reversed. Stills have no media to cut.
+ */
+internal fun Clip.played(fromUs: Long, toUs: Long): Clip {
+    val media = source ?: return copy(durationUs = toUs - fromUs)
+    if (speed.rate <= 0 && speed.ramp == null) return copy(durationUs = toUs - fromUs)
+    val span = media.outPointUs - media.inPointUs
+    val from = SpeedCurve.forwardOffset(speed, span, fromUs)
+    val to = SpeedCurve.forwardOffset(speed, span, toUs)
+    val cut = if (speed.reverse) {
+        media.copy(inPointUs = media.outPointUs - to, outPointUs = media.outPointUs - from)
+    } else {
+        media.copy(inPointUs = media.inPointUs + from, outPointUs = media.inPointUs + to)
+    }
+    return copy(
+        durationUs = toUs - fromUs,
+        source = cut,
+        speed = SpeedCurve.window(speed, span, from, to),
+    )
+}
 
 /**
  * Splits a clip at [atUs] into two, and its linked partners with it. The right parts get new ids
@@ -69,20 +93,15 @@ class SplitClip(
     }
 
     private fun Clip.splitAt(atUs: Long, rightId: String): Pair<Clip, Clip> {
-        val offset = sourceOffset(atUs)
         // A caption's words are timed from its start: each part keeps its own (#45).
         val cut = atUs - startUs
-        val left = copy(
-            durationUs = atUs - startUs,
-            source = source?.copy(outPointUs = source.inPointUs + offset),
+        val left = played(0, cut).copy(
             caption = caption?.let { c -> c.copy(words = c.words.filter { it.startUs < cut }) },
         )
         // Both parts keep every keyframe (#21), so the animation goes on where it was.
-        val right = withKeyframesShifted(-cut).copy(
+        val right = played(cut, durationUs).withKeyframesShifted(-cut).copy(
             id = rightId,
             startUs = atUs,
-            durationUs = endUs - atUs,
-            source = source?.copy(inPointUs = source.inPointUs + offset),
             caption = caption?.let { c ->
                 c.copy(
                     words = c.words.filter { it.startUs >= cut }.map {
@@ -152,22 +171,19 @@ data class TrimClip(val clipId: String, val edge: Edge, val toUs: Long) : EditCo
         }
         val source = clip.source
         val asset = source?.let { project.asset(it.mediaId) }
-        // Keyframes stay where they are on the timeline (#21).
+        // Keyframes stay where they are on the timeline (#21); the media and any ramp follow the
+        // edge (#22).
         val keyed = clip.withKeyframesShifted(clip.startUs - start)
         val trimmed = if (source == null || asset == null || asset.kind == MediaKind.Photo) {
             // A still has no source length to respect.
             keyed.copy(startUs = start, durationUs = end - start)
         } else {
-            val inPoint = source.inPointUs + clip.sourceOffset(start)
-            val outPoint = source.inPointUs + clip.sourceOffset(end)
-            if (inPoint < 0 || outPoint > asset.durationUs) {
+            val played = keyed.played(start - clip.startUs, end - clip.startUs)
+            val media = played.source!!
+            if (media.inPointUs < 0 || media.outPointUs > asset.durationUs) {
                 throw EditRejected(EditRejected.Reason.OutOfRange)
             }
-            keyed.copy(
-                startUs = start,
-                durationUs = end - start,
-                source = source.copy(inPointUs = inPoint, outPointUs = outPoint),
-            )
+            played.copy(startUs = start)
         }
         return project.updateLayer(layer.id) { it.withClip(trimmed) }
     }
@@ -189,7 +205,10 @@ class FreezeFrame(
         if (clip.type != ClipType.Video || !clip.contains(atUs)) {
             throw EditRejected(EditRejected.Reason.OutOfRange)
         }
-        val frame = (clip.source?.inPointUs ?: 0) + clip.sourceOffset(atUs)
+        val cut = atUs - clip.startUs
+        // The frame on screen at the cut, at any speed, forwards or reversed (#22).
+        val before = clip.played(0, cut).source
+        val frame = (if (clip.speed.reverse) before?.inPointUs else before?.outPointUs) ?: 0
         val later = layer.clips.filter { it.startUs > atUs }.map { it.id }.toSet()
         var edited = project.shiftClips(
             later + later.flatMap {
@@ -198,26 +217,26 @@ class FreezeFrame(
             durationUs,
         )
         val rightId = newId()
-        val splitsHere = atUs - clip.startUs >= MIN_CLIP_US && clip.endUs - atUs >= MIN_CLIP_US
+        val splitsHere = cut >= MIN_CLIP_US && clip.endUs - atUs >= MIN_CLIP_US
         if (splitsHere) {
-            val left = clip.copy(
-                durationUs = atUs - clip.startUs,
-                source = clip.source?.copy(outPointUs = frame),
-            )
-            val right = clip.copy(
+            val left = clip.played(0, cut)
+            val right = clip.played(cut, clip.durationUs).withKeyframesShifted(-cut).copy(
                 id = rightId,
                 startUs = atUs + durationUs,
-                durationUs = clip.endUs - atUs,
-                source = clip.source?.copy(inPointUs = frame),
             )
             edited = edited.replaceClip(left).updateLayer(layer.id) { it.withClip(right) }
         }
+        // The still holds the clip as it looks at the cut.
         val still = clip.copy(
             id = newId(),
             startUs = atUs,
             durationUs = durationUs,
             source = clip.source?.copy(inPointUs = frame, outPointUs = frame),
             speed = Speed(rate = 0.0),
+            transform = Keyframed(clip.transformAt(cut)),
+            opacity = Keyframed(clip.opacityAt(cut)),
+            mask = clip.maskAt(cut),
+            maskKeyframes = emptyList(),
         )
         return edited.updateLayer(layer.id) { it.withClip(still) }
     }
@@ -391,5 +410,46 @@ data class SetTranscripts(val transcripts: List<Transcript>, val options: Captio
             transcripts = project.transcripts.filter { it.clipId !in clips } + transcripts,
             captionOptions = options,
         )
+    }
+}
+
+/**
+ * Plays a clip at [speed] (#22): a constant speed or a ramp, forwards or reversed, with its pitch
+ * kept. The clip's length follows from its media, and the clips after it on its layer (with
+ * their linked partners) move to keep their places after it.
+ */
+data class SetSpeed(val clipId: String, val speed: Speed) : EditCommand {
+    override fun apply(project: Project): Project {
+        val (layer, clip) = project.clipWithLayer(clipId)
+        layer.requireUnlocked()
+        // Only moving pictures and sound have a speed.
+        val media =
+            clip.source?.takeIf { clip.type == ClipType.Video || clip.type == ClipType.Audio }
+                ?: throw EditRejected(EditRejected.Reason.OutOfRange)
+        val span = media.outPointUs - media.inPointUs
+        if (span <= 0) throw EditRejected(EditRejected.Reason.OutOfRange)
+        // A new ramp runs over the whole clip, in steps for its length.
+        val fresh = when {
+            speed.ramp == null -> speed
+
+            speed.ramp != clip.speed.ramp ->
+                speed.copy(rampFrom = 0f, rampTo = 1f, rampSteps = SpeedCurve.stepsFor(span))
+
+            speed.rampFrom == 0f && speed.rampTo == 1f ->
+                speed.copy(rampSteps = SpeedCurve.stepsFor(span))
+
+            else -> speed
+        }
+        val duration = SpeedCurve.timelineDuration(fresh, span).coerceAtLeast(MIN_CLIP_US)
+        val delta = duration - clip.durationUs
+        val later = layer.clips.filter { it.startUs >= clip.endUs }.map { it.id }.toSet()
+        val withPartners = later + later.flatMap { project.linkedPartners(it) } - clipId
+        val changed = clip.copy(speed = fresh, durationUs = duration)
+        // Make room first when the clip gets longer; close up after when it gets shorter.
+        return if (delta > 0) {
+            project.shiftClips(withPartners, delta).replaceClip(changed)
+        } else {
+            project.replaceClip(changed).shiftClips(withPartners, delta)
+        }
     }
 }

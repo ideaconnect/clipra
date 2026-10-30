@@ -43,6 +43,8 @@ import tech.idct.clipra.feature.editor.layers.LayersUiState
 import tech.idct.clipra.feature.editor.layers.TransformOverlay
 import tech.idct.clipra.feature.editor.layers.isVisual
 import tech.idct.clipra.feature.editor.layers.sourceSize
+import tech.idct.clipra.feature.editor.speed.SpeedActions
+import tech.idct.clipra.feature.editor.speed.SpeedScreen
 import tech.idct.clipra.feature.editor.timeline.Filmstrip
 import tech.idct.clipra.feature.editor.timeline.FilmstripLoader
 import tech.idct.clipra.feature.editor.timeline.TimelineActions
@@ -98,6 +100,7 @@ private fun EditorRoute(actions: EditorActions, viewModel: EditorViewModel = hil
     var layers by remember { mutableStateOf(false) }
     // The Layers board (#19, #20) over the editor, on the selected clip; null when closed.
     var board by remember { mutableStateOf<LayerTab?>(null) }
+    var speedBoard by remember { mutableStateOf(false) }
     var cropping by remember { mutableStateOf(false) }
     // Values a gesture is changing, shown before they are committed as one edit.
     var liveTransform by remember { mutableStateOf<Transform?>(null) }
@@ -183,6 +186,20 @@ private fun EditorRoute(actions: EditorActions, viewModel: EditorViewModel = hil
         liveTransform = transform
         player.setLiveTransform(clipId, transform)
     }
+    if (speedBoard && selected != null) {
+        BackHandler { speedBoard = false }
+        SpeedScreen(
+            project = project,
+            clip = selected,
+            actions = SpeedActions(
+                onDone = { speedBoard = false },
+                onSpeed = { viewModel.setSpeed(selected.id, it) },
+            ),
+            preview = { PreviewSurface(player = player) },
+        )
+        return
+    }
+    if (speedBoard) speedBoard = false
     val currentBoard = board
     if (currentBoard != null && selected != null) {
         BackHandler { board = null }
@@ -276,10 +293,24 @@ private fun EditorRoute(actions: EditorActions, viewModel: EditorViewModel = hil
             onDuplicate = viewModel::duplicate,
             onDelete = viewModel::delete,
             onFreeze = viewModel::freeze,
+            onReverse = {
+                if (selected?.hasSpeed() == true) {
+                    viewModel.reverse()
+                } else {
+                    viewModel.say(EditorMessage.NotAvailable)
+                }
+            },
             onExtract = viewModel::extractAudio,
             onTool = { tool ->
                 when (tool) {
                     EditorTool.Layer -> openBoard(LayerTab.Blend, false)
+
+                    EditorTool.Speed -> if (selected?.hasSpeed() == true) {
+                        playing = false
+                        speedBoard = true
+                    } else {
+                        viewModel.say(EditorMessage.NotAvailable)
+                    }
 
                     EditorTool.Filters, EditorTool.Masks -> {
                         // The selected clip, or the one on top at the playhead.
@@ -436,3 +467,7 @@ private fun layerActions(viewModel: EditorViewModel) = LayerActions(
     onMove = viewModel::moveLayer,
     onAdd = viewModel::addLayer,
 )
+
+/** Video and sound play at a speed (#22); stills, text and held frames don't. */
+private fun Clip.hasSpeed(): Boolean = (type == ClipType.Video || type == ClipType.Audio) &&
+    source != null && (speed.rate > 0 || speed.ramp != null)

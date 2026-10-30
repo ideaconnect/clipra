@@ -11,6 +11,7 @@ import tech.idct.clipra.core.model.LinkGroup
 import tech.idct.clipra.core.model.Project
 import tech.idct.clipra.core.model.Word
 import tech.idct.clipra.core.model.WordKind
+import tech.idct.clipra.core.model.timelineAt
 import kotlin.math.roundToLong
 
 /**
@@ -72,10 +73,11 @@ class CreateCaptions(
 
     /** [word] on the timeline, or null when [source] doesn't play it. */
     private fun timelineWord(source: Clip, word: Word): Word? {
-        val ref = source.source ?: return null
-        val rate = source.speed.rate.takeIf { it > 0 } ?: return null
-        val start = source.startUs + ((word.startUs - ref.inPointUs) / rate).roundToLong()
-        val end = source.startUs + ((word.endUs - ref.inPointUs) / rate).roundToLong()
+        // At the clip's speed (#22); a reversed clip plays the word end first.
+        val a = source.timelineAt(word.startUs) ?: return null
+        val b = source.timelineAt(word.endUs) ?: return null
+        val start = minOf(a, b)
+        val end = maxOf(a, b)
         if (end <= source.startUs || start >= source.endUs) return null
         return word.copy(
             startUs = start.coerceAtLeast(source.startUs),

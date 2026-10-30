@@ -2,7 +2,6 @@ package tech.idct.clipra.core.model.edit
 
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.Project
-import kotlin.math.roundToLong
 
 /**
  * Edit by text (#48): removes [ranges] of the timeline from every unlocked layer and closes
@@ -77,13 +76,10 @@ class CutTimeRanges(
         return edited
     }
 
-    /** The part of this clip before [atUs] on the timeline. */
+    /** The part of this clip before [atUs] on the timeline, at its speed (#22). */
     private fun Clip.before(atUs: Long): Clip {
         val cut = atUs - startUs
-        val offset = (cut * speed.rate).roundToLong()
-        return copy(
-            durationUs = cut,
-            source = source?.copy(outPointUs = source.inPointUs + offset),
+        return played(0, cut).copy(
             caption = caption?.let { c ->
                 c.copy(
                     words = c.words.filter {
@@ -97,11 +93,9 @@ class CutTimeRanges(
     /** The part of this clip from [atUs] on, as [id]; its start is still to be placed. */
     private fun Clip.after(atUs: Long, id: String): Clip {
         val cut = atUs - startUs
-        val offset = (cut * speed.rate).roundToLong()
-        return copy(
+        // Its keyframes (#21) keep their places in the picture's time.
+        return played(cut, durationUs).withKeyframesShifted(-cut).copy(
             id = id,
-            durationUs = endUs - atUs,
-            source = source?.copy(inPointUs = source.inPointUs + offset),
             caption = caption?.let { c ->
                 c.copy(
                     words = c.words.filter { it.endUs > cut }.map {
