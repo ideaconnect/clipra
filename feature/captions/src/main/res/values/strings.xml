@@ -53,4 +53,25 @@
     <string name="captions_bottom">Bottom</string>
     <string name="captions_play">Play</string>
     <string name="captions_pause">Pause</string>
+    <string name="captions_ripple">Cuts ripple through every layer</string>
+    <string name="captions_length">Length</string>
+    <string name="captions_no_cuts">No cuts yet</string>
+    <string name="captions_play_edited">Play edited version</string>
+    <string name="captions_cut_fillers">Cut filler words</string>
+    <string name="captions_cut_pauses">Cut pauses</string>
+    <string name="captions_fillers_found">%1$d found</string>
+    <string name="captions_long_pauses">%1$d longer than %2$s s</string>
+    <string name="captions_pauses_longer">Pauses longer than</string>
+    <string name="captions_seconds">%1$s s</string>
+    <string name="captions_pause_token">pause %1$s s</string>
+    <string name="captions_restore_all">Restore all</string>
+    <string name="captions_no_transcript">Transcribe the speech first, then cut it by its words.</string>
+    <string name="captions_cut">Cut</string>
+    <string name="captions_filler_sample">um</string>
+    <string name="captions_filler">Filler</string>
+    <string name="captions_tap_word">Tap a word to cut or restore it</string>
+    <plurals name="captions_cuts">
+        <item quantity="one">%1$d cut · %2$s s shorter</item>
+        <item quantity="other">%1$d cuts · %2$s s shorter</item>
+    </plurals>
 </resources>

@@ -130,6 +130,15 @@ Downloads run in WorkManager with a Wi-Fi-only constraint by default, resume aft
   - `ProjectRender` turns a caption into one render clip per spoken word, each a `RenderSource.Drawn` that the compositor draws the first time it shows and keeps only as a texture.
   - The highlight follows the speech in preview and export alike, and only the captions on screen take memory.
 
+### Edit by text (#48)
+
+- **Tokens.** `TextCuts` turns each transcribed clip into tokens on the timeline: words, fillers (from the transcript's word kinds) and pauses (gaps of 0.3 s or more).
+- **Choices.** `CutChoices` cuts fillers and pauses over the threshold when their switches are on, unless a tap restored them, plus any word that was tapped. That is the same logic as `design/canvas/Transcript.dc.html`, whose numbers the tests reproduce.
+- **Ranges.** Tokens cut one after another make one cut, gaps included.
+- **Applying.** The screen previews the result and changes nothing until Done. Done applies `CutTimeRanges`: it removes the ranges from every unlocked layer and closes the gaps.
+  - Clips across a cut are split, keeping links and transcripts. Captions lose the cut words, and captions left without words are removed.
+  - Everything after a cut, including captions, music and overlays, moves up with it.
+
 ## 7. Export
 
 - Transformer renders the composition from original media with the chosen resolution, frame rate, codec and bitrate (formula in `docs/product/spec.md`).

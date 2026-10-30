@@ -38,8 +38,9 @@ data class CaptionsSetupRoute(val projectId: String? = null)
 @Serializable
 data class CaptionsEditRoute(val projectId: String? = null)
 
+/** Edit by text for [projectId] (#48); no project opens the placeholder board. */
 @Serializable
-data object TranscriptRoute
+data class TranscriptRoute(val projectId: String? = null)
 
 /**
  * The boards this module builds, from design/README.md ("On-device AI").
@@ -58,7 +59,7 @@ object CaptionsBoards {
     val transcript = Board(
         id = "Transcript",
         title = R.string.captions_title_transcript,
-        route = TranscriptRoute,
+        route = TranscriptRoute(),
     )
 
     val all = listOf(captionsSetup, captionsEdit, transcript)
@@ -70,6 +71,7 @@ class CaptionsNavigationActions(
     /** Auto captions finished: the transcripts and captions are in the project. */
     val onTranscribed: (projectId: String) -> Unit,
     val onEditByText: (projectId: String) -> Unit,
+    val onAutoCaptions: (projectId: String) -> Unit,
 )
 
 /** Registers this module's destinations. [screen] draws a board until its real screen is built. */
@@ -99,7 +101,17 @@ fun NavGraphBuilder.captionsScreens(
             )
         }
     }
-    composable<TranscriptRoute> { screen(CaptionsBoards.transcript) }
+    composable<TranscriptRoute> { entry ->
+        val projectId = entry.toRoute<TranscriptRoute>().projectId
+        if (projectId == null) {
+            screen(CaptionsBoards.transcript)
+        } else {
+            EditByTextDestination(
+                onBack = actions.onBack,
+                onAutoCaptions = { actions.onAutoCaptions(projectId) },
+            )
+        }
+    }
 }
 
 @Composable
@@ -195,6 +207,67 @@ private fun CaptionsEditDestination(
                     modifier = Modifier.testTag("captions-play"),
                 )
             }
+        },
+    )
+}
+
+/**
+ * Edit by text: its preview plays the project as it will be after the cuts; Done makes them
+ * (one undo step) and Back leaves the project as it was.
+ */
+@Composable
+private fun EditByTextDestination(
+    onBack: () -> Unit,
+    onAutoCaptions: () -> Unit,
+    viewModel: EditByTextViewModel = hiltViewModel(),
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val player = remember { PreviewPlayer(context, viewModel.mediaCache) }
+    var playing by remember { mutableStateOf(false) }
+    DisposableEffect(player) {
+        player.onEnded = { playing = false }
+        onDispose { player.release() }
+    }
+    LaunchedEffect(state.edited) {
+        state.edited?.let { player.setProject(it, viewModel.state.value.playheadUs) }
+        if (playing) player.play()
+    }
+    LaunchedEffect(playing) {
+        if (!playing) {
+            player.pause()
+            return@LaunchedEffect
+        }
+        player.play()
+        while (playing) {
+            withFrameNanos { }
+            viewModel.seek(player.positionUs)
+        }
+    }
+    BackHandler(onBack = onBack)
+    EditByTextScreen(
+        state = state,
+        playing = playing,
+        actions = EditByTextActions(
+            onBack = onBack,
+            onDone = {
+                viewModel.apply()
+                onBack()
+            },
+            onFillers = viewModel::setFillers,
+            onPauses = viewModel::setPauses,
+            onThreshold = viewModel::setThreshold,
+            onToken = viewModel::toggle,
+            onRestoreAll = viewModel::restoreAll,
+            onPlay = { playing = !playing },
+            onAutoCaptions = onAutoCaptions,
+        ),
+        preview = {
+            VideoSurface(
+                onAttach = { surface, width, height -> player.attach(surface, width, height) },
+                onDetach = player::detach,
+                modifier = Modifier.fillMaxSize(),
+            )
         },
     )
 }
