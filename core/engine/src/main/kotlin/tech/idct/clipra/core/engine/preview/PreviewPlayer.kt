@@ -15,6 +15,7 @@ import tech.idct.clipra.core.engine.render.CompositionFactory
 import tech.idct.clipra.core.engine.render.LiveEdits
 import tech.idct.clipra.core.engine.render.MediaResolver
 import tech.idct.clipra.core.engine.render.ProjectRender
+import tech.idct.clipra.core.model.CaptionSpec
 import tech.idct.clipra.core.model.Effect
 import tech.idct.clipra.core.model.Format
 import tech.idct.clipra.core.model.Mask
@@ -139,6 +140,9 @@ class PreviewPlayer(private val context: Context, cache: MediaCache) {
 
         override fun voice(asset: MediaAsset, cleanup: VoiceCleanup): String? =
             inner.voice(asset, cleanup)
+
+        override fun caption(caption: CaptionSpec, current: Int, width: Int, height: Int) =
+            inner.caption(caption, current, width, height)
 
         override fun image(asset: MediaAsset): Bitmap? = images.getOrPut(asset.id) {
             inner.image(asset)

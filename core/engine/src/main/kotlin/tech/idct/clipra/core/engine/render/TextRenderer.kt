@@ -58,7 +58,7 @@ object TextRenderer {
     )
 
     /** Variable-font axes: the weight, and Bricolage's optical size for display text. */
-    private fun variation(family: String, weight: Int): String {
+    internal fun variation(family: String, weight: Int): String {
         val wght = "'wght' ${weight.coerceIn(100, 900)}"
         return if (family == BRICOLAGE) "$wght, 'opsz' 48" else wght
     }

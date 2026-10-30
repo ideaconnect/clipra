@@ -55,6 +55,9 @@ enum class EditorTool {
     Filters,
     Transitions,
     Captions,
+
+    /** The project's captions (#45), when it has them. */
+    CaptionsEdit,
     Transcript,
     Color,
     Cutout,

@@ -1,6 +1,7 @@
 package tech.idct.clipra.core.engine.render
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.Color
 import android.opengl.GLES20
 import android.opengl.GLUtils
@@ -71,6 +72,7 @@ private class LayerCompositorProgram(
     private val callbackHandler = Handler(callbackThread.looper)
     private val videoSources = HashMap<String, VideoFrameSource>()
     private val bitmapTextures = HashMap<String, Int>()
+    private val drawnSizes = HashMap<String, Pair<Int, Int>>()
 
     private val externalProgram = GlProgram(Shaders.VERTEX, Shaders.CLIP_EXTERNAL)
     private val bitmapProgram = GlProgram(Shaders.VERTEX, Shaders.CLIP_2D)
@@ -512,7 +514,8 @@ private class LayerCompositorProgram(
     private fun clipFrame(clip: RenderClip, timeUs: Long): ClipFrame? =
         when (val source = clip.source) {
             is RenderSource.Video -> videoFrame(clip, source, timeUs)
-            is RenderSource.Image -> imageFrame(clip, source)
+            is RenderSource.Image -> imageFrame(clip, source.bitmap)
+            is RenderSource.Drawn -> drawnFrame(clip, source)
             is RenderSource.Audio -> null
         }
 
@@ -529,20 +532,33 @@ private class LayerCompositorProgram(
         return ClipFrame(video.textureId, video.textureMatrix, video.width, video.height, true)
     }
 
-    private fun imageFrame(clip: RenderClip, source: RenderSource.Image): ClipFrame {
-        val texture = bitmapTextures.getOrPut(clip.id) {
-            GlUtil.generateTexture().also { id ->
-                GlUtil.bindTexture(GLES20.GL_TEXTURE_2D, id, GLES20.GL_LINEAR)
-                GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, source.bitmap, 0)
-            }
+    private fun imageFrame(clip: RenderClip, bitmap: Bitmap): ClipFrame {
+        val texture = bitmapTextures.getOrPut(clip.id) { upload(bitmap) }
+        return ClipFrame(texture, flipY, bitmap.width, bitmap.height, false)
+    }
+
+    /** Draws the picture once, when it first shows, and keeps only its texture. */
+    private fun drawnFrame(clip: RenderClip, source: RenderSource.Drawn): ClipFrame {
+        if (clip.id !in bitmapTextures) {
+            val bitmap = source.draw()
+            bitmapTextures[clip.id] = upload(bitmap)
+            drawnSizes[clip.id] = bitmap.width to bitmap.height
+            bitmap.recycle()
         }
-        return ClipFrame(texture, flipY, source.bitmap.width, source.bitmap.height, false)
+        val (width, height) = drawnSizes.getValue(clip.id)
+        return ClipFrame(bitmapTextures.getValue(clip.id), flipY, width, height, false)
+    }
+
+    private fun upload(bitmap: Bitmap): Int = GlUtil.generateTexture().also { id ->
+        GlUtil.bindTexture(GLES20.GL_TEXTURE_2D, id, GLES20.GL_LINEAR)
+        GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0)
     }
 
     private fun releaseInactive(active: Set<String>) {
         videoSources.keys.filter { it !in active }.forEach { videoSources.remove(it)?.release() }
         bitmapTextures.keys.filter { it !in active }.forEach {
             bitmapTextures.remove(it)?.let { id -> GlUtil.deleteTexture(id) }
+            drawnSizes.remove(it)
         }
     }
 

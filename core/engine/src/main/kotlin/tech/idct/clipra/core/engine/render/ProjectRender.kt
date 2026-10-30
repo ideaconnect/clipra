@@ -2,6 +2,8 @@ package tech.idct.clipra.core.engine.render
 
 import android.graphics.Bitmap
 import tech.idct.clipra.core.model.Background
+import tech.idct.clipra.core.model.CaptionSpec
+import tech.idct.clipra.core.model.CaptionStyle
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
 import tech.idct.clipra.core.model.MediaAsset
@@ -26,6 +28,9 @@ interface MediaResolver {
 
     /** The sound of [asset] after AI voice cleanup (#39), once it is ready; null until then. */
     fun voice(asset: MediaAsset, cleanup: VoiceCleanup): String? = null
+
+    /** A caption (#45) at [width] × [height] with word [current] spoken (-1: none). */
+    fun caption(caption: CaptionSpec, current: Int, width: Int, height: Int): Bitmap? = null
 }
 
 /** Turns a project into what the layer compositor draws (docs/architecture.md, section 4). */
@@ -49,8 +54,12 @@ object ProjectRender {
         durationUs = maxOf(project.durationUs, 1_000_000L / frameRate),
         background = backgroundColor(project.format.background),
         layers = project.layers.map { layer ->
-            val clips = layer.clips.mapNotNull { clip ->
-                renderClip(project, clip, media, width, height)
+            val clips = layer.clips.flatMap { clip ->
+                if (clip.type == ClipType.Caption) {
+                    captionClips(clip, media, width, height)
+                } else {
+                    listOfNotNull(renderClip(project, clip, media, width, height))
+                }
             }
             RenderLayer(
                 clips = clips,
@@ -77,6 +86,44 @@ object ProjectRender {
                 easing = transition.easing,
             )
         }
+
+    /**
+     * A caption (#45) as one render clip per spoken word, each drawn when it first shows, so the
+     * highlight follows the speech; without a highlight, one for the whole caption.
+     */
+    private fun captionClips(
+        clip: Clip,
+        media: MediaResolver,
+        width: Int,
+        height: Int,
+    ): List<RenderClip> {
+        val caption = clip.caption ?: return emptyList()
+        val drawn = { current: Int ->
+            RenderSource.Drawn {
+                media.caption(caption, current, width, height)
+                    ?: Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
+            }
+        }
+        val highlights = caption.highlight && caption.style != CaptionStyle.Minimal
+        if (!highlights || caption.words.isEmpty()) {
+            return listOf(renderClipOf(clip, drawn(-1)))
+        }
+        val starts = caption.words.map { it.startUs.coerceIn(0, clip.durationUs) }
+        val states = buildList {
+            if (starts.first() > 0) add(Triple(-1, 0L, starts.first()))
+            starts.forEachIndexed { i, start ->
+                val end = starts.getOrNull(i + 1) ?: clip.durationUs
+                if (end > start) add(Triple(i, start, end))
+            }
+        }
+        return states.map { (current, from, to) ->
+            renderClipOf(clip, drawn(current)).copy(
+                id = "${clip.id}#$current",
+                startUs = clip.startUs + from,
+                durationUs = to - from,
+            )
+        }
+    }
 
     private fun renderClip(
         project: Project,

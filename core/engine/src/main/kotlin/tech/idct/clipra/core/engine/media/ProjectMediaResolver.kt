@@ -3,8 +3,10 @@ package tech.idct.clipra.core.engine.media
 import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
+import tech.idct.clipra.core.engine.render.CaptionRenderer
 import tech.idct.clipra.core.engine.render.MediaResolver
 import tech.idct.clipra.core.engine.render.TextRenderer
+import tech.idct.clipra.core.model.CaptionSpec
 import tech.idct.clipra.core.model.MediaAsset
 import tech.idct.clipra.core.model.TextSpec
 import tech.idct.clipra.core.model.VoiceCleanup
@@ -33,6 +35,9 @@ class ProjectMediaResolver(
 
     override fun voice(asset: MediaAsset, cleanup: VoiceCleanup): String? =
         cache.voiceMix(asset.id, cleanup).takeIf { it.exists() }?.path
+
+    override fun caption(caption: CaptionSpec, current: Int, width: Int, height: Int): Bitmap =
+        CaptionRenderer.render(context, caption, current, width, height)
 
     override fun image(asset: MediaAsset): Bitmap? {
         if (!isAvailable(context, asset.uri)) return null

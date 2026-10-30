@@ -114,7 +114,7 @@ object CompositionFactory {
 
         is RenderSource.Audio -> (voicePath ?: source.path) to source.inPointUs
 
-        is RenderSource.Image -> null
+        is RenderSource.Image, is RenderSource.Drawn -> null
     }
 
     private fun fileDurationUs(context: Context, path: String): Long {
