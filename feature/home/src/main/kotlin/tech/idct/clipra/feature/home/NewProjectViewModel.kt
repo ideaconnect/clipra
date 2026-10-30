@@ -47,14 +47,24 @@ class NewProjectViewModel @Inject constructor(
         mutableFormat.value = format
     }
 
+    /** Picks a mosaic [layout] in the tablet home's panel ("Mosaic layout", #71). */
+    fun preset(layout: Layout) {
+        mutableFormat.value = mutableFormat.value.copy(layout = layout)
+    }
+
     /**
      * Creates the project and hands its id to [onCreated] to open the editor; from "Text card",
      * it starts with a black card saying [title], whose clip id comes along.
      */
-    fun create(name: String, title: String, onCreated: (String, String?) -> Unit) {
+    fun create(
+        name: String,
+        title: String,
+        onCreated: (String, String?) -> Unit,
+        withTextCard: Boolean = textCard,
+    ) {
         viewModelScope.launch {
             val project = projects.create(name, mutableFormat.value)
-            if (!textCard) {
+            if (!withTextCard) {
                 onCreated(project.id, null)
                 return@launch
             }

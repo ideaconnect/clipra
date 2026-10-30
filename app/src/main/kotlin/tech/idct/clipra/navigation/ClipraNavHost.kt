@@ -47,6 +47,7 @@ import tech.idct.clipra.feature.home.HomeActions
 import tech.idct.clipra.feature.home.MainRoute
 import tech.idct.clipra.feature.home.NewProjectActions
 import tech.idct.clipra.feature.home.NewProjectRoute
+import tech.idct.clipra.feature.home.ProOffer
 import tech.idct.clipra.feature.home.homeScreens
 import tech.idct.clipra.feature.models.ModelsBoards
 import tech.idct.clipra.feature.models.ModelsNavigationActions
@@ -65,6 +66,7 @@ import tech.idct.clipra.monetization.MonetizationBoards
 import tech.idct.clipra.monetization.MonetizationNavigationActions
 import tech.idct.clipra.monetization.ProRoute
 import tech.idct.clipra.monetization.monetizationScreens
+import tech.idct.clipra.monetization.proState
 
 /**
  * Connects the destinations of every feature module; feature modules don't know each other.
@@ -120,6 +122,7 @@ fun ClipraNavHost(
                 } else {
                     null
                 },
+                proOffer = { proState().let { ProOffer(owned = it.owned, price = it.price) } },
             ),
             NewProjectActions(
                 onBack = { navController.popBackStack() },
@@ -129,6 +132,9 @@ fun ClipraNavHost(
                         popUpTo<NewProjectRoute> { inclusive = true }
                     }
                     if (textClipId != null) navController.navigate(TextRoute(id, textClipId))
+                },
+                onCreatedToImport = { id ->
+                    navController.navigate(EditorRoute(id, pickMedia = true))
                 },
             ),
         )

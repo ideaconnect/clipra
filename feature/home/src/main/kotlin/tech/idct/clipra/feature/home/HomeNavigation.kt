@@ -19,7 +19,10 @@ import androidx.navigation.compose.composable
 import kotlinx.serialization.Serializable
 import tech.idct.clipra.core.data.project.ProjectSummary
 import tech.idct.clipra.core.designsystem.ClipraTheme
+import tech.idct.clipra.core.designsystem.adaptive.LocalWindowLayout
+import tech.idct.clipra.core.designsystem.adaptive.WindowLayout
 import tech.idct.clipra.core.designsystem.placeholder.Board
+import tech.idct.clipra.core.model.Layout
 
 @Serializable
 data object MainRoute
@@ -52,11 +55,13 @@ object HomeBoards {
 class NewProjectActions(
     val onBack: () -> Unit,
     val onCreated: (projectId: String, textClipId: String?) -> Unit,
+    /** The tablet's "Import from Gallery" (#71): the new project opens on the photo picker. */
+    val onCreatedToImport: (projectId: String) -> Unit = { onCreated(it, null) },
 )
 
 /** Registers this module's destinations: Home and New project. */
 fun NavGraphBuilder.homeScreens(actions: HomeActions, newProject: NewProjectActions) {
-    composable<MainRoute> { HomeRoute(actions) }
+    composable<MainRoute> { HomeRoute(actions, newProject) }
     composable<NewProjectRoute> { NewProjectRoute(newProject) }
 }
 
@@ -78,24 +83,71 @@ private fun NewProjectRoute(
 }
 
 @Composable
-private fun HomeRoute(actions: HomeActions, viewModel: HomeViewModel = hiltViewModel()) {
+private fun HomeRoute(
+    actions: HomeActions,
+    newProject: NewProjectActions,
+    viewModel: HomeViewModel = hiltViewModel(),
+) {
     val recent by viewModel.recent.collectAsStateWithLifecycle()
     val now by viewModel.now.collectAsStateWithLifecycle()
     var renaming by remember { mutableStateOf<ProjectSummary?>(null) }
     var deleting by remember { mutableStateOf<ProjectSummary?>(null) }
     val copyName = stringResource(R.string.home_copy_name)
-
-    HomeScreen(
-        recent = recent,
-        nowMillis = now,
-        aiStatus = null,
-        actions = actions,
-        projectActions = ProjectActions(
-            onRename = { renaming = it },
-            onDuplicate = { viewModel.duplicate(it.id, copyName.format(it.name)) },
-            onDelete = { deleting = it },
-        ),
+    val projectActions = ProjectActions(
+        onRename = { renaming = it },
+        onDuplicate = { viewModel.duplicate(it.id, copyName.format(it.name)) },
+        onDelete = { deleting = it },
     )
+
+    if (LocalWindowLayout.current == WindowLayout.Tablet) {
+        // New project sits beside the projects (#71), with its own state.
+        val creating: NewProjectViewModel = hiltViewModel()
+        val format by creating.format.collectAsStateWithLifecycle()
+        val name = stringResource(R.string.home_new_default_name)
+        val title = stringResource(R.string.home_new_card_title)
+        TabletHomeScreen(
+            recent = recent,
+            nowMillis = now,
+            aiStatus = null,
+            pro = actions.proOffer(),
+            actions = HomeActions(
+                onNewProject = actions.onNewProject,
+                onOpenProject = actions.onOpenProject,
+                onAutoCaptions = actions.onAutoCaptions,
+                onTextCard = actions.onTextCard,
+                onMosaic = { creating.preset(Layout.Grid2x2) },
+                onModels = actions.onModels,
+                onSettings = actions.onSettings,
+                onPro = actions.onPro,
+            ),
+            projectActions = projectActions,
+            panel = NewProjectPanel(
+                format = format,
+                onFormatChange = creating::change,
+                onCreate = { creating.create(name, title, newProject.onCreated) },
+                fourKSupported = creating.fourKSupported,
+                onTextCard = {
+                    creating.create(name, title, newProject.onCreated, withTextCard = true)
+                },
+                onImport = {
+                    creating.create(
+                        name,
+                        title,
+                        { id, _ -> newProject.onCreatedToImport(id) },
+                        withTextCard = false,
+                    )
+                },
+            ),
+        )
+    } else {
+        HomeScreen(
+            recent = recent,
+            nowMillis = now,
+            aiStatus = null,
+            actions = actions,
+            projectActions = projectActions,
+        )
+    }
 
     renaming?.let { project ->
         RenameDialog(

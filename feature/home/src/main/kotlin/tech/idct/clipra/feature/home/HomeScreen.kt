@@ -79,6 +79,8 @@ class HomeActions(
     val onPro: () -> Unit,
     /** Debug builds only: the screen index. */
     val onScreenIndex: (() -> Unit)? = null,
+    /** Clipra Pro for the tablet header (#71): owned, or its price from Google Play. */
+    val proOffer: @Composable () -> ProOffer = { ProOffer() },
 )
 
 /** What the on-device AI card says; the AI models issue (#43) supplies the real status. */
@@ -303,7 +305,7 @@ private fun QuickActions(actions: HomeActions) {
 }
 
 @Composable
-private fun RowScope.QuickAction(
+internal fun RowScope.QuickAction(
     label: Int,
     @DrawableRes icon: Int,
     tint: Color,
@@ -332,7 +334,7 @@ private fun RowScope.QuickAction(
 }
 
 @Composable
-private fun AiCard(status: AiStatus?, onModels: () -> Unit) {
+internal fun AiCard(status: AiStatus?, onModels: () -> Unit) {
     OnDeviceCard(
         title = stringResource(
             if (status?.ready ==
@@ -353,7 +355,7 @@ private fun AiCard(status: AiStatus?, onModels: () -> Unit) {
 }
 
 @Composable
-private fun RecentHeader(count: Int) {
+internal fun RecentHeader(count: Int) {
     Row(
         modifier = Modifier.padding(top = 8.dp),
         verticalAlignment = Alignment.Bottom,
@@ -376,7 +378,7 @@ private fun RecentHeader(count: Int) {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun ProjectCard(
+internal fun ProjectCard(
     project: ProjectSummary,
     nowMillis: Long,
     onOpen: () -> Unit,
