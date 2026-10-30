@@ -85,23 +85,28 @@ class PreviewPlayer(private val context: Context, cache: MediaCache) {
 
     /**
      * Shows the preview on [surface], drawing the paused frame on it. A surface that comes back
-     * after [detach] gets the composition rebuilt where it was: a paused frame isn't drawn again
-     * on it otherwise.
+     * after [detach], or a new one (another view, as when the layout changes, #68), gets the
+     * composition rebuilt where it was: a paused frame isn't drawn again on it otherwise.
      */
     fun attach(surface: Surface, width: Int, height: Int) {
         if (released) return
+        val fresh = surface !== this.surface
         this.surface = surface
         player.setVideoSurface(surface, Size(width, height))
-        if (detached) project?.let { setProject(it, positionUs) } else redraw()
+        if (detached || fresh) project?.let { setProject(it, positionUs) } else redraw()
         detached = false
     }
 
-    fun detach() {
+    /**
+     * The view of [gone] lets go of it. When the layout changes (#68), the new view attaches
+     * before the old one goes, so an old surface is only let go of.
+     */
+    fun detach(gone: Surface) {
         // The screen may release the player before its view lets go of the surface.
-        if (released) return
+        if (released || gone !== surface) return
         detached = true
         // CompositionPlayer clears only the surface it was given.
-        surface?.let(player::clearVideoSurface)
+        player.clearVideoSurface(gone)
         surface = null
     }
 

@@ -55,12 +55,33 @@ data class TimelineGeometry(
         fun laneHeight(layer: Layer): Float =
             if (layer.clips.any { it.type == ClipType.Video }) VIDEO_LANE else LANE
 
+        /** The tablet's lanes (TabletEditor board): video tallest, captions thinnest. */
+        fun tabletLaneHeight(layer: Layer): Float = when {
+            layer.clips.any { it.type == ClipType.Video } -> TABLET_VIDEO_LANE
+
+            layer.clips.isNotEmpty() && layer.clips.all { it.type == ClipType.Audio } ->
+                TABLET_AUDIO_LANE
+
+            layer.clips.isNotEmpty() && layer.clips.all { it.type == ClipType.Caption } ->
+                TABLET_CAPTION_LANE
+
+            else -> LANE
+        }
+
         const val VIDEO_LANE = 50f
         const val LANE = 28f
         const val AUDIO_STRIP = 11f
         const val LANE_GAP = 4f
         const val RULER = 24f
         const val GUTTER = 36f
+
+        /** The tablet's layer headers, and where its playhead stands across the lanes. */
+        const val HEADER = 120f
+        const val TABLET_PLAYHEAD = 0.3f
+        const val TABLET_DP_PER_SECOND = 48f
+        const val TABLET_VIDEO_LANE = 56f
+        const val TABLET_AUDIO_LANE = 32f
+        const val TABLET_CAPTION_LANE = 24f
     }
 }
 

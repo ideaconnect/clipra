@@ -28,20 +28,26 @@ import tech.idct.clipra.core.data.di.ApplicationScope
 import tech.idct.clipra.core.data.project.OpenProjects
 import tech.idct.clipra.core.data.project.ProjectSession
 import tech.idct.clipra.core.engine.media.Cutouts
+import tech.idct.clipra.core.engine.media.Loudness
 import tech.idct.clipra.core.engine.media.MediaCache
 import tech.idct.clipra.core.engine.media.MediaImporter
 import tech.idct.clipra.core.engine.media.ProjectMediaResolver
 import tech.idct.clipra.core.engine.media.Recording
 import tech.idct.clipra.core.engine.media.SoundAnalyzer
 import tech.idct.clipra.core.engine.media.Stabilizer
+import tech.idct.clipra.core.engine.media.Thumbnails
 import tech.idct.clipra.core.engine.media.VoiceCleaner
 import tech.idct.clipra.core.engine.media.VoiceRecorder
 import tech.idct.clipra.core.model.Animation
 import tech.idct.clipra.core.model.AudioSettings
+import tech.idct.clipra.core.model.AutoColor
 import tech.idct.clipra.core.model.BlendMode
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
+import tech.idct.clipra.core.model.ColorGrade
+import tech.idct.clipra.core.model.ColorStats
 import tech.idct.clipra.core.model.Easing
+import tech.idct.clipra.core.model.LoudnessTargets
 import tech.idct.clipra.core.model.MediaAsset
 import tech.idct.clipra.core.model.MediaKind
 import tech.idct.clipra.core.model.MediaRef
@@ -54,6 +60,7 @@ import tech.idct.clipra.core.model.TextSpec
 import tech.idct.clipra.core.model.Transform
 import tech.idct.clipra.core.model.VoiceCleanup
 import tech.idct.clipra.core.model.VoiceEngine
+import tech.idct.clipra.core.model.edit.AddClip
 import tech.idct.clipra.core.model.edit.AddLayer
 import tech.idct.clipra.core.model.edit.AddSound
 import tech.idct.clipra.core.model.edit.AddText
@@ -70,10 +77,13 @@ import tech.idct.clipra.core.model.edit.LayerTarget
 import tech.idct.clipra.core.model.edit.MoveClip
 import tech.idct.clipra.core.model.edit.MoveKeyframe
 import tech.idct.clipra.core.model.edit.MoveLayer
+import tech.idct.clipra.core.model.edit.PasteColor
 import tech.idct.clipra.core.model.edit.ReplaceMedia
 import tech.idct.clipra.core.model.edit.SetAnimation
+import tech.idct.clipra.core.model.edit.SetAudio
 import tech.idct.clipra.core.model.edit.SetBlend
 import tech.idct.clipra.core.model.edit.SetCell
+import tech.idct.clipra.core.model.edit.SetColor
 import tech.idct.clipra.core.model.edit.SetKeyframeEasing
 import tech.idct.clipra.core.model.edit.SetLayerHidden
 import tech.idct.clipra.core.model.edit.SetLayerLocked
@@ -85,6 +95,7 @@ import tech.idct.clipra.core.model.edit.SplitClip
 import tech.idct.clipra.core.model.edit.ToggleKeyframe
 import tech.idct.clipra.core.model.edit.TrimClip
 import tech.idct.clipra.core.model.edit.randomId
+import tech.idct.clipra.core.model.mediaTimeAt
 import tech.idct.clipra.core.model.timelineAt
 import tech.idct.clipra.feature.editor.stabilize.StabilizeAnalysis
 import tech.idct.clipra.feature.editor.timeline.TimelineGeometry
@@ -106,6 +117,9 @@ data class EditorUiState(
     val beats: Map<String, List<Long>> = emptyMap(),
     /** The voiceover panel (#41), while it is open. */
     val voiceover: VoiceoverState? = null,
+    /** The tablet toolbar's Snap and Ripple (#69): moves snap to cuts; deleting closes the gap. */
+    val snap: Boolean = true,
+    val ripple: Boolean = true,
 )
 
 /**
@@ -244,7 +258,133 @@ class EditorViewModel @Inject constructor(
 
     fun split() = onSelected { SplitClip(it, state.value.playheadUs) }
 
-    fun delete() = onSelected { DeleteClip(it, ripple = true) }
+    fun delete() = onSelected { DeleteClip(it, ripple = state.value.ripple) }
+
+    fun setSnap(on: Boolean) = mutableState.update { it.copy(snap = on) }
+
+    fun setRipple(on: Boolean) = mutableState.update { it.copy(ripple = on) }
+
+    /** Moves the playhead to the nearest clip start or end before it, or after it (#69). */
+    fun seekToCut(forward: Boolean) {
+        val project = state.value.project ?: return
+        val now = state.value.playheadUs
+        val edges = (
+            project.layers.flatMap { it.clips }.flatMap { listOf(it.startUs, it.endUs) } +
+                listOf(0L, project.durationUs)
+            ).distinct()
+        val to = if (forward) {
+            edges.filter { it > now + CUT_SLOP_US }.minOrNull()
+        } else {
+            edges.filter { it < now - CUT_SLOP_US }.maxOrNull()
+        }
+        to?.let(::seek)
+    }
+
+    /** Grades a picture clip (#28), from the tablet's Color tab; null takes the grade away. */
+    fun setColor(clipId: String, grade: ColorGrade?) = edit(SetColor(clipId, grade))
+
+    /** Gives every other picture clip the grade of [clipId] (#28). */
+    fun pasteColor(clipId: String) = edit(PasteColor(clipId))
+
+    /** A clip's sound (#36), from the tablet's Audio tab. */
+    fun setAudio(clipId: String, audio: AudioSettings) = edit(SetAudio(clipId, audio))
+
+    /**
+     * Balances the frame of [clipId] at the playhead, as the Color board's Auto does (#28):
+     * exposure, contrast, saturation and casts; the LUT stays.
+     */
+    fun autoColor(clipId: String) {
+        val project = state.value.project ?: return
+        val clip = project.findClip(clipId)?.second ?: return
+        val asset = mediaOf(clipId) ?: return
+        viewModelScope.launch {
+            val offset = (state.value.playheadUs - clip.startUs).coerceIn(0, clip.durationUs - 1)
+            val time = clip.mediaTimeAt(offset) ?: 0
+            val still = withContext(Dispatchers.IO) {
+                Thumbnails.still(context, asset, mediaCache, time, AUTO_SIDE)
+            } ?: return@launch
+            val pixels = IntArray(still.width * still.height)
+            still.getPixels(pixels, 0, still.width, 0, 0, still.width, still.height)
+            val auto = withContext(Dispatchers.Default) { AutoColor.grade(ColorStats.of(pixels)) }
+            val now = state.value.project?.findClip(clipId)?.second ?: return@launch
+            val grade = (now.color ?: ColorGrade()).copy(
+                exposure = auto.exposure,
+                contrast = auto.contrast,
+                saturation = auto.saturation,
+                temperature = auto.temperature,
+                tint = auto.tint,
+            )
+            edit(SetColor(clipId, grade))
+        }
+    }
+
+    /**
+     * Normalizes a clip's loudness to the social target (#37), from the tablet's Audio tab; the
+     * clip is measured on the device first. Off leaves the level alone.
+     */
+    fun setNormalize(clipId: String, on: Boolean) {
+        val project = state.value.project ?: return
+        val clip = project.findClip(clipId)?.second ?: return
+        if (!on) return edit(SetAudio(clipId, clip.audio.copy(loudnessTarget = null)))
+        val source = clip.source ?: return
+        val asset = mediaOf(clipId) ?: return
+        viewModelScope.launch {
+            val measured = withContext(Dispatchers.Default) {
+                val media =
+                    ProjectMediaResolver(context, mediaCache, forExport = true, maxImageSide = 0)
+                val original = media.source(asset) ?: return@withContext null
+                runCatching {
+                    Loudness.measure(context, original, source.inPointUs, source.outPointUs)
+                }.getOrNull()
+            }
+            if (measured == null) return@launch say(EditorMessage.NeedsSound)
+            val now = state.value.project?.findClip(clipId)?.second ?: return@launch
+            edit(
+                SetAudio(
+                    clipId,
+                    now.audio.copy(
+                        measuredLufs = measured.lufs,
+                        truePeakDb = measured.truePeakDb,
+                        loudnessTarget = LoudnessTargets.SOCIAL,
+                    ),
+                ),
+            )
+        }
+    }
+
+    /**
+     * Puts the project's media [mediaId] on the timeline at the playhead (the tablet's media
+     * bin, #69): on the lowest layer with room for it there, or on a new layer on top.
+     */
+    fun addToTimeline(mediaId: String) {
+        val project = state.value.project ?: return
+        val asset = project.asset(mediaId) ?: return
+        val duration = if (asset.kind == MediaKind.Photo) PHOTO_DURATION_US else asset.durationUs
+        val type = when (asset.kind) {
+            MediaKind.Video -> ClipType.Video
+            MediaKind.Photo -> ClipType.Photo
+            MediaKind.Audio -> ClipType.Audio
+        }
+        val outPoint = if (asset.kind == MediaKind.Photo) 0 else duration
+        val clip = Clip(
+            randomId(),
+            type,
+            state.value.playheadUs,
+            duration,
+            MediaRef(asset.id, 0, outPoint),
+        )
+        val free = project.layers.firstOrNull { layer ->
+            !layer.locked && layer.clips.none { it.startUs < clip.endUs && clip.startUs < it.endUs }
+        }
+        val target = free?.let { LayerTarget.Existing(it.id) } ?: LayerTarget.NewOnTop(randomId())
+        val opened = session ?: return
+        val refused = opened.edit(AddClip(clip, target))
+        if (refused == null) {
+            select(clip.id)
+        } else {
+            mutableState.update { it.copy(message = refused.toMessage()) }
+        }
+    }
 
     fun duplicate() = onSelected { DuplicateClip(it) }
 
@@ -589,5 +729,11 @@ class EditorViewModel @Inject constructor(
 
         /** A voiceover is never shorter than a clip can be. */
         const val MIN_VOICEOVER_US = 100_000L
+
+        /** Previous and next cut skip one this close to the playhead. */
+        const val CUT_SLOP_US = 10_000L
+
+        /** The side of the frame Auto looks at. */
+        const val AUTO_SIDE = 256
     }
 }

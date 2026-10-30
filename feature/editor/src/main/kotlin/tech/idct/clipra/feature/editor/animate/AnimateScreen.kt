@@ -5,6 +5,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import tech.idct.clipra.core.designsystem.ClipraTheme
 import tech.idct.clipra.core.designsystem.component.ChipStyle
@@ -56,8 +58,6 @@ fun AnimateScreen(
     modifier: Modifier = Modifier,
 ) {
     val colors = ClipraTheme.colors
-    val animation = clip.animation ?: Animation()
-    val text = clip.type == ClipType.Text || clip.type == ClipType.TextCard
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -97,36 +97,61 @@ fun AnimateScreen(
                 preview()
             }
         }
-        Column(
+        AnimateControls(
+            clip = clip,
+            onAnimation = actions.onAnimation,
             modifier = Modifier
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
                 .padding(top = 14.dp, bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
+        )
+    }
+}
+
+/**
+ * The Animate board's choices, also the tablet inspector's Animate tab (#69): in, out and, for
+ * clips that aren't text, a loop. [wrap] lays the chips out in rows instead of one scrolling
+ * line, as the narrower inspector does.
+ */
+@Composable
+fun AnimateControls(
+    clip: Clip,
+    onAnimation: (Animation) -> Unit,
+    modifier: Modifier = Modifier,
+    wrap: Boolean = false,
+    inset: Dp = 16.dp,
+) {
+    val animation = clip.animation ?: Animation()
+    val text = clip.type == ClipType.Text || clip.type == ClipType.TextCard
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        ChoiceRow(
+            title = stringResource(R.string.editor_animate_in),
+            choices = if (text) Animations.textIn else Animations.clipIn,
+            selected = animation.enter,
+            onPick = { onAnimation(animation.copy(enter = it)) },
+            tag = "animate-in",
+            wrap = wrap,
+            inset = inset,
+        )
+        ChoiceRow(
+            title = stringResource(R.string.editor_animate_out),
+            choices = if (text) Animations.textOut else Animations.clipOut,
+            selected = animation.exit,
+            onPick = { onAnimation(animation.copy(exit = it)) },
+            tag = "animate-out",
+            wrap = wrap,
+            inset = inset,
+        )
+        if (!text) {
             ChoiceRow(
-                title = stringResource(R.string.editor_animate_in),
-                choices = if (text) Animations.textIn else Animations.clipIn,
-                selected = animation.enter,
-                onPick = { actions.onAnimation(animation.copy(enter = it)) },
-                tag = "animate-in",
+                title = stringResource(R.string.editor_animate_loop),
+                choices = Animations.clipLoop,
+                selected = animation.loop,
+                onPick = { onAnimation(animation.copy(loop = it)) },
+                tag = "animate-loop",
+                wrap = wrap,
+                inset = inset,
             )
-            ChoiceRow(
-                title = stringResource(R.string.editor_animate_out),
-                choices = if (text) Animations.textOut else Animations.clipOut,
-                selected = animation.exit,
-                onPick = { actions.onAnimation(animation.copy(exit = it)) },
-                tag = "animate-out",
-            )
-            if (!text) {
-                ChoiceRow(
-                    title = stringResource(R.string.editor_animate_loop),
-                    choices = Animations.clipLoop,
-                    selected = animation.loop,
-                    onPick = { actions.onAnimation(animation.copy(loop = it)) },
-                    tag = "animate-loop",
-                )
-            }
         }
     }
 }
@@ -139,21 +164,17 @@ private fun ChoiceRow(
     selected: String?,
     onPick: (String?) -> Unit,
     tag: String,
+    wrap: Boolean,
+    inset: Dp,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
             text = title,
             style = ClipraTheme.typography.sectionLabel,
             color = ClipraTheme.colors.textSecondary,
-            modifier = Modifier.padding(horizontal = 16.dp),
+            modifier = Modifier.padding(horizontal = inset),
         )
-        Row(
-            modifier = Modifier
-                .horizontalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp)
-                .testTag(tag),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
+        val chips: @Composable () -> Unit = {
             (listOf<String?>(null) + choices).forEach { id ->
                 ClipraChip(
                     label = stringResource(animationName(id)),
@@ -162,6 +183,27 @@ private fun ChoiceRow(
                     selectedStyle = ChipStyle.Light,
                     modifier = Modifier.testTag("$tag:${id ?: "none"}"),
                 )
+            }
+        }
+        if (wrap) {
+            FlowRow(
+                modifier = Modifier
+                    .padding(horizontal = inset)
+                    .testTag(tag),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                chips()
+            }
+        } else {
+            Row(
+                modifier = Modifier
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = inset)
+                    .testTag(tag),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                chips()
             }
         }
     }

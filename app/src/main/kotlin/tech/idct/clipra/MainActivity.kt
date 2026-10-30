@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import tech.idct.clipra.core.data.settings.SettingsRepository
 import tech.idct.clipra.core.designsystem.ClipraTheme
+import tech.idct.clipra.core.designsystem.adaptive.ProvideWindowLayout
 import tech.idct.clipra.feature.export.ExportService
 import tech.idct.clipra.monetization.ads.AdConsent
 import tech.idct.clipra.navigation.ClipraNavHost
@@ -54,14 +55,17 @@ class MainActivity : ComponentActivity() {
                 if (start == null) {
                     Box(Modifier.fillMaxSize().background(ClipraTheme.colors.background))
                 } else {
-                    ClipraNavHost(
-                        openExport = openExport.intValue,
-                        // Ad consent is asked once the user is past onboarding (#62).
-                        onProjectsShown = {
-                            lifecycleScope.launch { adConsent.gather(this@MainActivity) }
-                        },
-                        onboarded = start,
-                    )
+                    // Phone or tablet layout by the window's size (#68), switched in place.
+                    ProvideWindowLayout {
+                        ClipraNavHost(
+                            openExport = openExport.intValue,
+                            // Ad consent is asked once the user is past onboarding (#62).
+                            onProjectsShown = {
+                                lifecycleScope.launch { adConsent.gather(this@MainActivity) }
+                            },
+                            onboarded = start,
+                        )
+                    }
                 }
             }
         }
