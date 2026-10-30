@@ -20,7 +20,7 @@
     <string name="audio_normalize_measuring">Mierzenie głośności klipu…</string>
     <string name="audio_normalize_silent">Ten klip nie ma dźwięku do zmierzenia</string>
     <string name="audio_target_lufs">%1$d LUFS</string>
-    <string name="audio_target_social">Social media, YouTube</string>
+    <string name="audio_target_social">Sieci, YouTube</string>
     <string name="audio_target_podcast">Podcast, głos</string>
     <string name="audio_target_broadcast">Telewizja, R128</string>
     <string name="audio_voice_title">Czyszczenie głosu AI</string>

@@ -122,4 +122,39 @@ class CaptionsEditScreenTest {
         assertEquals(listOf(CaptionPosition.Top), positions)
         assertEquals(listOf(12_100_000L), seeks)
     }
+
+    /** The design state in Polish, to see that every label fits (#76). */
+    @Test
+    @Config(qualifiers = "pl-w390dp-h844dp-xhdpi")
+    fun captionsAsDesignedInPolish() {
+        Locale.setDefault(Locale.forLanguageTag("pl-PL"))
+        val styles = mutableListOf<CaptionStyle>()
+        val positions = mutableListOf<CaptionPosition>()
+        val seeks = mutableListOf<Long>()
+        compose.setContent {
+            ClipraTheme {
+                CaptionsEditScreen(
+                    state = CaptionsEditUiState(project, loaded = true, playheadUs = 8_300_000),
+                    scale = null,
+                    actions = CaptionsEditActions(
+                        onDone = {},
+                        onStyle = { styles += it },
+                        onPosition = { positions += it },
+                        onScale = {},
+                        onScaleDone = {},
+                        onSeek = { seeks += it },
+                        onEditByText = {},
+                    ),
+                    preview = {
+                        Box(
+                            Modifier
+                                .fillMaxSize()
+                                .background(ClipraTheme.colors.surfaceRaised),
+                        )
+                    },
+                )
+            }
+        }
+        compose.onRoot().captureRoboImage(roborazziOptions = options)
+    }
 }

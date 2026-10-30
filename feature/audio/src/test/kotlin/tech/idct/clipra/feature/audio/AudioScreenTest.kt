@@ -146,6 +146,38 @@ class AudioScreenTest {
         assertEquals(listOf(LoudnessTargets.BROADCAST, null), targets)
     }
 
+    /** The design state in Polish, to see that every label fits (#76). */
+    @Test
+    @Config(qualifiers = "pl-w390dp-h844dp-xhdpi")
+    fun normalizeLoudnessInPolish() {
+        Locale.setDefault(Locale.forLanguageTag("pl-PL"))
+        val targets = mutableListOf<Int?>()
+        val normalized = clip.copy(
+            audio = clip.audio.copy(
+                loudnessTarget = LoudnessTargets.SOCIAL,
+                measuredLufs = -22.8f,
+                truePeakDb = -3.1f,
+            ),
+        )
+        compose.setContent {
+            ClipraTheme {
+                AudioScreen(
+                    state = AudioUiState(
+                        project,
+                        normalized,
+                        waveform,
+                        loaded = true,
+                        measured = Loudness.Measurement(-22.8f, -3.1f),
+                        measuring = false,
+                    ),
+                    volume = 1f,
+                    actions = AudioActions({}, {}, {}, {}, { targets += it }),
+                )
+            }
+        }
+        compose.onRoot().captureRoboImage(roborazziOptions = options)
+    }
+
     /** Until the clip is measured, normalization waits; a silent clip says why it cannot. */
     @Test
     fun normalizeWaitsForTheMeasurement() {

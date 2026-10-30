@@ -178,6 +178,7 @@ Downloads run in WorkManager with a Wi-Fi-only constraint by default, resume aft
 - Golden-image tests for GL effects (render a frame, compare with tolerance).
 - Instrumented tests for export on at least three device tiers; performance budgets tracked in CI where possible.
 - Screenshot tests for key Compose screens against the design PNGs.
+- Each main screen also has a Polish screenshot (`…InPolish`, `pl` qualifier and locale) of its design state, to check that every label fits; where Polish did not fit, the Polish string is shorter (#76). Seconds and decibels follow the user's number format; timecodes keep the point.
 - Development starts on the emulators (phone and tablet). Emulators show whether things work, not how fast a phone is: real phones join in a later phase, and every speed number (spikes, budgets) is confirmed there.
 
 ## 11. Performance budgets (initial)

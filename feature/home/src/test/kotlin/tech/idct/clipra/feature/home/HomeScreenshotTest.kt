@@ -16,6 +16,7 @@ import tech.idct.clipra.core.designsystem.ClipraTheme
 import tech.idct.clipra.core.model.AspectRatio
 import tech.idct.clipra.core.model.Layout
 import tech.idct.clipra.core.model.Resolution
+import java.util.Locale
 import java.util.TimeZone
 
 /** Home with the design's four projects (design/screens/phone/Main.png). */
@@ -79,6 +80,14 @@ class HomeScreenshotTest {
 
     @Test
     fun home() = capture(projects)
+
+    /** The design state in Polish, to see that every label fits (#76). */
+    @Test
+    @Config(qualifiers = "pl-w390dp-h844dp-xhdpi")
+    fun homeInPolish() {
+        Locale.setDefault(Locale.forLanguageTag("pl-PL"))
+        capture(projects)
+    }
 
     @Test
     fun homeWithoutProjects() = capture(emptyList())

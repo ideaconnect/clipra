@@ -5,7 +5,7 @@
     <string name="home_tagline">Bez konta · bez wysyłania · bez znaku wodnego</string>
     <string name="home_pro">Pro</string>
     <string name="home_new_project_formats">9:16, 16:9, 1:1, mozaika - do 4K</string>
-    <string name="home_quick_captions">Automatyczne napisy</string>
+    <string name="home_quick_captions">Napisy AI</string>
     <string name="home_quick_text">Karta tekstowa</string>
     <string name="home_quick_mosaic">Układ mozaiki</string>
     <string name="home_ai_ready">AI na urządzeniu gotowe</string>

@@ -19,6 +19,7 @@ import tech.idct.clipra.core.model.AspectRatio
 import tech.idct.clipra.core.model.Format
 import tech.idct.clipra.core.model.Layout
 import tech.idct.clipra.core.model.Resolution
+import java.util.Locale
 
 /** New project (design/screens/phone/NewProject.png and its 16:9, 2×2, 4K state). */
 @RunWith(AndroidJUnit4::class)
@@ -49,6 +50,15 @@ class NewProjectScreenshotTest {
     fun defaults() {
         show(Format())
         compose.onNodeWithTag("output-size").assertTextEquals("1080 × 1920")
+        compose.onRoot().captureRoboImage(roborazziOptions = options)
+    }
+
+    /** The design state in Polish, to see that every label fits (#76). */
+    @Test
+    @Config(qualifiers = "pl-w390dp-h844dp-xhdpi")
+    fun defaultsInPolish() {
+        Locale.setDefault(Locale.forLanguageTag("pl-PL"))
+        show(Format())
         compose.onRoot().captureRoboImage(roborazziOptions = options)
     }
 

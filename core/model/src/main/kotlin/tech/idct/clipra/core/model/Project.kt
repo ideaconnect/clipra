@@ -134,12 +134,59 @@ object Fillers {
         "fr" to setOf("euh", "heu", "bah"),
     )
 
+    /** Filler phrases (#76); they count only as asides, see [withPhrases]. */
+    private val phrases = mapOf(
+        "en" to listOf(listOf("you", "know"), listOf("i", "mean")),
+        "pl" to
+            listOf(listOf("no", "wiesz"), listOf("wiesz"), listOf("w", "sensie"), listOf("jakby")),
+    )
+
     /** Whether [word] (any case, with its punctuation) is a filler in [language]. */
     fun isFiller(word: String, language: String): Boolean {
-        val bare = word.lowercase().trim { !it.isLetter() }
+        val bare = bare(word)
         if (bare.isEmpty()) return false
         return bare in common || bare in byLanguage[language].orEmpty()
     }
+
+    /**
+     * Merges filler phrases such as "you know" into one filler word, so cutting it is one tap
+     * and one cut. A phrase counts only as an aside, set off by punctuation on both sides, as
+     * Whisper writes them ("It was, you know, great"): "Do you know where" stays speech.
+     */
+    fun withPhrases(words: List<Word>, language: String): List<Word> {
+        val candidates = phrases[language] ?: return words
+        val merged = ArrayList<Word>(words.size)
+        var i = 0
+        while (i < words.size) {
+            val phrase = candidates.firstOrNull { isAside(words, i, it) }
+            if (phrase == null) {
+                merged += words[i]
+                i++
+                continue
+            }
+            val parts = words.subList(i, i + phrase.size)
+            merged += Word(
+                text = parts.joinToString(" ") { it.text },
+                startUs = parts.first().startUs,
+                endUs = parts.last().endUs,
+                confidence = parts.minOf { it.confidence },
+                kind = WordKind.Filler,
+            )
+            i += phrase.size
+        }
+        return merged
+    }
+
+    private fun isAside(words: List<Word>, at: Int, phrase: List<String>): Boolean {
+        if (at == 0 || at + phrase.size > words.size) return false
+        if (phrase.indices.any { bare(words[at + it].text) != phrase[it] }) return false
+        return endsClause(words[at - 1].text) && endsClause(words[at + phrase.size - 1].text)
+    }
+
+    private fun endsClause(text: String) =
+        text.trimEnd().lastOrNull()?.let { it in ",.;:!?…" } == true
+
+    private fun bare(word: String) = word.lowercase().trim { !it.isLetter() }
 }
 
 @Serializable

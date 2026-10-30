@@ -17,6 +17,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import tech.idct.clipra.core.designsystem.ClipraTheme
+import java.util.Locale
 
 /**
  * The Pro and Pro--owned boards (design/screens/phone/Pro.png, states/Pro--owned.png) with the
@@ -56,6 +57,15 @@ class ProScreenTest {
         compose.onNodeWithTag("pro-ad-privacy").performClick()
         compose.onNodeWithContentDescription("Close").performClick()
         assertEquals(listOf("buy", "restore", "privacy", "close"), clicks)
+    }
+
+    /** The design state in Polish, to see that every label fits (#76). */
+    @Test
+    @Config(qualifiers = "pl-w390dp-h844dp-xhdpi")
+    fun proAsDesignedInPolish() {
+        Locale.setDefault(Locale.forLanguageTag("pl-PL"))
+        show(ProUiState(price = "10,00 zł", adPrivacyChoices = true))
+        compose.onRoot().captureRoboImage(roborazziOptions = options)
     }
 
     @Test

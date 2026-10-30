@@ -184,10 +184,11 @@ class Transcriber @Inject constructor(
                     if (carry.isEmpty() && chunk.size < CHUNK_SAMPLES) break
                 }
             }
+            val language = if (translate) ENGLISH else detected.orEmpty()
             return Transcript(
                 clipId = clip.id,
-                language = if (translate) ENGLISH else detected.orEmpty(),
-                words = words,
+                language = language,
+                words = Fillers.withPhrases(words, language),
             )
         } finally {
             wav.delete()

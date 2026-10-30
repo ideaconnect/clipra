@@ -78,6 +78,31 @@ class ExportScreenTest {
         assertEquals(1, pro)
     }
 
+    /** The design state in Polish, to see that every label fits (#76). */
+    @Test
+    @Config(qualifiers = "pl-w390dp-h844dp-xhdpi")
+    fun exportWithoutAv1InPolish() {
+        Locale.setDefault(Locale.forLanguageTag("pl-PL"))
+        compose.setContent {
+            ClipraTheme {
+                ExportScreen(
+                    project = project,
+                    settings = ExportSettings(),
+                    support = EncoderSupport(codecs = setOf(VideoCodec.H264, VideoCodec.HEVC)),
+                    onChange = {},
+                    onExport = {},
+                    onBack = {},
+                    ads = ExportAdsLine(proPrice = "10,00 zł", onPro = { pro++ }),
+                )
+            }
+        }
+        compose.onRoot().captureRoboImage(
+            roborazziOptions = RoborazziOptions(
+                compareOptions = RoborazziOptions.CompareOptions(changeThreshold = 0.001f),
+            ),
+        )
+    }
+
     @Test
     fun proUsersReadNothingAboutAds() {
         compose.setContent {

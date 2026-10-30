@@ -68,8 +68,11 @@ class TransitionsScreenTest {
     private val picked = mutableListOf<String?>()
     private val easings = mutableListOf<Easing>()
 
-    private fun show(category: TransitionCategory = TransitionCategory.All) {
-        Locale.setDefault(Locale.US)
+    private fun show(
+        category: TransitionCategory = TransitionCategory.All,
+        locale: Locale = Locale.US,
+    ) {
+        Locale.setDefault(locale)
         compose.setContent {
             ClipraTheme {
                 TransitionsScreen(
@@ -115,6 +118,14 @@ class TransitionsScreenTest {
         assertEquals(listOf("iris", null), picked)
         compose.onNodeWithText("Linear").performClick()
         assertEquals(listOf(Easing.Linear), easings)
+    }
+
+    /** The design state in Polish, to see that every label fits (#76). */
+    @Test
+    @Config(qualifiers = "pl-w390dp-h844dp-xhdpi")
+    fun allTransitionsInPolish() {
+        show(locale = Locale.forLanguageTag("pl-PL"))
+        compose.onRoot().captureRoboImage(roborazziOptions = options)
     }
 
     @Test

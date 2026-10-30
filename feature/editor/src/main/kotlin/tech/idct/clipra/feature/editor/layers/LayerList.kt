@@ -289,7 +289,7 @@ private fun chipColor(type: ClipType?): Color {
 }
 
 /** "5.0": seconds with one decimal, as the layer rows show times. */
-private fun seconds(us: Long): String = String.format(Locale.ROOT, "%.1f", us / 1_000_000.0)
+private fun seconds(us: Long): String = String.format(Locale.getDefault(), "%.1f", us / 1_000_000.0)
 
 private val ROW_HEIGHT = 44.dp
 private val ROW_GAP = 4.dp

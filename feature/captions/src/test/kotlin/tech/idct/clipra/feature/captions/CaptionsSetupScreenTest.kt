@@ -129,6 +129,29 @@ class CaptionsSetupScreenTest {
         compose.onNodeWithTag("captions-generate").assertIsNotEnabled()
     }
 
+    /** The design state in Polish, to see that every label fits (#76). */
+    @Test
+    @Config(qualifiers = "pl-w390dp-h844dp-xhdpi")
+    fun setupAsDesignedInPolish() {
+        Locale.setDefault(Locale.forLanguageTag("pl-PL"))
+        val generated = mutableListOf<Unit>()
+        val downloads = mutableListOf<AiModel>()
+        var current by mutableStateOf(state)
+        compose.setContent {
+            ClipraTheme {
+                CaptionsSetupScreen(
+                    current,
+                    actions(
+                        onGenerate = { generated += Unit },
+                        onDownload = { downloads += it },
+                        onModel = { current = current.copy(model = it) },
+                    ),
+                )
+            }
+        }
+        compose.onRoot().captureRoboImage(roborazziOptions = options)
+    }
+
     @Test
     fun polishSuggestsALargerModel() {
         Locale.setDefault(Locale.US)

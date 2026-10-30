@@ -164,6 +164,48 @@ class EditByTextScreenTest {
         compose.onNodeWithText("No cuts yet").assertExists()
     }
 
+    /** The design state in Polish, to see that every label fits (#76). */
+    @Test
+    @Config(qualifiers = "pl-w390dp-h844dp-xhdpi")
+    fun editByTextAsDesignedInPolish() {
+        Locale.setDefault(Locale.forLanguageTag("pl-PL"))
+        var state by mutableStateOf(
+            EditByTextUiState(project, loaded = true, playheadUs = 7_900_000),
+        )
+        val tapped = mutableListOf<Token>()
+        compose.setContent {
+            ClipraTheme {
+                EditByTextScreen(
+                    state = state,
+                    playing = false,
+                    actions = EditByTextActions(
+                        onBack = {},
+                        onDone = {},
+                        onFillers = {
+                            state = state.copy(choices = state.choices.copy(fillers = it))
+                        },
+                        onPauses = {
+                            state = state.copy(choices = state.choices.copy(pauses = it))
+                        },
+                        onThreshold = {},
+                        onToken = { tapped += it },
+                        onRestoreAll = {},
+                        onPlay = {},
+                        onAutoCaptions = {},
+                    ),
+                    preview = {
+                        Box(
+                            Modifier
+                                .fillMaxSize()
+                                .background(ClipraTheme.colors.surfaceRaised),
+                        )
+                    },
+                )
+            }
+        }
+        compose.onRoot().captureRoboImage(roborazziOptions = options)
+    }
+
     @Test
     fun withoutATranscriptItOffersAutoCaptions() {
         var opened = 0

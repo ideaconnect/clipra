@@ -67,8 +67,8 @@ class TextScreenTest {
 
     private val specs = mutableListOf<TextSpec>()
 
-    private fun show(spec: TextSpec) {
-        Locale.setDefault(Locale.US)
+    private fun show(spec: TextSpec, locale: Locale = Locale.US) {
+        Locale.setDefault(locale)
         val project = project(spec)
         compose.setContent {
             ClipraTheme {
@@ -98,6 +98,14 @@ class TextScreenTest {
         assertEquals(TextColors.YELLOW, specs.last().background)
         compose.onNodeWithTag("text-align").performClick()
         assertEquals(TextAlign.End, specs.last().align)
+    }
+
+    /** The design state in Polish, to see that every label fits (#76). */
+    @Test
+    @Config(qualifiers = "pl-w390dp-h844dp-xhdpi")
+    fun textCardInPolish() {
+        show(card, locale = Locale.forLanguageTag("pl-PL"))
+        compose.onRoot().captureRoboImage(roborazziOptions = options)
     }
 
     @Test
