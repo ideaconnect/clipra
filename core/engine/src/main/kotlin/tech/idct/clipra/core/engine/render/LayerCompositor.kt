@@ -28,6 +28,7 @@ import tech.idct.clipra.core.model.Filters
 import tech.idct.clipra.core.model.HueRange
 import tech.idct.clipra.core.model.Mask
 import tech.idct.clipra.core.model.MaskShape
+import tech.idct.clipra.core.model.Transform
 import tech.idct.clipra.core.model.Transitions
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -223,8 +224,11 @@ private class LayerCompositorProgram(
 
     private fun prepare(clip: RenderClip, timeUs: Long): Prepared? {
         val raw = clipFrame(clip, timeUs) ?: return null
-        // Keyframed values at this frame (#21); a gesture in progress shows its own.
-        val opacity = clip.opacityAt(timeUs, live?.opacity(clip.id) ?: clip.keyedOpacityAt(timeUs))
+        // Keyframed values at this frame (#21); a gesture in progress shows its own. The
+        // animation (#33) moves and fades from there.
+        val motion = clip.motionAt(timeUs, live?.transform(clip.id) ?: clip.transformAt(timeUs))
+        val keyed = live?.opacity(clip.id) ?: clip.keyedOpacityAt(timeUs)
+        val opacity = clip.opacityAt(timeUs, keyed * motion.opacity)
         if (opacity <= 0f) return null
         // The stack in order (#29); a disabled effect draws nothing.
         val stack = live?.effects(clip.id) ?: clip.effects
@@ -242,7 +246,7 @@ private class LayerCompositorProgram(
         } else {
             filtered(raw, filters, mask, timeUs, grading)
         }
-        val (position, unit) = quadFor(clip, timeUs, frame.width, frame.height)
+        val (position, unit) = quadFor(clip, motion.transform, frame.width, frame.height)
         return Prepared(frame, opacity, position, unit, clip.cell)
     }
 
@@ -740,11 +744,10 @@ private class LayerCompositorProgram(
      */
     private fun quadFor(
         clip: RenderClip,
-        timeUs: Long,
+        transform: Transform,
         sourceWidth: Int,
         sourceHeight: Int,
     ): Pair<FloatArray, FloatArray> {
-        val transform = live?.transform(clip.id) ?: clip.transformAt(timeUs)
         val frameSize = FrameSize(timeline.width, timeline.height)
         // In a mosaic cell (#17), the cell is the clip's frame.
         val origin = Cells.origin(frameSize, clip.cell)

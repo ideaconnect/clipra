@@ -260,5 +260,5 @@ private fun toolRoute(tool: EditorTool, target: ToolTarget): Any = when (tool) {
     EditorTool.Reframe -> ReframeRoute
     EditorTool.Masks -> MasksRoute(target.projectId, target.clipId, target.playheadUs)
     EditorTool.Effects -> EffectStackRoute(target.projectId, target.clipId!!, target.playheadUs)
-    EditorTool.Layer, EditorTool.Speed -> LayersRoute
+    EditorTool.Layer, EditorTool.Speed, EditorTool.Animate -> LayersRoute
 }

@@ -142,4 +142,27 @@
     <string name="editor_speed_reverse">Reverse</string>
     <string name="editor_speed_reverse_detail">Plays the clip backwards, without its sound.</string>
     <string name="editor_speed_pitch">Pitch is kept when speed changes.</string>
+    <!-- Animate board (#33) -->
+    <string name="editor_tool_animate">Animate</string>
+    <string name="editor_animate_header">%1$s · animation</string>
+    <string name="editor_animate_in">In</string>
+    <string name="editor_animate_out">Out</string>
+    <string name="editor_animate_loop">Loop</string>
+    <string name="editor_animation_none">None</string>
+    <string name="editor_animation_fade">Fade</string>
+    <string name="editor_animation_zoom_in">Zoom in</string>
+    <string name="editor_animation_slide_up">Slide up</string>
+    <string name="editor_animation_spin">Spin</string>
+    <string name="editor_animation_zoom_out">Zoom out</string>
+    <string name="editor_animation_slide_down">Slide down</string>
+    <string name="editor_animation_ken_burns">Ken Burns</string>
+    <string name="editor_animation_shake">Shake</string>
+    <string name="editor_animation_pulse">Pulse</string>
+    <string name="editor_animation_typewriter">Typewriter</string>
+    <string name="editor_animation_fade_up">Fade up</string>
+    <string name="editor_animation_pop">Pop</string>
+    <string name="editor_animation_slide">Slide</string>
+    <string name="editor_animation_bounce">Bounce</string>
+    <string name="editor_animation_wave">Wave</string>
+    <string name="editor_animation_glitch">Glitch in</string>
 </resources>

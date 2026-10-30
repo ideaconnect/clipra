@@ -44,4 +44,16 @@
     <string name="text_effect_hollow">Hollow</string>
     <string name="text_effect_retro">Retro</string>
     <string name="text_effect_marker">Marker</string>
+    <!-- Text animations (#33) -->
+    <string name="text_animation_in">Animation in</string>
+    <string name="text_animation_out">Animation out</string>
+    <string name="text_animation_none">None</string>
+    <string name="text_animation_typewriter">Typewriter</string>
+    <string name="text_animation_fade_up">Fade up</string>
+    <string name="text_animation_pop">Pop</string>
+    <string name="text_animation_slide">Slide</string>
+    <string name="text_animation_bounce">Bounce</string>
+    <string name="text_animation_wave">Wave</string>
+    <string name="text_animation_glitch">Glitch in</string>
+    <string name="text_animation_fade">Fade</string>
 </resources>

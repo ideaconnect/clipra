@@ -44,4 +44,16 @@
     <string name="text_effect_hollow">Obrys</string>
     <string name="text_effect_retro">Retro</string>
     <string name="text_effect_marker">Zakreślacz</string>
+    <!-- Text animations (#33) -->
+    <string name="text_animation_in">Animacja wejścia</string>
+    <string name="text_animation_out">Animacja wyjścia</string>
+    <string name="text_animation_none">Brak</string>
+    <string name="text_animation_typewriter">Maszynopis</string>
+    <string name="text_animation_fade_up">Uniesienie</string>
+    <string name="text_animation_pop">Wyskok</string>
+    <string name="text_animation_slide">Wsunięcie</string>
+    <string name="text_animation_bounce">Odbicie</string>
+    <string name="text_animation_wave">Fala</string>
+    <string name="text_animation_glitch">Glitch</string>
+    <string name="text_animation_fade">Przenikanie</string>
 </resources>

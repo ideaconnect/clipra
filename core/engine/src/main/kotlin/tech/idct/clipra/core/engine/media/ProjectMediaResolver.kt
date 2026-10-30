@@ -6,6 +6,7 @@ import android.net.Uri
 import tech.idct.clipra.core.engine.render.CaptionRenderer
 import tech.idct.clipra.core.engine.render.MediaResolver
 import tech.idct.clipra.core.engine.render.TextRenderer
+import tech.idct.clipra.core.model.Animations
 import tech.idct.clipra.core.model.CaptionSpec
 import tech.idct.clipra.core.model.CubeLut
 import tech.idct.clipra.core.model.Luts
@@ -34,6 +35,14 @@ class ProjectMediaResolver(
 
     override fun text(spec: TextSpec, card: Boolean, width: Int, height: Int): Bitmap =
         TextRenderer.render(context, spec, card, width, height)
+
+    override fun animatedText(
+        spec: TextSpec,
+        card: Boolean,
+        width: Int,
+        height: Int,
+        motion: Animations.TextMotion,
+    ): Bitmap = TextRenderer.render(context, spec, card, width, height, motion)
 
     override fun voice(asset: MediaAsset, cleanup: VoiceCleanup): String? =
         cache.voiceMix(asset.id, cleanup).takeIf { it.exists() }?.path

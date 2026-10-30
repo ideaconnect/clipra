@@ -59,6 +59,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import tech.idct.clipra.core.designsystem.ClipraTheme
+import tech.idct.clipra.core.designsystem.component.ChipStyle
+import tech.idct.clipra.core.designsystem.component.ClipraChip
 import tech.idct.clipra.core.designsystem.component.ClipraIcon
 import tech.idct.clipra.core.designsystem.component.HeaderNavigation
 import tech.idct.clipra.core.designsystem.component.LabelledSlider
@@ -71,6 +73,8 @@ import tech.idct.clipra.core.designsystem.component.TextAction
 import tech.idct.clipra.core.designsystem.icon.ClipraIcons
 import tech.idct.clipra.core.designsystem.theme.ClipraDimens
 import tech.idct.clipra.core.engine.render.TextRenderer
+import tech.idct.clipra.core.model.Animation
+import tech.idct.clipra.core.model.Animations
 import tech.idct.clipra.core.model.ClipType
 import tech.idct.clipra.core.model.TextAlign
 import tech.idct.clipra.core.model.TextColors
@@ -85,6 +89,8 @@ class TextActions(
     val onBack: () -> Unit,
     val onDraft: (String) -> Unit,
     val onSpec: (TextSpec) -> Unit,
+    /** The text's animation in and out (#33). */
+    val onAnimation: (Animation) -> Unit = {},
 )
 
 /**
@@ -185,6 +191,21 @@ fun TextScreen(
                 tag = "text-color",
             )
             EffectGrid(spec, onEffect = { actions.onSpec(spec.copy(effect = it)) })
+            val animation = clip.animation ?: Animation()
+            AnimationRow(
+                title = stringResource(R.string.text_animation_in),
+                choices = Animations.textIn,
+                selected = animation.enter,
+                onPick = { actions.onAnimation(animation.copy(enter = it)) },
+                tag = "text-in",
+            )
+            AnimationRow(
+                title = stringResource(R.string.text_animation_out),
+                choices = Animations.textOut,
+                selected = animation.exit,
+                onPick = { actions.onAnimation(animation.copy(exit = it)) },
+                tag = "text-out",
+            )
             var size by remember(spec.size) { mutableFloatStateOf(spec.size) }
             LabelledSlider(
                 label = stringResource(R.string.text_size),
@@ -642,3 +663,49 @@ private const val EFFECT_COLUMNS = 4
 private const val TILE_WIDTH = 192
 private const val TILE_HEIGHT = 96
 private const val TILE_TEXT = 0.46f
+
+/** None plus the text animations (#33) as chips, the picked one filled, as in the design. */
+@Composable
+private fun AnimationRow(
+    title: String,
+    choices: List<String>,
+    selected: String?,
+    onPick: (String?) -> Unit,
+    tag: String,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = title,
+            style = ClipraTheme.typography.sectionLabel,
+            color = ClipraTheme.colors.textSecondary,
+        )
+        Row(
+            modifier = Modifier
+                .horizontalScroll(rememberScrollState())
+                .testTag(tag),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            (listOf<String?>(null) + choices).forEach { id ->
+                ClipraChip(
+                    label = stringResource(animationName(id)),
+                    selected = id == selected,
+                    onClick = { onPick(id) },
+                    selectedStyle = ChipStyle.Light,
+                    modifier = Modifier.testTag("$tag:${id ?: "none"}"),
+                )
+            }
+        }
+    }
+}
+
+private fun animationName(id: String?): Int = when (id) {
+    "typewriter" -> R.string.text_animation_typewriter
+    "fade_up" -> R.string.text_animation_fade_up
+    "pop" -> R.string.text_animation_pop
+    "slide" -> R.string.text_animation_slide
+    "bounce" -> R.string.text_animation_bounce
+    "wave" -> R.string.text_animation_wave
+    "glitch" -> R.string.text_animation_glitch
+    "fade" -> R.string.text_animation_fade
+    else -> R.string.text_animation_none
+}

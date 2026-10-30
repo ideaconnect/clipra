@@ -58,6 +58,7 @@ internal fun TextDestination(onDone: () -> Unit, viewModel: TextViewModel = hilt
             onBack = finish,
             onDraft = { draft = it },
             onSpec = { viewModel.setSpec(it.copy(text = draft)) },
+            onAnimation = viewModel::setAnimation,
         ),
         preview = {
             VideoSurface(

@@ -74,6 +74,9 @@ enum class EditorTool {
 
     /** The effect stack (#29) of the selected clip. */
     Effects,
+
+    /** The Animate board (#33) of the selected clip. */
+    Animate,
 }
 
 /** Everything the editor screen can ask for. */
@@ -376,6 +379,7 @@ private fun clipTools(callbacks: EditorCallbacks): List<Tool> {
         tool(R.string.editor_tool_effects, ClipraIcons.Effects) { open(EditorTool.Effects) },
         tool(R.string.editor_tool_mask, ClipraIcons.Mask) { open(EditorTool.Masks) },
         tool(R.string.editor_tool_layer, ClipraIcons.Layers) { open(EditorTool.Layer) },
+        tool(R.string.editor_tool_animate, ClipraIcons.Keyframe) { open(EditorTool.Animate) },
         tool(R.string.editor_tool_text, ClipraIcons.Text) { open(EditorTool.Text) },
         tool(R.string.editor_tool_color, ClipraIcons.Color) { open(EditorTool.Color) },
         tool(R.string.editor_tool_cutout, ClipraIcons.Cutout) { open(EditorTool.Cutout) },

@@ -36,6 +36,8 @@ import tech.idct.clipra.core.model.cuts
 import tech.idct.clipra.core.model.edit.takesFilters
 import tech.idct.clipra.core.model.opacityAt
 import tech.idct.clipra.core.model.transformAt
+import tech.idct.clipra.feature.editor.animate.AnimateActions
+import tech.idct.clipra.feature.editor.animate.AnimateScreen
 import tech.idct.clipra.feature.editor.layers.LayerTab
 import tech.idct.clipra.feature.editor.layers.LayersActions
 import tech.idct.clipra.feature.editor.layers.LayersScreen
@@ -101,6 +103,7 @@ private fun EditorRoute(actions: EditorActions, viewModel: EditorViewModel = hil
     // The Layers board (#19, #20) over the editor, on the selected clip; null when closed.
     var board by remember { mutableStateOf<LayerTab?>(null) }
     var speedBoard by remember { mutableStateOf(false) }
+    var animateBoard by remember { mutableStateOf(false) }
     var cropping by remember { mutableStateOf(false) }
     // Values a gesture is changing, shown before they are committed as one edit.
     var liveTransform by remember { mutableStateOf<Transform?>(null) }
@@ -200,6 +203,20 @@ private fun EditorRoute(actions: EditorActions, viewModel: EditorViewModel = hil
         return
     }
     if (speedBoard) speedBoard = false
+    if (animateBoard && selected != null) {
+        BackHandler { animateBoard = false }
+        AnimateScreen(
+            project = project,
+            clip = selected,
+            actions = AnimateActions(
+                onDone = { animateBoard = false },
+                onAnimation = { viewModel.setAnimation(selected.id, it) },
+            ),
+            preview = { PreviewSurface(player = player) },
+        )
+        return
+    }
+    if (animateBoard) animateBoard = false
     val currentBoard = board
     if (currentBoard != null && selected != null) {
         BackHandler { board = null }
@@ -304,6 +321,15 @@ private fun EditorRoute(actions: EditorActions, viewModel: EditorViewModel = hil
             onTool = { tool ->
                 when (tool) {
                     EditorTool.Layer -> openBoard(LayerTab.Blend, false)
+
+                    EditorTool.Animate -> if (selected?.isVisual() == true &&
+                        selected.type != ClipType.Caption
+                    ) {
+                        playing = false
+                        animateBoard = true
+                    } else {
+                        viewModel.say(EditorMessage.NotAvailable)
+                    }
 
                     EditorTool.Speed -> if (selected?.hasSpeed() == true) {
                         playing = false

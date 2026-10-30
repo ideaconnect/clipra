@@ -1,5 +1,6 @@
 package tech.idct.clipra.feature.text
 
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
@@ -10,6 +11,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.RoborazziOptions
 import com.github.takahirom.roborazzi.captureRoboImage
@@ -19,6 +21,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import tech.idct.clipra.core.designsystem.ClipraTheme
+import tech.idct.clipra.core.model.Animation
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
 import tech.idct.clipra.core.model.Layer
@@ -111,6 +114,37 @@ class TextScreenTest {
         assertEquals("neon", specs.last().effect)
         compose.onNodeWithTag("effect:none").performClick()
         assertEquals(null, specs.last().effect)
+    }
+
+    /** Animation in and out (#33): Typewriter as in the design. */
+    @Test
+    fun textAnimations() {
+        val animated = mutableListOf<Animation>()
+        val spec = card.copy(text = "Day two")
+        val project = project(spec).let { p ->
+            val clip = p.layers[2].clips[0].copy(animation = Animation(enter = "typewriter"))
+            p.copy(layers = p.layers.take(2) + p.layers[2].copy(clips = listOf(clip)))
+        }
+        compose.setContent {
+            ClipraTheme {
+                TextScreen(
+                    state = TextUiState(project, project.layers[2].clips[0], loaded = true),
+                    draft = spec.text,
+                    actions = TextActions(
+                        onBack = {},
+                        onDraft = {},
+                        onSpec = {},
+                        onAnimation = { animated += it },
+                    ),
+                    preview = {},
+                )
+            }
+        }
+        compose.onNodeWithTag("text-in:typewriter").performScrollTo().assertIsSelected()
+        compose.onNodeWithTag("text-out:fade").performSemanticsAction(SemanticsActions.OnClick)
+        assertEquals(Animation(enter = "typewriter", exit = "fade"), animated.last())
+        compose.onNodeWithTag("text-in:none").performSemanticsAction(SemanticsActions.OnClick)
+        assertEquals(Animation(), animated.last())
     }
 
     /** The design state in Polish, to see that every label fits (#76). */
