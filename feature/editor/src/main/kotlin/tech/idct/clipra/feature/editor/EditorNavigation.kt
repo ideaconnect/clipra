@@ -13,6 +13,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.platform.LocalContext
@@ -68,7 +69,7 @@ import kotlin.math.abs
 
 /** The editor for [projectId]; null opens the placeholder board (debug screen index). */
 @Serializable
-data class EditorRoute(val projectId: String? = null)
+data class EditorRoute(val projectId: String? = null, val pickMedia: Boolean = false)
 
 @Serializable
 data object LayersRoute
@@ -101,17 +102,22 @@ class EditorActions(
 /** Registers this module's destinations. [screen] draws a board until its real screen is built. */
 fun NavGraphBuilder.editorScreens(screen: @Composable (Board) -> Unit, actions: EditorActions) {
     composable<EditorRoute> { entry ->
-        if (entry.toRoute<EditorRoute>().projectId == null) {
+        val route = entry.toRoute<EditorRoute>()
+        if (route.projectId == null) {
             screen(EditorBoards.editor)
         } else {
-            EditorRoute(actions)
+            EditorRoute(actions, pickMedia = route.pickMedia)
         }
     }
     composable<LayersRoute> { screen(EditorBoards.layers) }
 }
 
 @Composable
-private fun EditorRoute(actions: EditorActions, viewModel: EditorViewModel = hiltViewModel()) {
+private fun EditorRoute(
+    actions: EditorActions,
+    pickMedia: Boolean = false,
+    viewModel: EditorViewModel = hiltViewModel(),
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var playing by remember { mutableStateOf(false) }
     var layers by remember { mutableStateOf(false) }
@@ -133,6 +139,16 @@ private fun EditorRoute(actions: EditorActions, viewModel: EditorViewModel = hil
         rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia()) {
             viewModel.import(it)
         }
+    // A project made by the tablet's "Import from Gallery" (#71) opens on the picker, once.
+    var picked by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(pickMedia) {
+        if (pickMedia && !picked) {
+            picked = true
+            pickVisual.launch(
+                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo),
+            )
+        }
+    }
     val pickAudio =
         rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) {
             viewModel.import(it)

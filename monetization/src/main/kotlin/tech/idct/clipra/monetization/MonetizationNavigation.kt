@@ -58,6 +58,16 @@ fun NavGraphBuilder.monetizationScreens(
     composable<AdFinishRoute> { screen(MonetizationBoards.adFinish) }
 }
 
+/**
+ * Clipra Pro as a screen outside this module offers it (the tablet home's Go Pro, #71): owned,
+ * and the price from Google Play.
+ */
+@Composable
+fun proState(viewModel: ProViewModel = hiltViewModel()): ProUiState {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    return state
+}
+
 @Composable
 private fun ProDestination(
     actions: MonetizationNavigationActions,

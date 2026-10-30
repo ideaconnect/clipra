@@ -74,54 +74,71 @@ fun NewProjectScreen(
             .testTag("screen:NewProject"),
     ) {
         ScreenHeader(title = stringResource(R.string.home_title_new_project), onNavigate = onBack)
-        Column(
+        NewProjectForm(
+            format = format,
+            onFormatChange = onFormatChange,
+            fourKSupported = fourKSupported,
             modifier = Modifier
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
                 .padding(start = 20.dp, end = 20.dp, top = 6.dp, bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+        )
+        Summary(format, onCreate)
+    }
+}
+
+/**
+ * New project's choices: ratio, layout, resolution, frame rate and background. The phone's
+ * New project screen and the tablet home's panel (#71) both show them.
+ */
+@Composable
+internal fun NewProjectForm(
+    format: Format,
+    onFormatChange: (Format) -> Unit,
+    fourKSupported: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val colors = ClipraTheme.colors
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Section(stringResource(R.string.home_new_ratio)) {
+            RatioGrid(format.ratio) { onFormatChange(format.copy(ratio = it)) }
+        }
+        Section(
+            stringResource(R.string.home_new_layout),
+            stringResource(R.string.home_new_layout_note),
         ) {
-            Section(stringResource(R.string.home_new_ratio)) {
-                RatioGrid(format.ratio) { onFormatChange(format.copy(ratio = it)) }
-            }
-            Section(
-                stringResource(R.string.home_new_layout),
-                stringResource(R.string.home_new_layout_note),
-            ) {
-                LayoutRow(format.layout) { onFormatChange(format.copy(layout = it)) }
-            }
-            Section(stringResource(R.string.home_new_resolution)) {
-                SegmentedControl(
-                    segments = Resolution.entries.map { Segment(it.label, "${it.shortSide}p") },
-                    selectedIndex = format.resolution.ordinal,
-                    onSelect = { onFormatChange(format.copy(resolution = Resolution.entries[it])) },
-                    modifier = Modifier.fillMaxWidth(),
+            LayoutRow(format.layout) { onFormatChange(format.copy(layout = it)) }
+        }
+        Section(stringResource(R.string.home_new_resolution)) {
+            SegmentedControl(
+                segments = Resolution.entries.map { Segment(it.label, "${it.shortSide}p") },
+                selectedIndex = format.resolution.ordinal,
+                onSelect = { onFormatChange(format.copy(resolution = Resolution.entries[it])) },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            if (format.resolution == Resolution.UHD && !fourKSupported) {
+                Text(
+                    text = stringResource(R.string.home_new_4k_unsupported),
+                    style = ClipraTheme.typography.caption,
+                    color = colors.textSecondary,
                 )
-                if (format.resolution == Resolution.UHD && !fourKSupported) {
-                    Text(
-                        text = stringResource(R.string.home_new_4k_unsupported),
-                        style = ClipraTheme.typography.caption,
-                        color = colors.textSecondary,
-                    )
-                }
-            }
-            Section(stringResource(R.string.home_new_frame_rate)) {
-                SegmentedControl(
-                    segments = FrameRate.entries.map { Segment(it.fps.toString()) },
-                    selectedIndex = format.frameRate.ordinal,
-                    onSelect = { onFormatChange(format.copy(frameRate = FrameRate.entries[it])) },
-                    monospace = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-            Section(
-                stringResource(R.string.home_new_background),
-                stringResource(R.string.home_new_background_note),
-            ) {
-                BackgroundRow(format.background) { onFormatChange(format.copy(background = it)) }
             }
         }
-        Summary(format, onCreate)
+        Section(stringResource(R.string.home_new_frame_rate)) {
+            SegmentedControl(
+                segments = FrameRate.entries.map { Segment(it.fps.toString()) },
+                selectedIndex = format.frameRate.ordinal,
+                onSelect = { onFormatChange(format.copy(frameRate = FrameRate.entries[it])) },
+                monospace = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        Section(
+            stringResource(R.string.home_new_background),
+            stringResource(R.string.home_new_background_note),
+        ) {
+            BackgroundRow(format.background) { onFormatChange(format.copy(background = it)) }
+        }
     }
 }
 
@@ -325,15 +342,16 @@ private fun RowScope.BackgroundSwatch(background: Background) {
     )
 }
 
+/** The output size live, and Create project. [inset] is the side padding. */
 @Composable
-private fun Summary(format: Format, onCreate: () -> Unit) {
+internal fun Summary(format: Format, onCreate: () -> Unit, inset: Dp = 20.dp) {
     val colors = ClipraTheme.colors
     val type = ClipraTheme.typography
     val size = format.outputSize
     Column(modifier = Modifier.background(colors.background)) {
         HorizontalDivider(thickness = 1.dp, color = colors.borderSubtle)
         Column(
-            modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 22.dp),
+            modifier = Modifier.padding(start = inset, end = inset, top = 12.dp, bottom = 22.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Row(

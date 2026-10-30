@@ -71,4 +71,15 @@
     <string name="home_background_yellow">Yellow</string>
     <string name="home_background_blur">Blur</string>
     <string name="home_new_card_title">Day one</string>
+
+    <!-- Tablet home (#71) -->
+    <string name="home_tablet_search">Search projects</string>
+    <string name="home_tablet_go_pro">Go Pro</string>
+    <string name="home_tablet_go_pro_price">Go Pro · %1$s</string>
+    <string name="home_tablet_pro_owned">Clipra Pro</string>
+    <string name="home_tablet_models">AI models</string>
+    <string name="home_tablet_import">Import from Gallery</string>
+    <string name="home_tablet_order_edited">Last edited</string>
+    <string name="home_tablet_order_name">Name</string>
+    <string name="home_tablet_no_match">No project has that in its name.</string>
 </resources>

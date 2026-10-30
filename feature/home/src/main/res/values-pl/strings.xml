@@ -71,4 +71,15 @@
     <string name="home_background_yellow">Żółte</string>
     <string name="home_background_blur">Rozmycie</string>
     <string name="home_new_card_title">Dzień pierwszy</string>
+
+    <!-- Tablet home (#71) -->
+    <string name="home_tablet_search">Szukaj projektów</string>
+    <string name="home_tablet_go_pro">Przejdź na Pro</string>
+    <string name="home_tablet_go_pro_price">Przejdź na Pro · %1$s</string>
+    <string name="home_tablet_pro_owned">Clipra Pro</string>
+    <string name="home_tablet_models">Modele AI</string>
+    <string name="home_tablet_import">Import z galerii</string>
+    <string name="home_tablet_order_edited">Ostatnio edytowane</string>
+    <string name="home_tablet_order_name">Nazwa</string>
+    <string name="home_tablet_no_match">Żaden projekt nie ma tego w nazwie.</string>
 </resources>
