@@ -118,7 +118,7 @@ data class RenderClip(
     val maskKeyframes: List<Keyframe<Mask>> = emptyList(),
     /** Where clip time starts: the clip's start, kept by the pieces a caption is drawn in. */
     val keyframeOriginUs: Long = startUs,
-    /** The person cutout (#50) with its masks, once they are made. */
+    /** The cutout (#50, #51): a chroma key, or the person cutout once its masks are made. */
     val cutout: RenderCutout? = null,
 ) {
     val endUs: Long get() = startUs + durationUs
@@ -179,8 +179,11 @@ sealed interface RenderSource {
     data class Audio(val path: String, val inPointUs: Long = 0) : RenderSource
 }
 
-/** A person cutout (#50): its settings and the masks of the clip's media. */
-class RenderCutout(val settings: Cutout, val masks: CutoutMasks)
+/**
+ * A cutout (#50, #51): its settings and, for the person cutout, the masks of the clip's media
+ * (a chroma key needs none).
+ */
+class RenderCutout(val settings: Cutout, val masks: CutoutMasks?)
 
 /**
  * A voice a clip ducks under (#40): where it speaks, in microseconds from the clip's start on the

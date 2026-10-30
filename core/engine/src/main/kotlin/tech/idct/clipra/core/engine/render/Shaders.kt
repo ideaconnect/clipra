@@ -683,10 +683,11 @@ internal object Shaders {
     """
 
     /**
-     * Person cutout (#50): the clip's picture (uTex, upright) keeps what the person mask (uMask,
+     * Cutout (#50, #51): the clip's picture (uTex, upright) keeps what the person mask (uMask,
      * 256 × 256 confidences, top row first) says is a person, as `CutoutMath.alpha` works it out
-     * line by line. Behind the person (uBehind): 0 lets the layers under the clip show (straight
-     * alpha), 1 puts the blurred copy in uBlurred there, 2 the colour uColor.
+     * line by line; or, with uKeyed, what is far enough from the key's chroma (uKey), as
+     * `CutoutMath.keyAlpha` and `despill` do. Behind (uBehind): 0 lets the layers under the clip
+     * show (straight alpha), 1 puts the blurred copy in uBlurred there, 2 the colour uColor.
      */
     const val CUTOUT = PRECISION + """
         uniform sampler2D uTex;
@@ -696,22 +697,42 @@ internal object Shaders {
         uniform vec3 uColor;
         uniform float uRefine;
         uniform float uHair;
+        uniform int uKeyed;
+        uniform vec2 uKey;
+        uniform float uSimilarity;
+        uniform float uSmoothness;
+        uniform float uSpill;
         varying vec2 vTex;
+
+        const vec3 LUMA = vec3(0.2126, 0.7152, 0.0722);
+
         void main() {
             vec4 picture = texture2D(uTex, vTex);
-            // The mask's first row is the top of the picture.
-            float m = texture2D(uMask, vec2(vTex.x, 1.0 - vTex.y)).r;
-            float centre = 0.5 + 0.15 * uRefine;
-            float width = 0.3 - 0.22 * uRefine;
-            float firm = smoothstep(centre - width, centre + width, m);
-            float soft = smoothstep(0.08, 0.6, m);
-            float a = max(firm, soft * uHair);
-            if (uBehind == 0) {
-                gl_FragColor = vec4(picture.rgb, picture.a * a);
-            } else if (uBehind == 1) {
-                gl_FragColor = vec4(mix(texture2D(uBlurred, vTex).rgb, picture.rgb, a), picture.a);
+            vec3 rgb = picture.rgb;
+            float a;
+            if (uKeyed == 1) {
+                float y = dot(rgb, LUMA);
+                vec2 c = vec2((rgb.b - y) * 0.5389, (rgb.r - y) * 0.6350);
+                float d = distance(c, uKey);
+                float near = uSimilarity * 0.4;
+                a = smoothstep(near, near + 0.01 + uSmoothness * 0.25, d);
+                float tint = 1.0 - smoothstep(near, near + uSmoothness * 0.25 + 0.12, d);
+                rgb = mix(rgb, vec3(y), uSpill * tint);
             } else {
-                gl_FragColor = vec4(mix(uColor, picture.rgb, a), picture.a);
+                // The mask's first row is the top of the picture.
+                float m = texture2D(uMask, vec2(vTex.x, 1.0 - vTex.y)).r;
+                float centre = 0.5 + 0.15 * uRefine;
+                float width = 0.3 - 0.22 * uRefine;
+                float firm = smoothstep(centre - width, centre + width, m);
+                float soft = smoothstep(0.08, 0.6, m);
+                a = max(firm, soft * uHair);
+            }
+            if (uBehind == 0) {
+                gl_FragColor = vec4(rgb, picture.a * a);
+            } else if (uBehind == 1) {
+                gl_FragColor = vec4(mix(texture2D(uBlurred, vTex).rgb, rgb, a), picture.a);
+            } else {
+                gl_FragColor = vec4(mix(uColor, rgb, a), picture.a);
             }
         }
     """

@@ -254,7 +254,7 @@ class ExportRenderer(
     private suspend fun prepareCutouts(cutouts: Cutouts, project: Project) =
         withContext(Dispatchers.Default) {
             for (clip in project.layers.flatMap { it.clips }) {
-                if (clip.cutout == null) continue
+                if (clip.cutout == null || clip.cutout?.key != null) continue
                 val asset = clip.source?.let { project.asset(it.mediaId) } ?: continue
                 ensureActive()
                 cutouts.prepare(asset) { !isActive }

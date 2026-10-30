@@ -57,10 +57,13 @@ class Cutouts @Inject constructor(
         CutoutWorker.enqueue(context, asset)
     }
 
-    /** Requests the masks of every clip with a cutout, such as after the cache was cleared. */
+    /**
+     * Requests the masks of every clip with a person cutout, such as after the cache was cleared.
+     * A chroma key (#51) needs none.
+     */
     fun requestAll(project: Project) {
         for (clip in project.layers.flatMap { it.clips }) {
-            if (clip.cutout == null) continue
+            if (clip.cutout == null || clip.cutout?.key != null) continue
             clip.source?.let { project.asset(it.mediaId) }?.let(::request)
         }
     }

@@ -26,6 +26,7 @@ import tech.idct.clipra.core.model.ColorGrade
 import tech.idct.clipra.core.model.ColorMath
 import tech.idct.clipra.core.model.CubeLut
 import tech.idct.clipra.core.model.Cutout
+import tech.idct.clipra.core.model.CutoutMath
 import tech.idct.clipra.core.model.Effect
 import tech.idct.clipra.core.model.Filters
 import tech.idct.clipra.core.model.HueRange
@@ -255,7 +256,12 @@ private class LayerCompositorProgram(
         // The person cutout (#50) comes last, over the graded and filtered picture.
         val cutout = clip.cutout?.let { cut ->
             val settings = live?.cutout(clip.id) ?: cut.settings
-            Cutting(clip.id, settings, cut.masks, mediaTimeAt(clip, timeUs))
+            // The person cutout needs its masks; a chroma key (#51) doesn't.
+            if (settings.key == null && cut.masks == null) {
+                null
+            } else {
+                Cutting(clip.id, settings, cut.masks, mediaTimeAt(clip, timeUs))
+            }
         }
         val frame = if (filters.isEmpty() && grading == null && cutout == null) {
             raw
@@ -392,7 +398,7 @@ private class LayerCompositorProgram(
     private class Cutting(
         val clipId: String,
         val settings: Cutout,
-        val masks: CutoutMasks,
+        val masks: CutoutMasks?,
         val mediaUs: Long,
     )
 
@@ -516,7 +522,10 @@ private class LayerCompositorProgram(
         val program = cutoutProgram
         program.use()
         program.setSamplerTexIdUniform("uTex", input.texture, 0)
-        program.setSamplerTexIdUniform("uMask", maskTexture(cutout), 1)
+        val key = settings.key
+        // A chroma key reads no mask; the sampler still needs a texture.
+        val mask = if (key == null) maskTexture(cutout) else input.texture
+        program.setSamplerTexIdUniform("uMask", mask, 1)
         program.setSamplerTexIdUniform("uBlurred", blurred.texture, 2)
         val behind = when (settings.behind) {
             Behind.LayerBelow, Behind.Clear -> 0
@@ -535,12 +544,25 @@ private class LayerCompositorProgram(
         )
         program.setFloatUniform("uRefine", settings.edgeRefine)
         program.setFloatUniform("uHair", settings.hairDetail)
+        program.setIntUniform("uKeyed", if (key != null) 1 else 0)
+        val keyColor = (key?.color ?: 0L).toInt()
+        program.setFloatsUniform(
+            "uKey",
+            CutoutMath.chroma(
+                Color.red(keyColor) / 255f,
+                Color.green(keyColor) / 255f,
+                Color.blue(keyColor) / 255f,
+            ),
+        )
+        program.setFloatUniform("uSimilarity", key?.similarity ?: 0f)
+        program.setFloatUniform("uSmoothness", key?.smoothness ?: 0f)
+        program.setFloatUniform("uSpill", key?.spill ?: 0f)
         drawQuad(program, FULL_FRAME, FULL_UNIT, identity)
     }
 
     /** The clip's mask at its media time, uploaded when the frame changes. */
     private fun maskTexture(cutout: Cutting): Int {
-        val masks = cutout.masks
+        val masks = cutout.masks!!
         val frame = masks.indexAt(cutout.mediaUs)
         val held = maskTextures[cutout.clipId]
         if (held != null && held.frame == frame && held.masks === masks) return held.id
