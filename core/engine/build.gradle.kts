@@ -13,6 +13,7 @@ dependencies {
     api(project(":core:audio"))
     implementation(project(":core:models"))
     api(project(":ml:voice"))
+    implementation(project(":ml:whisper"))
     api(libs.androidx.media3.common)
     api(libs.androidx.media3.effect)
     api(libs.androidx.media3.exoplayer)

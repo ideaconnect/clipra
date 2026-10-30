@@ -26,7 +26,6 @@ import tech.idct.clipra.core.models.ModelCatalog
 import tech.idct.clipra.core.models.ModelStore
 import tech.idct.clipra.ml.voice.DeepFilterNet
 import tech.idct.clipra.ml.voice.OnnxDeepFilterModel
-import tech.idct.clipra.ml.voice.Resampler
 import tech.idct.clipra.ml.voice.RnNoise
 import tech.idct.clipra.ml.voice.VoiceDenoiser
 import java.io.File
@@ -111,67 +110,15 @@ class VoiceCleaner @Inject constructor(
 
     /** The media's sound, down-mixed to mono and resampled to 48 kHz. */
     private fun decode(asset: MediaAsset, target: File, key: String): Boolean {
-        target.parentFile?.mkdirs()
-        val raw = File(target.path + ".raw")
-        var writer: WavWriter? = null
-        var written = 0L
-        var rate = 0
         val durationUs = asset.durationUs.takeIf { it > 0 } ?: Long.MAX_VALUE
-        val format = try {
-            AudioDecoder.decode(context, asset.uri, 0, durationUs) {
-                    samples,
-                    count,
-                    format,
-                    timeUs,
-                ->
-                val out = writer ?: WavWriter(raw, format.sampleRate).also {
-                    writer = it
-                    rate = format.sampleRate
-                }
-                // A gap in the track (or a late start) stays silent, so time lines up.
-                val expected = timeUs * rate / 1_000_000
-                if (expected > written + rate / 100) {
-                    val silence = FloatArray((expected - written).toInt())
-                    out.write(silence, silence.size)
-                    written += silence.size
-                }
-                val channels = format.channels
-                val frames = count / channels
-                val mono = FloatArray(frames)
-                for (f in 0 until frames) {
-                    var sum = 0
-                    for (c in 0 until channels) sum += samples[f * channels + c]
-                    mono[f] = sum / (32768f * channels)
-                }
-                out.write(mono, frames)
-                written += frames
-                if (durationUs != Long.MAX_VALUE) report(key, DECODE_SHARE * timeUs / durationUs)
-            }
-        } finally {
-            writer?.close()
-        }
-        if (format == null || writer == null) {
-            raw.delete()
-            return false
-        }
-        val part = File(target.path + ".part")
-        if (rate == DeepFilterNet.SAMPLE_RATE) {
-            raw.renameTo(part)
-        } else {
-            WavReader(raw).use { reader ->
-                WavWriter(part, DeepFilterNet.SAMPLE_RATE).use { out ->
-                    val resampled = Resampler(reader, rate, DeepFilterNet.SAMPLE_RATE)
-                    val buffer = FloatArray(BLOCK)
-                    while (true) {
-                        val n = resampled.read(buffer, 0, BLOCK)
-                        if (n < 0) break
-                        out.write(buffer, n)
-                    }
-                }
-            }
-            raw.delete()
-        }
-        return part.renameTo(target)
+        return MonoAudio.write(
+            context,
+            asset.uri,
+            0,
+            durationUs,
+            DeepFilterNet.SAMPLE_RATE,
+            target,
+        ) { report(key, DECODE_SHARE * it) }
     }
 
     private fun clean(

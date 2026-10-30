@@ -208,10 +208,11 @@ fun ChoiceCard(
 }
 
 /**
- * How a selected [ClipraChip] looks: accent fill, warm fill with an accent border, or only an
- * accent border (the background colours of New project).
+ * How a selected [ClipraChip] looks: accent fill, warm fill with an accent border, only an
+ * accent border (the background colours of New project), or a light fill (Auto captions'
+ * "Listen to").
  */
-enum class ChipStyle { Accent, Outline, Border }
+enum class ChipStyle { Accent, Outline, Border, Light }
 
 /** A pill choice, 36 dp visible with a 44 dp touch area. */
 @Composable
@@ -228,19 +229,24 @@ fun ClipraChip(
     val colors = ClipraTheme.colors
     val shape = ClipraTheme.shapes.chip
     val accentFill = selected && selectedStyle == ChipStyle.Accent
+    val lightFill = selected && selectedStyle == ChipStyle.Light
     val fill = when {
         accentFill -> colors.accent
+        lightFill -> colors.textPrimary
         selected && selectedStyle == ChipStyle.Outline -> colors.accentSelectedBackground
         else -> colors.surface
     }
     val border = when {
         accentFill -> colors.accent
+        lightFill -> colors.textPrimary
         selected -> colors.accent
+        selectedStyle == ChipStyle.Light -> colors.surface
         else -> colors.border
     }
     val content = when {
         !enabled -> colors.textDisabled
         accentFill -> colors.onAccent
+        lightFill -> colors.background
         else -> colors.textPrimary
     }
     Row(

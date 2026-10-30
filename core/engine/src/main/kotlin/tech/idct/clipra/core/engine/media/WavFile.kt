@@ -116,5 +116,16 @@ class WavReader(file: File) :
         return n
     }
 
+    /** Skips [count] frames (fewer at the end). */
+    fun skip(count: Long) {
+        var bytes = minOf(count, left) * 2
+        left -= bytes / 2
+        while (bytes > 0) {
+            val skipped = input.skip(bytes)
+            if (skipped <= 0) break
+            bytes -= skipped
+        }
+    }
+
     override fun close() = input.close()
 }

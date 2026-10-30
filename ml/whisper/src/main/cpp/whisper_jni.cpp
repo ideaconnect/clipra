@@ -1,22 +1,49 @@
-// Clipra's bridge to whisper.cpp (#7): load a ggml model, transcribe 16 kHz mono samples, and
-// read the result token by token. Token text crosses as bytes: a multi-byte character (Polish
-// letters, for example) can be split between two tokens.
+// Clipra's bridge to whisper.cpp (#7, #44): load a ggml model, transcribe 16 kHz mono samples
+// with progress and cancel, and read the result token by token. Token text crosses as bytes: a
+// multi-byte character (Polish letters, for example) can be split between two tokens.
 #include <jni.h>
 #include <android/log.h>
+#include <atomic>
 #include <cstring>
 #include "whisper.h"
 
-static whisper_context *context(jlong handle) {
-    return reinterpret_cast<whisper_context *>(handle);
+namespace {
+
+// A loaded model and its cancel flag, which any thread may set.
+struct Session {
+    whisper_context *ctx = nullptr;
+    std::atomic<bool> cancelled{false};
+};
+
+Session *session(jlong handle) {
+    return reinterpret_cast<Session *>(handle);
 }
 
 // whisper.cpp and ggml log to logcat (tag whisper.cpp) instead of stderr.
-static void log_to_logcat(ggml_log_level level, const char *text, void *) {
+void log_to_logcat(ggml_log_level level, const char *text, void *) {
     int priority = level == GGML_LOG_LEVEL_ERROR ? ANDROID_LOG_ERROR
                  : level == GGML_LOG_LEVEL_WARN ? ANDROID_LOG_WARN
                  : ANDROID_LOG_INFO;
     __android_log_write(priority, "whisper.cpp", text);
 }
+
+// Progress goes to the listener's onProgress(int) on the transcribing thread.
+struct Progress {
+    JNIEnv *env;
+    jobject listener;
+    jmethodID method;
+};
+
+void on_progress(whisper_context *, whisper_state *, int progress, void *data) {
+    auto *p = static_cast<Progress *>(data);
+    if (p->listener != nullptr) p->env->CallVoidMethod(p->listener, p->method, progress);
+}
+
+bool on_abort(void *data) {
+    return static_cast<Session *>(data)->cancelled.load();
+}
+
+}  // namespace
 
 extern "C" {
 
@@ -34,60 +61,92 @@ Java_tech_idct_clipra_ml_whisper_Whisper_load(JNIEnv *env, jclass, jstring path,
     }
     whisper_context *ctx = whisper_init_from_file_with_params(file, params);
     env->ReleaseStringUTFChars(path, file);
-    return reinterpret_cast<jlong>(ctx);
+    if (ctx == nullptr) return 0;
+    auto *s = new Session();
+    s->ctx = ctx;
+    return reinterpret_cast<jlong>(s);
 }
 
 JNIEXPORT void JNICALL
 Java_tech_idct_clipra_ml_whisper_Whisper_free(JNIEnv *, jclass, jlong handle) {
-    whisper_free(context(handle));
+    Session *s = session(handle);
+    whisper_free(s->ctx);
+    delete s;
 }
 
+JNIEXPORT void JNICALL
+Java_tech_idct_clipra_ml_whisper_Whisper_cancel(JNIEnv *, jclass, jlong handle) {
+    session(handle)->cancelled.store(true);
+}
+
+// Transcribes in `language` ("auto" detects it); `translate` gives English. Returns 0 when
+// done, -100 when cancelled, and whisper.cpp's code on failure.
 JNIEXPORT jint JNICALL
 Java_tech_idct_clipra_ml_whisper_Whisper_transcribe(JNIEnv *env, jclass, jlong handle,
                                                     jfloatArray samples, jstring language,
-                                                    jint threads) {
+                                                    jboolean translate, jint threads,
+                                                    jobject listener) {
+    Session *s = session(handle);
     whisper_full_params params = whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
     const char *lang = env->GetStringUTFChars(language, nullptr);
     params.language = lang;
     params.detect_language = false;
     params.n_threads = threads;
-    params.translate = false;
+    params.translate = translate;
     params.token_timestamps = true;
     params.no_context = true;
     params.print_progress = false;
     params.print_realtime = false;
     params.print_special = false;
     params.print_timestamps = false;
+    Progress progress{env, listener, nullptr};
+    if (listener != nullptr) {
+        jclass type = env->GetObjectClass(listener);
+        progress.method = env->GetMethodID(type, "onProgress", "(I)V");
+        env->DeleteLocalRef(type);
+    }
+    params.progress_callback = on_progress;
+    params.progress_callback_user_data = &progress;
+    params.abort_callback = on_abort;
+    params.abort_callback_user_data = s;
     jsize count = env->GetArrayLength(samples);
     jfloat *pcm = env->GetFloatArrayElements(samples, nullptr);
-    int result = whisper_full(context(handle), params, pcm, count);
-    whisper_print_timings(context(handle));
+    int result = s->cancelled.load() ? -100 : whisper_full(s->ctx, params, pcm, count);
+    whisper_print_timings(s->ctx);
     env->ReleaseFloatArrayElements(samples, pcm, JNI_ABORT);
     env->ReleaseStringUTFChars(language, lang);
+    if (s->cancelled.load()) return -100;
     return result;
+}
+
+JNIEXPORT jstring JNICALL
+Java_tech_idct_clipra_ml_whisper_Whisper_language(JNIEnv *env, jclass, jlong handle) {
+    int id = whisper_full_lang_id(session(handle)->ctx);
+    const char *code = id >= 0 ? whisper_lang_str(id) : "";
+    return env->NewStringUTF(code);
 }
 
 JNIEXPORT jint JNICALL
 Java_tech_idct_clipra_ml_whisper_Whisper_segmentCount(JNIEnv *, jclass, jlong handle) {
-    return whisper_full_n_segments(context(handle));
+    return whisper_full_n_segments(session(handle)->ctx);
 }
 
 JNIEXPORT jint JNICALL
 Java_tech_idct_clipra_ml_whisper_Whisper_tokenCount(JNIEnv *, jclass, jlong handle, jint segment) {
-    return whisper_full_n_tokens(context(handle), segment);
+    return whisper_full_n_tokens(session(handle)->ctx, segment);
 }
 
 JNIEXPORT jboolean JNICALL
 Java_tech_idct_clipra_ml_whisper_Whisper_isSpecial(JNIEnv *, jclass, jlong handle, jint segment,
                                                    jint token) {
-    whisper_context *ctx = context(handle);
+    whisper_context *ctx = session(handle)->ctx;
     return whisper_full_get_token_id(ctx, segment, token) >= whisper_token_eot(ctx);
 }
 
 JNIEXPORT jbyteArray JNICALL
 Java_tech_idct_clipra_ml_whisper_Whisper_tokenBytes(JNIEnv *env, jclass, jlong handle,
                                                     jint segment, jint token) {
-    const char *text = whisper_full_get_token_text(context(handle), segment, token);
+    const char *text = whisper_full_get_token_text(session(handle)->ctx, segment, token);
     jsize length = static_cast<jsize>(strlen(text));
     jbyteArray bytes = env->NewByteArray(length);
     env->SetByteArrayRegion(bytes, 0, length, reinterpret_cast<const jbyte *>(text));
@@ -98,7 +157,8 @@ Java_tech_idct_clipra_ml_whisper_Whisper_tokenBytes(JNIEnv *env, jclass, jlong h
 JNIEXPORT jlongArray JNICALL
 Java_tech_idct_clipra_ml_whisper_Whisper_tokenTimes(JNIEnv *env, jclass, jlong handle,
                                                     jint segment, jint token) {
-    whisper_token_data data = whisper_full_get_token_data(context(handle), segment, token);
+    whisper_token_data data =
+        whisper_full_get_token_data(session(handle)->ctx, segment, token);
     jlong times[3] = {data.t0, data.t1, data.t_dtw};
     jlongArray result = env->NewLongArray(3);
     env->SetLongArrayRegion(result, 0, 3, times);
@@ -108,7 +168,7 @@ Java_tech_idct_clipra_ml_whisper_Whisper_tokenTimes(JNIEnv *env, jclass, jlong h
 JNIEXPORT jfloat JNICALL
 Java_tech_idct_clipra_ml_whisper_Whisper_tokenProbability(JNIEnv *, jclass, jlong handle,
                                                           jint segment, jint token) {
-    return whisper_full_get_token_p(context(handle), segment, token);
+    return whisper_full_get_token_p(session(handle)->ctx, segment, token);
 }
 
 JNIEXPORT jstring JNICALL
