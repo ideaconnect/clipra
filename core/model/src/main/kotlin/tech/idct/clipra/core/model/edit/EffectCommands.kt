@@ -9,7 +9,8 @@ import tech.idct.clipra.core.model.Project
 import tech.idct.clipra.core.model.maskKeyframed
 import tech.idct.clipra.core.model.set
 
-// Effect commands (#25). A clip has at most one filter; picking another replaces it.
+// Effect commands (#25, #29). The Filters board picks the first filter of the stack; the
+// effect stack adds, orders, turns off and removes the rest.
 
 /**
  * Gives a clip the filter [type] at [strength] (0 to 1), or removes its filter when [type] is
@@ -46,14 +47,25 @@ data class ApplyFilterToAll(val type: String?, val strength: Float) : EditComman
 /** Clips with a picture of their own: videos and photos. */
 fun Clip.takesFilters(): Boolean = type == ClipType.Video || type == ClipType.Photo
 
+/**
+ * The clip with [type] as its first filter, in that filter's place in the stack (#29); null
+ * takes the first filter away. A [type] further down the stack moves up, keeping its settings.
+ */
 private fun Clip.withFilter(type: String?, strength: Float): Clip {
-    val current = effects.firstOrNull { Filters.isFilter(it.type) }
-    val others = effects.filterNot { Filters.isFilter(it.type) }
-    if (type == null) return copy(effects = others)
+    val stack = effects.toMutableList()
+    if (type == null) {
+        val first = stack.indexOfFirst { Filters.isFilter(it.type) }
+        if (first >= 0) stack.removeAt(first)
+        return copy(effects = stack)
+    }
     require(Filters.isFilter(type)) { "Unknown filter $type" }
-    val params = if (current?.type == type) current.params else emptyMap()
-    val filter = Effect(type, strength.coerceIn(0f, 1f), params)
-    return copy(effects = listOf(filter) + others)
+    val existing = stack.firstOrNull { it.type == type }
+    val first = stack.indexOfFirst { Filters.isFilter(it.type) }
+    val filter = Effect(type, strength.coerceIn(0f, 1f), existing?.params ?: emptyMap())
+    if (first >= 0 && stack[first].type != type) stack.removeAll { it.type == type }
+    val at = stack.indexOfFirst { Filters.isFilter(it.type) }
+    if (at < 0) stack.add(0, filter) else stack[at] = filter
+    return copy(effects = stack)
 }
 
 /**
@@ -109,5 +121,92 @@ data class SetEffectParam(val clipId: String, val type: String, val key: String,
             if (it.type == type) it.copy(params = it.params + (key to value)) else it
         }
         return project.replaceClip(clip.copy(effects = effects))
+    }
+}
+
+/** The clip's stack, checked: a picture clip on an unlocked layer. */
+private fun Project.stackOf(clipId: String): Clip {
+    val (layer, clip) = clipWithLayer(clipId)
+    layer.requireUnlocked()
+    if (!clip.takesFilters()) throw EditRejected(EditRejected.Reason.OutOfRange)
+    return clip
+}
+
+private fun Clip.requireEffect(index: Int) {
+    if (index !in effects.indices) throw EditRejected(EditRejected.Reason.OutOfRange)
+}
+
+/**
+ * Adds effect [type] at the top of the clip's stack (#29), at the default strength, so it
+ * applies last. A type the stack already has is refused: each effect is there once.
+ */
+data class AddEffect(val clipId: String, val type: String) : EditCommand {
+    override fun apply(project: Project): Project {
+        val clip = project.stackOf(clipId)
+        if (!Filters.isFilter(type) || clip.effects.any { it.type == type }) {
+            throw EditRejected(EditRejected.Reason.OutOfRange)
+        }
+        return project.replaceClip(
+            clip.copy(effects = clip.effects + Effect(type, Filters.DEFAULT_STRENGTH)),
+        )
+    }
+}
+
+/** Moves the effect at [from] to [to] in the clip's stack (#29), changing the order they apply. */
+data class MoveEffect(val clipId: String, val from: Int, val to: Int) : EditCommand {
+    override fun apply(project: Project): Project {
+        val clip = project.stackOf(clipId)
+        clip.requireEffect(from)
+        clip.requireEffect(to)
+        val stack = clip.effects.toMutableList()
+        stack.add(to, stack.removeAt(from))
+        return project.replaceClip(clip.copy(effects = stack))
+    }
+}
+
+/** Turns the effect at [index] on or off (#29); off, it stays in the stack and draws nothing. */
+data class SetEffectEnabled(val clipId: String, val index: Int, val enabled: Boolean) :
+    EditCommand {
+    override fun apply(project: Project): Project {
+        val clip = project.stackOf(clipId)
+        clip.requireEffect(index)
+        val stack = clip.effects.toMutableList()
+        stack[index] = stack[index].copy(enabled = enabled)
+        return project.replaceClip(clip.copy(effects = stack))
+    }
+}
+
+/** Sets the strength (0 to 1) of the effect at [index] (#29). */
+data class SetEffectStrength(val clipId: String, val index: Int, val strength: Float) :
+    EditCommand {
+    override fun apply(project: Project): Project {
+        val clip = project.stackOf(clipId)
+        clip.requireEffect(index)
+        val stack = clip.effects.toMutableList()
+        stack[index] = stack[index].copy(strength = strength.coerceIn(0f, 1f))
+        return project.replaceClip(clip.copy(effects = stack))
+    }
+}
+
+/** Removes the effect at [index] from the clip's stack (#29). */
+data class RemoveEffect(val clipId: String, val index: Int) : EditCommand {
+    override fun apply(project: Project): Project {
+        val clip = project.stackOf(clipId)
+        clip.requireEffect(index)
+        return project.replaceClip(
+            clip.copy(effects = clip.effects.filterIndexed { i, _ -> i != index }),
+        )
+    }
+}
+
+/**
+ * Paste effects (#29): gives the clip a copy of another clip's stack, in its order, replacing
+ * its own. Effects Clipra doesn't know are left out.
+ */
+data class PasteEffects(val clipId: String, val effects: List<Effect>) : EditCommand {
+    override fun apply(project: Project): Project {
+        val clip = project.stackOf(clipId)
+        val known = effects.filter { Filters.isFilter(it.type) }.distinctBy { it.type }
+        return project.replaceClip(clip.copy(effects = known))
     }
 }

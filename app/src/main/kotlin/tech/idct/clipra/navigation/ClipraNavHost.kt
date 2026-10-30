@@ -30,6 +30,7 @@ import tech.idct.clipra.feature.editor.ToolTarget
 import tech.idct.clipra.feature.editor.editorScreens
 import tech.idct.clipra.feature.effects.ColorRoute
 import tech.idct.clipra.feature.effects.CutoutRoute
+import tech.idct.clipra.feature.effects.EffectStackRoute
 import tech.idct.clipra.feature.effects.EffectsActions
 import tech.idct.clipra.feature.effects.FiltersRoute
 import tech.idct.clipra.feature.effects.MasksRoute
@@ -258,5 +259,6 @@ private fun toolRoute(tool: EditorTool, target: ToolTarget): Any = when (tool) {
     EditorTool.Cutout -> CutoutRoute
     EditorTool.Reframe -> ReframeRoute
     EditorTool.Masks -> MasksRoute(target.projectId, target.clipId, target.playheadUs)
+    EditorTool.Effects -> EffectStackRoute(target.projectId, target.clipId!!, target.playheadUs)
     EditorTool.Layer, EditorTool.Speed -> LayersRoute
 }

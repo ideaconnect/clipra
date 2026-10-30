@@ -43,6 +43,8 @@
     <string name="editor_tool_delete">Delete</string>
     <string name="editor_tool_freeze">Freeze</string>
     <string name="editor_tool_speed">Speed</string>
+    <string name="editor_tool_effects">Effects</string>
+    <string name="editor_timeline_fx">FX %1$d</string>
     <string name="editor_tool_reverse">Reverse</string>
     <string name="editor_tool_extract">Extract</string>
     <string name="editor_tool_replace">Replace</string>

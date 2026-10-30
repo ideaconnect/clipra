@@ -226,7 +226,9 @@ private class LayerCompositorProgram(
         // Keyframed values at this frame (#21); a gesture in progress shows its own.
         val opacity = clip.opacityAt(timeUs, live?.opacity(clip.id) ?: clip.keyedOpacityAt(timeUs))
         if (opacity <= 0f) return null
-        val filters = (live?.effects(clip.id) ?: clip.effects).mapNotNull { effect ->
+        // The stack in order (#29); a disabled effect draws nothing.
+        val stack = live?.effects(clip.id) ?: clip.effects
+        val filters = stack.filter { it.enabled }.mapNotNull { effect ->
             FilterRecipes.of(effect.type)?.takeIf { effect.strength > 0f }?.let { it to effect }
         }
         val mask = live?.mask(clip.id) ?: clip.maskAt(timeUs)

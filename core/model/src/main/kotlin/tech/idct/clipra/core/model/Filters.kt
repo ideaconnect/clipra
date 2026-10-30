@@ -2,8 +2,8 @@ package tech.idct.clipra.core.model
 
 /**
  * The 24 filters of spec section 6 (#25): 13 looks and 11 stylized, stored as an [Effect] whose
- * type is the filter's id. A clip has at most one filter; the effect stack (#29) adds more
- * effects next to it.
+ * type is the filter's id. A clip's effect stack (#29) holds any of them, each type once, in
+ * the order they apply; the Filters board picks the first.
  */
 object Filters {
     val looks = listOf(
@@ -48,5 +48,5 @@ object Filters {
     fun isFilter(type: String): Boolean = type in all
 }
 
-/** The clip's filter, if it has one. */
+/** The clip's first filter, the one the Filters board shows and picks, if it has one. */
 val Clip.filter: Effect? get() = effects.firstOrNull { Filters.isFilter(it.type) }

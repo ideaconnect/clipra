@@ -150,4 +150,23 @@
         <item quantity="many">Wklej do %d klipów</item>
         <item quantity="other">Wklej do %d klipu</item>
     </plurals>
+    <!-- Effect stack (#29) -->
+    <string name="effects_stack_title">Stos efektów</string>
+    <plurals name="effects_stack_subtitle">
+        <item quantity="one">%1$s · %2$d efekt</item>
+        <item quantity="few">%1$s · %2$d efekty</item>
+        <item quantity="many">%1$s · %2$d efektów</item>
+        <item quantity="other">%1$s · %2$d efektu</item>
+    </plurals>
+    <string name="effects_stack_empty">Brak efektów. Dodaj jeden, a potem kolejne: każdy działa na tych przed nim.</string>
+    <string name="effects_stack_look">Wygląd: %1$s</string>
+    <string name="effects_stack_masked">z maską</string>
+    <string name="effects_stack_block">Blok</string>
+    <string name="effects_stack_percent">%1$d%%</string>
+    <string name="effects_stack_up">Przesuń w górę</string>
+    <string name="effects_stack_down">Przesuń w dół</string>
+    <string name="effects_stack_remove">Usuń</string>
+    <string name="effects_stack_add">+ Dodaj efekt</string>
+    <string name="effects_stack_copy">Kopiuj</string>
+    <string name="effects_stack_paste">Wklej</string>
 </resources>
