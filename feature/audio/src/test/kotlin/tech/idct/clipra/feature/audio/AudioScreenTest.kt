@@ -260,6 +260,35 @@ class AudioScreenTest {
         compose.onNodeWithText("Download · 8.0 MB").assertExists()
     }
 
+    /** Noise reduction (#38): on at 40%, its progress while it runs, and the switch. */
+    @Test
+    fun noiseReduction() {
+        Locale.setDefault(Locale.US)
+        val switches = mutableListOf<Boolean>()
+        val gated = clip.copy(audio = clip.audio.copy(noiseReduction = 0.4f))
+        compose.setContent {
+            ClipraTheme {
+                AudioScreen(
+                    state = AudioUiState(
+                        project,
+                        gated,
+                        waveform,
+                        loaded = true,
+                        voice = VoiceUiState(gating = 0.35f),
+                    ),
+                    volume = 1f,
+                    actions = AudioActions({}, {}, {}, {}, {}, onNoise = { switches += it }),
+                )
+            }
+        }
+        compose.onNodeWithTag("audio-noise").performScrollTo()
+        compose.onNodeWithText("Reducing noise · 35%").assertExists()
+        compose.onNodeWithText("40").assertExists()
+        compose.onNodeWithTag("audio-noise").captureRoboImage(roborazziOptions = options)
+        compose.onNodeWithTag("audio-noise-switch").performClick()
+        assertEquals(listOf(false), switches)
+    }
+
     @Test
     fun levelsAfterFollowVolumeAndNormalization() {
         val measured = Loudness.Measurement(-22.8f, -3.1f)

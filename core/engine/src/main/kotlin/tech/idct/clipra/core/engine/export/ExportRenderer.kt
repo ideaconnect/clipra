@@ -30,6 +30,7 @@ import tech.idct.clipra.core.engine.media.VoiceCleaner
 import tech.idct.clipra.core.engine.render.CompositionFactory
 import tech.idct.clipra.core.engine.render.PauseGate
 import tech.idct.clipra.core.engine.render.ProjectRender
+import tech.idct.clipra.core.model.ClipType
 import tech.idct.clipra.core.model.Project
 import tech.idct.clipra.core.model.export.ExportSettings
 import java.io.File
@@ -220,15 +221,20 @@ class ExportRenderer(
         else -> ExportFailure.Other
     }
 
-    /** Every clip's cleaned voice, made now where the background work has not finished. */
+    /**
+     * Every clip's cleaned voice (#39) and noise reduction (#38), made now where the background
+     * work has not finished.
+     */
     private suspend fun prepareVoices(cleaner: VoiceCleaner, project: Project) =
         withContext(Dispatchers.Default) {
             for (clip in project.layers.flatMap { it.clips }) {
-                val cleanup = clip.audio.voiceCleanup ?: continue
+                val cleanup = clip.audio.voiceCleanup
+                val noise = clip.audio.noiseReduction
+                if (cleanup == null && noise == null) continue
                 val asset = clip.source?.let { project.asset(it.mediaId) } ?: continue
-                if (!asset.hasAudio) continue
+                if (!asset.hasAudio && clip.type != ClipType.Audio) continue
                 ensureActive()
-                cleaner.prepare(asset, cleanup) { !isActive }
+                cleaner.prepare(asset, cleanup, noise) { !isActive }
             }
         }
 

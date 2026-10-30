@@ -50,6 +50,15 @@ class MediaCache(private val root: File) {
     fun voiceMix(mediaId: String, cleanup: VoiceCleanup): File =
         File(root, "voice/$mediaId-${cleanup.engine.name}-${cleanup.percent}.wav")
 
+    /**
+     * What plays with noise reduction (#38): the recorded sound, or its [cleanup] mix, through
+     * the spectral gate at [percent] strength.
+     */
+    fun voiceGated(mediaId: String, cleanup: VoiceCleanup?, percent: Int): File {
+        val cleaned = cleanup?.let { "-${it.engine.name}-${it.percent}" }.orEmpty()
+        return File(root, "voice/$mediaId$cleaned-gate$percent.wav")
+    }
+
     /** The waveform of a voice [mix]. */
     fun voiceWaveform(mix: File): File = File(mix.path.removeSuffix(".wav") + ".peaks")
 
