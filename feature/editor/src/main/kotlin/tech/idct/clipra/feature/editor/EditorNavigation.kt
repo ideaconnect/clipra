@@ -27,6 +27,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import kotlinx.coroutines.delay
 import kotlinx.serialization.Serializable
+import tech.idct.clipra.core.designsystem.adaptive.LocalWindowLayout
+import tech.idct.clipra.core.designsystem.adaptive.WindowLayout
 import tech.idct.clipra.core.designsystem.placeholder.Board
 import tech.idct.clipra.core.engine.preview.PreviewPlayer
 import tech.idct.clipra.core.model.Cells
@@ -52,9 +54,14 @@ import tech.idct.clipra.feature.editor.speed.SpeedActions
 import tech.idct.clipra.feature.editor.speed.SpeedScreen
 import tech.idct.clipra.feature.editor.stabilize.StabilizeActions
 import tech.idct.clipra.feature.editor.stabilize.StabilizeScreen
+import tech.idct.clipra.feature.editor.tablet.InspectorActions
+import tech.idct.clipra.feature.editor.tablet.TabletEditorActions
+import tech.idct.clipra.feature.editor.tablet.TabletEditorScreen
 import tech.idct.clipra.feature.editor.timeline.Filmstrip
 import tech.idct.clipra.feature.editor.timeline.FilmstripLoader
+import tech.idct.clipra.feature.editor.timeline.LayerHeaderActions
 import tech.idct.clipra.feature.editor.timeline.TimelineActions
+import tech.idct.clipra.feature.editor.timeline.TimelineGeometry
 import tech.idct.clipra.feature.editor.timeline.WaveformLoader
 import tech.idct.clipra.feature.editor.voiceover.VoiceoverActions
 import kotlin.math.abs
@@ -87,6 +94,8 @@ class EditorActions(
     val onClose: () -> Unit,
     val onExport: (projectId: String) -> Unit,
     val onTool: (EditorTool, ToolTarget) -> Unit,
+    /** An effect's name for the tablet inspector (#69), as the Effects screens call it. */
+    val effectName: @Composable (type: String) -> String = { it },
 )
 
 /** Registers this module's destinations. [screen] draws a board until its real screen is built. */
@@ -328,246 +337,304 @@ private fun EditorRoute(actions: EditorActions, viewModel: EditorViewModel = hil
     }
     // While recording, the timeline stays as it is; the playhead follows the recording.
     val whenNotRecording = { action: () -> Unit -> if (!recording) action() }
-    EditorScreen(
-        state = state,
-        playing = playing,
-        callbacks = EditorCallbacks(
-            onClose = {
-                viewModel.flush()
-                actions.onClose()
-            },
-            onExport = {
-                viewModel.flush()
-                actions.onExport(project.id)
-            },
-            onPlayPause = play@{
-                if (recording) return@play
-                if (!playing && state.playheadUs >= project.durationUs) {
-                    viewModel.seek(0)
-                    player.seekTo(0)
-                }
-                playing = !playing
-            },
-            onUndo = viewModel::undo,
-            onRedo = viewModel::redo,
-            onPickVisual = {
-                pickVisual.launch(
-                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo),
-                )
-            },
-            onPickAudio = { pickAudio.launch(arrayOf("audio/*")) },
-            onPickReplacement = {
-                pickReplacement.launch(
-                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo),
-                )
-            },
-            onSplit = viewModel::split,
-            onDuplicate = viewModel::duplicate,
-            onDelete = viewModel::delete,
-            onFreeze = viewModel::freeze,
-            onReverse = {
-                if (selected?.hasSpeed() == true) {
-                    viewModel.reverse()
+    // The tablet's timeline is wider at the same zoom (#69), and its filmstrips follow.
+    val tablet = LocalWindowLayout.current == WindowLayout.Tablet
+    val timelineDps = if (tablet) {
+        state.dpPerSecond * TimelineGeometry.TABLET_DP_PER_SECOND /
+            TimelineGeometry.DEFAULT_DP_PER_SECOND
+    } else {
+        state.dpPerSecond
+    }
+    val callbacks = EditorCallbacks(
+        onClose = {
+            viewModel.flush()
+            actions.onClose()
+        },
+        onExport = {
+            viewModel.flush()
+            actions.onExport(project.id)
+        },
+        onPlayPause = play@{
+            if (recording) return@play
+            if (!playing && state.playheadUs >= project.durationUs) {
+                viewModel.seek(0)
+                player.seekTo(0)
+            }
+            playing = !playing
+        },
+        onUndo = viewModel::undo,
+        onRedo = viewModel::redo,
+        onPickVisual = {
+            pickVisual.launch(
+                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo),
+            )
+        },
+        onPickAudio = { pickAudio.launch(arrayOf("audio/*")) },
+        onPickReplacement = {
+            pickReplacement.launch(
+                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo),
+            )
+        },
+        onSplit = viewModel::split,
+        onDuplicate = viewModel::duplicate,
+        onDelete = viewModel::delete,
+        onFreeze = viewModel::freeze,
+        onReverse = {
+            if (selected?.hasSpeed() == true) {
+                viewModel.reverse()
+            } else {
+                viewModel.say(EditorMessage.NotAvailable)
+            }
+        },
+        onExtract = viewModel::extractAudio,
+        onTool = { tool ->
+            when (tool) {
+                EditorTool.Layer -> openBoard(LayerTab.Blend, false)
+
+                EditorTool.Animate -> if (selected?.isVisual() == true &&
+                    selected.type != ClipType.Caption
+                ) {
+                    playing = false
+                    animateBoard = true
                 } else {
                     viewModel.say(EditorMessage.NotAvailable)
                 }
+
+                EditorTool.Speed -> if (selected?.hasSpeed() == true) {
+                    playing = false
+                    speedBoard = true
+                } else {
+                    viewModel.say(EditorMessage.NotAvailable)
+                }
+
+                EditorTool.Stabilize -> if (selected?.type == ClipType.Video) {
+                    playing = false
+                    if (!selected.contains(state.playheadUs)) viewModel.seek(selected.startUs)
+                    stabilizeBoard = true
+                } else {
+                    viewModel.say(EditorMessage.NotAvailable)
+                }
+
+                EditorTool.Filters,
+                EditorTool.Masks,
+                EditorTool.Color,
+                EditorTool.Effects,
+                EditorTool.Cutout,
+                -> {
+                    // The selected clip, or the one on top at the playhead.
+                    val clip = selected?.takeIf { it.takesFilters() }
+                        ?: project.layers.reversed().flatMap { it.clips }
+                            .firstOrNull { it.takesFilters() && it.contains(state.playheadUs) }
+                        ?: project.layers.flatMap { it.clips }.firstOrNull { it.takesFilters() }
+                    if (clip == null) {
+                        viewModel.say(EditorMessage.NeedsPicture)
+                    } else {
+                        playing = false
+                        val playhead = if (clip.contains(state.playheadUs)) {
+                            state.playheadUs
+                        } else {
+                            clip.startUs
+                        }
+                        actions.onTool(tool, ToolTarget(project.id, clip.id, playhead))
+                    }
+                }
+
+                EditorTool.Text -> {
+                    playing = false
+                    val clipId = selected?.takeIf {
+                        it.type == ClipType.Text || it.type == ClipType.TextCard
+                    }?.id ?: viewModel.addText(newText)
+                    if (clipId != null) {
+                        val clip = project.findClip(clipId)?.second
+                        val playhead = clip?.takeIf { !it.contains(state.playheadUs) }
+                            ?.startUs ?: state.playheadUs
+                        actions.onTool(tool, ToolTarget(project.id, clipId, playhead))
+                    }
+                }
+
+                EditorTool.Audio -> {
+                    // The selected clip, or the one on top with sound at the playhead.
+                    val sound = { c: Clip ->
+                        c.type == ClipType.Audio || (
+                            c.type == ClipType.Video &&
+                                c.source?.let { project.asset(it.mediaId) }?.hasAudio == true
+                            )
+                    }
+                    val clip = selected?.takeIf(sound)
+                        ?: project.layers.reversed().flatMap { it.clips }
+                            .firstOrNull { sound(it) && it.contains(state.playheadUs) }
+                        ?: project.layers.flatMap { it.clips }.firstOrNull(sound)
+                    if (clip == null) {
+                        viewModel.say(EditorMessage.NeedsSound)
+                    } else {
+                        playing = false
+                        actions.onTool(tool, ToolTarget(project.id, clip.id, state.playheadUs))
+                    }
+                }
+
+                EditorTool.Transitions -> {
+                    // The cut at either end of the selected clip, or the one nearest the
+                    // playhead.
+                    val cuts = project.cuts()
+                    val near = { cut: Cut -> abs(cut.timeUs - state.playheadUs) }
+                    val cut = selected?.let { clip ->
+                        cuts.filter { it.from.id == clip.id || it.to.id == clip.id }
+                            .minByOrNull(near)
+                    } ?: cuts.minByOrNull(near)
+                    if (cut == null) {
+                        viewModel.say(EditorMessage.NeedsCut)
+                    } else {
+                        playing = false
+                        actions.onTool(tool, ToolTarget(project.id, cut.from.id, cut.timeUs))
+                    }
+                }
+
+                EditorTool.Captions -> {
+                    playing = false
+                    val captioned = project.layers.any { layer ->
+                        layer.clips.any { it.type == ClipType.Caption }
+                    }
+                    val open = if (captioned) EditorTool.CaptionsEdit else EditorTool.Captions
+                    actions.onTool(open, ToolTarget(project.id, null, state.playheadUs))
+                }
+
+                else -> actions.onTool(tool, ToolTarget(project.id, null, state.playheadUs))
+            }
+        },
+        onLayers = { layers = true },
+        onCrop = { openBoard(LayerTab.Transform, true) },
+        onDismissMessage = viewModel::dismissMessage,
+        onKeyframe = {
+            playing = false
+            state.selectedClipId?.let(viewModel::toggleKeyframe)
+        },
+        onVoiceover = {
+            playing = false
+            viewModel.openVoiceover()
+        },
+        voiceover = VoiceoverActions(
+            onRecord = {
+                val granted = ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.RECORD_AUDIO,
+                ) == PackageManager.PERMISSION_GRANTED
+                if (granted) {
+                    viewModel.startRecording()
+                } else {
+                    askMicrophone.launch(Manifest.permission.RECORD_AUDIO)
+                }
             },
-            onExtract = viewModel::extractAudio,
-            onTool = { tool ->
-                when (tool) {
-                    EditorTool.Layer -> openBoard(LayerTab.Blend, false)
-
-                    EditorTool.Animate -> if (selected?.isVisual() == true &&
-                        selected.type != ClipType.Caption
-                    ) {
-                        playing = false
-                        animateBoard = true
-                    } else {
-                        viewModel.say(EditorMessage.NotAvailable)
-                    }
-
-                    EditorTool.Speed -> if (selected?.hasSpeed() == true) {
-                        playing = false
-                        speedBoard = true
-                    } else {
-                        viewModel.say(EditorMessage.NotAvailable)
-                    }
-
-                    EditorTool.Stabilize -> if (selected?.type == ClipType.Video) {
+            onStop = viewModel::stopRecording,
+            onDiscard = viewModel::discardRecording,
+            onClose = viewModel::closeVoiceover,
+        ),
+        timeline = TimelineActions(
+            onSeek = {
+                whenNotRecording {
+                    playing = false
+                    viewModel.seek(it)
+                }
+            },
+            onZoom = viewModel::zoom,
+            onSelect = { whenNotRecording { viewModel.select(it) } },
+            onMove = { id, start, target ->
+                whenNotRecording { viewModel.move(id, start, target) }
+            },
+            onTrim = { id, edge, to -> whenNotRecording { viewModel.trim(id, edge, to) } },
+            onMoveKeyframe = viewModel::moveKeyframe,
+            onTransition = { fromClipId ->
+                project.cutAfter(fromClipId)?.let { cut ->
+                    playing = false
+                    actions.onTool(
+                        EditorTool.Transitions,
+                        ToolTarget(project.id, cut.from.id, cut.timeUs),
+                    )
+                }
+            },
+            onAddMedia = {
+                pickVisual.launch(
+                    PickVisualMediaRequest(
+                        ActivityResultContracts.PickVisualMedia.ImageAndVideo,
+                    ),
+                )
+            },
+        ),
+    )
+    val previewOverlay: @Composable () -> Unit = {
+        // Handles on the selected clip while it is on screen and the preview is paused.
+        if (selected != null && selected.isVisual() && !playing &&
+            selected.contains(state.playheadUs)
+        ) {
+            TransformOverlay(
+                transform =
+                liveTransform ?: selected.transformAt(state.playheadUs - selected.startUs),
+                frame = project.format.outputSize,
+                source = sourceSize(project, selected),
+                onChange = { transformLive(selected.id, it) },
+                onCommit = { viewModel.setTransform(selected.id, it) },
+                cell = Cells.rect(project.format, selected.cell),
+            )
+        }
+    }
+    val filmstrip: @Composable (Clip, Float, Float) -> Unit = { clip, width, height ->
+        Filmstrip(filmstrips, project, clip, width, height, timelineDps)
+    }
+    if (tablet) {
+        TabletEditorScreen(
+            state = state,
+            playing = playing,
+            callbacks = callbacks,
+            actions = TabletEditorActions(
+                onAddMedia = { whenNotRecording { viewModel.addToTimeline(it) } },
+                onSeekCut = {
+                    playing = false
+                    viewModel.seekToCut(it)
+                },
+                onSnap = viewModel::setSnap,
+                onRipple = viewModel::setRipple,
+                onAddLayer = viewModel::addLayer,
+                onStabilize = {
+                    if (selected?.type == ClipType.Video) {
                         playing = false
                         if (!selected.contains(state.playheadUs)) viewModel.seek(selected.startUs)
                         stabilizeBoard = true
-                    } else {
-                        viewModel.say(EditorMessage.NotAvailable)
-                    }
-
-                    EditorTool.Filters,
-                    EditorTool.Masks,
-                    EditorTool.Color,
-                    EditorTool.Effects,
-                    EditorTool.Cutout,
-                    -> {
-                        // The selected clip, or the one on top at the playhead.
-                        val clip = selected?.takeIf { it.takesFilters() }
-                            ?: project.layers.reversed().flatMap { it.clips }
-                                .firstOrNull { it.takesFilters() && it.contains(state.playheadUs) }
-                            ?: project.layers.flatMap { it.clips }.firstOrNull { it.takesFilters() }
-                        if (clip == null) {
-                            viewModel.say(EditorMessage.NeedsPicture)
-                        } else {
-                            playing = false
-                            val playhead = if (clip.contains(state.playheadUs)) {
-                                state.playheadUs
-                            } else {
-                                clip.startUs
-                            }
-                            actions.onTool(tool, ToolTarget(project.id, clip.id, playhead))
-                        }
-                    }
-
-                    EditorTool.Text -> {
-                        playing = false
-                        val clipId = selected?.takeIf {
-                            it.type == ClipType.Text || it.type == ClipType.TextCard
-                        }?.id ?: viewModel.addText(newText)
-                        if (clipId != null) {
-                            val clip = project.findClip(clipId)?.second
-                            val playhead = clip?.takeIf { !it.contains(state.playheadUs) }
-                                ?.startUs ?: state.playheadUs
-                            actions.onTool(tool, ToolTarget(project.id, clipId, playhead))
-                        }
-                    }
-
-                    EditorTool.Audio -> {
-                        // The selected clip, or the one on top with sound at the playhead.
-                        val sound = { c: Clip ->
-                            c.type == ClipType.Audio || (
-                                c.type == ClipType.Video &&
-                                    c.source?.let { project.asset(it.mediaId) }?.hasAudio == true
-                                )
-                        }
-                        val clip = selected?.takeIf(sound)
-                            ?: project.layers.reversed().flatMap { it.clips }
-                                .firstOrNull { sound(it) && it.contains(state.playheadUs) }
-                            ?: project.layers.flatMap { it.clips }.firstOrNull(sound)
-                        if (clip == null) {
-                            viewModel.say(EditorMessage.NeedsSound)
-                        } else {
-                            playing = false
-                            actions.onTool(tool, ToolTarget(project.id, clip.id, state.playheadUs))
-                        }
-                    }
-
-                    EditorTool.Transitions -> {
-                        // The cut at either end of the selected clip, or the one nearest the
-                        // playhead.
-                        val cuts = project.cuts()
-                        val near = { cut: Cut -> abs(cut.timeUs - state.playheadUs) }
-                        val cut = selected?.let { clip ->
-                            cuts.filter { it.from.id == clip.id || it.to.id == clip.id }
-                                .minByOrNull(near)
-                        } ?: cuts.minByOrNull(near)
-                        if (cut == null) {
-                            viewModel.say(EditorMessage.NeedsCut)
-                        } else {
-                            playing = false
-                            actions.onTool(tool, ToolTarget(project.id, cut.from.id, cut.timeUs))
-                        }
-                    }
-
-                    EditorTool.Captions -> {
-                        playing = false
-                        val captioned = project.layers.any { layer ->
-                            layer.clips.any { it.type == ClipType.Caption }
-                        }
-                        val open = if (captioned) EditorTool.CaptionsEdit else EditorTool.Captions
-                        actions.onTool(open, ToolTarget(project.id, null, state.playheadUs))
-                    }
-
-                    else -> actions.onTool(tool, ToolTarget(project.id, null, state.playheadUs))
-                }
-            },
-            onLayers = { layers = true },
-            onCrop = { openBoard(LayerTab.Transform, true) },
-            onDismissMessage = viewModel::dismissMessage,
-            onKeyframe = {
-                playing = false
-                state.selectedClipId?.let(viewModel::toggleKeyframe)
-            },
-            onVoiceover = {
-                playing = false
-                viewModel.openVoiceover()
-            },
-            voiceover = VoiceoverActions(
-                onRecord = {
-                    val granted = ContextCompat.checkSelfPermission(
-                        context,
-                        Manifest.permission.RECORD_AUDIO,
-                    ) == PackageManager.PERMISSION_GRANTED
-                    if (granted) {
-                        viewModel.startRecording()
-                    } else {
-                        askMicrophone.launch(Manifest.permission.RECORD_AUDIO)
                     }
                 },
-                onStop = viewModel::stopRecording,
-                onDiscard = viewModel::discardRecording,
-                onClose = viewModel::closeVoiceover,
+                layers = LayerHeaderActions(
+                    onHidden = viewModel::setHidden,
+                    onMuted = viewModel::setMuted,
+                    onLocked = viewModel::setLocked,
+                ),
+                inspector = InspectorActions(
+                    onTransform = viewModel::setTransform,
+                    onBlend = viewModel::setBlend,
+                    onColor = viewModel::setColor,
+                    onAutoColor = viewModel::autoColor,
+                    onPasteColor = viewModel::pasteColor,
+                    onAudio = viewModel::setAudio,
+                    onNormalize = viewModel::setNormalize,
+                    onSpeed = viewModel::setSpeed,
+                    onAnimation = viewModel::setAnimation,
+                    effectName = actions.effectName,
+                ),
             ),
-            timeline = TimelineActions(
-                onSeek = {
-                    whenNotRecording {
-                        playing = false
-                        viewModel.seek(it)
-                    }
-                },
-                onZoom = viewModel::zoom,
-                onSelect = { whenNotRecording { viewModel.select(it) } },
-                onMove = { id, start, target ->
-                    whenNotRecording { viewModel.move(id, start, target) }
-                },
-                onTrim = { id, edge, to -> whenNotRecording { viewModel.trim(id, edge, to) } },
-                onMoveKeyframe = viewModel::moveKeyframe,
-                onTransition = { fromClipId ->
-                    project.cutAfter(fromClipId)?.let { cut ->
-                        playing = false
-                        actions.onTool(
-                            EditorTool.Transitions,
-                            ToolTarget(project.id, cut.from.id, cut.timeUs),
-                        )
-                    }
-                },
-                onAddMedia = {
-                    pickVisual.launch(
-                        PickVisualMediaRequest(
-                            ActivityResultContracts.PickVisualMedia.ImageAndVideo,
-                        ),
-                    )
-                },
-            ),
-        ),
-        preview = { PreviewSurface(player = player) },
-        previewOverlay = {
-            // Handles on the selected clip while it is on screen and the preview is paused.
-            if (selected != null && selected.isVisual() && !playing &&
-                selected.contains(state.playheadUs)
-            ) {
-                TransformOverlay(
-                    transform =
-                    liveTransform ?: selected.transformAt(state.playheadUs - selected.startUs),
-                    frame = project.format.outputSize,
-                    source = sourceSize(project, selected),
-                    onChange = { transformLive(selected.id, it) },
-                    onCommit = { viewModel.setTransform(selected.id, it) },
-                    cell = Cells.rect(project.format, selected.cell),
-                )
-            }
-        },
-        filmstrip = { clip, width, height ->
-            Filmstrip(filmstrips, project, clip, width, height, state.dpPerSecond)
-        },
-        waveforms = waveforms,
-    )
+            preview = { PreviewSurface(player = player) },
+            previewOverlay = previewOverlay,
+            filmstrip = filmstrip,
+            waveforms = waveforms,
+            thumbnail = filmstrips::thumbnail,
+        )
+    } else {
+        EditorScreen(
+            state = state,
+            playing = playing,
+            callbacks = callbacks,
+            preview = { PreviewSurface(player = player) },
+            previewOverlay = previewOverlay,
+            filmstrip = filmstrip,
+            waveforms = waveforms,
+        )
+    }
     if (layers) {
         LayersSheet(
             project = project,

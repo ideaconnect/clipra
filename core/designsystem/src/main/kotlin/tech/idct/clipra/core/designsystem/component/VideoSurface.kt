@@ -19,7 +19,8 @@ import androidx.compose.ui.viewinterop.AndroidView
 @Composable
 fun VideoSurface(
     onAttach: (surface: Surface, width: Int, height: Int) -> Unit,
-    onDetach: () -> Unit,
+    /** The surface given to [onAttach] is going away. */
+    onDetach: (surface: Surface) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val attach by rememberUpdatedState(onAttach)
@@ -49,7 +50,7 @@ fun VideoSurface(
                     }
 
                     override fun onSurfaceTextureDestroyed(texture: SurfaceTexture): Boolean {
-                        detach()
+                        surface?.let(detach)
                         surface?.release()
                         surface = null
                         return true

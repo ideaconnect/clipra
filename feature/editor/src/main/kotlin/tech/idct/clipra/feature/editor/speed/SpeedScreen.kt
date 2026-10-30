@@ -63,8 +63,6 @@ fun SpeedScreen(
     modifier: Modifier = Modifier,
 ) {
     val colors = ClipraTheme.colors
-    val type = ClipraTheme.typography
-    val speed = clip.speed
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -104,74 +102,87 @@ fun SpeedScreen(
                 preview()
             }
         }
-        Column(
+        SpeedControls(
+            speed = clip.speed,
+            onSpeed = actions.onSpeed,
             modifier = Modifier
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp)
                 .padding(top = 14.dp, bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Text(
-                text = stringResource(R.string.editor_speed_constant),
-                style = type.sectionLabel,
-                color = colors.textSecondary,
-            )
-            val constant = SpeedCurve.constants.indexOf(speed.rate).takeIf { speed.ramp == null }
-            SegmentedControl(
-                segments = SpeedCurve.constants.map { Segment(speedLabel(it)) },
-                selectedIndex = constant ?: -1,
-                onSelect = {
-                    actions.onSpeed(Speed(rate = SpeedCurve.constants[it], reverse = speed.reverse))
-                },
-                monospace = true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("speed-constant"),
-            )
-            Text(
-                text = stringResource(R.string.editor_speed_ramp),
-                style = type.sectionLabel,
-                color = colors.textSecondary,
-                modifier = Modifier.padding(top = 4.dp),
-            )
-            val ramps = SpeedCurve.ramps.keys.toList() + SpeedCurve.CUSTOM
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                ramps.chunked(3).forEach { row ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        row.forEach { ramp ->
-                            Option(
-                                label = rampLabel(ramp),
-                                selected = speed.ramp == ramp,
-                                onClick = {
-                                    actions.onSpeed(Speed(ramp = ramp, reverse = speed.reverse))
-                                },
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(44.dp)
-                                    .testTag("ramp:$ramp"),
-                                raised = true,
-                            )
-                        }
+        )
+    }
+}
+
+/**
+ * The Speed board's controls, also the tablet inspector's Speed tab (#69): a constant speed, a
+ * ramp (Custom with its own three speeds) and reverse.
+ */
+@Composable
+fun SpeedControls(speed: Speed, onSpeed: (Speed) -> Unit, modifier: Modifier = Modifier) {
+    val colors = ClipraTheme.colors
+    val type = ClipraTheme.typography
+    val actions = SpeedActions(onDone = {}, onSpeed = onSpeed)
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(
+            text = stringResource(R.string.editor_speed_constant),
+            style = type.sectionLabel,
+            color = colors.textSecondary,
+        )
+        val constant = SpeedCurve.constants.indexOf(speed.rate).takeIf { speed.ramp == null }
+        SegmentedControl(
+            segments = SpeedCurve.constants.map { Segment(speedLabel(it)) },
+            selectedIndex = constant ?: -1,
+            onSelect = {
+                actions.onSpeed(Speed(rate = SpeedCurve.constants[it], reverse = speed.reverse))
+            },
+            monospace = true,
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag("speed-constant"),
+        )
+        Text(
+            text = stringResource(R.string.editor_speed_ramp),
+            style = type.sectionLabel,
+            color = colors.textSecondary,
+            modifier = Modifier.padding(top = 4.dp),
+        )
+        val ramps = SpeedCurve.ramps.keys.toList() + SpeedCurve.CUSTOM
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            ramps.chunked(3).forEach { row ->
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    row.forEach { ramp ->
+                        Option(
+                            label = rampLabel(ramp),
+                            selected = speed.ramp == ramp,
+                            onClick = {
+                                actions.onSpeed(Speed(ramp = ramp, reverse = speed.reverse))
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(44.dp)
+                                .testTag("ramp:$ramp"),
+                            raised = true,
+                        )
                     }
                 }
             }
-            if (speed.ramp == SpeedCurve.CUSTOM) CustomRamp(speed, actions)
-            SwitchRow(
-                title = stringResource(R.string.editor_speed_reverse),
-                subtitle = stringResource(R.string.editor_speed_reverse_detail),
-                checked = speed.reverse,
-                onCheckedChange = { actions.onSpeed(speed.copy(reverse = it)) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("speed-reverse"),
-            )
-            Text(
-                text = stringResource(R.string.editor_speed_pitch),
-                style = type.caption,
-                color = colors.textSecondary,
-            )
         }
+        if (speed.ramp == SpeedCurve.CUSTOM) CustomRamp(speed, actions)
+        SwitchRow(
+            title = stringResource(R.string.editor_speed_reverse),
+            subtitle = stringResource(R.string.editor_speed_reverse_detail),
+            checked = speed.reverse,
+            onCheckedChange = { actions.onSpeed(speed.copy(reverse = it)) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag("speed-reverse"),
+        )
+        Text(
+            text = stringResource(R.string.editor_speed_pitch),
+            style = type.caption,
+            color = colors.textSecondary,
+        )
     }
 }
 

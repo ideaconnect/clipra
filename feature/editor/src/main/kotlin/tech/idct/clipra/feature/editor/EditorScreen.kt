@@ -419,7 +419,7 @@ private fun clipTools(callbacks: EditorCallbacks): List<Tool> {
     )
 }
 
-private fun EditorMessage.textRes(): Int = when (this) {
+internal fun EditorMessage.textRes(): Int = when (this) {
     EditorMessage.LayerLocked -> R.string.editor_message_locked
     EditorMessage.NoRoom -> R.string.editor_message_no_room
     EditorMessage.CantSplitHere -> R.string.editor_message_out_of_range

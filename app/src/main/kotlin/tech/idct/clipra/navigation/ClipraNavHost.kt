@@ -37,6 +37,7 @@ import tech.idct.clipra.feature.effects.MasksRoute
 import tech.idct.clipra.feature.effects.ReframeRoute
 import tech.idct.clipra.feature.effects.TransitionsRoute
 import tech.idct.clipra.feature.effects.effectsScreens
+import tech.idct.clipra.feature.effects.filters.filterName
 import tech.idct.clipra.feature.export.ExportActions
 import tech.idct.clipra.feature.export.ExportDoneRoute
 import tech.idct.clipra.feature.export.ExportProgressRoute
@@ -137,6 +138,7 @@ fun ClipraNavHost(
                 onClose = { navController.popBackStack() },
                 onExport = { navController.navigate(ExportRoute(it)) },
                 onTool = { tool, target -> navController.navigate(toolRoute(tool, target)) },
+                effectName = { filterName(it) },
             ),
         )
         effectsScreens(screen, EffectsActions(onDone = { navController.popBackStack() }))

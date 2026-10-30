@@ -1,6 +1,7 @@
 package tech.idct.clipra.feature.editor.timeline
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -68,6 +69,7 @@ import tech.idct.clipra.core.designsystem.icon.ClipraIcons
 import tech.idct.clipra.core.designsystem.theme.ClipraDimens
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
+import tech.idct.clipra.core.model.Layer
 import tech.idct.clipra.core.model.Project
 import tech.idct.clipra.core.model.cuts
 import tech.idct.clipra.core.model.edit.Edge
@@ -95,10 +97,24 @@ class TimelineActions(
 )
 
 /**
- * The phone timeline (Editor board): a ruler, one lane per layer with the highest on top and an
+ * The tablet timeline's layer headers (TabletEditor board, #69): show or hide, mute and lock
+ * each layer.
+ */
+class LayerHeaderActions(
+    val onHidden: (layerId: String, hidden: Boolean) -> Unit,
+    val onMuted: (layerId: String, muted: Boolean) -> Unit,
+    val onLocked: (layerId: String, locked: Boolean) -> Unit,
+)
+
+/**
+ * The timeline (Editor board): a ruler, one lane per layer with the highest on top and an
  * L-chip gutter, the playhead fixed in the middle. Drag to scrub, pinch to zoom, tap a clip to
  * select it, long-press and drag to move it (to another layer too), drag a selected clip's
- * handles to trim. Moves and trims snap to the playhead and cuts.
+ * handles to trim. Moves and trims snap to the playhead and cuts unless [snap] is off.
+ *
+ * With [headers] it is the tablet's (TabletEditor board, #69): each layer has a header with its
+ * eye, sound and lock, the lanes are a little taller, and the playhead stands a third of the
+ * way in.
  */
 @Composable
 fun Timeline(
@@ -113,6 +129,8 @@ fun Timeline(
     waveforms: WaveformLoader? = null,
     /** Beat markers (#40): each clip's beats on the timeline; cuts snap to them. */
     beats: Map<String, List<Long>> = emptyMap(),
+    headers: LayerHeaderActions? = null,
+    snap: Boolean = true,
 ) {
     val colors = ClipraTheme.colors
     val density = LocalDensity.current
@@ -133,17 +151,47 @@ fun Timeline(
             .testTag("timeline"),
     ) {
         val viewWidth = maxWidth.value
-        val lanesWidth = viewWidth - TimelineGeometry.GUTTER
+        val tablet = headers != null
+        val gutter = if (tablet) TimelineGeometry.HEADER else TimelineGeometry.GUTTER
+        val lanesWidth = viewWidth - gutter
         val geometry = TimelineGeometry(
             dpPerSecond,
-            playheadX = viewWidth / 2 - TimelineGeometry.GUTTER,
+            playheadX = if (tablet) {
+                lanesWidth * TimelineGeometry.TABLET_PLAYHEAD
+            } else {
+                viewWidth / 2 - gutter
+            },
             playheadUs,
         )
+        // The headers scroll with the lanes.
+        val vertical = rememberScrollState()
+        val laneHeight = { layer: Layer ->
+            if (tablet) {
+                TimelineGeometry.tabletLaneHeight(
+                    layer,
+                )
+            } else {
+                TimelineGeometry.laneHeight(layer)
+            }
+        }
         Row(modifier = Modifier.fillMaxSize()) {
-            Gutter(
-                lanes.map { it.index to it.value },
-                modifier = Modifier.width(TimelineGeometry.GUTTER.dp),
-            )
+            if (headers != null) {
+                val selectedLayer = selectedClipId?.let { project.findClip(it)?.first?.id }
+                LayerHeaders(
+                    lanes.map { it.index to it.value },
+                    selectedLayer,
+                    headers,
+                    vertical,
+                    laneHeight,
+                    modifier = Modifier.width(gutter.dp),
+                )
+            } else {
+                Gutter(
+                    lanes.map { it.index to it.value },
+                    vertical,
+                    modifier = Modifier.width(gutter.dp),
+                )
+            }
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -158,11 +206,11 @@ fun Timeline(
                     modifier = Modifier
                         .padding(top = TimelineGeometry.RULER.dp)
                         .fillMaxWidth()
-                        .verticalScroll(rememberScrollState()),
+                        .verticalScroll(vertical),
                 ) {
                     val partners = selectedClipId?.let { project.linkedPartners(it) }.orEmpty()
                     lanes.forEach { (index, layer) ->
-                        val laneHeight = TimelineGeometry.laneHeight(layer)
+                        val laneHeight = laneHeight(layer)
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -184,6 +232,7 @@ fun Timeline(
                                     filmstrip = filmstrip,
                                     waveforms = waveforms,
                                     beats = beats,
+                                    snap = snap,
                                 )
                             }
                             project.cuts().filter { it.layerId == layer.id }.forEach { cut ->
@@ -217,13 +266,14 @@ fun Timeline(
 }
 
 @Composable
-private fun Gutter(lanes: List<Pair<Int, tech.idct.clipra.core.model.Layer>>, modifier: Modifier) {
+private fun Gutter(lanes: List<Pair<Int, Layer>>, scroll: ScrollState, modifier: Modifier) {
     val colors = ClipraTheme.colors
     Column(
         modifier = modifier
             .fillMaxHeight()
             .background(colors.timelineBackground)
-            .padding(top = TimelineGeometry.RULER.dp),
+            .padding(top = TimelineGeometry.RULER.dp)
+            .verticalScroll(scroll),
     ) {
         lanes.forEach { (index, layer) ->
             Box(
@@ -243,6 +293,140 @@ private fun Gutter(lanes: List<Pair<Int, tech.idct.clipra.core.model.Layer>>, mo
                 )
             }
         }
+    }
+}
+
+/**
+ * The tablet's layer headers: "Layers" over the ruler, then for each lane its L chip (lit on the
+ * selected clip's layer), eye, sound and lock.
+ */
+@Composable
+private fun LayerHeaders(
+    lanes: List<Pair<Int, Layer>>,
+    selectedLayerId: String?,
+    actions: LayerHeaderActions,
+    scroll: ScrollState,
+    laneHeight: (Layer) -> Float,
+    modifier: Modifier,
+) {
+    val colors = ClipraTheme.colors
+    val type = ClipraTheme.typography
+    Column(
+        modifier = modifier
+            .fillMaxHeight()
+            .background(colors.layerHeaderBackground)
+            .drawBehind {
+                drawLine(
+                    colors.borderSubtle,
+                    Offset(size.width, 0f),
+                    Offset(size.width, size.height),
+                    strokeWidth = 1.dp.toPx(),
+                )
+            }
+            .testTag("layer-headers"),
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(TimelineGeometry.RULER.dp)
+                .padding(start = 12.dp),
+            contentAlignment = Alignment.CenterStart,
+        ) {
+            Text(
+                text = stringResource(R.string.editor_layers_title),
+                style = type.caption,
+                color = colors.textTertiary,
+            )
+        }
+        Column(modifier = Modifier.verticalScroll(scroll)) {
+            lanes.forEach { (index, layer) ->
+                val selected = layer.id == selectedLayerId
+                val name = "L${index + 1}"
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height((laneHeight(layer) + TimelineGeometry.LANE_GAP).dp)
+                        .background(
+                            if (selected) colors.accent.copy(alpha = 0.07f) else Color.Transparent,
+                        )
+                        .padding(start = 10.dp, end = 2.dp)
+                        .testTag("layer-header:$name"),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = name,
+                        style = type.clipLabel,
+                        color = when {
+                            selected -> colors.onAccent
+                            layer.hidden -> colors.textDisabled
+                            else -> colors.textPrimary
+                        },
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(if (selected) colors.accent else colors.surfaceRaised)
+                            .padding(horizontal = 5.dp, vertical = 3.dp),
+                    )
+                    Box(modifier = Modifier.weight(1f))
+                    HeaderToggle(
+                        icon = if (layer.hidden) ClipraIcons.Hidden else ClipraIcons.Visible,
+                        description = stringResource(
+                            if (layer.hidden) {
+                                R.string.editor_layer_show
+                            } else {
+                                R.string.editor_layer_hide
+                            },
+                        ),
+                        on = layer.hidden,
+                        onClick = { actions.onHidden(layer.id, !layer.hidden) },
+                    )
+                    HeaderToggle(
+                        icon = if (layer.muted) ClipraIcons.Muted else ClipraIcons.Volume,
+                        description = stringResource(
+                            if (layer.muted) {
+                                R.string.editor_layer_unmute
+                            } else {
+                                R.string.editor_layer_mute
+                            },
+                        ),
+                        on = layer.muted,
+                        onClick = { actions.onMuted(layer.id, !layer.muted) },
+                    )
+                    HeaderToggle(
+                        icon = if (layer.locked) ClipraIcons.Lock else ClipraIcons.Unlock,
+                        description = stringResource(
+                            if (layer.locked) {
+                                R.string.editor_layer_unlock
+                            } else {
+                                R.string.editor_layer_lock
+                            },
+                        ),
+                        on = layer.locked,
+                        onClick = { actions.onLocked(layer.id, !layer.locked) },
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** One of a layer header's toggles: dim when off, lit when hiding, muting or locking. */
+@Composable
+private fun HeaderToggle(icon: Int, description: String, on: Boolean, onClick: () -> Unit) {
+    val colors = ClipraTheme.colors
+    Box(
+        modifier = Modifier
+            .size(width = 26.dp, height = 32.dp)
+            .clip(RoundedCornerShape(6.dp))
+            .clickable(onClick = onClick)
+            .semantics { contentDescription = description },
+        contentAlignment = Alignment.Center,
+    ) {
+        ClipraIcon(
+            icon = icon,
+            contentDescription = null,
+            size = 15.dp,
+            tint = if (on) colors.accent else colors.textTertiary,
+        )
     }
 }
 
@@ -321,6 +505,7 @@ private fun ClipBlock(
     filmstrip: @Composable (Clip, Float, Float) -> Unit,
     waveforms: WaveformLoader?,
     beats: Map<String, List<Long>> = emptyMap(),
+    snap: Boolean = true,
 ) {
     val colors = ClipraTheme.colors
     val density = LocalDensity.current
@@ -338,7 +523,8 @@ private fun ClipBlock(
     val fill = clipColor(clip.type, project.isVoiceover(clip))
     val shape = RoundedCornerShape(7.dp)
     val description = clipDescription(project, clip, layerNumber, selected, linked, missing)
-    val thresholdUs = geometry.duration(8f)
+    // Snap off (tablet toolbar) leaves moves and trims where they are let go.
+    val thresholdUs = if (snap) geometry.duration(8f) else 0L
 
     Box(
         modifier = Modifier

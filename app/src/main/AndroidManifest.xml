@@ -23,8 +23,11 @@
         adjustResize: with edge to edge, screens make room for the keyboard themselves
         (safeDrawingPadding) instead of the window being panned off the top.
         -->
+        <!-- Size changes (split screen, foldables, rotation) recompose in place, so the editor
+             keeps what is open when it switches between the phone and tablet layouts (#68). -->
         <activity
             android:name=".MainActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden"
             android:exported="true"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>

@@ -40,6 +40,19 @@ class FilmstripLoader(private val context: Context, private val cache: MediaCach
         return bitmap
     }
 
+    /** The picture made when [mediaId] was imported, for the tablet's media bin (#69). */
+    suspend fun thumbnail(mediaId: String): ImageBitmap? {
+        val key = "thumbnail/$mediaId"
+        frames.get(key)?.let { return it }
+        val bitmap = withContext(Dispatchers.IO) {
+            cache.thumbnail(mediaId).takeIf { it.exists() }
+                ?.let { BitmapFactory.decodeFile(it.path) }
+                ?.asImageBitmap()
+        } ?: return null
+        frames.put(key, bitmap)
+        return bitmap
+    }
+
     private companion object {
         const val MAX_FRAMES = 240
     }

@@ -53,6 +53,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import tech.idct.clipra.core.designsystem.ClipraTheme
@@ -533,19 +534,22 @@ internal fun Option(
  * leaving the field, applies it.
  */
 @Composable
-private fun NumberField(
+internal fun NumberField(
     label: String,
     value: Int,
     unit: String,
     onValue: (Float) -> Unit,
     modifier: Modifier = Modifier,
+    labelWidth: Dp = 64.dp,
+    /** The value as shown, such as "0.5" for seconds; [value] by default. */
+    shown: String = value.toString(),
 ) {
     val colors = ClipraTheme.colors
     val type = ClipraTheme.typography
     val focus = LocalFocusManager.current
-    var text by remember { mutableStateOf(value.toString()) }
+    var text by remember { mutableStateOf(shown) }
     var focused by remember { mutableStateOf(false) }
-    LaunchedEffect(value, focused) { if (!focused) text = value.toString() }
+    LaunchedEffect(shown, focused) { if (!focused) text = shown }
     val valueStyle = type.meta.copy(
         fontSize = type.body.fontSize,
         color = colors.textPrimary,
@@ -564,7 +568,7 @@ private fun NumberField(
             text = label,
             style = type.caption,
             color = colors.textSecondary,
-            modifier = Modifier.width(64.dp),
+            modifier = Modifier.width(labelWidth),
             maxLines = 2,
         )
         BasicTextField(
@@ -582,8 +586,8 @@ private fun NumberField(
                 .weight(1f)
                 .semantics { contentDescription = label }
                 .onFocusChanged { state ->
-                    if (focused && !state.isFocused) {
-                        parseNumber(text)?.let { if (it.roundToInt() != value) onValue(it) }
+                    if (focused && !state.isFocused && text != shown) {
+                        parseNumber(text)?.let(onValue)
                     }
                     focused = state.isFocused
                 },
