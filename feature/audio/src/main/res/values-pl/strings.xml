@@ -37,4 +37,8 @@
     <string name="audio_engine_rnnoise_detail">Lekki, starsze telefony</string>
     <string name="audio_strength">Siła</string>
     <string name="audio_apply_all">Zastosuj do wszystkich klipów z mową</string>
+    <!-- Noise reduction (#38) -->
+    <string name="audio_noise_title">Redukcja szumów</string>
+    <string name="audio_noise_detail">Bramka widmowa na stały przydźwięk i syk</string>
+    <string name="audio_noise_working">Redukcja szumów · %1$d%%</string>
 </resources>

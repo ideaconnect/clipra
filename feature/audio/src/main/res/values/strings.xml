@@ -37,4 +37,8 @@
     <string name="audio_engine_rnnoise_detail">Lite, older phones</string>
     <string name="audio_strength">Strength</string>
     <string name="audio_apply_all">Apply to all clips with speech</string>
+    <!-- Noise reduction (#38) -->
+    <string name="audio_noise_title">Noise reduction</string>
+    <string name="audio_noise_detail">Spectral gate for steady hum and hiss</string>
+    <string name="audio_noise_working">Reducing noise · %1$d%%</string>
 </resources>

@@ -31,7 +31,7 @@ interface MediaResolver {
     fun text(spec: TextSpec, card: Boolean, width: Int, height: Int): Bitmap?
 
     /** The sound of [asset] after AI voice cleanup (#39), once it is ready; null until then. */
-    fun voice(asset: MediaAsset, cleanup: VoiceCleanup): String? = null
+    fun voice(asset: MediaAsset, cleanup: VoiceCleanup?, noise: Float?): String? = null
 
     /** A caption (#45) at [width] × [height] with word [current] spoken (-1: none). */
     fun caption(caption: CaptionSpec, current: Int, width: Int, height: Int): Bitmap? = null
@@ -261,7 +261,13 @@ object ProjectRender {
             // Captions and adjustment clips come with M6 and M2.
             else -> null
         } ?: return null
-        val voice = clip.audio.voiceCleanup?.let { media.voice(asset, it) }
+        // Cleaned up (#39) and noise reduced (#38), once that is ready.
+        val audio = clip.audio
+        val voice = if (audio.voiceCleanup != null || audio.noiseReduction != null) {
+            media.voice(asset, audio.voiceCleanup, audio.noiseReduction)
+        } else {
+            null
+        }
         return renderClipOf(clip, source, voice)
     }
 

@@ -215,6 +215,7 @@ data class AudioSettings(
     /** The clip's own integrated loudness (LUFS) and true peak (dBTP), as measured. */
     val measuredLufs: Float? = null,
     val truePeakDb: Float? = null,
+    /** Noise reduction (#38), the spectral gate's strength 0 to 1, or null for none. */
     val noiseReduction: Float? = null,
     /** AI voice cleanup (#39), or null to keep the sound as recorded. */
     val voiceCleanup: VoiceCleanup? = null,
@@ -332,4 +333,13 @@ object TextFonts {
     const val GEIST_MONO = "Geist Mono"
 
     val all = listOf(BRICOLAGE, GEIST, GEIST_MONO)
+}
+
+/** Noise reduction (#38): a spectral gate for steady hum and hiss. */
+object NoiseReduction {
+    /** The design's default strength, 40%. */
+    const val DEFAULT_STRENGTH = 0.4f
+
+    /** A strength in whole percent, as the slider shows it and the cache keys it. */
+    fun percent(strength: Float): Int = (strength * 100).roundToInt()
 }

@@ -201,8 +201,8 @@ class PreviewPlayer(private val context: Context, cache: MediaCache) {
 
         override fun source(asset: MediaAsset): String? = inner.source(asset)
 
-        override fun voice(asset: MediaAsset, cleanup: VoiceCleanup): String? =
-            inner.voice(asset, cleanup)
+        override fun voice(asset: MediaAsset, cleanup: VoiceCleanup?, noise: Float?): String? =
+            inner.voice(asset, cleanup, noise)
 
         override fun caption(caption: CaptionSpec, current: Int, width: Int, height: Int) =
             inner.caption(caption, current, width, height)

@@ -63,6 +63,7 @@ import tech.idct.clipra.core.model.AudioSettings
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
 import tech.idct.clipra.core.model.LoudnessTargets
+import tech.idct.clipra.core.model.NoiseReduction
 import tech.idct.clipra.core.model.VoiceCleanup
 import tech.idct.clipra.core.model.VoiceEngine
 import tech.idct.clipra.core.model.mediaRangeOf
@@ -87,13 +88,17 @@ class AudioActions(
     val onStrength: (Float) -> Unit = {},
     val onStrengthDone: () -> Unit = {},
     val onApplyToAll: () -> Unit = {},
+    /** Noise reduction (#38): on or off, and its strength as the slider moves and is let go. */
+    val onNoise: (Boolean) -> Unit = {},
+    val onNoiseStrength: (Float) -> Unit = {},
+    val onNoiseStrengthDone: () -> Unit = {},
 )
 
 /**
  * The Audio board (#36): the clip's waveform with its loudness before and after, its volume
- * (0 to 200%), its fades, loudness normalization (#37) and AI voice cleanup (#39). Noise
- * reduction and ducking join with their issues. [volume] and [strength] follow their sliders
- * while they move.
+ * (0 to 200%), its fades, loudness normalization (#37), noise reduction (#38) and AI voice
+ * cleanup (#39). Ducking joins with its issue. [volume], [strength] and [noiseStrength] follow
+ * their sliders while they move.
  */
 @Composable
 fun AudioScreen(
@@ -102,6 +107,7 @@ fun AudioScreen(
     actions: AudioActions,
     modifier: Modifier = Modifier,
     strength: Float? = null,
+    noiseStrength: Float? = null,
 ) {
     val colors = ClipraTheme.colors
     val project = state.project ?: return
@@ -144,7 +150,9 @@ fun AudioScreen(
             CompareCard(
                 clip,
                 state.waveform,
-                state.voice.cleanedWaveform.takeIf { audio.voiceCleanup != null },
+                state.voice.cleanedWaveform.takeIf {
+                    audio.voiceCleanup != null || audio.noiseReduction != null
+                },
                 audio.copy(volume = volume),
                 state.recorded,
                 state.measured,
@@ -183,6 +191,7 @@ fun AudioScreen(
                 )
             }
             NormalizeCard(audio, state.measured, state.measuring, actions.onLoudnessTarget)
+            NoiseReductionCard(audio.noiseReduction, noiseStrength, state.voice.gating, actions)
             VoiceCleanupCard(audio.voiceCleanup, strength, state.voice, actions)
             SecondaryButton(
                 text = stringResource(R.string.audio_apply_all),
@@ -303,6 +312,74 @@ private fun VoiceCleanupCard(
             modifier = Modifier
                 .height(44.dp)
                 .testTag("audio-strength"),
+        )
+    }
+}
+
+/**
+ * Noise reduction (#38): the switch and the strength, as the design draws it. Its progress
+ * replaces the explanation while it runs; off, the strength is dimmed.
+ */
+@Composable
+private fun NoiseReductionCard(
+    noise: Float?,
+    liveStrength: Float?,
+    gating: Float?,
+    actions: AudioActions,
+) {
+    val colors = ClipraTheme.colors
+    val type = ClipraTheme.typography
+    val on = noise != null
+    val strength = liveStrength ?: noise ?: NoiseReduction.DEFAULT_STRENGTH
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(ClipraTheme.shapes.card)
+            .background(colors.surface)
+            .padding(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 12.dp)
+            .testTag("audio-noise"),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = ClipraDimens.TouchTarget)
+                .toggleable(value = on, role = Role.Switch, onValueChange = actions.onNoise)
+                .testTag("audio-noise-switch"),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                Text(
+                    text = stringResource(R.string.audio_noise_title),
+                    style = type.bodyStrong,
+                    color = colors.textPrimary,
+                )
+                Text(
+                    text = if (on && gating != null) {
+                        stringResource(R.string.audio_noise_working, (gating * 100).roundToInt())
+                    } else {
+                        stringResource(R.string.audio_noise_detail)
+                    },
+                    style = type.caption,
+                    color = colors.textSecondary,
+                )
+            }
+            ClipraSwitch(checked = on, onCheckedChange = null)
+        }
+        LabelledSlider(
+            label = stringResource(R.string.audio_strength),
+            value = strength,
+            onValueChange = actions.onNoiseStrength,
+            onValueChangeFinished = actions.onNoiseStrengthDone,
+            valueText = "${(strength * 100).roundToInt()}",
+            enabled = on,
+            labelWidth = 80.dp,
+            modifier = Modifier
+                .height(44.dp)
+                .testTag("audio-noise-strength"),
         )
     }
 }

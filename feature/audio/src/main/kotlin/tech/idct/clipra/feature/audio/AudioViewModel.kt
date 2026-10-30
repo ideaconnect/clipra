@@ -32,6 +32,7 @@ import tech.idct.clipra.core.model.AudioSettings
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
 import tech.idct.clipra.core.model.MediaAsset
+import tech.idct.clipra.core.model.NoiseReduction
 import tech.idct.clipra.core.model.Project
 import tech.idct.clipra.core.model.VoiceCleanup
 import tech.idct.clipra.core.model.VoiceEngine
@@ -67,6 +68,8 @@ data class VoiceUiState(
     val deepFilterNet: ModelStatus = ModelStatus.Missing(),
     val cleaning: Float? = null,
     val cleanedWaveform: Waveform? = null,
+    /** Noise reduction's progress (#38) while it runs. */
+    val gating: Float? = null,
 )
 
 @HiltViewModel
@@ -165,9 +168,30 @@ class AudioViewModel @Inject constructor(
 
     private fun setVoiceCleanup(cleanup: VoiceCleanup?) {
         val clip = state.value.clip ?: return
-        setAudio(clip.audio.copy(voiceCleanup = cleanup))
+        process(clip.audio.copy(voiceCleanup = cleanup))
+    }
+
+    /** Turns noise reduction (#38) on, at the design's 40%, or off. */
+    fun setNoiseOn(on: Boolean) {
+        val clip = state.value.clip ?: return
+        val strength = if (on) NoiseReduction.DEFAULT_STRENGTH else null
+        process(clip.audio.copy(noiseReduction = strength))
+    }
+
+    /** Commits noise reduction's strength (0 to 1) when the slider is let go. */
+    fun setNoiseStrength(strength: Float) {
+        val clip = state.value.clip ?: return
+        if (clip.audio.noiseReduction == null) return
+        process(clip.audio.copy(noiseReduction = strength))
+    }
+
+    /** Commits [audio] and starts the cleanup and noise reduction it asks for. */
+    private fun process(audio: AudioSettings) {
+        setAudio(audio)
         val asset = asset() ?: return
-        if (cleanup != null) appScope.launch(Dispatchers.IO) { voices.request(asset, cleanup) }
+        appScope.launch(Dispatchers.IO) {
+            voices.request(asset, audio.voiceCleanup, audio.noiseReduction)
+        }
     }
 
     private fun asset(): MediaAsset? {
@@ -202,20 +226,33 @@ class AudioViewModel @Inject constructor(
                 mutableState.update { it.copy(voice = it.voice.copy(cleaning = progress)) }
             }
         }
+        launch {
+            combine(voices.running, state) { running, current ->
+                val asset = asset()
+                if (current.clip?.audio?.noiseReduction == null || asset == null) {
+                    null
+                } else {
+                    running[VoiceCleaner.gateKey(asset)]
+                }
+            }.distinctUntilChanged().collect { progress ->
+                mutableState.update { it.copy(voice = it.voice.copy(gating = progress)) }
+            }
+        }
         combine(cache.voiceVersion, state) { version, current ->
-            Triple(version, current.clip?.audio?.voiceCleanup, current.project != null)
+            val audio = current.clip?.audio
+            Triple(version, audio?.voiceCleanup to audio?.noiseReduction, current.project != null)
         }.filter { it.third }
             .distinctUntilChanged()
-            .collectLatest { (_, cleanup) ->
+            .collectLatest { (_, processing) ->
                 val project = state.value.project ?: return@collectLatest
-                loadCleanedWaveform(cleanup)
+                loadCleanedWaveform(processing.first, processing.second)
                 measure(project)
             }
     }
 
-    private suspend fun loadCleanedWaveform(cleanup: VoiceCleanup?) {
+    private suspend fun loadCleanedWaveform(cleanup: VoiceCleanup?, noise: Float?) {
         val asset = asset()
-        val mix = if (cleanup != null && asset != null) voices.mix(asset, cleanup) else null
+        val mix = asset?.let { voices.played(it, cleanup, noise) }
         val waveform = if (mix == null || asset == null) {
             null
         } else {
@@ -268,7 +305,7 @@ class AudioViewModel @Inject constructor(
                     Loudness.measure(context, path, source.inPointUs, endUs)
                 }.getOrNull()
                 recorded = measure(original)
-                val voice = clip.audio.voiceCleanup?.let { voices.mix(asset, it) }
+                val voice = voices.played(asset, clip.audio.voiceCleanup, clip.audio.noiseReduction)
                 if (voice == null) recorded else measure(voice.path)
             }
         }

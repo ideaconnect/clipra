@@ -18,7 +18,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
+import tech.idct.clipra.core.audio.NoiseProfile
+import tech.idct.clipra.core.audio.SpectralGate
+import tech.idct.clipra.core.model.ClipType
 import tech.idct.clipra.core.model.MediaAsset
+import tech.idct.clipra.core.model.NoiseReduction
 import tech.idct.clipra.core.model.Project
 import tech.idct.clipra.core.model.VoiceCleanup
 import tech.idct.clipra.core.model.VoiceEngine
@@ -54,6 +58,19 @@ class VoiceCleaner @Inject constructor(
     fun mix(asset: MediaAsset, cleanup: VoiceCleanup): File? =
         cache.voiceMix(asset.id, cleanup).takeIf { it.exists() }
 
+    /**
+     * What the clip plays (#38, #39): its sound cleaned up by [cleanup] and gated by [noise],
+     * once that is ready; null when neither is set or it is not ready yet.
+     */
+    fun played(asset: MediaAsset, cleanup: VoiceCleanup?, noise: Float?): File? = when {
+        noise != null -> gated(asset, cleanup, noise)
+        cleanup != null -> mix(asset, cleanup)
+        else -> null
+    }
+
+    private fun gated(asset: MediaAsset, cleanup: VoiceCleanup?, noise: Float): File? =
+        cache.voiceGated(asset.id, cleanup, NoiseReduction.percent(noise)).takeIf { it.exists() }
+
     /** The cleaned sound of [asset] at full strength, for its waveform; null until ready. */
     fun cleaned(asset: MediaAsset, engine: VoiceEngine): File? =
         cache.voiceCleaned(asset.id, engine).takeIf { it.exists() }
@@ -65,17 +82,24 @@ class VoiceCleaner @Inject constructor(
     }
 
     /** Cleans up in the background unless the mix is ready (WorkManager, once per mix). */
-    fun request(asset: MediaAsset, cleanup: VoiceCleanup) {
-        if (mix(asset, cleanup) != null || !isAvailable(cleanup.engine)) return
-        VoiceCleanupWorker.enqueue(context, asset, cleanup)
+    fun request(asset: MediaAsset, cleanup: VoiceCleanup) = request(asset, cleanup, null)
+
+    /** Cleans up and gates in the background unless that is ready (once per result). */
+    fun request(asset: MediaAsset, cleanup: VoiceCleanup?, noise: Float?) {
+        if (cleanup == null && noise == null) return
+        if (played(asset, cleanup, noise) != null) return
+        if (cleanup != null && !isAvailable(cleanup.engine)) return
+        VoiceCleanupWorker.enqueue(context, asset, cleanup, noise)
     }
 
     /** Requests every cleanup of [project] that is not ready, such as after the cache was cleared. */
     fun requestAll(project: Project) {
         for (clip in project.layers.flatMap { it.clips }) {
-            val cleanup = clip.audio.voiceCleanup ?: continue
+            val cleanup = clip.audio.voiceCleanup
+            val noise = clip.audio.noiseReduction
+            if (cleanup == null && noise == null) continue
             val asset = clip.source?.let { project.asset(it.mediaId) } ?: continue
-            if (asset.hasAudio) request(asset, cleanup)
+            if (asset.hasAudio || clip.type == ClipType.Audio) request(asset, cleanup, noise)
         }
     }
 
@@ -106,6 +130,88 @@ class VoiceCleaner @Inject constructor(
         } finally {
             progress.update { it - key }
         }
+    }
+
+    /**
+     * Does the cleanup and the noise reduction now, and returns what plays; null when neither
+     * is set, the media has no sound, the engine's model is missing or [stopped] said so.
+     */
+    fun prepare(
+        asset: MediaAsset,
+        cleanup: VoiceCleanup?,
+        noise: Float?,
+        stopped: () -> Boolean = { false },
+    ): File? {
+        if (noise == null) return cleanup?.let { prepare(asset, it, stopped) }
+        return synchronized(locks.getOrPut(asset.id) { Any() }) {
+            gated(asset, cleanup, noise)?.let { return it }
+            val base = if (cleanup != null) {
+                prepare(asset, cleanup, stopped) ?: return null
+            } else {
+                recorded(asset) ?: return null
+            }
+            val key = gateKey(asset)
+            progress.update { it + (key to 0f) }
+            try {
+                val target = cache.voiceGated(asset.id, cleanup, NoiseReduction.percent(noise))
+                if (!gate(base, target, noise, key, stopped)) return null
+                cache.voiceReady()
+                target
+            } finally {
+                progress.update { it - key }
+            }
+        }
+    }
+
+    /** The media's sound as recorded, mono at 48 kHz, decoded once. */
+    private fun recorded(asset: MediaAsset): File? {
+        val recorded = cache.voiceRecorded(asset.id)
+        if (recorded.exists()) return recorded
+        val key = gateKey(asset)
+        return recorded.takeIf { decode(asset, it, key) }
+    }
+
+    /**
+     * Noise reduction (#38): learns the sound's noise floor in one pass, then gates it in a
+     * second, at [strength].
+     */
+    private fun gate(
+        source: File,
+        target: File,
+        strength: Float,
+        key: String,
+        stopped: () -> Boolean,
+    ): Boolean {
+        val profile = NoiseProfile()
+        val block = FloatArray(BLOCK)
+        WavReader(source).use { reader ->
+            while (!stopped()) {
+                val n = reader.read(block, 0, BLOCK)
+                if (n < 0) break
+                profile.add(block, n)
+            }
+        }
+        val part = File(target.path + ".part")
+        WavReader(source).use { reader ->
+            WavWriter(part, DeepFilterNet.SAMPLE_RATE).use { writer ->
+                val gate = SpectralGate(profile.floor(), strength)
+                val emit = { out: FloatArray, n: Int -> writer.write(out, n) }
+                var done = 0L
+                while (!stopped()) {
+                    val n = reader.read(block, 0, BLOCK)
+                    if (n < 0) break
+                    gate.process(block, n, emit)
+                    done += n
+                    report(key, done.toFloat() / reader.frames.coerceAtLeast(1))
+                }
+                gate.finish(emit)
+            }
+        }
+        if (stopped()) {
+            part.delete()
+            return false
+        }
+        return part.renameTo(target)
     }
 
     /** The media's sound, down-mixed to mono and resampled to 48 kHz. */
@@ -204,6 +310,9 @@ class VoiceCleaner @Inject constructor(
 
         /** The key of [running] for a media and an engine. */
         fun key(asset: MediaAsset, engine: VoiceEngine) = "${asset.id}-${engine.name}"
+
+        /** The key of [running] for a media's noise reduction (#38). */
+        fun gateKey(asset: MediaAsset) = "${asset.id}-gate"
     }
 }
 
@@ -223,14 +332,17 @@ class VoiceCleanupWorker @AssistedInject constructor(
             durationUs = inputData.getLong(KEY_DURATION, 0),
             hasAudio = true,
         )
-        val cleanup = VoiceCleanup(
-            engine = VoiceEngine.valueOf(
-                inputData.getString(KEY_ENGINE) ?: return Result.failure(),
-            ),
-            strength = inputData.getFloat(KEY_STRENGTH, VoiceCleanup.DEFAULT_STRENGTH),
-        )
+        val cleanup = inputData.getString(KEY_ENGINE)?.let {
+            VoiceCleanup(
+                engine = VoiceEngine.valueOf(it),
+                strength = inputData.getFloat(KEY_STRENGTH, VoiceCleanup.DEFAULT_STRENGTH),
+            )
+        }
+        val noise = inputData.getFloat(KEY_NOISE, -1f).takeIf { it >= 0f }
         return try {
-            withContext(Dispatchers.Default) { cleaner.prepare(asset, cleanup) { isStopped } }
+            withContext(Dispatchers.Default) {
+                cleaner.prepare(asset, cleanup, noise) { isStopped }
+            }
             Result.success()
         } catch (e: Exception) {
             Log.w("VoiceCleaner", "Voice cleanup failed", e)
@@ -244,21 +356,25 @@ class VoiceCleanupWorker @AssistedInject constructor(
         private const val KEY_DURATION = "duration"
         private const val KEY_ENGINE = "engine"
         private const val KEY_STRENGTH = "strength"
+        private const val KEY_NOISE = "noise"
 
-        fun enqueue(context: Context, asset: MediaAsset, cleanup: VoiceCleanup) {
+        fun enqueue(context: Context, asset: MediaAsset, cleanup: VoiceCleanup?, noise: Float?) {
             val request = OneTimeWorkRequestBuilder<VoiceCleanupWorker>()
                 .setInputData(
                     workDataOf(
                         KEY_ID to asset.id,
                         KEY_URI to asset.uri,
                         KEY_DURATION to asset.durationUs,
-                        KEY_ENGINE to cleanup.engine.name,
-                        KEY_STRENGTH to cleanup.strength,
+                        KEY_ENGINE to cleanup?.engine?.name,
+                        KEY_STRENGTH to (cleanup?.strength ?: VoiceCleanup.DEFAULT_STRENGTH),
+                        KEY_NOISE to (noise ?: -1f),
                     ),
                 )
                 .build()
+            val cleaned = cleanup?.let { "-${it.engine.name}-${it.percent}" }.orEmpty()
+            val gated = noise?.let { "-gate${NoiseReduction.percent(it)}" }.orEmpty()
             WorkManager.getInstance(context).enqueueUniqueWork(
-                "voice-${asset.id}-${cleanup.engine.name}-${cleanup.percent}",
+                "voice-${asset.id}$cleaned$gated",
                 ExistingWorkPolicy.KEEP,
                 request,
             )

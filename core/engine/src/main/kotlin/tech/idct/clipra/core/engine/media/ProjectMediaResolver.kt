@@ -11,6 +11,7 @@ import tech.idct.clipra.core.model.CaptionSpec
 import tech.idct.clipra.core.model.CubeLut
 import tech.idct.clipra.core.model.Luts
 import tech.idct.clipra.core.model.MediaAsset
+import tech.idct.clipra.core.model.NoiseReduction
 import tech.idct.clipra.core.model.TextSpec
 import tech.idct.clipra.core.model.VoiceCleanup
 
@@ -44,8 +45,17 @@ class ProjectMediaResolver(
         motion: Animations.TextMotion,
     ): Bitmap = TextRenderer.render(context, spec, card, width, height, motion)
 
-    override fun voice(asset: MediaAsset, cleanup: VoiceCleanup): String? =
-        cache.voiceMix(asset.id, cleanup).takeIf { it.exists() }?.path
+    /**
+     * What the clip plays: the noise-reduced sound once it is ready (#38), else the cleaned-up
+     * mix (#39), else nothing, so the media's own sound plays.
+     */
+    override fun voice(asset: MediaAsset, cleanup: VoiceCleanup?, noise: Float?): String? {
+        if (noise != null) {
+            val gated = cache.voiceGated(asset.id, cleanup, NoiseReduction.percent(noise))
+            if (gated.exists()) return gated.path
+        }
+        return cleanup?.let { cache.voiceMix(asset.id, it) }?.takeIf { it.exists() }?.path
+    }
 
     override fun caption(caption: CaptionSpec, current: Int, width: Int, height: Int): Bitmap =
         CaptionRenderer.render(context, caption, current, width, height)
