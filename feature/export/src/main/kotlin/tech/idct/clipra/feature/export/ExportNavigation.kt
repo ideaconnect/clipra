@@ -1,6 +1,9 @@
 package tech.idct.clipra.feature.export
 
 import android.Manifest
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import android.net.Uri
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -17,11 +20,13 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.Serializable
 import tech.idct.clipra.core.designsystem.placeholder.Board
 import tech.idct.clipra.core.engine.export.ExportManager
 import tech.idct.clipra.core.engine.export.ExportState
+import tech.idct.clipra.monetization.billing.ProStore
 import javax.inject.Inject
 
 /** Export for [projectId]; null opens the placeholder board (debug screen index). */
@@ -88,6 +93,7 @@ private fun ExportRoute(actions: ExportActions, viewModel: ExportViewModel = hil
         onChange = viewModel::change,
         onExport = { viewModel.start(actions.onStarted) },
         onBack = actions.onBack,
+        ads = if (state.pro) null else ExportAdsLine(state.proPrice, actions.onPro),
     )
 }
 
@@ -97,6 +103,9 @@ private fun ExportProgressRoute(
     viewModel: ExportProgressViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val startAd by viewModel.startAd.collectAsStateWithLifecycle()
+    val finishAd by viewModel.finishAd.collectAsStateWithLifecycle()
+    val context = LocalContext.current
     val askNotifications =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
     LaunchedEffect(Unit) {
@@ -107,8 +116,12 @@ private fun ExportProgressRoute(
             askNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
-    LaunchedEffect(state) {
-        if (state is ExportState.Done) actions.onDone()
+    LaunchedEffect(startAd) {
+        if (startAd) context.findActivity()?.let(viewModel::showStartAd)
+    }
+    // Without Ad 2 to come, a finished export opens the saved video at once.
+    LaunchedEffect(state, finishAd) {
+        if (state is ExportState.Done && finishAd == false) actions.onDone()
     }
     LifecycleResumeEffect(Unit) {
         viewModel.setVisible(true)
@@ -123,12 +136,17 @@ private fun ExportProgressRoute(
             viewModel.cancel()
             actions.onKeepEditing()
         },
+        finished = finishAd == true,
+        onSeeVideo = { context.findActivity()?.let { viewModel.seeVideo(it, actions.onDone) } },
     )
 }
 
 @HiltViewModel
-class SavedViewModel @Inject constructor(private val exports: ExportManager) : ViewModel() {
+class SavedViewModel @Inject constructor(private val exports: ExportManager, proStore: ProStore) :
+    ViewModel() {
     val state: StateFlow<ExportState> = exports.state
+    val pro: Flow<Boolean> = proStore.isPro
+    val proPrice: StateFlow<String?> = proStore.price
 
     /** The finished export has been seen; the next one starts fresh. */
     override fun onCleared() = exports.dismiss()
@@ -141,6 +159,8 @@ private fun SavedRoute(
     viewModel: SavedViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val pro by viewModel.pro.collectAsStateWithLifecycle(initialValue = true)
+    val proPrice by viewModel.proPrice.collectAsStateWithLifecycle()
     val saved = state as? ExportState.Done
     if (saved == null) {
         // Opened from the screen index without an export.
@@ -151,11 +171,17 @@ private fun SavedRoute(
     val uri = Uri.parse(saved.uri)
     SavedScreen(
         saved = saved,
-        // Every user is a free user until Clipra Pro is on sale (M9).
-        showPro = true,
+        showPro = !pro,
+        proPrice = proPrice,
         onShare = { shareVideo(context, uri) },
         onOpenGallery = { openInGallery(context, uri) },
         onPro = actions.onPro,
         onBackToEditing = actions.onKeepEditing,
     )
+}
+
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
 }

@@ -56,4 +56,13 @@
     <string name="export_pro_title">Export without ads next time</string>
     <string name="export_pro_subtitle">Clipra Pro · one payment</string>
     <string name="export_play">Play</string>
+    <string name="export_ads_line">Two short ads play while it exports.</string>
+    <string name="export_ads_remove_for">Remove for %1$s</string>
+    <string name="export_ads_remove">Remove them with Clipra Pro</string>
+    <string name="export_finished_title">Export finished</string>
+    <string name="export_saved_to_gallery">Saved to Gallery</string>
+    <string name="export_file_done">Done</string>
+    <string name="export_see_video">See your video</string>
+    <string name="export_ad_note">A short ad plays first. Clipra Pro removes it.</string>
+    <string name="export_pro_subtitle_price">Clipra Pro · %1$s, one payment</string>
 </resources>

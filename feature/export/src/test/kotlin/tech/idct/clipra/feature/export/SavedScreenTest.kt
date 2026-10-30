@@ -48,6 +48,7 @@ class SavedScreenTest {
                 SavedScreen(
                     saved,
                     showPro = true,
+                    proPrice = "10,00 zł",
                     onShare = {},
                     onOpenGallery = {},
                     onPro = {},
@@ -71,6 +72,7 @@ class SavedScreenTest {
                 SavedScreen(
                     saved,
                     showPro = false,
+                    proPrice = null,
                     onShare = { shareVideo(app, Uri.parse(saved.uri)) },
                     onOpenGallery = {},
                     onPro = {},

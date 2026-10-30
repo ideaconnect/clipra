@@ -4,10 +4,13 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.RoborazziOptions
 import com.github.takahirom.roborazzi.captureRoboImage
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -27,6 +30,8 @@ import java.util.Locale
 class ExportScreenTest {
     @get:Rule
     val compose = createComposeRule()
+
+    private var pro = 0
 
     private val project = Project(
         id = "lisbon",
@@ -57,15 +62,55 @@ class ExportScreenTest {
                     onChange = {},
                     onExport = {},
                     onBack = {},
+                    ads = ExportAdsLine(proPrice = "10,00 zł", onPro = { pro++ }),
                 )
             }
         }
         compose.onNodeWithTag("estimate").assertTextEquals("~64.3 MB")
         compose.onNodeWithTag("codec:AV1").assertIsNotEnabled()
+        compose.onNodeWithText("Remove for 10,00 zł", substring = true).assertExists()
         compose.onRoot().captureRoboImage(
             roborazziOptions = RoborazziOptions(
                 compareOptions = RoborazziOptions.CompareOptions(changeThreshold = 0.001f),
             ),
         )
+        compose.onNodeWithTag("export-ads-line").performClick()
+        assertEquals(1, pro)
+    }
+
+    @Test
+    fun proUsersReadNothingAboutAds() {
+        compose.setContent {
+            ClipraTheme {
+                ExportScreen(
+                    project = project,
+                    settings = ExportSettings(),
+                    support = EncoderSupport(codecs = setOf(VideoCodec.H264)),
+                    onChange = {},
+                    onExport = {},
+                    onBack = {},
+                    ads = null,
+                )
+            }
+        }
+        compose.onNodeWithTag("export-ads-line").assertDoesNotExist()
+    }
+
+    @Test
+    fun withoutAPriceNoneIsMadeUp() {
+        compose.setContent {
+            ClipraTheme {
+                ExportScreen(
+                    project = project,
+                    settings = ExportSettings(),
+                    support = EncoderSupport(codecs = setOf(VideoCodec.H264)),
+                    onChange = {},
+                    onExport = {},
+                    onBack = {},
+                    ads = ExportAdsLine(proPrice = null, onPro = {}),
+                )
+            }
+        }
+        compose.onNodeWithText("Remove them with Clipra Pro", substring = true).assertExists()
     }
 }

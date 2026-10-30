@@ -68,6 +68,7 @@ import java.util.Locale
 fun SavedScreen(
     saved: ExportState.Done,
     showPro: Boolean,
+    proPrice: String?,
     onShare: () -> Unit,
     onOpenGallery: () -> Unit,
     onPro: () -> Unit,
@@ -168,10 +169,11 @@ fun SavedScreen(
                 )
             }
             if (showPro) {
-                // The price comes from Play Billing once Clipra Pro is on sale (M9).
                 ProCard(
                     title = stringResource(R.string.export_pro_title),
-                    subtitle = stringResource(R.string.export_pro_subtitle),
+                    subtitle = proPrice?.let {
+                        stringResource(R.string.export_pro_subtitle_price, it)
+                    } ?: stringResource(R.string.export_pro_subtitle),
                     onClick = onPro,
                     modifier = Modifier.fillMaxWidth(),
                     action = {
