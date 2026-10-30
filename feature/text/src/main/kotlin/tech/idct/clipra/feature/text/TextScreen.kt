@@ -70,6 +70,7 @@ import tech.idct.clipra.core.designsystem.component.Segment
 import tech.idct.clipra.core.designsystem.component.SegmentedControl
 import tech.idct.clipra.core.designsystem.component.SegmentedStyle
 import tech.idct.clipra.core.designsystem.component.TextAction
+import tech.idct.clipra.core.designsystem.component.ToolScaffold
 import tech.idct.clipra.core.designsystem.icon.ClipraIcons
 import tech.idct.clipra.core.designsystem.theme.ClipraDimens
 import tech.idct.clipra.core.engine.render.TextRenderer
@@ -113,42 +114,31 @@ fun TextScreen(
     val spec = clip.text ?: return
     val (layer, _) = project.findClip(clip.id) ?: return
     val output = project.format.outputSize
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(colors.background)
-            .safeDrawingPadding()
-            .testTag("screen:Text"),
-    ) {
-        ScreenHeader(
-            title = stringResource(
-                if (clip.type == ClipType.TextCard) R.string.text_card else R.string.text_overlay,
-            ),
-            subtitle = stringResource(
-                R.string.text_subtitle,
-                project.layers.indexOf(layer) + 1,
-                timecode(clip.startUs),
-                timecode(clip.endUs),
-            ),
-            navigation = HeaderNavigation.Back,
-            onNavigate = actions.onBack,
-            actions = {
-                PrimaryButton(
-                    text = stringResource(R.string.text_done),
-                    onClick = actions.onBack,
-                    compact = true,
-                    modifier = Modifier.testTag("text-done"),
-                )
-            },
-        )
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(280.dp)
-                .clipToBounds()
-                .background(colors.ad.background),
-            contentAlignment = Alignment.Center,
-        ) {
+    val card = clip.type == ClipType.TextCard
+    val title = stringResource(if (card) R.string.text_card else R.string.text_overlay)
+    ToolScaffold(
+        header = {
+            ScreenHeader(
+                title = title,
+                subtitle = stringResource(
+                    R.string.text_subtitle,
+                    project.layers.indexOf(layer) + 1,
+                    timecode(clip.startUs),
+                    timecode(clip.endUs),
+                ),
+                navigation = HeaderNavigation.Back,
+                onNavigate = actions.onBack,
+                actions = {
+                    PrimaryButton(
+                        text = stringResource(R.string.text_done),
+                        onClick = actions.onBack,
+                        compact = true,
+                        modifier = Modifier.testTag("text-done"),
+                    )
+                },
+            )
+        },
+        preview = {
             val ratio = project.format.ratio
             Box(
                 modifier = Modifier
@@ -162,80 +152,92 @@ fun TextScreen(
                 preview()
                 SafeArea()
             }
-        }
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp)
-                .padding(top = 12.dp, bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TextField(draft, actions.onDraft, Modifier.weight(1f))
-                FontButton(spec, onFont = { actions.onSpec(spec.copy(font = it)) })
-                AlignButton(spec.align, onAlign = { actions.onSpec(spec.copy(align = it)) })
+        },
+        controls = { fill ->
+            Column(
+                modifier = fill
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp)
+                    .padding(top = 12.dp, bottom = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextField(draft, actions.onDraft, fill)
+                    FontButton(spec, onFont = { actions.onSpec(spec.copy(font = it)) })
+                    AlignButton(spec.align, onAlign = { actions.onSpec(spec.copy(align = it)) })
+                }
+                Swatches(
+                    title = stringResource(R.string.text_card_color),
+                    selected = spec.background,
+                    allowNone = true,
+                    onPick = { actions.onSpec(spec.copy(background = it)) },
+                    tag = "card-color",
+                )
+                Swatches(
+                    title = stringResource(R.string.text_color),
+                    selected = spec.color,
+                    allowNone = false,
+                    onPick = { it?.let { color -> actions.onSpec(spec.copy(color = color)) } },
+                    tag = "text-color",
+                )
+                EffectGrid(spec, onEffect = { actions.onSpec(spec.copy(effect = it)) })
+                val animation = clip.animation ?: Animation()
+                AnimationRow(
+                    title = stringResource(R.string.text_animation_in),
+                    choices = Animations.textIn,
+                    selected = animation.enter,
+                    onPick = { actions.onAnimation(animation.copy(enter = it)) },
+                    tag = "text-in",
+                )
+                AnimationRow(
+                    title = stringResource(R.string.text_animation_out),
+                    choices = Animations.textOut,
+                    selected = animation.exit,
+                    onPick = { actions.onAnimation(animation.copy(exit = it)) },
+                    tag = "text-out",
+                )
+                var size by remember(spec.size) { mutableFloatStateOf(spec.size) }
+                LabelledSlider(
+                    label = stringResource(R.string.text_size),
+                    value = size,
+                    onValueChange = { size = it },
+                    onValueChangeFinished = { actions.onSpec(spec.copy(size = size)) },
+                    valueText = stringResource(
+                        R.string.text_pixels,
+                        (size * output.height).toInt(),
+                    ),
+                    valueRange = 0.02f..0.2f,
+                    labelWidth = 64.dp,
+                    modifier = Modifier
+                        .height(48.dp)
+                        .testTag("text-size"),
+                )
+                val weights = listOf(
+                    400 to R.string.text_weight_regular,
+                    500 to R.string.text_weight_medium,
+                    700 to R.string.text_weight_bold,
+                    800 to R.string.text_weight_heavy,
+                )
+                SegmentedControl(
+                    segments = weights.map { Segment(stringResource(it.second)) },
+                    selectedIndex = weights
+                        .indexOfFirst { it.first == spec.weight }
+                        .coerceAtLeast(0),
+                    onSelect = { actions.onSpec(spec.copy(weight = weights[it].first)) },
+                    style = SegmentedStyle.Tabs,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("text-weight"),
+                )
             }
-            Swatches(
-                title = stringResource(R.string.text_card_color),
-                selected = spec.background,
-                allowNone = true,
-                onPick = { actions.onSpec(spec.copy(background = it)) },
-                tag = "card-color",
-            )
-            Swatches(
-                title = stringResource(R.string.text_color),
-                selected = spec.color,
-                allowNone = false,
-                onPick = { it?.let { color -> actions.onSpec(spec.copy(color = color)) } },
-                tag = "text-color",
-            )
-            EffectGrid(spec, onEffect = { actions.onSpec(spec.copy(effect = it)) })
-            val animation = clip.animation ?: Animation()
-            AnimationRow(
-                title = stringResource(R.string.text_animation_in),
-                choices = Animations.textIn,
-                selected = animation.enter,
-                onPick = { actions.onAnimation(animation.copy(enter = it)) },
-                tag = "text-in",
-            )
-            AnimationRow(
-                title = stringResource(R.string.text_animation_out),
-                choices = Animations.textOut,
-                selected = animation.exit,
-                onPick = { actions.onAnimation(animation.copy(exit = it)) },
-                tag = "text-out",
-            )
-            var size by remember(spec.size) { mutableFloatStateOf(spec.size) }
-            LabelledSlider(
-                label = stringResource(R.string.text_size),
-                value = size,
-                onValueChange = { size = it },
-                onValueChangeFinished = { actions.onSpec(spec.copy(size = size)) },
-                valueText = stringResource(R.string.text_pixels, (size * output.height).toInt()),
-                valueRange = 0.02f..0.2f,
-                labelWidth = 64.dp,
-                modifier = Modifier
-                    .height(48.dp)
-                    .testTag("text-size"),
-            )
-            val weights = listOf(
-                400 to R.string.text_weight_regular,
-                500 to R.string.text_weight_medium,
-                700 to R.string.text_weight_bold,
-                800 to R.string.text_weight_heavy,
-            )
-            SegmentedControl(
-                segments = weights.map { Segment(stringResource(it.second)) },
-                selectedIndex = weights.indexOfFirst { it.first == spec.weight }.coerceAtLeast(0),
-                onSelect = { actions.onSpec(spec.copy(weight = weights[it].first)) },
-                style = SegmentedStyle.Tabs,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("text-weight"),
-            )
-        }
-    }
+        },
+        previewHeight = 280.dp,
+        modifier = modifier
+            .fillMaxSize()
+            .background(colors.background)
+            .safeDrawingPadding()
+            .testTag("screen:Text"),
+    )
 }
 
 /** The title-safe area: text stays inside this guide. */

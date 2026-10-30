@@ -42,6 +42,7 @@ import tech.idct.clipra.core.designsystem.component.LabelledSlider
 import tech.idct.clipra.core.designsystem.component.PrimaryButton
 import tech.idct.clipra.core.designsystem.component.ScreenHeader
 import tech.idct.clipra.core.designsystem.component.SecondaryButton
+import tech.idct.clipra.core.designsystem.component.ToolScaffold
 import tech.idct.clipra.core.designsystem.icon.ClipraIcons
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.Effect
@@ -86,40 +87,29 @@ fun EffectStackScreen(
     val clip = state.clip ?: return
     val asset = clip.source?.let { project.asset(it.mediaId) }
     var adding by rememberSaveable { mutableStateOf(initialAdding) }
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(colors.background)
-            .safeDrawingPadding()
-            .testTag("screen:EffectStack"),
-    ) {
-        ScreenHeader(
-            title = stringResource(R.string.effects_stack_title),
-            subtitle = pluralStringResource(
-                R.plurals.effects_stack_subtitle,
-                effects.size,
-                asset?.displayName.orEmpty(),
-                effects.size,
-            ),
-            navigation = HeaderNavigation.Back,
-            onNavigate = actions.onBack,
-            actions = {
-                PrimaryButton(
-                    text = stringResource(R.string.effects_done),
-                    onClick = actions.onBack,
-                    compact = true,
-                    modifier = Modifier.testTag("stack-done"),
-                )
-            },
-        )
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(PREVIEW_HEIGHT)
-                .clipToBounds()
-                .background(colors.ad.background),
-            contentAlignment = Alignment.Center,
-        ) {
+    ToolScaffold(
+        header = {
+            ScreenHeader(
+                title = stringResource(R.string.effects_stack_title),
+                subtitle = pluralStringResource(
+                    R.plurals.effects_stack_subtitle,
+                    effects.size,
+                    asset?.displayName.orEmpty(),
+                    effects.size,
+                ),
+                navigation = HeaderNavigation.Back,
+                onNavigate = actions.onBack,
+                actions = {
+                    PrimaryButton(
+                        text = stringResource(R.string.effects_done),
+                        onClick = actions.onBack,
+                        compact = true,
+                        modifier = Modifier.testTag("stack-done"),
+                    )
+                },
+            )
+        },
+        preview = {
             val ratio = project.format.ratio
             Box(
                 modifier = Modifier
@@ -131,67 +121,76 @@ fun EffectStackScreen(
             ) {
                 preview()
             }
-        }
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp)
-                .padding(top = 12.dp, bottom = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            if (effects.isEmpty()) {
-                Text(
-                    text = stringResource(R.string.effects_stack_empty),
-                    style = ClipraTheme.typography.body,
-                    color = colors.textSecondary,
-                    modifier = Modifier.testTag("stack-empty"),
-                )
-            }
-            effects.forEachIndexed { index, effect ->
-                EffectCard(clip, effects, index, effect, actions)
-            }
-            if (adding) {
-                AddPicker(state.addable) { type ->
-                    adding = false
-                    actions.onAdd(type)
+        },
+        controls = { fill ->
+            Column(
+                modifier = fill
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp)
+                    .padding(top = 12.dp, bottom = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                if (effects.isEmpty()) {
+                    Text(
+                        text = stringResource(R.string.effects_stack_empty),
+                        style = ClipraTheme.typography.body,
+                        color = colors.textSecondary,
+                        modifier = Modifier.testTag("stack-empty"),
+                    )
+                }
+                effects.forEachIndexed { index, effect ->
+                    EffectCard(clip, effects, index, effect, actions)
+                }
+                if (adding) {
+                    AddPicker(state.addable) { type ->
+                        adding = false
+                        actions.onAdd(type)
+                    }
                 }
             }
-        }
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .padding(top = 8.dp, bottom = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            SecondaryButton(
-                text = stringResource(R.string.effects_stack_add),
-                onClick = { adding = !adding },
-                enabled = state.addable.isNotEmpty(),
-                outlined = adding,
+        },
+        previewHeight = PREVIEW_HEIGHT,
+        modifier = modifier
+            .fillMaxSize()
+            .background(colors.background)
+            .safeDrawingPadding()
+            .testTag("screen:EffectStack"),
+        bottom = {
+            Row(
                 modifier = Modifier
-                    .weight(1.3f)
-                    .testTag("stack-add"),
-            )
-            SecondaryButton(
-                text = stringResource(R.string.effects_stack_copy),
-                onClick = actions.onCopy,
-                enabled = effects.isNotEmpty(),
-                modifier = Modifier
-                    .weight(1f)
-                    .testTag("stack-copy"),
-            )
-            SecondaryButton(
-                text = stringResource(R.string.effects_stack_paste),
-                onClick = actions.onPaste,
-                enabled = state.copied != null,
-                modifier = Modifier
-                    .weight(1f)
-                    .testTag("stack-paste"),
-            )
-        }
-    }
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .padding(top = 8.dp, bottom = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                SecondaryButton(
+                    text = stringResource(R.string.effects_stack_add),
+                    onClick = { adding = !adding },
+                    enabled = state.addable.isNotEmpty(),
+                    outlined = adding,
+                    modifier = Modifier
+                        .weight(1.3f)
+                        .testTag("stack-add"),
+                )
+                SecondaryButton(
+                    text = stringResource(R.string.effects_stack_copy),
+                    onClick = actions.onCopy,
+                    enabled = effects.isNotEmpty(),
+                    modifier = Modifier
+                        .weight(1f)
+                        .testTag("stack-copy"),
+                )
+                SecondaryButton(
+                    text = stringResource(R.string.effects_stack_paste),
+                    onClick = actions.onPaste,
+                    enabled = state.copied != null,
+                    modifier = Modifier
+                        .weight(1f)
+                        .testTag("stack-paste"),
+                )
+            }
+        },
+    )
 }
 
 /** One effect of the stack: its place, name, switch, strength and how to move or remove it. */

@@ -47,6 +47,7 @@ import tech.idct.clipra.core.designsystem.component.HeaderNavigation
 import tech.idct.clipra.core.designsystem.component.LabelledSlider
 import tech.idct.clipra.core.designsystem.component.PrimaryButton
 import tech.idct.clipra.core.designsystem.component.ScreenHeader
+import tech.idct.clipra.core.designsystem.component.ToolScaffold
 import tech.idct.clipra.core.designsystem.icon.ClipraIcons
 import tech.idct.clipra.core.model.Cells
 import tech.idct.clipra.core.model.Clip
@@ -98,39 +99,28 @@ fun MasksScreen(
     val effectName = filterName(effectType)
     val outputShortSide = minOf(project.format.outputSize.width, project.format.outputSize.height)
     val asset = clip.source?.let { project.asset(it.mediaId) }
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(colors.background)
-            .safeDrawingPadding()
-            .testTag("screen:Masks"),
-    ) {
-        ScreenHeader(
-            title = stringResource(R.string.effects_mask_title),
-            subtitle = stringResource(
-                R.string.effects_mask_subtitle,
-                stringResource(R.string.effects_mask_effect, effectName),
-                asset?.displayName.orEmpty(),
-            ),
-            navigation = HeaderNavigation.Back,
-            onNavigate = actions.onBack,
-            actions = {
-                PrimaryButton(
-                    text = stringResource(R.string.effects_done),
-                    onClick = actions.onBack,
-                    compact = true,
-                    modifier = Modifier.testTag("masks-done"),
-                )
-            },
-        )
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(PREVIEW_HEIGHT)
-                .clipToBounds()
-                .background(colors.ad.background),
-            contentAlignment = Alignment.Center,
-        ) {
+    ToolScaffold(
+        header = {
+            ScreenHeader(
+                title = stringResource(R.string.effects_mask_title),
+                subtitle = stringResource(
+                    R.string.effects_mask_subtitle,
+                    stringResource(R.string.effects_mask_effect, effectName),
+                    asset?.displayName.orEmpty(),
+                ),
+                navigation = HeaderNavigation.Back,
+                onNavigate = actions.onBack,
+                actions = {
+                    PrimaryButton(
+                        text = stringResource(R.string.effects_done),
+                        onClick = actions.onBack,
+                        compact = true,
+                        modifier = Modifier.testTag("masks-done"),
+                    )
+                },
+            )
+        },
+        preview = {
             val ratio = project.format.ratio
             Box(
                 modifier = Modifier
@@ -154,124 +144,131 @@ fun MasksScreen(
                     cell = Cells.rect(project.format, clip.cell),
                 )
             }
-        }
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp)
-                .padding(top = 14.dp, bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf(
-                    Triple(MaskShape.None, R.string.effects_mask_none, ClipraIcons.MaskNone),
-                    Triple(
-                        MaskShape.Rectangle,
-                        R.string.effects_mask_rectangle,
-                        ClipraIcons.MaskRectangle,
-                    ),
-                    Triple(MaskShape.Oval, R.string.effects_mask_oval, ClipraIcons.MaskOval),
-                ).forEach { (option, label, icon) ->
-                    ChoiceCard(
-                        title = stringResource(label),
-                        selected = shape == option,
-                        onClick = { actions.onShape(option) },
-                        compact = true,
-                        leading = { selected ->
-                            ClipraIcon(
-                                icon = icon,
-                                contentDescription = null,
-                                tint = if (selected) colors.accent else colors.textPrimary,
-                            )
-                        },
-                        modifier = Modifier
-                            .weight(1f)
-                            .testTag("shape:${option.name}"),
-                    )
+        },
+        controls = { fill ->
+            Column(
+                modifier = fill
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp)
+                    .padding(top = 14.dp, bottom = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(
+                        Triple(MaskShape.None, R.string.effects_mask_none, ClipraIcons.MaskNone),
+                        Triple(
+                            MaskShape.Rectangle,
+                            R.string.effects_mask_rectangle,
+                            ClipraIcons.MaskRectangle,
+                        ),
+                        Triple(MaskShape.Oval, R.string.effects_mask_oval, ClipraIcons.MaskOval),
+                    ).forEach { (option, label, icon) ->
+                        ChoiceCard(
+                            title = stringResource(label),
+                            selected = shape == option,
+                            onClick = { actions.onShape(option) },
+                            compact = true,
+                            leading = { selected ->
+                                ClipraIcon(
+                                    icon = icon,
+                                    contentDescription = null,
+                                    tint = if (selected) colors.accent else colors.textPrimary,
+                                )
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .testTag("shape:${option.name}"),
+                        )
+                    }
                 }
-            }
-            if (mask != null && shape != MaskShape.None) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    AppliesTo(
-                        effectName = effectName,
-                        choices = clip.effects.map { it.type }.filter(Filters::isFilter)
-                            .ifEmpty { listOf(MasksUiState.DEFAULT_EFFECT) },
-                        onPick = { actions.onMask(mask.copy(effect = it)) },
-                        modifier = Modifier.weight(1f),
-                    )
-                    Text(
-                        text = stringResource(R.string.effects_mask_invert),
-                        style = ClipraTheme.typography.bodyStrong,
-                        color = colors.textPrimary,
-                    )
-                    ClipraSwitch(
-                        checked = mask.invert,
-                        onCheckedChange = { actions.onMask(mask.copy(invert = it)) },
-                        modifier = Modifier.testTag("mask-invert"),
-                    )
+                if (mask != null && shape != MaskShape.None) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        AppliesTo(
+                            effectName = effectName,
+                            choices = clip.effects.map { it.type }.filter(Filters::isFilter)
+                                .ifEmpty { listOf(MasksUiState.DEFAULT_EFFECT) },
+                            onPick = { actions.onMask(mask.copy(effect = it)) },
+                            modifier = fill,
+                        )
+                        Text(
+                            text = stringResource(R.string.effects_mask_invert),
+                            style = ClipraTheme.typography.bodyStrong,
+                            color = colors.textPrimary,
+                        )
+                        ClipraSwitch(
+                            checked = mask.invert,
+                            onCheckedChange = { actions.onMask(mask.copy(invert = it)) },
+                            modifier = Modifier.testTag("mask-invert"),
+                        )
+                    }
                 }
-            }
-            if (effectType == "mosaic" && clip.effects.any { it.type == "mosaic" }) {
-                LabelledSlider(
-                    label = stringResource(R.string.effects_mask_block_size),
-                    value = blockSize,
-                    onValueChange = actions.onBlockSizeLive,
-                    onValueChangeFinished = actions.onBlockSizeDone,
-                    valueText = pixels(blockSize, outputShortSide),
-                    valueRange = 0.02f..0.2f,
-                    labelWidth = 104.dp,
-                    modifier = Modifier
-                        .height(52.dp)
-                        .testTag("mask-block-size"),
-                )
-            }
-            if (mask != null && shape != MaskShape.None) {
-                LabelledSlider(
-                    label = stringResource(R.string.effects_mask_feather),
-                    value = mask.feather,
-                    onValueChange = { actions.onMaskLive(mask.copy(feather = it)) },
-                    onValueChangeFinished = actions.onMaskDone,
-                    valueText = pixels(mask.feather, outputShortSide),
-                    valueRange = 0f..0.15f,
-                    labelWidth = 104.dp,
-                    modifier = Modifier
-                        .height(52.dp)
-                        .testTag("mask-feather"),
-                )
-                if (shape == MaskShape.Rectangle) {
+                if (effectType == "mosaic" && clip.effects.any { it.type == "mosaic" }) {
                     LabelledSlider(
-                        label = stringResource(R.string.effects_mask_radius),
-                        value = mask.cornerRadius,
-                        onValueChange = { actions.onMaskLive(mask.copy(cornerRadius = it)) },
-                        onValueChangeFinished = actions.onMaskDone,
-                        valueText = pixels(mask.cornerRadius, outputShortSide),
-                        valueRange = 0f..0.25f,
+                        label = stringResource(R.string.effects_mask_block_size),
+                        value = blockSize,
+                        onValueChange = actions.onBlockSizeLive,
+                        onValueChangeFinished = actions.onBlockSizeDone,
+                        valueText = pixels(blockSize, outputShortSide),
+                        valueRange = 0.02f..0.2f,
                         labelWidth = 104.dp,
                         modifier = Modifier
                             .height(52.dp)
-                            .testTag("mask-radius"),
+                            .testTag("mask-block-size"),
                     )
                 }
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    FollowFace(
-                        on = mask.followFace || state.tracking != null,
-                        tracking = state.tracking,
-                        noFace = state.noFace,
-                        onFollowFace = actions.onFollowFace,
-                        modifier = Modifier.weight(1f),
+                if (mask != null && shape != MaskShape.None) {
+                    LabelledSlider(
+                        label = stringResource(R.string.effects_mask_feather),
+                        value = mask.feather,
+                        onValueChange = { actions.onMaskLive(mask.copy(feather = it)) },
+                        onValueChangeFinished = actions.onMaskDone,
+                        valueText = pixels(mask.feather, outputShortSide),
+                        valueRange = 0f..0.15f,
+                        labelWidth = 104.dp,
+                        modifier = Modifier
+                            .height(52.dp)
+                            .testTag("mask-feather"),
                     )
-                    MaskKeyframe(clip, state.playheadUs, actions.onKeyframe)
+                    if (shape == MaskShape.Rectangle) {
+                        LabelledSlider(
+                            label = stringResource(R.string.effects_mask_radius),
+                            value = mask.cornerRadius,
+                            onValueChange = { actions.onMaskLive(mask.copy(cornerRadius = it)) },
+                            onValueChangeFinished = actions.onMaskDone,
+                            valueText = pixels(mask.cornerRadius, outputShortSide),
+                            valueRange = 0f..0.25f,
+                            labelWidth = 104.dp,
+                            modifier = Modifier
+                                .height(52.dp)
+                                .testTag("mask-radius"),
+                        )
+                    }
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        FollowFace(
+                            on = mask.followFace || state.tracking != null,
+                            tracking = state.tracking,
+                            noFace = state.noFace,
+                            onFollowFace = actions.onFollowFace,
+                            modifier = Modifier.weight(1f),
+                        )
+                        MaskKeyframe(clip, state.playheadUs, actions.onKeyframe)
+                    }
                 }
             }
-        }
-    }
+        },
+        previewHeight = PREVIEW_HEIGHT,
+        modifier = modifier
+            .fillMaxSize()
+            .background(colors.background)
+            .safeDrawingPadding()
+            .testTag("screen:Masks"),
+    )
 }
 
 /**

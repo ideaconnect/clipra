@@ -3,9 +3,11 @@ package tech.idct.clipra.feature.effects.transitions
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -36,6 +38,7 @@ import tech.idct.clipra.core.designsystem.component.Segment
 import tech.idct.clipra.core.designsystem.component.SegmentedControl
 import tech.idct.clipra.core.designsystem.component.SegmentedStyle
 import tech.idct.clipra.core.designsystem.component.TextAction
+import tech.idct.clipra.core.designsystem.component.ToolScaffold
 import tech.idct.clipra.core.designsystem.icon.ClipraIcons
 import tech.idct.clipra.core.designsystem.theme.ClipraDimens
 import tech.idct.clipra.core.model.Clip
@@ -45,7 +48,6 @@ import tech.idct.clipra.core.model.Transitions
 import tech.idct.clipra.feature.effects.R
 import tech.idct.clipra.feature.effects.common.PICKER_COLUMNS
 import tech.idct.clipra.feature.effects.common.PickerCategory
-import tech.idct.clipra.feature.effects.common.PickerPreview
 import tech.idct.clipra.feature.effects.common.PickerTile
 import java.util.Locale
 import kotlin.math.roundToLong
@@ -79,37 +81,43 @@ fun TransitionsScreen(
     val project = state.project ?: return
     val cut = state.cut ?: return
     val selected = state.transition?.type
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(colors.background)
-            .safeDrawingPadding()
-            .testTag("screen:Transitions"),
-    ) {
-        ScreenHeader(
-            title = stringResource(R.string.effects_transition_title),
-            subtitle = stringResource(
-                R.string.effects_transition_subtitle,
-                name(project, cut.from),
-                name(project, cut.to),
-            ),
-            navigation = HeaderNavigation.Back,
-            onNavigate = actions.onBack,
-            actions = {
-                TextAction(
-                    text = stringResource(R.string.effects_apply_to_all),
-                    onClick = actions.onApplyToAll,
-                    modifier = Modifier.testTag("apply-to-all"),
-                )
-                PrimaryButton(
-                    text = stringResource(R.string.effects_done),
-                    onClick = actions.onBack,
-                    compact = true,
-                    modifier = Modifier.testTag("transitions-done"),
-                )
-            },
-        )
-        PickerPreview(project.format.ratio.let { it.width.toFloat() / it.height }, preview) {
+    ToolScaffold(
+        header = {
+            ScreenHeader(
+                title = stringResource(R.string.effects_transition_title),
+                subtitle = stringResource(
+                    R.string.effects_transition_subtitle,
+                    name(project, cut.from),
+                    name(project, cut.to),
+                ),
+                navigation = HeaderNavigation.Back,
+                onNavigate = actions.onBack,
+                actions = {
+                    TextAction(
+                        text = stringResource(R.string.effects_apply_to_all),
+                        onClick = actions.onApplyToAll,
+                        modifier = Modifier.testTag("apply-to-all"),
+                    )
+                    PrimaryButton(
+                        text = stringResource(R.string.effects_done),
+                        onClick = actions.onBack,
+                        compact = true,
+                        modifier = Modifier.testTag("transitions-done"),
+                    )
+                },
+            )
+        },
+        preview = {
+            Box(
+                modifier = Modifier
+                    .aspectRatio(
+                        project.format.ratio.let { it.width.toFloat() / it.height },
+                        matchHeightConstraintsFirst = true,
+                    )
+                    .testTag("preview"),
+            ) {
+                preview()
+            }
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
@@ -138,100 +146,110 @@ fun TransitionsScreen(
                         .padding(end = 12.dp, bottom = 8.dp),
                 )
             }
-        }
-        Row(
-            modifier = Modifier
-                .padding(start = 16.dp, end = 16.dp, top = 10.dp)
-                .horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            TransitionCategory.entries.forEach { entry ->
-                val (label, count) = when (entry) {
-                    TransitionCategory.All -> R.string.effects_category_all to Transitions.all.size
+        },
+        controls = { fill ->
+            Row(
+                modifier = Modifier
+                    .padding(start = 16.dp, end = 16.dp, top = 10.dp)
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                TransitionCategory.entries.forEach { entry ->
+                    val (label, count) = when (entry) {
+                        TransitionCategory.All ->
+                            R.string.effects_category_all to Transitions.all.size
 
-                    TransitionCategory.Basic ->
-                        R.string.effects_category_basic to Transitions.basic.size
+                        TransitionCategory.Basic ->
+                            R.string.effects_category_basic to Transitions.basic.size
 
-                    TransitionCategory.Motion ->
-                        R.string.effects_category_motion to Transitions.motion.size
+                        TransitionCategory.Motion ->
+                            R.string.effects_category_motion to Transitions.motion.size
 
-                    TransitionCategory.Stylized ->
-                        R.string.effects_category_stylized to Transitions.stylized.size
-                }
-                PickerCategory(
-                    label = stringResource(label),
-                    count = count,
-                    selected = entry == state.category,
-                    onClick = { actions.onCategory(entry) },
-                    modifier = Modifier.testTag("category:${entry.name}"),
-                )
-            }
-        }
-        val shown = listOf<String?>(null) + when (state.category) {
-            TransitionCategory.All -> Transitions.all
-            TransitionCategory.Basic -> Transitions.basic
-            TransitionCategory.Motion -> Transitions.motion
-            TransitionCategory.Stylized -> Transitions.stylized
-        }
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .verticalScroll(rememberScrollState())
-                .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            shown.chunked(PICKER_COLUMNS).forEach { row ->
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    row.forEach { type ->
-                        PickerTile(
-                            name = transitionName(type),
-                            thumbnail = state.thumbnails[type.orEmpty()],
-                            selected = type == selected,
-                            onClick = { actions.onPick(type) },
-                            modifier = Modifier
-                                .weight(1f)
-                                .testTag("transition:${type ?: "none"}"),
-                        )
+                        TransitionCategory.Stylized ->
+                            R.string.effects_category_stylized to Transitions.stylized.size
                     }
-                    repeat(PICKER_COLUMNS - row.size) { Spacer(modifier = Modifier.weight(1f)) }
+                    PickerCategory(
+                        label = stringResource(label),
+                        count = count,
+                        selected = entry == state.category,
+                        onClick = { actions.onCategory(entry) },
+                        modifier = Modifier.testTag("category:${entry.name}"),
+                    )
                 }
             }
-        }
-        val longest = minOf(Transitions.MAX_DURATION_US, cut.maxTransitionUs)
-        val shortestSeconds = Transitions.MIN_DURATION_US / 1_000_000f
-        val longestSeconds = Transitions.MAX_DURATION_US / 1_000_000f
-        LabelledSlider(
-            label = stringResource(R.string.effects_duration),
-            value = durationUs / 1_000_000f,
-            onValueChange = { seconds ->
-                val tenths = (seconds * 10).roundToLong().coerceIn(1, longest / 100_000)
-                actions.onDuration(tenths * 100_000)
-            },
-            onValueChangeFinished = actions.onDurationDone,
-            valueText = stringResource(R.string.effects_seconds, seconds(durationUs)),
-            valueRange = shortestSeconds..longestSeconds,
-            enabled = selected != null,
-            labelWidth = 72.dp,
-            modifier = Modifier
-                .padding(horizontal = 16.dp)
-                .height(52.dp)
-                .testTag("transition-duration"),
-        )
-        SegmentedControl(
-            segments = listOf(
-                Segment(stringResource(R.string.effects_easing_linear), enabled = selected != null),
-                Segment(stringResource(R.string.effects_easing_in_out), enabled = selected != null),
-                Segment(stringResource(R.string.effects_easing_out), enabled = selected != null),
-            ),
-            selectedIndex = (state.transition?.easing ?: Easing.EaseInOut).ordinal,
-            onSelect = { actions.onEasing(Easing.entries[it]) },
-            style = SegmentedStyle.Tabs,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 16.dp, end = 16.dp, bottom = 12.dp)
-                .testTag("transition-easing"),
-        )
-    }
+            val shown = listOf<String?>(null) + when (state.category) {
+                TransitionCategory.All -> Transitions.all
+                TransitionCategory.Basic -> Transitions.basic
+                TransitionCategory.Motion -> Transitions.motion
+                TransitionCategory.Stylized -> Transitions.stylized
+            }
+            Column(
+                modifier = fill
+                    .verticalScroll(rememberScrollState())
+                    .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                shown.chunked(PICKER_COLUMNS).forEach { row ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        row.forEach { type ->
+                            PickerTile(
+                                name = transitionName(type),
+                                thumbnail = state.thumbnails[type.orEmpty()],
+                                selected = type == selected,
+                                onClick = { actions.onPick(type) },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .testTag("transition:${type ?: "none"}"),
+                            )
+                        }
+                        repeat(PICKER_COLUMNS - row.size) { Spacer(modifier = fill) }
+                    }
+                }
+            }
+        },
+        previewHeight = 240.dp,
+        modifier = modifier
+            .fillMaxSize()
+            .background(colors.background)
+            .safeDrawingPadding()
+            .testTag("screen:Transitions"),
+        bottom = {
+            val longest = minOf(Transitions.MAX_DURATION_US, cut.maxTransitionUs)
+            val shortestSeconds = Transitions.MIN_DURATION_US / 1_000_000f
+            val longestSeconds = Transitions.MAX_DURATION_US / 1_000_000f
+            LabelledSlider(
+                label = stringResource(R.string.effects_duration),
+                value = durationUs / 1_000_000f,
+                onValueChange = { seconds ->
+                    val tenths = (seconds * 10).roundToLong().coerceIn(1, longest / 100_000)
+                    actions.onDuration(tenths * 100_000)
+                },
+                onValueChangeFinished = actions.onDurationDone,
+                valueText = stringResource(R.string.effects_seconds, seconds(durationUs)),
+                valueRange = shortestSeconds..longestSeconds,
+                enabled = selected != null,
+                labelWidth = 72.dp,
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .height(52.dp)
+                    .testTag("transition-duration"),
+            )
+            SegmentedControl(
+                segments = listOf(
+                    R.string.effects_easing_linear,
+                    R.string.effects_easing_in_out,
+                    R.string.effects_easing_out,
+                ).map { Segment(stringResource(it), enabled = selected != null) },
+                selectedIndex = (state.transition?.easing ?: Easing.EaseInOut).ordinal,
+                onSelect = { actions.onEasing(Easing.entries[it]) },
+                style = SegmentedStyle.Tabs,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, end = 16.dp, bottom = 12.dp)
+                    .testTag("transition-easing"),
+            )
+        },
+    )
 }
 
 @Composable

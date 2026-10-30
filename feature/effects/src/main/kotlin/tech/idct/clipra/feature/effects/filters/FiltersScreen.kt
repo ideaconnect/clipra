@@ -50,6 +50,7 @@ import tech.idct.clipra.core.designsystem.component.LabelledSlider
 import tech.idct.clipra.core.designsystem.component.PrimaryButton
 import tech.idct.clipra.core.designsystem.component.ScreenHeader
 import tech.idct.clipra.core.designsystem.component.TextAction
+import tech.idct.clipra.core.designsystem.component.ToolScaffold
 import tech.idct.clipra.core.designsystem.icon.ClipraIcons
 import tech.idct.clipra.core.designsystem.theme.ClipraDimens
 import tech.idct.clipra.core.model.Filters
@@ -57,7 +58,6 @@ import tech.idct.clipra.core.model.filter
 import tech.idct.clipra.feature.effects.R
 import tech.idct.clipra.feature.effects.common.PICKER_COLUMNS
 import tech.idct.clipra.feature.effects.common.PickerCategory
-import tech.idct.clipra.feature.effects.common.PickerPreview
 import tech.idct.clipra.feature.effects.common.PickerTile
 import kotlin.math.roundToInt
 
@@ -90,33 +90,41 @@ fun FiltersScreen(
     val clip = state.clip ?: return
     val selected = clip.filter?.type
     val assetName = clip.source?.let { project.asset(it.mediaId) }?.displayName.orEmpty()
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(colors.background)
-            .safeDrawingPadding()
-            .testTag("screen:Filters"),
-    ) {
-        ScreenHeader(
-            title = stringResource(R.string.effects_title_filters),
-            subtitle = pluralStringResource(
-                R.plurals.effects_filters_subtitle,
-                Filters.all.size,
-                assetName,
-                Filters.all.size,
-            ),
-            navigation = HeaderNavigation.Back,
-            onNavigate = actions.onBack,
-            actions = {
-                PrimaryButton(
-                    text = stringResource(R.string.effects_done),
-                    onClick = actions.onBack,
-                    compact = true,
-                    modifier = Modifier.testTag("filters-done"),
-                )
-            },
-        )
-        PickerPreview(project.format.ratio.let { it.width.toFloat() / it.height }, preview) {
+    ToolScaffold(
+        header = {
+            ScreenHeader(
+                title = stringResource(R.string.effects_title_filters),
+                subtitle = pluralStringResource(
+                    R.plurals.effects_filters_subtitle,
+                    Filters.all.size,
+                    assetName,
+                    Filters.all.size,
+                ),
+                navigation = HeaderNavigation.Back,
+                onNavigate = actions.onBack,
+                actions = {
+                    PrimaryButton(
+                        text = stringResource(R.string.effects_done),
+                        onClick = actions.onBack,
+                        compact = true,
+                        modifier = Modifier.testTag("filters-done"),
+                    )
+                },
+            )
+        },
+        preview = {
+            Box(
+                modifier = Modifier
+                    .aspectRatio(
+                        project.format.ratio.let {
+                            it.width.toFloat() / it.height
+                        },
+                        matchHeightConstraintsFirst = true,
+                    )
+                    .testTag("preview"),
+            ) {
+                preview()
+            }
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
@@ -145,32 +153,41 @@ fun FiltersScreen(
                     .align(Alignment.BottomEnd)
                     .padding(end = 12.dp, bottom = 8.dp),
             )
-        }
-        Categories(state.category, actions)
-        Grid(
-            category = state.category,
-            selected = selected,
-            thumbnails = state.thumbnails,
-            onPick = actions.onPick,
-            modifier = Modifier
-                .weight(1f)
-                .verticalScroll(rememberScrollState())
-                .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 8.dp),
-        )
-        LabelledSlider(
-            label = stringResource(R.string.effects_strength),
-            value = strength,
-            onValueChange = actions.onStrength,
-            onValueChangeFinished = actions.onStrengthDone,
-            valueText = (strength * 100).roundToInt().toString(),
-            enabled = selected != null,
-            labelWidth = 64.dp,
-            modifier = Modifier
-                .padding(start = 16.dp, end = 16.dp, bottom = 12.dp)
-                .height(52.dp)
-                .testTag("filter-strength"),
-        )
-    }
+        },
+        controls = { fill ->
+            Categories(state.category, actions)
+            Grid(
+                category = state.category,
+                selected = selected,
+                thumbnails = state.thumbnails,
+                onPick = actions.onPick,
+                modifier = fill
+                    .verticalScroll(rememberScrollState())
+                    .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 8.dp),
+            )
+        },
+        previewHeight = 240.dp,
+        modifier = modifier
+            .fillMaxSize()
+            .background(colors.background)
+            .safeDrawingPadding()
+            .testTag("screen:Filters"),
+        bottom = {
+            LabelledSlider(
+                label = stringResource(R.string.effects_strength),
+                value = strength,
+                onValueChange = actions.onStrength,
+                onValueChangeFinished = actions.onStrengthDone,
+                valueText = (strength * 100).roundToInt().toString(),
+                enabled = selected != null,
+                labelWidth = 64.dp,
+                modifier = Modifier
+                    .padding(start = 16.dp, end = 16.dp, bottom = 12.dp)
+                    .height(52.dp)
+                    .testTag("filter-strength"),
+            )
+        },
+    )
 }
 
 /** Shows the original while held. */

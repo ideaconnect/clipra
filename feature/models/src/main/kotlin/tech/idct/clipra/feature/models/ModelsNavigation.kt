@@ -7,6 +7,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import kotlinx.serialization.Serializable
+import tech.idct.clipra.core.designsystem.component.ReadableWidth
 import tech.idct.clipra.core.designsystem.placeholder.Board
 
 @Serializable
@@ -49,17 +50,19 @@ fun NavGraphBuilder.modelsScreens(
 @Composable
 private fun ModelsDestination(onBack: () -> Unit, viewModel: ModelsViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    ModelsScreen(
-        state = state,
-        actions = ModelsActions(
-            onBack = onBack,
-            onDownload = viewModel::download,
-            onCancel = viewModel::cancel,
-            onRemove = viewModel::remove,
-            onWifiOnly = viewModel::setWifiOnly,
-            onUseAccelerator = viewModel::setUseAccelerator,
-        ),
-    )
+    ReadableWidth {
+        ModelsScreen(
+            state = state,
+            actions = ModelsActions(
+                onBack = onBack,
+                onDownload = viewModel::download,
+                onCancel = viewModel::cancel,
+                onRemove = viewModel::remove,
+                onWifiOnly = viewModel::setWifiOnly,
+                onUseAccelerator = viewModel::setUseAccelerator,
+            ),
+        )
+    }
 }
 
 @Composable
@@ -68,12 +71,14 @@ private fun OnboardingDestination(
     viewModel: OnboardingViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    OnboardingScreen(
-        state = state,
-        actions = OnboardingActions(
-            onToggle = viewModel::toggle,
-            onStart = { viewModel.start(onDone) },
-            onSkip = { viewModel.skip(onDone) },
-        ),
-    )
+    ReadableWidth {
+        OnboardingScreen(
+            state = state,
+            actions = OnboardingActions(
+                onToggle = viewModel::toggle,
+                onStart = { viewModel.start(onDone) },
+                onSkip = { viewModel.skip(onDone) },
+            ),
+        )
+    }
 }

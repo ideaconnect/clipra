@@ -11,6 +11,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import kotlinx.serialization.Serializable
+import tech.idct.clipra.core.designsystem.component.ReadableWidth
 import tech.idct.clipra.core.designsystem.placeholder.Board
 
 @Serializable
@@ -75,16 +76,18 @@ private fun ProDestination(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    ProScreen(
-        state = state,
-        actions = ProActions(
-            onClose = actions.onClose,
-            onBuy = { context.findActivity()?.let(viewModel::buy) },
-            onRestore = viewModel::restore,
-            onBackToProjects = actions.onBackToProjects,
-            onAdPrivacy = { context.findActivity()?.let(viewModel::adPrivacy) },
-        ),
-    )
+    ReadableWidth {
+        ProScreen(
+            state = state,
+            actions = ProActions(
+                onClose = actions.onClose,
+                onBuy = { context.findActivity()?.let(viewModel::buy) },
+                onRestore = viewModel::restore,
+                onBackToProjects = actions.onBackToProjects,
+                onAdPrivacy = { context.findActivity()?.let(viewModel::adPrivacy) },
+            ),
+        )
+    }
 }
 
 private tailrec fun Context.findActivity(): Activity? = when (this) {

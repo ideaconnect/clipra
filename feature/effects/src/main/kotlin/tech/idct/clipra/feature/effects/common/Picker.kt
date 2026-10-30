@@ -35,39 +35,13 @@ import androidx.compose.ui.unit.sp
 import tech.idct.clipra.core.designsystem.ClipraTheme
 import tech.idct.clipra.core.designsystem.theme.ClipraDimens
 
-// The pieces Filters and Transitions share: the preview, category pills and thumbnail tiles.
+// The pieces Filters and Transitions share: category pills and thumbnail tiles.
 
 /** Five tiles a row. */
 internal const val PICKER_COLUMNS = 5
 
 /** Thumbnail height; the view models render them at this size. */
 internal val TILE_HEIGHT = 48.dp
-
-/** The 240 dp preview, letterboxed at the project's ratio, with [overlay] on top. */
-@Composable
-internal fun PickerPreview(
-    ratio: Float,
-    preview: @Composable () -> Unit,
-    overlay: @Composable BoxScope.() -> Unit,
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(240.dp)
-            .clipToBounds()
-            .background(ClipraTheme.colors.ad.background),
-        contentAlignment = Alignment.Center,
-    ) {
-        Box(
-            modifier = Modifier
-                .aspectRatio(ratio, matchHeightConstraintsFirst = true)
-                .testTag("preview"),
-        ) {
-            preview()
-        }
-        overlay()
-    }
-}
 
 /** A category pill with its count, as on Filters and Transitions. */
 @Composable

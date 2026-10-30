@@ -27,6 +27,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import kotlinx.serialization.Serializable
 import tech.idct.clipra.core.designsystem.component.IconAction
+import tech.idct.clipra.core.designsystem.component.ReadableWidth
 import tech.idct.clipra.core.designsystem.component.VideoSurface
 import tech.idct.clipra.core.designsystem.icon.ClipraIcons
 import tech.idct.clipra.core.designsystem.placeholder.Board
@@ -128,21 +129,23 @@ private fun CaptionsSetupDestination(
     }
     BackHandler(onBack = onBack)
     LaunchedEffect(viewModel) { viewModel.done.collect { onTranscribed() } }
-    CaptionsSetupScreen(
-        state = state,
-        actions = CaptionsSetupActions(
-            onBack = onBack,
-            onListenTo = viewModel::setListenTo,
-            onLanguage = viewModel::setLanguage,
-            onTranslate = viewModel::setTranslate,
-            onModel = viewModel::selectModel,
-            onDownload = viewModel::download,
-            onOptions = viewModel::setOptions,
-            onGenerate = viewModel::generate,
-            onCancel = viewModel::cancel,
-            onImportSrt = { importSrt.launch(SrtFiles.types) },
-        ),
-    )
+    ReadableWidth {
+        CaptionsSetupScreen(
+            state = state,
+            actions = CaptionsSetupActions(
+                onBack = onBack,
+                onListenTo = viewModel::setListenTo,
+                onLanguage = viewModel::setLanguage,
+                onTranslate = viewModel::setTranslate,
+                onModel = viewModel::selectModel,
+                onDownload = viewModel::download,
+                onOptions = viewModel::setOptions,
+                onGenerate = viewModel::generate,
+                onCancel = viewModel::cancel,
+                onImportSrt = { importSrt.launch(SrtFiles.types) },
+            ),
+        )
+    }
 }
 
 /** The Captions screen with its own preview; style, position and size apply to every caption. */
@@ -185,50 +188,52 @@ private fun CaptionsEditDestination(
         }
     }
     BackHandler(onBack = onDone)
-    CaptionsEditScreen(
-        state = state,
-        scale = liveScale,
-        actions = CaptionsEditActions(
-            onDone = onDone,
-            onStyle = viewModel::setStyle,
-            onPosition = viewModel::setPosition,
-            onScale = { liveScale = it },
-            onScaleDone = { liveScale?.let(viewModel::setScale) },
-            onSeek = {
-                playing = false
-                viewModel.seek(it)
-                player.seekTo(it)
-            },
-            onEditByText = onEditByText,
-            onEditWord = viewModel::editWord,
-            onSplit = viewModel::split,
-            onMerge = viewModel::merge,
-            onReplaceAll = viewModel::replaceAll,
-            onSaveSrt = { state.project?.let { saveSrt.launch(SrtFiles.fileName(it)) } },
-            onImportSrt = { importSrt.launch(SrtFiles.types) },
-            onDismissMessage = viewModel::dismissMessage,
-        ),
-        preview = {
-            VideoSurface(
-                onAttach = { surface, width, height -> player.attach(surface, width, height) },
-                onDetach = player::detach,
-                modifier = Modifier.fillMaxSize(),
-            )
-            Box(
-                modifier = Modifier.fillMaxSize().padding(16.dp),
-                contentAlignment = Alignment.BottomEnd,
-            ) {
-                IconAction(
-                    icon = if (playing) ClipraIcons.Pause else ClipraIcons.Play,
-                    contentDescription = stringResource(
-                        if (playing) R.string.captions_pause else R.string.captions_play,
-                    ),
-                    onClick = { playing = !playing },
-                    modifier = Modifier.testTag("captions-play"),
+    ReadableWidth {
+        CaptionsEditScreen(
+            state = state,
+            scale = liveScale,
+            actions = CaptionsEditActions(
+                onDone = onDone,
+                onStyle = viewModel::setStyle,
+                onPosition = viewModel::setPosition,
+                onScale = { liveScale = it },
+                onScaleDone = { liveScale?.let(viewModel::setScale) },
+                onSeek = {
+                    playing = false
+                    viewModel.seek(it)
+                    player.seekTo(it)
+                },
+                onEditByText = onEditByText,
+                onEditWord = viewModel::editWord,
+                onSplit = viewModel::split,
+                onMerge = viewModel::merge,
+                onReplaceAll = viewModel::replaceAll,
+                onSaveSrt = { state.project?.let { saveSrt.launch(SrtFiles.fileName(it)) } },
+                onImportSrt = { importSrt.launch(SrtFiles.types) },
+                onDismissMessage = viewModel::dismissMessage,
+            ),
+            preview = {
+                VideoSurface(
+                    onAttach = { surface, width, height -> player.attach(surface, width, height) },
+                    onDetach = player::detach,
+                    modifier = Modifier.fillMaxSize(),
                 )
-            }
-        },
-    )
+                Box(
+                    modifier = Modifier.fillMaxSize().padding(16.dp),
+                    contentAlignment = Alignment.BottomEnd,
+                ) {
+                    IconAction(
+                        icon = if (playing) ClipraIcons.Pause else ClipraIcons.Play,
+                        contentDescription = stringResource(
+                            if (playing) R.string.captions_pause else R.string.captions_play,
+                        ),
+                        onClick = { playing = !playing },
+                        modifier = Modifier.testTag("captions-play"),
+                    )
+                }
+            },
+        )
+    }
 }
 
 /**
@@ -265,29 +270,31 @@ private fun EditByTextDestination(
         }
     }
     BackHandler(onBack = onBack)
-    EditByTextScreen(
-        state = state,
-        playing = playing,
-        actions = EditByTextActions(
-            onBack = onBack,
-            onDone = {
-                viewModel.apply()
-                onBack()
+    ReadableWidth {
+        EditByTextScreen(
+            state = state,
+            playing = playing,
+            actions = EditByTextActions(
+                onBack = onBack,
+                onDone = {
+                    viewModel.apply()
+                    onBack()
+                },
+                onFillers = viewModel::setFillers,
+                onPauses = viewModel::setPauses,
+                onThreshold = viewModel::setThreshold,
+                onToken = viewModel::toggle,
+                onRestoreAll = viewModel::restoreAll,
+                onPlay = { playing = !playing },
+                onAutoCaptions = onAutoCaptions,
+            ),
+            preview = {
+                VideoSurface(
+                    onAttach = { surface, width, height -> player.attach(surface, width, height) },
+                    onDetach = player::detach,
+                    modifier = Modifier.fillMaxSize(),
+                )
             },
-            onFillers = viewModel::setFillers,
-            onPauses = viewModel::setPauses,
-            onThreshold = viewModel::setThreshold,
-            onToken = viewModel::toggle,
-            onRestoreAll = viewModel::restoreAll,
-            onPlay = { playing = !playing },
-            onAutoCaptions = onAutoCaptions,
-        ),
-        preview = {
-            VideoSurface(
-                onAttach = { surface, width, height -> player.attach(surface, width, height) },
-                onDetach = player::detach,
-                modifier = Modifier.fillMaxSize(),
-            )
-        },
-    )
+        )
+    }
 }
