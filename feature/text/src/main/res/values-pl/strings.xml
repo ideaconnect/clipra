@@ -30,4 +30,18 @@
     <string name="text_weight_medium">Średni</string>
     <string name="text_weight_bold">Gruby</string>
     <string name="text_weight_heavy">Ciężki</string>
+    <!-- Text effects (#32) -->
+    <string name="text_effect">Efekt tekstu</string>
+    <string name="text_effect_none">Brak</string>
+    <string name="text_effect_outline">Kontur</string>
+    <string name="text_effect_shadow">Cień</string>
+    <string name="text_effect_glow">Poświata</string>
+    <string name="text_effect_neon">Neon</string>
+    <string name="text_effect_box">Pole</string>
+    <string name="text_effect_gradient">Gradient</string>
+    <string name="text_effect_extrude">Głębia</string>
+    <string name="text_effect_glitch">Glitch</string>
+    <string name="text_effect_hollow">Obrys</string>
+    <string name="text_effect_retro">Retro</string>
+    <string name="text_effect_marker">Zakreślacz</string>
 </resources>

@@ -17,7 +17,7 @@ import tech.idct.clipra.core.model.TextSpec
  * Draws text clips (#31) into bitmaps as large as the frame they render into, so text is as
  * sharp as the output, 4K included. A text card fills the frame with its colour; text over
  * video is transparent around the letters. The text is centred, wrapped to the title-safe
- * width, at [TextSpec.size] of the frame's height.
+ * width, at [TextSpec.size] of the frame's height, in its text effect (#32).
  */
 object TextRenderer {
     /** Title-safe width: text wraps within 90% of the frame. */
@@ -44,7 +44,7 @@ object TextRenderer {
             .setLineSpacing(0f, LINE_SPACING)
             .build()
         canvas.translate((width - wrap) / 2f, (height - layout.height) / 2f)
-        layout.draw(canvas)
+        TextEffectPainter(layout, paint, spec, card).draw(canvas)
         return bitmap
     }
 

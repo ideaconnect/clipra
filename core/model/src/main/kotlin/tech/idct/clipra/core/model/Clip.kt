@@ -275,8 +275,26 @@ data class TextSpec(
     val color: Long = 0xFFF4F3EF,
     val background: Long? = null,
     val align: TextAlign = TextAlign.Center,
+    /** A text effect (#32) from `TextEffects.all`; null for None. */
     val effect: String? = null,
 )
+
+/** The text effects of spec section 10 (#32), in the order the Text board shows them. */
+object TextEffects {
+    val all = listOf(
+        "outline",
+        "shadow",
+        "glow",
+        "neon",
+        "box",
+        "gradient",
+        "extrude",
+        "glitch",
+        "hollow",
+        "retro",
+        "marker",
+    )
+}
 
 @Serializable
 enum class TextAlign { Start, Center, End }

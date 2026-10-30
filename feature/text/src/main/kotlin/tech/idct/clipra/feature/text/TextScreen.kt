@@ -1,6 +1,7 @@
 package tech.idct.clipra.feature.text
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
@@ -39,9 +40,13 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -69,8 +74,10 @@ import tech.idct.clipra.core.engine.render.TextRenderer
 import tech.idct.clipra.core.model.ClipType
 import tech.idct.clipra.core.model.TextAlign
 import tech.idct.clipra.core.model.TextColors
+import tech.idct.clipra.core.model.TextEffects
 import tech.idct.clipra.core.model.TextSpec
 import android.graphics.Color as AndroidColor
+import androidx.compose.ui.text.style.TextAlign as ComposeTextAlign
 import tech.idct.clipra.core.fonts.R as FontsR
 
 /** What the Text screen can do. */
@@ -177,6 +184,7 @@ fun TextScreen(
                 onPick = { it?.let { color -> actions.onSpec(spec.copy(color = color)) } },
                 tag = "text-color",
             )
+            EffectGrid(spec, onEffect = { actions.onSpec(spec.copy(effect = it)) })
             var size by remember(spec.size) { mutableFloatStateOf(spec.size) }
             LabelledSlider(
                 label = stringResource(R.string.text_size),
@@ -522,3 +530,115 @@ private fun timecode(us: Long): String {
     val hundredths = us / 10_000
     return "%02d:%02d.%02d".format(hundredths / 6_000, (hundredths / 100) % 60, hundredths % 100)
 }
+
+/**
+ * The 12 text effects (#32) as tiles: "Aa" in the clip's font, colours and card, drawn by the
+ * renderer that draws the clip, so each tile shows exactly what the effect does.
+ */
+@Composable
+private fun EffectGrid(spec: TextSpec, onEffect: (String?) -> Unit) {
+    val context = LocalContext.current
+    val effects = listOf<String?>(null) + TextEffects.all
+    val tiles = remember(spec.font, spec.weight, spec.color, spec.background) {
+        effects.associateWith { effect ->
+            TextRenderer.render(
+                context,
+                spec.copy(
+                    text = "Aa",
+                    size = TILE_TEXT,
+                    align = TextAlign.Center,
+                    background = spec.background ?: TextColors.BLACK,
+                    effect = effect,
+                ),
+                card = true,
+                TILE_WIDTH,
+                TILE_HEIGHT,
+            ).asImageBitmap()
+        }
+    }
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.testTag("text-effects"),
+    ) {
+        Text(
+            text = stringResource(R.string.text_effect),
+            style = ClipraTheme.typography.sectionLabel,
+            color = ClipraTheme.colors.textSecondary,
+        )
+        effects.chunked(EFFECT_COLUMNS).forEach { row ->
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                row.forEach { effect ->
+                    EffectTile(
+                        name = stringResource(effectName(effect)),
+                        tile = tiles.getValue(effect),
+                        selected = spec.effect == effect,
+                        onClick = { onEffect(effect) },
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag("effect:${effect ?: "none"}"),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun EffectTile(
+    name: String,
+    tile: ImageBitmap,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colors = ClipraTheme.colors
+    val shape = ClipraTheme.shapes.button
+    Column(
+        modifier = modifier
+            .clip(shape)
+            .border(2.dp, if (selected) colors.accent else colors.border, shape)
+            .selectable(selected = selected, role = Role.RadioButton, onClick = onClick),
+    ) {
+        Image(
+            bitmap = tile,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(42.dp),
+        )
+        Text(
+            text = name,
+            style = ClipraTheme.typography.caption,
+            color = if (selected) colors.accent else colors.textSecondary,
+            textAlign = ComposeTextAlign.Center,
+            maxLines = 1,
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(colors.surface)
+                .padding(vertical = 4.dp),
+        )
+    }
+}
+
+private fun effectName(effect: String?): Int = when (effect) {
+    "outline" -> R.string.text_effect_outline
+    "shadow" -> R.string.text_effect_shadow
+    "glow" -> R.string.text_effect_glow
+    "neon" -> R.string.text_effect_neon
+    "box" -> R.string.text_effect_box
+    "gradient" -> R.string.text_effect_gradient
+    "extrude" -> R.string.text_effect_extrude
+    "glitch" -> R.string.text_effect_glitch
+    "hollow" -> R.string.text_effect_hollow
+    "retro" -> R.string.text_effect_retro
+    "marker" -> R.string.text_effect_marker
+    else -> R.string.text_effect_none
+}
+
+private const val EFFECT_COLUMNS = 4
+
+// Tiles are drawn at this size in pixels, "Aa" half their height, as in the design.
+private const val TILE_WIDTH = 192
+private const val TILE_HEIGHT = 96
+private const val TILE_TEXT = 0.46f
