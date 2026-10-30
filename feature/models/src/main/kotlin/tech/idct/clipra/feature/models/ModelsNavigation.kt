@@ -31,14 +31,18 @@ object ModelsBoards {
 }
 
 /** Where the models screens lead; the app connects it. */
-class ModelsNavigationActions(val onBack: () -> Unit)
+class ModelsNavigationActions(
+    val onBack: () -> Unit,
+    /** Onboarding is done: on to the projects, never back. */
+    val onOnboarded: () -> Unit,
+)
 
 /** Registers this module's destinations. [screen] draws a board until its real screen is built. */
 fun NavGraphBuilder.modelsScreens(
     screen: @Composable (Board) -> Unit,
     actions: ModelsNavigationActions,
 ) {
-    composable<OnboardingRoute> { screen(ModelsBoards.onboarding) }
+    composable<OnboardingRoute> { OnboardingDestination(actions.onOnboarded) }
     composable<ModelsRoute> { ModelsDestination(actions.onBack) }
 }
 
@@ -54,6 +58,22 @@ private fun ModelsDestination(onBack: () -> Unit, viewModel: ModelsViewModel = h
             onRemove = viewModel::remove,
             onWifiOnly = viewModel::setWifiOnly,
             onUseAccelerator = viewModel::setUseAccelerator,
+        ),
+    )
+}
+
+@Composable
+private fun OnboardingDestination(
+    onDone: () -> Unit,
+    viewModel: OnboardingViewModel = hiltViewModel(),
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    OnboardingScreen(
+        state = state,
+        actions = OnboardingActions(
+            onToggle = viewModel::toggle,
+            onStart = { viewModel.start(onDone) },
+            onSkip = { viewModel.skip(onDone) },
         ),
     )
 }
