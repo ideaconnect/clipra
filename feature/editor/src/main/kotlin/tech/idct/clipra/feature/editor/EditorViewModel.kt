@@ -35,6 +35,7 @@ import tech.idct.clipra.core.model.Transform
 import tech.idct.clipra.core.model.edit.AddClip
 import tech.idct.clipra.core.model.edit.AddLayer
 import tech.idct.clipra.core.model.edit.AddText
+import tech.idct.clipra.core.model.edit.AddToMosaic
 import tech.idct.clipra.core.model.edit.DeleteClip
 import tech.idct.clipra.core.model.edit.DuplicateClip
 import tech.idct.clipra.core.model.edit.Edge
@@ -47,6 +48,7 @@ import tech.idct.clipra.core.model.edit.MoveClip
 import tech.idct.clipra.core.model.edit.MoveLayer
 import tech.idct.clipra.core.model.edit.ReplaceMedia
 import tech.idct.clipra.core.model.edit.SetBlend
+import tech.idct.clipra.core.model.edit.SetCell
 import tech.idct.clipra.core.model.edit.SetLayerHidden
 import tech.idct.clipra.core.model.edit.SetLayerLocked
 import tech.idct.clipra.core.model.edit.SetLayerMuted
@@ -169,6 +171,8 @@ class EditorViewModel @Inject constructor(
     // Layers board (#19, #20).
 
     fun setTransform(clipId: String, transform: Transform) = edit(SetTransform(clipId, transform))
+
+    fun setCell(clipId: String, cell: Int?) = edit(SetCell(clipId, cell))
 
     fun setBlend(clipId: String, blend: BlendMode, opacity: Float) =
         edit(SetBlend(clipId, blend, opacity))
@@ -293,10 +297,9 @@ class EditorViewModel @Inject constructor(
                 free?.let { LayerTarget.Existing(it.id) } ?: LayerTarget.NewOnTop(randomId())
             return AddClip(clip, target).apply(withAsset)
         }
-        val main = withAsset.layers.first()
-        val start = main.clips.maxOfOrNull { it.endUs } ?: 0L
-        val clip = Clip(randomId(), type, start, duration, MediaRef(asset.id, 0, outPoint))
-        return AddClip(clip, LayerTarget.Existing(main.id)).apply(withAsset)
+        // After the main layer's clips, or into the next empty mosaic cell (#17).
+        val clip = Clip(randomId(), type, 0, duration, MediaRef(asset.id, 0, outPoint))
+        return AddToMosaic(clip, randomId()).apply(withAsset)
     }
 
     private fun Project.withAsset(asset: MediaAsset): Project =

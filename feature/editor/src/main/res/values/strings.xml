@@ -113,4 +113,6 @@
     <string name="editor_transition_marker">Transition between %1$s and %2$s</string>
     <string name="editor_new_text">Your text</string>
     <string name="editor_message_needs_sound">Add a clip with sound first</string>
+    <string name="editor_transform_cell">Cell</string>
+    <string name="editor_transform_whole_frame">Whole frame</string>
 </resources>

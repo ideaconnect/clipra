@@ -29,6 +29,11 @@ data class Clip(
     val caption: CaptionSpec? = null,
     val animation: Animation? = null,
     val stabilize: Stabilization? = null,
+    /**
+     * The mosaic cell the clip is drawn in (#17), numbered as `Cells` numbers them; null for the
+     * whole frame. It is ignored in a Single layout.
+     */
+    val cell: Int? = null,
 ) {
     val endUs: Long get() = startUs + durationUs
 

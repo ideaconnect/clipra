@@ -33,6 +33,8 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import tech.idct.clipra.core.designsystem.ClipraTheme
 import tech.idct.clipra.core.designsystem.icon.ClipraIcons
+import tech.idct.clipra.core.model.CellRect
+import tech.idct.clipra.core.model.Cells
 import tech.idct.clipra.core.model.ClipGeometry
 import tech.idct.clipra.core.model.Mask
 import tech.idct.clipra.core.model.MaskShape
@@ -62,23 +64,26 @@ fun MaskOverlay(
     onChange: (Mask) -> Unit,
     onCommit: (Mask) -> Unit,
     modifier: Modifier = Modifier,
+    /** A clip in a mosaic cell (#17) is laid out in it, as the compositor draws it. */
+    cell: CellRect? = null,
 ) {
     val current by rememberUpdatedState(mask)
     val change by rememberUpdatedState(onChange)
     val commit by rememberUpdatedState(onCommit)
     Layout(
         content = {
-            Outline(mask, transform, frame, source)
+            Outline(mask, transform, frame, source, cell)
             Chip(chip)
         },
         modifier = modifier
             .fillMaxSize()
             .testTag("mask-overlay")
-            .pointerInput(transform, frame, source) {
+            .pointerInput(transform, frame, source, cell) {
                 maskGestures(
                     transform,
                     frame,
                     source,
+                    cell,
                     current = { current },
                     onChange = { change(it) },
                     onCommit = { commit(it) },
@@ -92,8 +97,8 @@ fun MaskOverlay(
         layout(width, height) {
             outline.place(0, 0)
             // Under the mask's lowest point, kept on the preview.
-            val box = FrameBox.of(width.toFloat(), height.toFloat(), frame)
-            val space = MaskSpace(mask, transform, frame, source)
+            val box = FrameBox.of(width.toFloat(), height.toFloat(), frame, cell)
+            val space = MaskSpace(mask, transform, Cells.size(frame, cell), source)
             val points = space.outline(0f).map { box.view(it) }
             val bottom = points.maxOf { it.y }
             val centre = box.view(space.frame(0f, 0f)).x
@@ -107,13 +112,13 @@ fun MaskOverlay(
 }
 
 @Composable
-private fun Outline(mask: Mask, transform: Transform, frame: Size, source: Size) {
+private fun Outline(mask: Mask, transform: Transform, frame: Size, source: Size, cell: CellRect?) {
     val colors = ClipraTheme.colors
     val knobIcon = rememberVectorPainter(ImageVector.vectorResource(ClipraIcons.Reset))
     Canvas(modifier = Modifier.fillMaxSize()) {
         if (mask.shape == MaskShape.None) return@Canvas
-        val box = FrameBox.of(size.width, size.height, frame)
-        val space = MaskSpace(mask, transform, frame, source)
+        val box = FrameBox.of(size.width, size.height, frame, cell)
+        val space = MaskSpace(mask, transform, Cells.size(frame, cell), source)
         val stroke = 1.5.dp.toPx()
         drawShape(space.outline(0f).map { box.view(it) }, colors.accent, Stroke(stroke))
         if (mask.feather > 0f) {
@@ -275,11 +280,13 @@ internal class FrameBox(private val left: Float, private val top: Float, private
     fun frame(offset: Offset) = Point((offset.x - left) / scale, (offset.y - top) / scale)
 
     companion object {
-        fun of(viewWidth: Float, viewHeight: Float, frame: Size): FrameBox {
+        /** The frame centred in the view; for a mosaic [cell] (#17), the cell within it. */
+        fun of(viewWidth: Float, viewHeight: Float, frame: Size, cell: CellRect?): FrameBox {
             val scale = minOf(viewWidth / frame.width, viewHeight / frame.height)
+            val origin = Cells.origin(frame, cell)
             return FrameBox(
-                (viewWidth - frame.width * scale) / 2,
-                (viewHeight - frame.height * scale) / 2,
+                (viewWidth - frame.width * scale) / 2 + origin.x * scale,
+                (viewHeight - frame.height * scale) / 2 + origin.y * scale,
                 scale,
             )
         }
@@ -298,6 +305,7 @@ private suspend fun PointerInputScope.maskGestures(
     transform: Transform,
     frame: Size,
     source: Size,
+    cell: CellRect?,
     current: () -> Mask,
     onChange: (Mask) -> Unit,
     onCommit: (Mask) -> Unit,
@@ -306,8 +314,8 @@ private suspend fun PointerInputScope.maskGestures(
         val down = awaitFirstDown(requireUnconsumed = false)
         val start = current()
         if (start.shape == MaskShape.None) return@awaitEachGesture
-        val box = FrameBox.of(size.width.toFloat(), size.height.toFloat(), frame)
-        val space = MaskSpace(start, transform, frame, source)
+        val box = FrameBox.of(size.width.toFloat(), size.height.toFloat(), frame, cell)
+        val space = MaskSpace(start, transform, Cells.size(frame, cell), source)
         val reach = 22.dp.toPx()
         val (_, knob) = knob(space, box, KNOB_DISTANCE.toPx())
         val handles = space.handles().map { box.view(it) }

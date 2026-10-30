@@ -35,6 +35,8 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import tech.idct.clipra.core.designsystem.ClipraTheme
 import tech.idct.clipra.core.designsystem.icon.ClipraIcons
+import tech.idct.clipra.core.model.CellRect
+import tech.idct.clipra.core.model.Cells
 import tech.idct.clipra.core.model.ClipGeometry
 import tech.idct.clipra.core.model.Point
 import tech.idct.clipra.core.model.Size
@@ -56,6 +58,7 @@ enum class OverlayMode { Transform, Crop }
  * the frame sits centred in it at its ratio. [frame] is the output size and [source] the clip's
  * picture size. [onChange] reports each step of a gesture, so the preview can follow it,
  * and [onCommit] the end of it, as one edit. [chip] (blend mode and opacity) shows under the clip.
+ * A clip in a mosaic [cell] (#17) is laid out in it, as the compositor draws it.
  */
 @Composable
 fun TransformOverlay(
@@ -67,21 +70,25 @@ fun TransformOverlay(
     modifier: Modifier = Modifier,
     mode: OverlayMode = OverlayMode.Transform,
     chip: String? = null,
+    cell: CellRect? = null,
 ) {
+    // The geometry works in the cell; the box puts the cell where it is in the frame.
+    val area = Cells.size(frame, cell)
     val current by rememberUpdatedState(transform)
     val change by rememberUpdatedState(onChange)
     val commit by rememberUpdatedState(onCommit)
     Layout(
         content = {
-            Handles(transform, frame, source, mode)
+            Handles(transform, frame, cell, source, mode)
             if (chip != null) Chip(chip)
         },
         modifier = modifier
             .fillMaxSize()
             .testTag("transform-overlay")
-            .pointerInput(frame, source, mode) {
+            .pointerInput(frame, cell, source, mode) {
                 transformGestures(
                     frame = frame,
+                    cell = cell,
                     source = source,
                     mode = mode,
                     current = { current },
@@ -99,8 +106,8 @@ fun TransformOverlay(
             handles.place(0, 0)
             if (chipPlaceable != null) {
                 // Centred under the clip's lowest corner, kept on the preview.
-                val box = FrameBox.of(width.toFloat(), height.toFloat(), frame)
-                val corners = ClipGeometry.corners(transform, frame, source).map(box::view)
+                val box = FrameBox.of(width.toFloat(), height.toFloat(), frame, cell)
+                val corners = ClipGeometry.corners(transform, area, source).map(box::view)
                 val bottom = corners.maxOf { it.y }
                 val centre = corners.sumOf { it.x.toDouble() }.toFloat() / 4
                 val gap = 12.dp.roundToPx()
@@ -115,15 +122,22 @@ fun TransformOverlay(
 }
 
 @Composable
-private fun Handles(transform: Transform, frame: Size, source: Size, mode: OverlayMode) {
+private fun Handles(
+    transform: Transform,
+    frame: Size,
+    cell: CellRect?,
+    source: Size,
+    mode: OverlayMode,
+) {
     val colors = ClipraTheme.colors
     val rotateIcon = rememberVectorPainter(ImageVector.vectorResource(ClipraIcons.Reset))
+    val area = Cells.size(frame, cell)
     Canvas(modifier = Modifier.fillMaxSize()) {
-        val box = FrameBox.of(size.width, size.height, frame)
+        val box = FrameBox.of(size.width, size.height, frame, cell)
         fun view(point: Point) = box.view(point)
-        val corners = ClipGeometry.corners(transform, frame, source).map(::view)
+        val corners = ClipGeometry.corners(transform, area, source).map(::view)
         if (mode == OverlayMode.Crop) {
-            val whole = ClipGeometry.uncroppedCorners(transform, frame, source).map(::view)
+            val whole = ClipGeometry.uncroppedCorners(transform, area, source).map(::view)
             drawPolygon(whole, colors.textTertiary, dashed = true)
             drawPolygon(corners, colors.accent, dashed = false)
             corners.forEach {
@@ -253,21 +267,23 @@ private sealed interface Grab {
 
 private suspend fun androidx.compose.ui.input.pointer.PointerInputScope.transformGestures(
     frame: Size,
+    cell: CellRect?,
     source: Size,
     mode: OverlayMode,
     current: () -> Transform,
     onChange: (Transform) -> Unit,
     onCommit: (Transform) -> Unit,
 ) {
+    val area = Cells.size(frame, cell)
     awaitEachGesture {
         val down = awaitFirstDown(requireUnconsumed = false)
         val start = current()
-        val box = FrameBox.of(size.width.toFloat(), size.height.toFloat(), frame)
+        val box = FrameBox.of(size.width.toFloat(), size.height.toFloat(), frame, cell)
         val reaches = Reaches(22.dp.toPx(), 4.dp.toPx(), KNOB_DISTANCE.toPx())
-        var grab = grabAt(start, frame, source, mode, box, down.position, reaches)
+        var grab = grabAt(start, area, source, mode, box, down.position, reaches)
         if (grab != null) down.consume()
 
-        val centre = box.view(ClipGeometry.centre(start, frame))
+        val centre = box.view(ClipGeometry.centre(start, area))
         var x = start.x
         var y = start.y
         var scale = start.scale
@@ -311,7 +327,7 @@ private suspend fun androidx.compose.ui.input.pointer.PointerInputScope.transfor
                 }
 
                 is Grab.CropCorner -> {
-                    val to = ClipGeometry.toSource(start, frame, source, box.frame(position))
+                    val to = ClipGeometry.toSource(start, area, source, box.frame(position))
                     crop(start, held.index, to)
                 }
             }
@@ -341,16 +357,20 @@ private class FrameBox(
     fun frame(offset: Offset) = Point((offset.x - left) / scale, (offset.y - top) / scale)
 
     companion object {
-        fun of(viewWidth: Float, viewHeight: Float, frame: Size): FrameBox {
+        /** The frame centred in the view; for a mosaic [cell] (#17), the cell within it. */
+        fun of(viewWidth: Float, viewHeight: Float, frame: Size, cell: CellRect? = null): FrameBox {
             val scale = minOf(viewWidth / frame.width, viewHeight / frame.height)
             val width = frame.width * scale
             val height = frame.height * scale
+            val left = (viewWidth - width) / 2
+            val top = (viewHeight - height) / 2
+            if (cell == null) return FrameBox(left, top, scale, width, height)
             return FrameBox(
-                (viewWidth - width) / 2,
-                (viewHeight - height) / 2,
+                left + cell.left * width,
+                top + cell.top * height,
                 scale,
-                width,
-                height,
+                cell.width * width,
+                cell.height * height,
             )
         }
     }
