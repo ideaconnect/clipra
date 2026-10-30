@@ -27,6 +27,8 @@ import tech.idct.clipra.core.data.project.OpenProjects
 import tech.idct.clipra.core.designsystem.icon.ClipraIcons
 import tech.idct.clipra.core.engine.media.Transcriber
 import tech.idct.clipra.core.model.CaptionOptions
+import tech.idct.clipra.core.model.edit.AllOf
+import tech.idct.clipra.core.model.edit.CreateCaptions
 import tech.idct.clipra.core.model.edit.SetTranscripts
 import tech.idct.clipra.core.models.ModelCatalog
 
@@ -54,8 +56,9 @@ sealed interface TranscriptionState {
 
 /**
  * Transcribes a project's clips in the background (#44), so it carries on when the screen goes
- * or the app is in the background, with a progress notification. The transcripts go into the
- * project as one undo step, through the editor's shared session.
+ * or the app is in the background, with a progress notification. The transcripts and the
+ * captions made from them (#45) go into the project as one undo step, through the editor's
+ * shared session.
  */
 @HiltWorker
 class TranscriptionWorker @AssistedInject constructor(
@@ -96,7 +99,7 @@ class TranscriptionWorker @AssistedInject constructor(
                     stopped = { isStopped },
                 )
             }
-            session.edit(SetTranscripts(transcripts, options))
+            session.edit(AllOf(SetTranscripts(transcripts, options), CreateCaptions(clipIds)))
             Result.success(workDataOf(KEY_WORDS to transcripts.sumOf { it.words.size }))
         } catch (_: Transcriber.Cancelled) {
             Result.failure()

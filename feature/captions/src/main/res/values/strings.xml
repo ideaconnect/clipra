@@ -36,4 +36,21 @@
     <string name="captions_no_sources">No clips with sound to listen to</string>
     <string name="captions_notification_channel">Auto captions</string>
     <string name="captions_notification_title">Transcribing speech</string>
+    <string name="captions_done">Done</string>
+    <string name="captions_size">Size</string>
+    <string name="captions_points">%1$d pt</string>
+    <string name="captions_count">%1$d captions</string>
+    <string name="captions_to_check">%1$d words to check</string>
+    <string name="captions_detected">%1$s (detected)</string>
+    <string name="captions_whisper">Whisper %1$s</string>
+    <string name="captions_style_clean">Clean</string>
+    <string name="captions_style_bold_pop">Bold pop</string>
+    <string name="captions_style_boxed">Boxed</string>
+    <string name="captions_style_karaoke">Karaoke</string>
+    <string name="captions_style_minimal">Minimal</string>
+    <string name="captions_top">Top</string>
+    <string name="captions_middle">Middle</string>
+    <string name="captions_bottom">Bottom</string>
+    <string name="captions_play">Play</string>
+    <string name="captions_pause">Pause</string>
 </resources>

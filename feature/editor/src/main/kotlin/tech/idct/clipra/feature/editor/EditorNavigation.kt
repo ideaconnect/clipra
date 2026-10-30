@@ -331,6 +331,15 @@ private fun EditorRoute(actions: EditorActions, viewModel: EditorViewModel = hil
                         }
                     }
 
+                    EditorTool.Captions -> {
+                        playing = false
+                        val captioned = project.layers.any { layer ->
+                            layer.clips.any { it.type == ClipType.Caption }
+                        }
+                        val open = if (captioned) EditorTool.CaptionsEdit else EditorTool.Captions
+                        actions.onTool(open, ToolTarget(project.id, null, state.playheadUs))
+                    }
+
                     else -> actions.onTool(tool, ToolTarget(project.id, null, state.playheadUs))
                 }
             },

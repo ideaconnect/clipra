@@ -108,6 +108,12 @@ sealed interface RenderSource {
     /** A still picture: a photo, or a text card rendered to a bitmap. */
     data class Image(val bitmap: Bitmap) : RenderSource
 
+    /**
+     * A picture drawn when the compositor first needs it, such as one state of a caption (#45):
+     * only what is on screen takes memory.
+     */
+    class Drawn(val draw: () -> Bitmap) : RenderSource
+
     /** Sound only (music, voiceover): no picture. */
     data class Audio(val path: String, val inPointUs: Long = 0) : RenderSource
 }

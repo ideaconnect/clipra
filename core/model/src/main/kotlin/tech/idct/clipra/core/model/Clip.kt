@@ -25,6 +25,8 @@ data class Clip(
     val color: ColorGrade? = null,
     val audio: AudioSettings = AudioSettings(),
     val text: TextSpec? = null,
+    /** A caption clip's words and look (#45). */
+    val caption: CaptionSpec? = null,
     val animation: Animation? = null,
     val stabilize: Stabilization? = null,
 ) {

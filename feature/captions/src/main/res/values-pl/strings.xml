@@ -36,4 +36,21 @@
     <string name="captions_no_sources">Brak klipów z dźwiękiem do odsłuchania</string>
     <string name="captions_notification_channel">Automatyczne napisy</string>
     <string name="captions_notification_title">Transkrypcja mowy</string>
+    <string name="captions_done">Gotowe</string>
+    <string name="captions_size">Rozmiar</string>
+    <string name="captions_points">%1$d pt</string>
+    <string name="captions_count">Napisy: %1$d</string>
+    <string name="captions_to_check">Słowa do sprawdzenia: %1$d</string>
+    <string name="captions_detected">%1$s (wykryty)</string>
+    <string name="captions_whisper">Whisper %1$s</string>
+    <string name="captions_style_clean">Czysty</string>
+    <string name="captions_style_bold_pop">Wyrazisty</string>
+    <string name="captions_style_boxed">W ramce</string>
+    <string name="captions_style_karaoke">Karaoke</string>
+    <string name="captions_style_minimal">Minimalny</string>
+    <string name="captions_top">Góra</string>
+    <string name="captions_middle">Środek</string>
+    <string name="captions_bottom">Dół</string>
+    <string name="captions_play">Odtwórz</string>
+    <string name="captions_pause">Wstrzymaj</string>
 </resources>

@@ -106,6 +106,10 @@ data class Transcript(
     val clipId: String,
     val language: String = "",
     val words: List<Word> = emptyList(),
+    /** The Whisper model that heard it, by model id. */
+    val model: String = "",
+    /** Whether Whisper detected [language] rather than being told it. */
+    val detected: Boolean = false,
 )
 
 /**

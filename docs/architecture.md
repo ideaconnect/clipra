@@ -123,6 +123,13 @@ Every model runs on the phone and comes from its official source. Clipra never h
 
 Downloads run in WorkManager with a Wi-Fi-only constraint by default, resume after interruptions, are verified by SHA-256 before use, are stored in app-specific storage, and are listed on the AI models screen with their size. In `core:models`, `ModelCatalog` is the manifest and `ModelManager` gives each model's state (built in, missing, waiting, downloading, installed) from the files on disk and the download work. `ModelDownloadWorker` runs as a data sync foreground service with a progress notification. It downloads into `<model>.part` and continues it with a range request after a lost connection, a stopped worker or a restart. It checks the size and SHA-256, unpacks archives (DeepFilterNet's tar.gz, read by our own small tar reader), and only then moves the files into `files/models/<model>/` and marks them installed. A failed check deletes the partial file; a source that answers 403, 404 or 410 fails without retrying. If a source moves or a file changes, the download fails with a clear message; the fix ships in an app update, never through another host. Every size the app shows is real: the manifest's byte count before download, the bytes on disk after, formatted with `Formatter.formatShortFileSize` (decimal units from Android 8 on, like the system's storage screens).
 
+### Captions (#45)
+
+- **Caption clips.** `CreateCaptions` turns transcripts into Caption clips: words go from media time to the timeline and are split into captions of about two lines (at sentence ends, pauses of 0.6 s, length, or 5 s). The captions go on a new top layer, linked to their source clip so they move, cut and delete with it. A caption clip's `CaptionSpec` holds its words timed from its own start, its style (Clean, Bold pop, Boxed, Karaoke, Minimal), position, scale and highlight.
+- **Rendering.** `CaptionRenderer` draws a caption at frame size, sized from the frame's short side, shrinking long captions to two lines.
+  - `ProjectRender` turns a caption into one render clip per spoken word, each a `RenderSource.Drawn` that the compositor draws the first time it shows and keeps only as a texture.
+  - The highlight follows the speech in preview and export alike, and only the captions on screen take memory.
+
 ## 7. Export
 
 - Transformer renders the composition from original media with the chosen resolution, frame rate, codec and bitrate (formula in `docs/product/spec.md`).

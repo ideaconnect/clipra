@@ -15,6 +15,7 @@ import tech.idct.clipra.core.model.Layout
 import tech.idct.clipra.feature.audio.AudioActionsNavigation
 import tech.idct.clipra.feature.audio.AudioRoute
 import tech.idct.clipra.feature.audio.audioScreens
+import tech.idct.clipra.feature.captions.CaptionsEditRoute
 import tech.idct.clipra.feature.captions.CaptionsNavigationActions
 import tech.idct.clipra.feature.captions.CaptionsSetupRoute
 import tech.idct.clipra.feature.captions.TranscriptRoute
@@ -123,8 +124,13 @@ fun ClipraNavHost(
             screen,
             CaptionsNavigationActions(
                 onBack = { navController.popBackStack() },
-                // Captions from the transcripts come with #45; until then, back to the editor.
-                onTranscribed = { navController.popBackStack() },
+                // Back from the captions returns to the editor, not to the setup.
+                onTranscribed = { id ->
+                    navController.navigate(CaptionsEditRoute(id)) {
+                        popUpTo<CaptionsSetupRoute> { inclusive = true }
+                    }
+                },
+                onEditByText = { navController.navigate(TranscriptRoute) },
             ),
         )
         audioScreens(screen, AudioActionsNavigation(onDone = { navController.popBackStack() }))
@@ -189,6 +195,7 @@ private fun toolRoute(tool: EditorTool, target: ToolTarget): Any = when (tool) {
     EditorTool.Filters -> FiltersRoute(target.projectId, target.clipId, target.playheadUs)
     EditorTool.Transitions -> TransitionsRoute(target.projectId, target.clipId, target.playheadUs)
     EditorTool.Captions -> CaptionsSetupRoute(target.projectId)
+    EditorTool.CaptionsEdit -> CaptionsEditRoute(target.projectId)
     EditorTool.Transcript -> TranscriptRoute
     EditorTool.Color -> ColorRoute
     EditorTool.Cutout -> CutoutRoute

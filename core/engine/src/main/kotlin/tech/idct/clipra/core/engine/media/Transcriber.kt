@@ -77,7 +77,7 @@ class Transcriber @Inject constructor(
                     before += clip.durationUs
                     transcribe(whisper, clip, asset, language, translate) {
                         onProgress(offset + share * it)
-                    }
+                    }.copy(model = model.id, detected = language == AUTO && !translate)
                 }.also {
                     val seconds = (System.nanoTime() - started) / 1e9
                     Log.i(

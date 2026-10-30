@@ -54,6 +54,14 @@ class SplitClip(
             val pieceLayer = project.clipWithLayer(piece.id).first.requireUnlocked()
             val (left, right) = piece.splitAt(atUs, newId())
             edited = edited.replaceClip(left).updateLayer(pieceLayer.id) { it.withClip(right) }
+            // The transcript is in media time, so the right part keeps the same one (#44).
+            project.transcripts.firstOrNull { it.clipId == piece.id }?.let { transcript ->
+                edited =
+                    edited.copy(
+                        transcripts =
+                        edited.transcripts + transcript.copy(clipId = right.id),
+                    )
+            }
             rightIds += right.id
         }
         return if (rightIds.size > 1) edited.addLink(newId(), rightIds) else edited
@@ -61,15 +69,25 @@ class SplitClip(
 
     private fun Clip.splitAt(atUs: Long, rightId: String): Pair<Clip, Clip> {
         val offset = sourceOffset(atUs)
+        // A caption's words are timed from its start: each part keeps its own (#45).
+        val cut = atUs - startUs
         val left = copy(
             durationUs = atUs - startUs,
             source = source?.copy(outPointUs = source.inPointUs + offset),
+            caption = caption?.let { c -> c.copy(words = c.words.filter { it.startUs < cut }) },
         )
         val right = copy(
             id = rightId,
             startUs = atUs,
             durationUs = endUs - atUs,
             source = source?.copy(inPointUs = source.inPointUs + offset),
+            caption = caption?.let { c ->
+                c.copy(
+                    words = c.words.filter { it.startUs >= cut }.map {
+                        it.copy(startUs = it.startUs - cut, endUs = it.endUs - cut)
+                    },
+                )
+            },
         )
         return left to right
     }

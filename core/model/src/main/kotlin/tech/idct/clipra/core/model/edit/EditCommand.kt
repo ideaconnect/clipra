@@ -13,6 +13,12 @@ fun interface EditCommand {
     fun apply(project: Project): Project
 }
 
+/** Several commands as one undo step, applied in order. */
+class AllOf(private vararg val commands: EditCommand) : EditCommand {
+    override fun apply(project: Project): Project =
+        commands.fold(project) { edited, command -> command.apply(edited) }
+}
+
 /** Why an edit was refused; the editor tells the user instead of changing anything. */
 class EditRejected(val reason: Reason, message: String = reason.name) : Exception(message) {
     enum class Reason {

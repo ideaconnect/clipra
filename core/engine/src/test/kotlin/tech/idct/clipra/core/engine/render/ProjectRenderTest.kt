@@ -5,6 +5,8 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import tech.idct.clipra.core.model.BlendMode
+import tech.idct.clipra.core.model.CaptionSpec
+import tech.idct.clipra.core.model.CaptionStyle
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
 import tech.idct.clipra.core.model.Easing
@@ -18,6 +20,7 @@ import tech.idct.clipra.core.model.Project
 import tech.idct.clipra.core.model.Resolution
 import tech.idct.clipra.core.model.TextSpec
 import tech.idct.clipra.core.model.Transition
+import tech.idct.clipra.core.model.Word
 import tech.idct.clipra.core.model.edit.LayerTarget
 import tech.idct.clipra.core.model.edit.MoveClip
 
@@ -154,5 +157,46 @@ class ProjectRenderTest {
         assertEquals(600_000L, transition.durationUs)
         assertEquals("spin", transition.type)
         assertEquals(Easing.Linear, transition.easing)
+    }
+
+    @Test
+    fun aCaptionBecomesOneRenderClipPerSpokenWord() {
+        val words = listOf(
+            Word("We", 200_000, 400_000),
+            Word("made", 400_000, 700_000),
+            Word("it", 900_000, 1_000_000),
+        )
+        val caption = Clip(
+            id = "cap",
+            type = ClipType.Caption,
+            startUs = 5_000_000,
+            durationUs = 1_200_000,
+            caption = CaptionSpec(words),
+        )
+        val project =
+            Project(id = "p", name = "p", layers = listOf(Layer("L1", clips = listOf(caption))))
+        val clips = ProjectRender.timeline(project, resolver).layers[0].clips
+        // Before the first word, then from each word to the next.
+        assertEquals(listOf("cap#-1", "cap#0", "cap#1", "cap#2"), clips.map { it.id })
+        assertEquals(
+            listOf(5_000_000L, 5_200_000L, 5_400_000L, 5_900_000L),
+            clips.map {
+                it.startUs
+            },
+        )
+        assertEquals(6_200_000L, clips.last().endUs)
+        assertTrue(clips.all { it.source is RenderSource.Drawn })
+
+        val still = project.copy(
+            layers = listOf(
+                Layer(
+                    "L1",
+                    clips = listOf(
+                        caption.copy(caption = CaptionSpec(words, CaptionStyle.Minimal)),
+                    ),
+                ),
+            ),
+        )
+        assertEquals(1, ProjectRender.timeline(still, resolver).layers[0].clips.size)
     }
 }
