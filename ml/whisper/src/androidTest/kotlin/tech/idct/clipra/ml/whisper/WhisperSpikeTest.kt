@@ -49,7 +49,7 @@ class WhisperSpikeTest {
                 val loadSeconds = (System.nanoTime() - loadStart) / 1e9
                 val peak = PeakMemory()
                 val start = System.nanoTime()
-                val words = whisper.use { it.transcribe(samples, language, threads) }
+                val words = whisper.use { it.transcribe(samples, language, threads).words }
                 val elapsed = (System.nanoTime() - start) / 1e9
                 val peakMb = peak.stop()
                 val line = String.format(

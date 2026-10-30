@@ -15,6 +15,7 @@ import tech.idct.clipra.core.model.Layout
 import tech.idct.clipra.feature.audio.AudioActionsNavigation
 import tech.idct.clipra.feature.audio.AudioRoute
 import tech.idct.clipra.feature.audio.audioScreens
+import tech.idct.clipra.feature.captions.CaptionsNavigationActions
 import tech.idct.clipra.feature.captions.CaptionsSetupRoute
 import tech.idct.clipra.feature.captions.TranscriptRoute
 import tech.idct.clipra.feature.captions.captionsScreens
@@ -83,7 +84,7 @@ fun ClipraNavHost(
             HomeActions(
                 onNewProject = { navController.navigate(NewProjectRoute()) },
                 onOpenProject = { navController.navigate(EditorRoute(it)) },
-                onAutoCaptions = { navController.navigate(CaptionsSetupRoute) },
+                onAutoCaptions = { navController.navigate(CaptionsSetupRoute()) },
                 onTextCard = { navController.navigate(NewProjectRoute(textCard = true)) },
                 onMosaic = {
                     navController.navigate(NewProjectRoute(layout = Layout.Grid2x2.name))
@@ -118,7 +119,14 @@ fun ClipraNavHost(
         )
         effectsScreens(screen, EffectsActions(onDone = { navController.popBackStack() }))
         textScreens(screen, TextNavigationActions(onDone = { navController.popBackStack() }))
-        captionsScreens(screen)
+        captionsScreens(
+            screen,
+            CaptionsNavigationActions(
+                onBack = { navController.popBackStack() },
+                // Captions from the transcripts come with #45; until then, back to the editor.
+                onTranscribed = { navController.popBackStack() },
+            ),
+        )
         audioScreens(screen, AudioActionsNavigation(onDone = { navController.popBackStack() }))
         exportScreens(
             screen,
@@ -180,7 +188,7 @@ private fun toolRoute(tool: EditorTool, target: ToolTarget): Any = when (tool) {
     EditorTool.Text -> TextRoute(target.projectId, target.clipId, target.playheadUs)
     EditorTool.Filters -> FiltersRoute(target.projectId, target.clipId, target.playheadUs)
     EditorTool.Transitions -> TransitionsRoute(target.projectId, target.clipId, target.playheadUs)
-    EditorTool.Captions -> CaptionsSetupRoute
+    EditorTool.Captions -> CaptionsSetupRoute(target.projectId)
     EditorTool.Transcript -> TranscriptRoute
     EditorTool.Color -> ColorRoute
     EditorTool.Cutout -> CutoutRoute

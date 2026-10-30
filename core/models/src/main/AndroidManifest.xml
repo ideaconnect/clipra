@@ -5,7 +5,8 @@
     <!--
     AI models download from their official sources (#43), the only network use besides ads and
     billing (CLAUDE.md, "On-device only"). Long downloads run as a data sync foreground service
-    with a progress notification.
+    with a progress notification. WorkManager's foreground service also runs Auto captions'
+    transcription (#44), as media processing on Android 15 and later.
     -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -14,7 +15,7 @@
     <application>
         <service
             android:name="androidx.work.impl.foreground.SystemForegroundService"
-            android:foregroundServiceType="dataSync"
+            android:foregroundServiceType="dataSync|mediaProcessing"
             tools:node="merge" />
     </application>
 </manifest>

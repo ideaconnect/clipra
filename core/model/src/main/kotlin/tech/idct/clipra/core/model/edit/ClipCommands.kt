@@ -2,12 +2,14 @@ package tech.idct.clipra.core.model.edit
 
 import tech.idct.clipra.core.model.AudioSettings
 import tech.idct.clipra.core.model.BlendMode
+import tech.idct.clipra.core.model.CaptionOptions
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
 import tech.idct.clipra.core.model.MediaKind
 import tech.idct.clipra.core.model.MediaRef
 import tech.idct.clipra.core.model.Project
 import tech.idct.clipra.core.model.Speed
+import tech.idct.clipra.core.model.Transcript
 import tech.idct.clipra.core.model.Transform
 import tech.idct.clipra.core.model.VoiceCleanup
 import java.util.UUID
@@ -331,5 +333,20 @@ data class SetAudio(val clipId: String, val audio: AudioSettings) : EditCommand 
             },
         )
         return project.replaceClip(clip.copy(audio = fitted))
+    }
+}
+
+/**
+ * Stores Auto captions' result (#44): [transcripts] replace the ones of the same clips, and
+ * [options] become the project's caption options. One undo step.
+ */
+data class SetTranscripts(val transcripts: List<Transcript>, val options: CaptionOptions) :
+    EditCommand {
+    override fun apply(project: Project): Project {
+        val clips = transcripts.map { it.clipId }.toSet()
+        return project.copy(
+            transcripts = project.transcripts.filter { it.clipId !in clips } + transcripts,
+            captionOptions = options,
+        )
     }
 }

@@ -20,6 +20,8 @@ data class Project(
     val transitions: List<Transition> = emptyList(),
     val links: List<LinkGroup> = emptyList(),
     val transcripts: List<Transcript> = emptyList(),
+    /** How Auto captions turns transcripts into captions (#44, #45). */
+    val captionOptions: CaptionOptions = CaptionOptions(),
     /** The options of the last export, offered again next time. */
     val exportSettings: ExportSettings? = null,
     val createdAtMillis: Long = 0,
@@ -94,13 +96,47 @@ data class Transition(
 @Serializable
 enum class Easing { Linear, EaseInOut, EaseOut }
 
-/** The words Whisper heard in a clip, for captions and edit by text. */
+/**
+ * The words Whisper heard in a clip, for captions and edit by text (#44). Word times are in the
+ * clip's media time (the time of `MediaRef`), so moving or trimming the clip keeps them right.
+ * [language] is the ISO 639-1 code spoken (or "en" when translated to English).
+ */
 @Serializable
 data class Transcript(
     val clipId: String,
     val language: String = "",
     val words: List<Word> = emptyList(),
 )
+
+/**
+ * The Auto captions options (#44): highlight each word as it is spoken, leave filler words out,
+ * and put the captions on a new layer at the top.
+ */
+@Serializable
+data class CaptionOptions(
+    val highlightWords: Boolean = true,
+    val removeFillers: Boolean = false,
+    val newLayer: Boolean = true,
+)
+
+/** Filler words per language, for "Remove filler words" and edit by text (#44, #48). */
+object Fillers {
+    private val common = setOf("hmm", "hm", "mm", "mmm", "uh", "um")
+    private val byLanguage = mapOf(
+        "en" to setOf("umm", "uhh", "uhm", "er", "erm", "ah", "eh"),
+        "pl" to setOf("yyy", "yy", "eee", "ee", "eh", "ehm", "yhm", "aaa"),
+        "de" to setOf("äh", "ähm", "öhm", "hm"),
+        "es" to setOf("eh", "em", "este"),
+        "fr" to setOf("euh", "heu", "bah"),
+    )
+
+    /** Whether [word] (any case, with its punctuation) is a filler in [language]. */
+    fun isFiller(word: String, language: String): Boolean {
+        val bare = word.lowercase().trim { !it.isLetter() }
+        if (bare.isEmpty()) return false
+        return bare in common || bare in byLanguage[language].orEmpty()
+    }
+}
 
 @Serializable
 data class Word(

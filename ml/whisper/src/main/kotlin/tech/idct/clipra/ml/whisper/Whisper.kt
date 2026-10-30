@@ -4,8 +4,9 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 
 /**
- * whisper.cpp on the device (#7): a loaded ggml model that turns 16 kHz mono speech into
- * words with their times and how sure the model is of each.
+ * whisper.cpp on the device (#7, #44): a loaded ggml model that turns 16 kHz mono speech into
+ * words with their times and how sure the model is of each. [cancel] may be called from any
+ * thread while [transcribe] runs.
  */
 class Whisper private constructor(private var handle: Long) : AutoCloseable {
     /** A word, from [startUs] to [endUs] of the audio, with its mean token [probability]. */
@@ -18,13 +19,31 @@ class Whisper private constructor(private var handle: Long) : AutoCloseable {
         val dtwUs: Long = -1,
     )
 
+    /** What [transcribe] heard: the [language] spoken (or detected) and the words. */
+    data class Result(val language: String, val words: List<Word>)
+
+    /** Gets whisper.cpp's progress through one call, 0 to 100. */
+    fun interface ProgressListener {
+        fun onProgress(percent: Int)
+    }
+
+    /** Thrown by [transcribe] after [cancel]. */
+    class CancelledException : RuntimeException("Transcription cancelled")
+
     /**
-     * Transcribes [samples] (16 kHz mono, -1 to 1) in [language] ("en", "pl", ...) on
-     * [threads] threads.
+     * Transcribes [samples] (16 kHz mono, -1 to 1) in [language] ("en", "pl", ..., or "auto"
+     * to detect it) on [threads] threads; [translate] gives English words instead.
      */
-    fun transcribe(samples: FloatArray, language: String, threads: Int): List<Word> {
+    fun transcribe(
+        samples: FloatArray,
+        language: String,
+        threads: Int,
+        translate: Boolean = false,
+        listener: ProgressListener? = null,
+    ): Result {
         check(handle != 0L) { "Whisper is closed" }
-        val status = transcribe(handle, samples, language, threads)
+        val status = transcribe(handle, samples, language, translate, threads, listener)
+        if (status == CANCELLED) throw CancelledException()
         check(status == 0) { "whisper_full failed: $status" }
         val words = mutableListOf<Word>()
         val bytes = ByteArrayOutputStream()
@@ -58,7 +77,12 @@ class Whisper private constructor(private var handle: Long) : AutoCloseable {
             }
             flush()
         }
-        return words
+        return Result(language(handle), words)
+    }
+
+    /** Stops a [transcribe] that is running (or the next one) as soon as it can. */
+    fun cancel() {
+        if (handle != 0L) cancel(handle)
     }
 
     override fun close() {
@@ -77,6 +101,7 @@ class Whisper private constructor(private var handle: Long) : AutoCloseable {
     companion object {
         const val SAMPLE_RATE = 16_000
         private const val CENTISECOND_US = 10_000L
+        private const val CANCELLED = -100
 
         init {
             System.loadLibrary("clipra_whisper")
@@ -99,12 +124,20 @@ class Whisper private constructor(private var handle: Long) : AutoCloseable {
         private external fun free(handle: Long)
 
         @JvmStatic
+        private external fun cancel(handle: Long)
+
+        @JvmStatic
         private external fun transcribe(
             handle: Long,
             samples: FloatArray,
             language: String,
+            translate: Boolean,
             threads: Int,
+            listener: ProgressListener?,
         ): Int
+
+        @JvmStatic
+        private external fun language(handle: Long): String
 
         @JvmStatic
         private external fun segmentCount(handle: Long): Int
