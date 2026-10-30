@@ -18,6 +18,7 @@ import tech.idct.clipra.core.model.Keyframes
 import tech.idct.clipra.core.model.Mask
 import tech.idct.clipra.core.model.Speed
 import tech.idct.clipra.core.model.SpeedCurve
+import tech.idct.clipra.core.model.Stabilized
 import tech.idct.clipra.core.model.Transform
 import tech.idct.clipra.core.model.at
 import kotlin.math.roundToLong
@@ -120,6 +121,8 @@ data class RenderClip(
     val keyframeOriginUs: Long = startUs,
     /** The cutout (#50, #51): a chroma key, or the person cutout once its masks are made. */
     val cutout: RenderCutout? = null,
+    /** Stabilization (#54): each frame's correction by media time, and the clip's zoom. */
+    val stabilized: Stabilized? = null,
 ) {
     val endUs: Long get() = startUs + durationUs
 

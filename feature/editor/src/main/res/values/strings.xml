@@ -43,6 +43,7 @@
     <string name="editor_tool_delete">Delete</string>
     <string name="editor_tool_freeze">Freeze</string>
     <string name="editor_tool_speed">Speed</string>
+    <string name="editor_tool_stabilize">Stabilize</string>
     <string name="editor_tool_effects">Effects</string>
     <string name="editor_timeline_fx">FX %1$d</string>
     <string name="editor_tool_reverse">Reverse</string>
@@ -142,6 +143,19 @@
     <string name="editor_speed_reverse">Reverse</string>
     <string name="editor_speed_reverse_detail">Plays the clip backwards, without its sound.</string>
     <string name="editor_speed_pitch">Pitch is kept when speed changes.</string>
+
+    <!-- Stabilize sheet (#54) -->
+    <string name="editor_stabilize_header">%1$s · stabilize</string>
+    <string name="editor_stabilize_switch">Stabilize</string>
+    <string name="editor_stabilize_switch_detail">Smooths out handheld shake, on this device.</string>
+    <string name="editor_stabilize_strength">Strength</string>
+    <string name="editor_stabilize_crop">Crop</string>
+    <string name="editor_stabilize_crop_value">%1$d%%</string>
+    <string name="editor_stabilize_analysing">Analysing the camera\'s motion · %1$d%%</string>
+    <string name="editor_stabilize_failed">This clip couldn\'t be analysed.</string>
+    <string name="editor_stabilize_retry">Try again</string>
+    <string name="editor_stabilize_cancel">Cancel</string>
+    <string name="editor_stabilize_detail">More strength is smoother and crops more: the clip zooms in just enough that no edge shows. Until the analysis is done, the clip plays as it was shot.</string>
     <!-- Animate board (#33) -->
     <string name="editor_tool_animate">Animate</string>
     <string name="editor_animate_header">%1$s · animation</string>

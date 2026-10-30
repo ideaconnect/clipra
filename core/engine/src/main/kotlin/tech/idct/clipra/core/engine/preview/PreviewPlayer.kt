@@ -9,6 +9,7 @@ import androidx.media3.common.util.ExperimentalApi
 import androidx.media3.common.util.Size
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.transformer.CompositionPlayer
+import tech.idct.clipra.core.engine.media.CameraMotion
 import tech.idct.clipra.core.engine.media.CutoutMasks
 import tech.idct.clipra.core.engine.media.MediaCache
 import tech.idct.clipra.core.engine.media.ProjectMediaResolver
@@ -238,6 +239,8 @@ class PreviewPlayer(private val context: Context, cache: MediaCache) {
         override fun speech(asset: MediaAsset): List<LongRange>? = inner.speech(asset)
 
         override fun cutout(asset: MediaAsset): CutoutMasks? = inner.cutout(asset)
+
+        override fun cameraMotion(asset: MediaAsset): CameraMotion? = inner.cameraMotion(asset)
 
         override fun lut(id: String): CubeLut? = luts.getOrPut(id) { inner.lut(id) }
     }

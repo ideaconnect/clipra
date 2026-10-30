@@ -79,6 +79,9 @@ enum class EditorTool {
 
     /** The Animate board (#33) of the selected clip. */
     Animate,
+
+    /** The Stabilize sheet (#54) of the selected video clip. */
+    Stabilize,
 }
 
 /** Everything the editor screen can ask for. */
@@ -387,8 +390,8 @@ private fun mainTools(callbacks: EditorCallbacks, onAdd: () -> Unit): List<Tool>
 }
 
 /**
- * With a clip selected. Stabilize and Linked join when their issues land (M7), so every tool
- * shown does something.
+ * With a clip selected. Linked joins when its issue lands (M7), so every tool shown does
+ * something.
  */
 @Composable
 private fun clipTools(callbacks: EditorCallbacks): List<Tool> {
@@ -405,6 +408,7 @@ private fun clipTools(callbacks: EditorCallbacks): List<Tool> {
         tool(R.string.editor_tool_text, ClipraIcons.Text) { open(EditorTool.Text) },
         tool(R.string.editor_tool_color, ClipraIcons.Color) { open(EditorTool.Color) },
         tool(R.string.editor_tool_cutout, ClipraIcons.Cutout) { open(EditorTool.Cutout) },
+        tool(R.string.editor_tool_stabilize, ClipraIcons.Stabilize) { open(EditorTool.Stabilize) },
         tool(R.string.editor_tool_duplicate, ClipraIcons.Duplicate, callbacks.onDuplicate),
         tool(R.string.editor_tool_delete, ClipraIcons.Delete, callbacks.onDelete),
         tool(R.string.editor_tool_crop, ClipraIcons.Crop, callbacks.onCrop),

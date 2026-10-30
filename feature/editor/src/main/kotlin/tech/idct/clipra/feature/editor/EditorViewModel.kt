@@ -11,11 +11,14 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
@@ -30,6 +33,7 @@ import tech.idct.clipra.core.engine.media.MediaImporter
 import tech.idct.clipra.core.engine.media.ProjectMediaResolver
 import tech.idct.clipra.core.engine.media.Recording
 import tech.idct.clipra.core.engine.media.SoundAnalyzer
+import tech.idct.clipra.core.engine.media.Stabilizer
 import tech.idct.clipra.core.engine.media.VoiceCleaner
 import tech.idct.clipra.core.engine.media.VoiceRecorder
 import tech.idct.clipra.core.model.Animation
@@ -43,6 +47,7 @@ import tech.idct.clipra.core.model.MediaKind
 import tech.idct.clipra.core.model.MediaRef
 import tech.idct.clipra.core.model.Project
 import tech.idct.clipra.core.model.Speed
+import tech.idct.clipra.core.model.Stabilization
 import tech.idct.clipra.core.model.TextColors
 import tech.idct.clipra.core.model.TextFonts
 import tech.idct.clipra.core.model.TextSpec
@@ -74,12 +79,14 @@ import tech.idct.clipra.core.model.edit.SetLayerHidden
 import tech.idct.clipra.core.model.edit.SetLayerLocked
 import tech.idct.clipra.core.model.edit.SetLayerMuted
 import tech.idct.clipra.core.model.edit.SetSpeed
+import tech.idct.clipra.core.model.edit.SetStabilize
 import tech.idct.clipra.core.model.edit.SetTransform
 import tech.idct.clipra.core.model.edit.SplitClip
 import tech.idct.clipra.core.model.edit.ToggleKeyframe
 import tech.idct.clipra.core.model.edit.TrimClip
 import tech.idct.clipra.core.model.edit.randomId
 import tech.idct.clipra.core.model.timelineAt
+import tech.idct.clipra.feature.editor.stabilize.StabilizeAnalysis
 import tech.idct.clipra.feature.editor.timeline.TimelineGeometry
 import javax.inject.Inject
 
@@ -136,6 +143,7 @@ class EditorViewModel @Inject constructor(
     private val analyzer: SoundAnalyzer,
     private val recorder: VoiceRecorder,
     private val cutouts: Cutouts,
+    private val stabilizer: Stabilizer,
     @param:ApplicationScope private val appScope: CoroutineScope,
     savedState: SavedStateHandle,
 ) : ViewModel() {
@@ -167,8 +175,9 @@ class EditorViewModel @Inject constructor(
                 // Cleaned voices (#39) the cache lost, or that were asked for elsewhere.
                 appScope.launch(Dispatchers.IO) {
                     voices.requestAll(session.project)
-                    // Person masks (#50) the cache lost.
+                    // Person masks (#50) and camera motion (#54) the cache lost.
                     cutouts.requestAll(session.project)
+                    stabilizer.requestAll(session.project)
                 }
                 mutableState.update { state ->
                     state.copy(
@@ -244,6 +253,52 @@ class EditorViewModel @Inject constructor(
     fun setSpeed(clipId: String, speed: Speed) = edit(SetSpeed(clipId, speed))
 
     fun setAnimation(clipId: String, animation: Animation) = edit(SetAnimation(clipId, animation))
+
+    /**
+     * Steadies a video clip (#54), or stops; turned on, its media's camera motion is analysed in
+     * the background unless it is known.
+     */
+    fun setStabilize(clipId: String, stabilization: Stabilization?) {
+        edit(SetStabilize(clipId, stabilization))
+        if (stabilization != null) {
+            mediaOf(clipId)?.let { appScope.launch(Dispatchers.IO) { stabilizer.request(it) } }
+        }
+    }
+
+    /** Stops the analysis for a clip's stabilization, and turns it off. */
+    fun cancelStabilize(clipId: String) {
+        mediaOf(clipId)?.let(stabilizer::cancel)
+        edit(SetStabilize(clipId, null))
+    }
+
+    /** Analyses a clip's media again after it failed. */
+    fun retryStabilize(clipId: String) {
+        mediaOf(clipId)?.let { appScope.launch(Dispatchers.IO) { stabilizer.request(it) } }
+    }
+
+    /** How far the analysis for [clip]'s stabilization (#54) is; null while it is off. */
+    fun stabilizeAnalysis(clip: Clip): Flow<StabilizeAnalysis?> {
+        val asset = mediaOf(clip.id)
+        if (clip.stabilize == null || asset == null) return flowOf(null)
+        return combine(
+            stabilizer.progress,
+            stabilizer.failed,
+            mediaCache.voiceVersion,
+        ) { progress, failed, _ ->
+            val motion = stabilizer.motion(asset)
+            when {
+                motion != null -> StabilizeAnalysis.Ready(motion.playedBy(clip), motion.aspect)
+                asset.id in progress -> StabilizeAnalysis.Working(progress.getValue(asset.id))
+                asset.id in failed -> StabilizeAnalysis.Failed
+                else -> StabilizeAnalysis.Waiting
+            }
+        }.flowOn(Dispatchers.IO)
+    }
+
+    private fun mediaOf(clipId: String): MediaAsset? {
+        val project = state.value.project ?: return null
+        return project.findClip(clipId)?.second?.source?.let { project.asset(it.mediaId) }
+    }
 
     fun reverse() {
         val clipId = state.value.selectedClipId ?: return

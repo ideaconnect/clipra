@@ -24,6 +24,7 @@ import tech.idct.clipra.core.model.Cells
 import tech.idct.clipra.core.model.ClipGeometry
 import tech.idct.clipra.core.model.ColorGrade
 import tech.idct.clipra.core.model.ColorMath
+import tech.idct.clipra.core.model.Correction
 import tech.idct.clipra.core.model.CubeLut
 import tech.idct.clipra.core.model.Cutout
 import tech.idct.clipra.core.model.CutoutMath
@@ -32,6 +33,7 @@ import tech.idct.clipra.core.model.Filters
 import tech.idct.clipra.core.model.HueRange
 import tech.idct.clipra.core.model.Mask
 import tech.idct.clipra.core.model.MaskShape
+import tech.idct.clipra.core.model.Stabilizing
 import tech.idct.clipra.core.model.Transform
 import tech.idct.clipra.core.model.Transitions
 import java.nio.ByteBuffer
@@ -263,10 +265,18 @@ private class LayerCompositorProgram(
                 Cutting(clip.id, settings, cut.masks, mediaTimeAt(clip, timeUs))
             }
         }
-        val frame = if (filters.isEmpty() && grading == null && cutout == null) {
+        // Stabilization (#54) moves the frame onto the steadied path, before everything else.
+        val steady = clip.stabilized?.let { stabilized ->
+            stabilizationMatrix(
+                stabilized.at(mediaTimeAt(clip, timeUs)),
+                stabilized.zoom,
+                raw.width.toFloat() / raw.height,
+            )
+        }
+        val frame = if (filters.isEmpty() && grading == null && cutout == null && steady == null) {
             raw
         } else {
-            filtered(raw, filters, mask, timeUs, grading, cutout)
+            filtered(raw, filters, mask, timeUs, grading, cutout, steady)
         }
         val (position, unit) = quadFor(clip, motion.transform, frame.width, frame.height)
         return Prepared(frame, opacity, position, unit, clip.cell)
@@ -405,6 +415,31 @@ private class LayerCompositorProgram(
     /** A clip's mask texture and the frame of its masks it holds. */
     private class MaskTexture(val id: Int, var frame: Int, var masks: CutoutMasks)
 
+    /**
+     * Stabilization (#54) as a texture matrix on the picture's unit coordinates (origin at the
+     * bottom-left): each point of the steadied picture reads from where `Stabilizing.source`
+     * says, in the frame as shot. [aspect] is the picture's width over its height.
+     */
+    private fun stabilizationMatrix(
+        correction: Correction,
+        zoom: Float,
+        aspect: Float,
+    ): FloatArray {
+        fun read(u: Float, v: Float): Pair<Float, Float> {
+            val (px, py) = Stabilizing.source(correction, zoom, u - 0.5f, (0.5f - v) / aspect)
+            return (px + 0.5f) to (0.5f - py * aspect)
+        }
+        val (bx, by) = read(0f, 0f)
+        val (ux, uy) = read(1f, 0f)
+        val (vx, vy) = read(0f, 1f)
+        return floatArrayOf(
+            ux - bx, uy - by, 0f, 0f,
+            vx - bx, vy - by, 0f, 0f,
+            0f, 0f, 1f, 0f,
+            bx, by, 0f, 1f,
+        )
+    }
+
     /** The media time a clip shows at [timeUs]: a photo has one picture. */
     private fun mediaTimeAt(clip: RenderClip, timeUs: Long): Long =
         when (val source = clip.source) {
@@ -427,6 +462,7 @@ private class LayerCompositorProgram(
         timeUs: Long,
         grading: Grading?,
         cutout: Cutting? = null,
+        steady: FloatArray? = null,
     ): ClipFrame {
         val longest = maxOf(timeline.width, timeline.height).toFloat()
         val scale = minOf(1f, longest / maxOf(frame.width, frame.height))
@@ -446,7 +482,17 @@ private class LayerCompositorProgram(
         GLES20.glClearColor(0f, 0f, 0f, 0f)
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
         val source = if (frame.external) externalProgram else bitmapProgram
-        drawSource(source, frame, 1f, FULL_FRAME, FULL_UNIT)
+        if (steady == null) {
+            drawSource(source, frame, 1f, FULL_FRAME, FULL_UNIT)
+        } else {
+            // Read the frame through the correction: the texture's own matrix after it.
+            val matrix = FloatArray(16)
+            Matrix.multiplyMM(matrix, 0, frame.textureMatrix, 0, steady, 0)
+            source.use()
+            source.setSamplerTexIdUniform("uTex", frame.texture, 0)
+            source.setFloatUniform("uOpacity", 1f)
+            drawQuad(source, FULL_FRAME, FULL_UNIT, matrix)
+        }
         if (grading != null) {
             focus(targets[1])
             gradePass(targets[0], grading)
@@ -509,7 +555,7 @@ private class LayerCompositorProgram(
             }
             val next = (current + 1) % 3
             focus(targets[next])
-            cutoutPass(targets[current], targets[blurred], cutout)
+            cutoutPass(targets[current], targets[blurred], cutout, steady ?: identity)
             current = next
         }
         val result = targets[current]
@@ -517,7 +563,12 @@ private class LayerCompositorProgram(
     }
 
     /** The cutout pass (#50) into the focused target, as `CutoutMath.alpha` keeps a pixel. */
-    private fun cutoutPass(input: Target, blurred: Target, cutout: Cutting) {
+    private fun cutoutPass(
+        input: Target,
+        blurred: Target,
+        cutout: Cutting,
+        maskMatrix: FloatArray,
+    ) {
         val settings = cutout.settings
         val program = cutoutProgram
         program.use()
@@ -557,6 +608,7 @@ private class LayerCompositorProgram(
         program.setFloatUniform("uSimilarity", key?.similarity ?: 0f)
         program.setFloatUniform("uSmoothness", key?.smoothness ?: 0f)
         program.setFloatUniform("uSpill", key?.spill ?: 0f)
+        program.setFloatsUniform("uMaskMatrix", maskMatrix)
         drawQuad(program, FULL_FRAME, FULL_UNIT, identity)
     }
 

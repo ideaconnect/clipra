@@ -30,7 +30,7 @@ core:audio               Loudness, gates, ducking, beat detection, waveform extr
 core:models              AI model manifest, downloads (WorkManager), verification and storage
 ml:whisper               whisper.cpp JNI, model files, transcription pipeline
 ml:voice                 DeepFilterNet 3 (ONNX Runtime), RNNoise (JNI)
-ml:vision                MediaPipe models on LiteRT: selfie segmenter, face detector, subject tracking; motion tracking for Stabilize (OpenCV)
+ml:vision                MediaPipe models on LiteRT: selfie segmenter, face detector, subject tracking; motion tracking for Stabilize (Kotlin, no library)
 ml:translate             ML Kit on-device translation
 feature:home             Home, new project
 feature:editor           Timeline, preview, tools, inspector (phone and tablet)
@@ -118,7 +118,7 @@ Transcript(clipId, words: List<Word(text, start, end, confidence, kind: Word|Fil
 | Person cutout | MediaPipe selfie segmenter model (Apache-2.0, 256 × 256) on LiteRT (Apache-2.0) | Masks per frame, steadied and cached; see below |
 | Subject follow | MediaPipe object detector plus a simple tracker | Fallback to face, then centre |
 | Translation | ML Kit on-device translation (Google terms) | Language packs downloaded on demand; non-English pairs pivot through English |
-| Stabilization | No model: corner tracking (pyramidal Lucas-Kanade) and per-frame camera motion with RANSAC, using OpenCV (Apache-2.0, trimmed build) | Analysed on the proxy in the background and cached per media hash; the smoothed path is rendered by a per-frame matrix effect with one zoom per clip, in preview and export. No gyro data or learned model in v1 |
+| Stabilization | No model and no library: Shi-Tomasi corners, pyramidal Lucas-Kanade tracking and a RANSAC similarity fit per frame, written in Kotlin (`ml:vision` `MotionEstimator`) on 320 px wide grey frames. OpenCV was planned; the few routines needed are small, so the download stays the same and there is no native build to maintain | Analysed from the proxy in the background (WorkManager, one thread per core) and cached per media; the steps are kept in fractions of the picture keyed by media time, so trims, speed and reverse keep working. `Stabilizing` smooths the path with a Gaussian (wider with strength) and picks one zoom per clip; the compositor reads each frame through the correction matrix in its first draw, so preview and export match, and cutout masks and followed faces go through the same transform. No gyro data or learned model in v1 |
 
 **MediaPipe models run on LiteRT, not MediaPipe Tasks (#50).** The Tasks libraries send usage events (task name, app version) through Google's datatransport to Clearcut, with no switch to turn them off; that is network traffic the product doesn't allow. LiteRT (`com.google.ai.edge.litert:litert`, the TensorFlow Lite runtime) has no telemetry and runs the same official model files, so `ml:vision` does the small pre- and post-processing itself (for the selfie segmenter: the picture squeezed to 256 × 256, RGB in 0 to 1, a confidence per pixel out).
 

@@ -1,6 +1,7 @@
 package tech.idct.clipra.core.engine.render
 
 import android.graphics.Bitmap
+import tech.idct.clipra.core.engine.media.CameraMotion
 import tech.idct.clipra.core.engine.media.CutoutMasks
 import tech.idct.clipra.core.model.Animations
 import tech.idct.clipra.core.model.Background
@@ -43,6 +44,9 @@ interface MediaResolver {
 
     /** The person masks of [asset] (#50), once they are made. */
     fun cutout(asset: MediaAsset): CutoutMasks? = null
+
+    /** The camera motion in [asset] (#54), once it is analysed. */
+    fun cameraMotion(asset: MediaAsset): CameraMotion? = null
 
     /** The LUT with [id] (#28): a built-in one, or an imported `.cube` file; null if gone. */
     fun lut(id: String): CubeLut? = Luts.builtIn(id)
@@ -330,7 +334,9 @@ object ProjectRender {
                 media.cutout(asset)?.let { RenderCutout(settings, it) }
             }
         }
-        return renderClipOf(clip, source, voice, cutout)
+        // Steadied (#54) once the media is analysed, over the part the clip plays.
+        val stabilized = clip.stabilize?.let { media.cameraMotion(asset)?.over(clip) }
+        return renderClipOf(clip, source, voice, cutout).copy(stabilized = stabilized)
     }
 
     private fun renderClipOf(
