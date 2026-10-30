@@ -15,6 +15,7 @@ import tech.idct.clipra.core.engine.render.CompositionFactory
 import tech.idct.clipra.core.engine.render.LiveEdits
 import tech.idct.clipra.core.engine.render.MediaResolver
 import tech.idct.clipra.core.engine.render.ProjectRender
+import tech.idct.clipra.core.model.Animations
 import tech.idct.clipra.core.model.CaptionSpec
 import tech.idct.clipra.core.model.ColorGrade
 import tech.idct.clipra.core.model.CubeLut
@@ -209,6 +210,15 @@ class PreviewPlayer(private val context: Context, cache: MediaCache) {
         override fun image(asset: MediaAsset): Bitmap? = images.getOrPut(asset.id) {
             inner.image(asset)
         }
+
+        // Each moment of a text animation (#33) is drawn once, when it shows.
+        override fun animatedText(
+            spec: TextSpec,
+            card: Boolean,
+            width: Int,
+            height: Int,
+            motion: Animations.TextMotion,
+        ): Bitmap? = inner.animatedText(spec, card, width, height, motion)
 
         private val luts = HashMap<String, CubeLut?>()
 

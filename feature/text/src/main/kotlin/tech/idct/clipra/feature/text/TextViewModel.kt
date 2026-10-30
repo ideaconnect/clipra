@@ -14,9 +14,11 @@ import tech.idct.clipra.core.data.di.ApplicationScope
 import tech.idct.clipra.core.data.project.OpenProjects
 import tech.idct.clipra.core.data.project.ProjectSession
 import tech.idct.clipra.core.engine.media.MediaCache
+import tech.idct.clipra.core.model.Animation
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.Project
 import tech.idct.clipra.core.model.TextSpec
+import tech.idct.clipra.core.model.edit.SetAnimation
 import tech.idct.clipra.core.model.edit.SetText
 import javax.inject.Inject
 
@@ -69,6 +71,12 @@ class TextViewModel @Inject constructor(
     fun setSpec(spec: TextSpec) {
         val clip = state.value.clip ?: return
         if (clip.text != spec) session?.edit(SetText(clip.id, spec))
+    }
+
+    /** Commits the text's animation in and out (#33). */
+    fun setAnimation(animation: Animation) {
+        val clip = state.value.clip ?: return
+        if (clip.animation != animation) session?.edit(SetAnimation(clip.id, animation))
     }
 
     override fun onCleared() {

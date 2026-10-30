@@ -1,6 +1,7 @@
 package tech.idct.clipra.core.engine.render
 
 import android.graphics.Bitmap
+import tech.idct.clipra.core.model.Animations
 import tech.idct.clipra.core.model.Background
 import tech.idct.clipra.core.model.CaptionSpec
 import tech.idct.clipra.core.model.CaptionStyle
@@ -37,6 +38,15 @@ interface MediaResolver {
 
     /** The LUT with [id] (#28): a built-in one, or an imported `.cube` file; null if gone. */
     fun lut(id: String): CubeLut? = Luts.builtIn(id)
+
+    /** Text [spec] with its letters in [motion] (#33); still text when it can't animate. */
+    fun animatedText(
+        spec: TextSpec,
+        card: Boolean,
+        width: Int,
+        height: Int,
+        motion: Animations.TextMotion,
+    ): Bitmap? = text(spec, card, width, height)
 }
 
 /** Turns a project into what the layer compositor draws (docs/architecture.md, section 4). */
@@ -63,6 +73,8 @@ object ProjectRender {
             val clips = layer.clips.flatMap { clip ->
                 val rendered = if (clip.type == ClipType.Caption) {
                     captionClips(clip, media, width, height)
+                } else if (clip.isText() && clip.animation?.let { it.enter ?: it.exit } != null) {
+                    animatedTextClips(project, clip, media, width, height, frameRate)
                 } else {
                     listOfNotNull(renderClip(project, clip, media, width, height))
                 }
@@ -140,6 +152,76 @@ object ProjectRender {
         }
     }
 
+    /**
+     * A text clip with an animation in or out (#33): a piece per frame while its letters move,
+     * each drawn by the text renderer at that moment (only when on screen), and the still text
+     * between. Pieces keep the clip's time base, so its keyframes and transform carry on.
+     */
+    private fun animatedTextClips(
+        project: Project,
+        clip: Clip,
+        media: MediaResolver,
+        width: Int,
+        height: Int,
+        frameRate: Int,
+    ): List<RenderClip> {
+        val still = renderClip(project, clip, media, width, height) ?: return emptyList()
+        val spec = clip.text ?: return listOf(still)
+        val animation = clip.animation ?: return listOf(still)
+        val card = clip.type == ClipType.TextCard
+        val length = Animations.lengthUs(clip.durationUs)
+        // As large as the still text is drawn (larger when scaled up).
+        val drawn = (still.source as? RenderSource.Image)?.bitmap
+        val factor = drawn?.let { it.width.toFloat() / width } ?: 1f
+
+        // One piece per frame of the timeline's grid, at that frame's moment.
+        fun frameAt(k: Long) = k * 1_000_000L / frameRate
+        fun pieces(from: Long, to: Long, tag: String): List<RenderClip> {
+            val starts = buildList {
+                add(clip.startUs + from)
+                var k = (clip.startUs + from) * frameRate / 1_000_000L + 1
+                while (frameAt(k) < clip.startUs + to) add(frameAt(k++))
+            }
+            return starts.mapIndexed { i, start ->
+                val end = starts.getOrNull(i + 1) ?: (clip.startUs + to)
+                val motion = Animations.textMotion(animation, start - clip.startUs, clip.durationUs)
+                val source = if (motion == null) {
+                    still.source
+                } else {
+                    RenderSource.Drawn {
+                        media.animatedText(
+                            spec,
+                            card,
+                            (width * factor).toInt(),
+                            (height * factor).toInt(),
+                            motion,
+                        ) ?: Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
+                    }
+                }
+                still.copy(
+                    id = "${clip.id}#$tag$i",
+                    startUs = start,
+                    durationUs = end - start,
+                    source = source,
+                )
+            }
+        }
+        val enterEnd = if (animation.enter != null) length else 0L
+        val exitStart = if (animation.exit != null) clip.durationUs - length else clip.durationUs
+        return buildList {
+            if (enterEnd > 0) addAll(pieces(0, enterEnd, "in"))
+            if (exitStart > enterEnd) {
+                val between = exitStart - enterEnd
+                add(still.copy(startUs = clip.startUs + enterEnd, durationUs = between))
+            }
+            if (exitStart < clip.durationUs) {
+                addAll(pieces(maxOf(exitStart, enterEnd), clip.durationUs, "out"))
+            }
+        }
+    }
+
+    private fun Clip.isText() = type == ClipType.Text || type == ClipType.TextCard
+
     private fun renderClip(
         project: Project,
         clip: Clip,
@@ -196,6 +278,8 @@ object ProjectRender {
         maskKeyframes = clip.maskKeyframes,
         speed = clip.speed,
         color = clip.color,
+        // Text animates in its renderer, not as a whole (#33).
+        animation = clip.animation.takeIf { !clip.isText() },
         sourceSpanUs = clip.source?.let { it.outPointUs - it.inPointUs } ?: 0,
         effects = clip.effects,
         mask = clip.mask,

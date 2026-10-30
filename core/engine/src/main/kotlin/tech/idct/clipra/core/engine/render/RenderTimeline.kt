@@ -1,6 +1,8 @@
 package tech.idct.clipra.core.engine.render
 
 import android.graphics.Bitmap
+import tech.idct.clipra.core.model.Animation
+import tech.idct.clipra.core.model.Animations
 import tech.idct.clipra.core.model.AudioSettings
 import tech.idct.clipra.core.model.BlendMode
 import tech.idct.clipra.core.model.CellRect
@@ -99,6 +101,13 @@ data class RenderClip(
     /** The colour grade (#28), before the filters, and its LUT read from its file. */
     val color: ColorGrade? = null,
     val lut: CubeLut? = null,
+    /**
+     * The clip's animation in, out and loop (#33), over [clipDurationUs] from
+     * [keyframeOriginUs]: the whole clip's, which pieces of it keep. Text animates in its
+     * renderer instead.
+     */
+    val animation: Animation? = null,
+    val clipDurationUs: Long = durationUs,
     /** Keyframes (#21) of the transform, the opacity and the mask, in clip time. */
     val transformKeyframes: List<Keyframe<Transform>> = emptyList(),
     val opacityKeyframes: List<Keyframe<Float>> = emptyList(),
@@ -107,6 +116,10 @@ data class RenderClip(
     val keyframeOriginUs: Long = startUs,
 ) {
     val endUs: Long get() = startUs + durationUs
+
+    /** The transform and opacity of its animation (#33) at [timeUs], over [base]. */
+    fun motionAt(timeUs: Long, base: Transform): Animations.Motion =
+        Animations.motion(animation, base, timeUs - keyframeOriginUs, clipDurationUs)
 
     /** The transform at [timeUs] (timeline time), its keyframes applied. */
     fun transformAt(timeUs: Long): Transform =

@@ -144,4 +144,27 @@
     <string name="editor_speed_reverse">Odwróć</string>
     <string name="editor_speed_reverse_detail">Odtwarza klip od końca, bez dźwięku.</string>
     <string name="editor_speed_pitch">Wysokość dźwięku nie zmienia się przy zmianie prędkości.</string>
+    <!-- Animate board (#33) -->
+    <string name="editor_tool_animate">Animuj</string>
+    <string name="editor_animate_header">%1$s · animacja</string>
+    <string name="editor_animate_in">Wejście</string>
+    <string name="editor_animate_out">Wyjście</string>
+    <string name="editor_animate_loop">Pętla</string>
+    <string name="editor_animation_none">Brak</string>
+    <string name="editor_animation_fade">Przenikanie</string>
+    <string name="editor_animation_zoom_in">Przybliżenie</string>
+    <string name="editor_animation_slide_up">Wsuń w górę</string>
+    <string name="editor_animation_spin">Obrót</string>
+    <string name="editor_animation_zoom_out">Oddalenie</string>
+    <string name="editor_animation_slide_down">Wysuń w dół</string>
+    <string name="editor_animation_ken_burns">Ken Burns</string>
+    <string name="editor_animation_shake">Drżenie</string>
+    <string name="editor_animation_pulse">Puls</string>
+    <string name="editor_animation_typewriter">Maszynopis</string>
+    <string name="editor_animation_fade_up">Uniesienie</string>
+    <string name="editor_animation_pop">Wyskok</string>
+    <string name="editor_animation_slide">Wsunięcie</string>
+    <string name="editor_animation_bounce">Odbicie</string>
+    <string name="editor_animation_wave">Fala</string>
+    <string name="editor_animation_glitch">Glitch</string>
 </resources>

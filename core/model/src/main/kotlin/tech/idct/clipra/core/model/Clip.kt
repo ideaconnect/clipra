@@ -299,8 +299,15 @@ object TextEffects {
 @Serializable
 enum class TextAlign { Start, Center, End }
 
+/** A clip's animations in, out and in a loop (#33), by id from `Animations`; null for none. */
 @Serializable
-data class Animation(val enter: String? = null, val exit: String? = null, val loop: String? = null)
+data class Animation(
+    val enter: String? = null,
+    val exit: String? = null,
+    val loop: String? = null,
+) {
+    val isEmpty: Boolean get() = enter == null && exit == null && loop == null
+}
 
 /** Video stabilization, strength 0 to 100 (spec section 3). */
 @Serializable

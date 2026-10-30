@@ -1,5 +1,6 @@
 package tech.idct.clipra.core.model.edit
 
+import tech.idct.clipra.core.model.Animation
 import tech.idct.clipra.core.model.AudioSettings
 import tech.idct.clipra.core.model.BlendMode
 import tech.idct.clipra.core.model.CaptionOptions
@@ -95,13 +96,16 @@ class SplitClip(
     private fun Clip.splitAt(atUs: Long, rightId: String): Pair<Clip, Clip> {
         // A caption's words are timed from its start: each part keeps its own (#45).
         val cut = atUs - startUs
+        // The animation in stays at the start, and the one out at the end (#33).
         val left = played(0, cut).copy(
             caption = caption?.let { c -> c.copy(words = c.words.filter { it.startUs < cut }) },
+            animation = animation?.copy(exit = null)?.takeIf { !it.isEmpty },
         )
         // Both parts keep every keyframe (#21), so the animation goes on where it was.
         val right = played(cut, durationUs).withKeyframesShifted(-cut).copy(
             id = rightId,
             startUs = atUs,
+            animation = animation?.copy(enter = null)?.takeIf { !it.isEmpty },
             caption = caption?.let { c ->
                 c.copy(
                     words = c.words.filter { it.startUs >= cut }.map {
@@ -451,5 +455,20 @@ data class SetSpeed(val clipId: String, val speed: Speed) : EditCommand {
         } else {
             project.replaceClip(changed).shiftClips(withPartners, delta)
         }
+    }
+}
+
+/**
+ * Animates a clip (#33): in, out and loop for pictures, in and out for text. Null, or an empty
+ * animation, takes it away.
+ */
+data class SetAnimation(val clipId: String, val animation: Animation?) : EditCommand {
+    override fun apply(project: Project): Project {
+        val (layer, clip) = project.clipWithLayer(clipId)
+        layer.requireUnlocked()
+        if (clip.type == ClipType.Audio || clip.type == ClipType.Caption) {
+            throw EditRejected(EditRejected.Reason.OutOfRange)
+        }
+        return project.replaceClip(clip.copy(animation = animation?.takeIf { !it.isEmpty }))
     }
 }

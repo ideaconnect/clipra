@@ -21,6 +21,7 @@ import tech.idct.clipra.core.engine.media.MediaCache
 import tech.idct.clipra.core.engine.media.MediaImporter
 import tech.idct.clipra.core.engine.media.ProjectMediaResolver
 import tech.idct.clipra.core.engine.media.VoiceCleaner
+import tech.idct.clipra.core.model.Animation
 import tech.idct.clipra.core.model.BlendMode
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
@@ -51,6 +52,7 @@ import tech.idct.clipra.core.model.edit.MoveClip
 import tech.idct.clipra.core.model.edit.MoveKeyframe
 import tech.idct.clipra.core.model.edit.MoveLayer
 import tech.idct.clipra.core.model.edit.ReplaceMedia
+import tech.idct.clipra.core.model.edit.SetAnimation
 import tech.idct.clipra.core.model.edit.SetBlend
 import tech.idct.clipra.core.model.edit.SetCell
 import tech.idct.clipra.core.model.edit.SetKeyframeEasing
@@ -169,6 +171,8 @@ class EditorViewModel @Inject constructor(
     fun freeze() = onSelected { FreezeFrame(it, state.value.playheadUs) }
 
     fun setSpeed(clipId: String, speed: Speed) = edit(SetSpeed(clipId, speed))
+
+    fun setAnimation(clipId: String, animation: Animation) = edit(SetAnimation(clipId, animation))
 
     fun reverse() {
         val clipId = state.value.selectedClipId ?: return

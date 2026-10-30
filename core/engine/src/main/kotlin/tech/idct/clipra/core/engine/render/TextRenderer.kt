@@ -9,6 +9,7 @@ import android.text.Layout
 import android.text.StaticLayout
 import android.text.TextPaint
 import tech.idct.clipra.core.fonts.R
+import tech.idct.clipra.core.model.Animations
 import tech.idct.clipra.core.model.TextAlign
 import tech.idct.clipra.core.model.TextFonts
 import tech.idct.clipra.core.model.TextSpec
@@ -26,7 +27,15 @@ object TextRenderer {
     /** The families Clipra ships (OFL), by the names text clips use. */
     val families = TextFonts.all
 
-    fun render(context: Context, spec: TextSpec, card: Boolean, width: Int, height: Int): Bitmap {
+    /** [spec] drawn at [width] × [height], its letters at [motion] of their animation (#33). */
+    fun render(
+        context: Context,
+        spec: TextSpec,
+        card: Boolean,
+        width: Int,
+        height: Int,
+        motion: Animations.TextMotion? = null,
+    ): Bitmap {
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         if (card) canvas.drawColor((spec.background ?: DEFAULT_CARD).toInt())
@@ -44,7 +53,18 @@ object TextRenderer {
             .setLineSpacing(0f, LINE_SPACING)
             .build()
         canvas.translate((width - wrap) / 2f, (height - layout.height) / 2f)
-        TextEffectPainter(layout, paint, spec, card).draw(canvas)
+        val effect = TextEffectPainter(layout, paint, spec, card)
+        if (motion == null) {
+            effect.draw(canvas)
+        } else {
+            TextMotionPainter(
+                layout,
+                paint.textSize,
+                width,
+                height,
+                effect::draw,
+            ).draw(canvas, motion)
+        }
         return bitmap
     }
 
