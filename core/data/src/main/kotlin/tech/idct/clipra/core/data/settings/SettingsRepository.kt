@@ -7,6 +7,10 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import tech.idct.clipra.core.model.export.CaptionMode
+import tech.idct.clipra.core.model.export.ExportQuality
+import tech.idct.clipra.core.model.export.ExportSettings
+import tech.idct.clipra.core.model.export.VideoCodec
 import javax.inject.Inject
 
 /** App settings, kept in DataStore. */
@@ -39,10 +43,37 @@ class SettingsRepository @Inject constructor(private val dataStore: DataStore<Pr
         dataStore.edit { it[ONBOARDED] = true }
     }
 
+    /**
+     * The codec, quality and captions a project's first export starts with (#74); the resolution
+     * and frame rate follow the project's format.
+     */
+    val exportDefaults: Flow<ExportSettings> = dataStore.data.map { prefs ->
+        val defaults = ExportSettings()
+        ExportSettings(
+            codec = enumOrNull<VideoCodec>(prefs[EXPORT_CODEC]) ?: defaults.codec,
+            quality = enumOrNull<ExportQuality>(prefs[EXPORT_QUALITY]) ?: defaults.quality,
+            captions = enumOrNull<CaptionMode>(prefs[EXPORT_CAPTIONS]) ?: defaults.captions,
+        )
+    }
+
+    suspend fun setExportDefaults(settings: ExportSettings) {
+        dataStore.edit {
+            it[EXPORT_CODEC] = settings.codec.name
+            it[EXPORT_QUALITY] = settings.quality.name
+            it[EXPORT_CAPTIONS] = settings.captions.name
+        }
+    }
+
+    private inline fun <reified E : Enum<E>> enumOrNull(name: String?): E? =
+        enumValues<E>().firstOrNull { it.name == name }
+
     private companion object {
         val WIFI_ONLY_DOWNLOADS = booleanPreferencesKey("wifi_only_downloads")
         val USE_ACCELERATOR = booleanPreferencesKey("use_accelerator")
         val CAPTION_MODEL = stringPreferencesKey("caption_model")
         val ONBOARDED = booleanPreferencesKey("onboarded")
+        val EXPORT_CODEC = stringPreferencesKey("export_codec")
+        val EXPORT_QUALITY = stringPreferencesKey("export_quality")
+        val EXPORT_CAPTIONS = stringPreferencesKey("export_captions")
     }
 }

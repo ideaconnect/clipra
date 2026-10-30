@@ -51,6 +51,11 @@ import tech.idct.clipra.feature.models.ModelsNavigationActions
 import tech.idct.clipra.feature.models.ModelsRoute
 import tech.idct.clipra.feature.models.OnboardingRoute
 import tech.idct.clipra.feature.models.modelsScreens
+import tech.idct.clipra.feature.settings.LicenseRoute
+import tech.idct.clipra.feature.settings.LicensesRoute
+import tech.idct.clipra.feature.settings.SettingsNavigationActions
+import tech.idct.clipra.feature.settings.SettingsRoute
+import tech.idct.clipra.feature.settings.settingsScreens
 import tech.idct.clipra.feature.text.TextNavigationActions
 import tech.idct.clipra.feature.text.TextRoute
 import tech.idct.clipra.feature.text.textScreens
@@ -203,7 +208,17 @@ fun ClipraNavHost(
                 },
             ),
         )
-        composable<SettingsRoute> { screen(AppBoards.settings) }
+        settingsScreens(
+            SettingsNavigationActions(
+                onBack = { navController.popBackStack() },
+                onPro = { navController.navigate(ProRoute) },
+                onModels = { navController.navigate(ModelsRoute) },
+                onLicenses = { navController.navigate(LicensesRoute) },
+                onLicense = { component ->
+                    component.file?.let { navController.navigate(LicenseRoute(component.name, it)) }
+                },
+            ),
+        )
         composable<BoardIndexRoute> {
             BoardIndex(
                 boards = AllBoards.phone + AppBoards.designSystem,

@@ -38,5 +38,6 @@ include(
     ":feature:audio",
     ":feature:export",
     ":feature:models",
+    ":feature:settings",
 )
 include(":monetization")

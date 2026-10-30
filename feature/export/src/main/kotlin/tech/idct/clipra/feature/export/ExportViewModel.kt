@@ -9,10 +9,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import tech.idct.clipra.core.data.project.ProjectRepository
+import tech.idct.clipra.core.data.settings.SettingsRepository
 import tech.idct.clipra.core.engine.encoder.VideoEncoders
 import tech.idct.clipra.core.model.Project
 import tech.idct.clipra.core.model.Resolution
@@ -36,6 +38,7 @@ data class ExportUiState(
 class ExportViewModel @Inject constructor(
     private val projects: ProjectRepository,
     private val proStore: ProStore,
+    private val settings: SettingsRepository,
     exportAds: ExportAds,
     savedState: SavedStateHandle,
 ) : ViewModel() {
@@ -47,7 +50,11 @@ class ExportViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             val project = projectId?.let { projects.load(it) } ?: return@launch
-            val wanted = project.exportSettings ?: ExportSettings.forProject(project.format)
+            // A project's first export starts from the defaults in Settings (#74).
+            val wanted = project.exportSettings ?: settings.exportDefaults.first().copy(
+                resolution = project.format.resolution,
+                frameRate = project.format.frameRate,
+            )
             mutableState.update { it.copy(project = project) }
             change(wanted)
         }

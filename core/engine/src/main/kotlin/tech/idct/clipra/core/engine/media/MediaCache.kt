@@ -14,6 +14,18 @@ import java.io.File
  * never store these paths.
  */
 class MediaCache(private val root: File) {
+    /** The bytes the cache takes now (Settings, #74). */
+    fun sizeBytes(): Long = root.walkTopDown().filter { it.isFile }.sumOf { it.length() }
+
+    /**
+     * Deletes every proxy, thumbnail, waveform and cleaned voice. Projects and exported videos
+     * live elsewhere and stay; Clipra makes these files again when it needs them.
+     */
+    fun clear() {
+        root.listFiles()?.forEach { it.deleteRecursively() }
+        voiceChanges.update { it + 1 }
+    }
+
     /** The 720p H.264 proxy the editor plays instead of the original. */
     fun proxy(mediaId: String): File = File(root, "proxies/$mediaId.mp4")
 
