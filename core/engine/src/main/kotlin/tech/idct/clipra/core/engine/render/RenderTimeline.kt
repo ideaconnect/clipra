@@ -4,6 +4,8 @@ import android.graphics.Bitmap
 import tech.idct.clipra.core.model.AudioSettings
 import tech.idct.clipra.core.model.BlendMode
 import tech.idct.clipra.core.model.CellRect
+import tech.idct.clipra.core.model.ColorGrade
+import tech.idct.clipra.core.model.CubeLut
 import tech.idct.clipra.core.model.Easing
 import tech.idct.clipra.core.model.Effect
 import tech.idct.clipra.core.model.Keyframe
@@ -94,6 +96,9 @@ data class RenderClip(
     val voicePath: String? = null,
     /** The mosaic cell (#17) the clip is laid out in and cut to; null for the whole frame. */
     val cell: CellRect? = null,
+    /** The colour grade (#28), before the filters, and its LUT read from its file. */
+    val color: ColorGrade? = null,
+    val lut: CubeLut? = null,
     /** Keyframes (#21) of the transform, the opacity and the mask, in clip time. */
     val transformKeyframes: List<Keyframe<Transform>> = emptyList(),
     val opacityKeyframes: List<Keyframe<Float>> = emptyList(),

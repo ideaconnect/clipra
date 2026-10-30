@@ -1,5 +1,7 @@
 package tech.idct.clipra.core.engine.render
 
+import tech.idct.clipra.core.model.ColorGrade
+import tech.idct.clipra.core.model.CubeLut
 import tech.idct.clipra.core.model.Effect
 import tech.idct.clipra.core.model.Mask
 import tech.idct.clipra.core.model.Transform
@@ -16,6 +18,24 @@ class LiveEdits {
     private val opacities = ConcurrentHashMap<String, Float>()
     private val effects = ConcurrentHashMap<String, List<Effect>>()
     private val masks = ConcurrentHashMap<String, Mask>()
+    private val colors = ConcurrentHashMap<String, LiveColor>()
+    private val splits = ConcurrentHashMap<String, Float>()
+
+    /** A grade being changed (#28), with its LUT already read. */
+    class LiveColor(val grade: ColorGrade, val lut: CubeLut?)
+
+    fun color(clipId: String): LiveColor? = colors[clipId]
+
+    fun setColor(clipId: String, color: LiveColor?) {
+        if (color == null) colors.remove(clipId) else colors[clipId] = color
+    }
+
+    /** Where the Color board's before and after divide [clipId], across its picture. */
+    fun split(clipId: String): Float? = splits[clipId]
+
+    fun setSplit(clipId: String, split: Float?) {
+        if (split == null) splits.remove(clipId) else splits[clipId] = split
+    }
 
     fun transform(clipId: String): Transform? = transforms[clipId]
 

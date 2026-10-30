@@ -1,8 +1,8 @@
 package tech.idct.clipra.core.designsystem.component
 
+import android.graphics.SurfaceTexture
 import android.view.Surface
-import android.view.SurfaceHolder
-import android.view.SurfaceView
+import android.view.TextureView
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
@@ -12,6 +12,9 @@ import androidx.compose.ui.viewinterop.AndroidView
 /**
  * A surface for a video player's picture (the editor's preview and the tool screens'). The
  * player draws on the [Surface] from [onAttach], at the given size, until [onDetach].
+ *
+ * A [TextureView] keeps its surface, and the picture on it, while another screen (a picker) or
+ * the background covers the app; a SurfaceView's would be destroyed and come back blank.
  */
 @Composable
 fun VideoSurface(
@@ -23,19 +26,37 @@ fun VideoSurface(
     val detach by rememberUpdatedState(onDetach)
     AndroidView(
         factory = { context ->
-            SurfaceView(context).apply {
-                holder.addCallback(object : SurfaceHolder.Callback {
-                    override fun surfaceCreated(holder: SurfaceHolder) = Unit
+            TextureView(context).apply {
+                surfaceTextureListener = object : TextureView.SurfaceTextureListener {
+                    private var surface: Surface? = null
 
-                    override fun surfaceChanged(
-                        holder: SurfaceHolder,
-                        format: Int,
+                    override fun onSurfaceTextureAvailable(
+                        texture: SurfaceTexture,
                         width: Int,
                         height: Int,
-                    ) = attach(holder.surface, width, height)
+                    ) {
+                        val created = Surface(texture)
+                        surface = created
+                        attach(created, width, height)
+                    }
 
-                    override fun surfaceDestroyed(holder: SurfaceHolder) = detach()
-                })
+                    override fun onSurfaceTextureSizeChanged(
+                        texture: SurfaceTexture,
+                        width: Int,
+                        height: Int,
+                    ) {
+                        surface?.let { attach(it, width, height) }
+                    }
+
+                    override fun onSurfaceTextureDestroyed(texture: SurfaceTexture): Boolean {
+                        detach()
+                        surface?.release()
+                        surface = null
+                        return true
+                    }
+
+                    override fun onSurfaceTextureUpdated(texture: SurfaceTexture) = Unit
+                }
             }
         },
         modifier = modifier,

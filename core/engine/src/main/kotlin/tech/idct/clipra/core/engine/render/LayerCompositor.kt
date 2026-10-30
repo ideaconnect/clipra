@@ -20,14 +20,23 @@ import tech.idct.clipra.core.model.BlendMode
 import tech.idct.clipra.core.model.CellRect
 import tech.idct.clipra.core.model.Cells
 import tech.idct.clipra.core.model.ClipGeometry
+import tech.idct.clipra.core.model.ColorGrade
+import tech.idct.clipra.core.model.ColorMath
+import tech.idct.clipra.core.model.CubeLut
 import tech.idct.clipra.core.model.Effect
 import tech.idct.clipra.core.model.Filters
+import tech.idct.clipra.core.model.HueRange
 import tech.idct.clipra.core.model.Mask
 import tech.idct.clipra.core.model.MaskShape
 import tech.idct.clipra.core.model.Transitions
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import kotlin.math.ceil
 import kotlin.math.cos
+import kotlin.math.pow
 import kotlin.math.roundToInt
 import kotlin.math.sin
+import kotlin.math.sqrt
 import tech.idct.clipra.core.model.Size as FrameSize
 
 /**
@@ -83,6 +92,10 @@ private class LayerCompositorProgram(
     private val filterProgram = GlProgram(Shaders.VERTEX, Shaders.FILTER)
     private val blurProgram = GlProgram(Shaders.VERTEX, Shaders.BLUR)
     private val transitionProgram = GlProgram(Shaders.VERTEX, Shaders.TRANSITION)
+    private val gradeProgram = GlProgram(Shaders.VERTEX, Shaders.GRADE)
+
+    // LUTs (#28) as textures, by table; a few hundred kilobytes each.
+    private val lutTextures = HashMap<CubeLut, LutTexture>()
 
     // The two clips of a transition, each drawn alone; made on the first transition.
     private var transitionTargets: Array<Target>? = null
@@ -182,6 +195,8 @@ private class LayerCompositorProgram(
         transitionTargets = null
         effectTargets.values.forEach { pair -> pair.forEach { it.delete() } }
         effectTargets.clear()
+        lutTextures.values.forEach { GlUtil.deleteTexture(it.id) }
+        lutTextures.clear()
         val programs = listOf(
             externalProgram,
             bitmapProgram,
@@ -190,6 +205,7 @@ private class LayerCompositorProgram(
             filterProgram,
             blurProgram,
             transitionProgram,
+            gradeProgram,
         )
         programs.forEach { it.delete() }
         callbackThread.quitSafely()
@@ -214,7 +230,16 @@ private class LayerCompositorProgram(
             FilterRecipes.of(effect.type)?.takeIf { effect.strength > 0f }?.let { it to effect }
         }
         val mask = live?.mask(clip.id) ?: clip.maskAt(timeUs)
-        val frame = if (filters.isEmpty()) raw else filtered(raw, filters, mask, timeUs)
+        // The grade (#28) comes first; the Color board shows its own while a slider moves.
+        val liveColor = live?.color(clip.id)
+        val grading = (liveColor?.grade ?: clip.color)?.takeIf { !it.isNeutral }?.let {
+            Grading(it, if (liveColor != null) liveColor.lut else clip.lut, live?.split(clip.id))
+        }
+        val frame = if (filters.isEmpty() && grading == null) {
+            raw
+        } else {
+            filtered(raw, filters, mask, timeUs, grading)
+        }
         val (position, unit) = quadFor(clip, timeUs, frame.width, frame.height)
         return Prepared(frame, opacity, position, unit, clip.cell)
     }
@@ -338,15 +363,23 @@ private class LayerCompositorProgram(
         drawQuad(blendProgram, FULL_FRAME, FULL_UNIT, identity)
     }
 
+    /** A grade to draw (#28), its LUT, and where the before and after divide (or null). */
+    private class Grading(val grade: ColorGrade, val lut: CubeLut?, val split: Float?)
+
+    /** A LUT's slices in a grid of tiles, [columns] across and [rows] down. */
+    private class LutTexture(val id: Int, val columns: Int, val rows: Int)
+
     /**
-     * The clip's picture through [filters]: drawn upright into an effect texture (no larger than
-     * the frame), then one pass per filter, two for a blur. The [mask] limits one of them.
+     * The clip's picture through its [grading] and [filters]: drawn upright into an effect
+     * texture (no larger than the frame), graded, then one pass per filter, two for a blur. The
+     * [mask] limits one of the filters.
      */
     private fun filtered(
         frame: ClipFrame,
         filters: List<Pair<FilterRecipe, Effect>>,
         mask: Mask?,
         timeUs: Long,
+        grading: Grading?,
     ): ClipFrame {
         val longest = maxOf(timeline.width, timeline.height).toFloat()
         val scale = minOf(1f, longest / maxOf(frame.width, frame.height))
@@ -367,10 +400,15 @@ private class LayerCompositorProgram(
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
         val source = if (frame.external) externalProgram else bitmapProgram
         drawSource(source, frame, 1f, FULL_FRAME, FULL_UNIT)
+        if (grading != null) {
+            focus(targets[1])
+            gradePass(targets[0], grading)
+            current = 1
+        }
 
         // The mask limits the effect it names, or the first filter.
         val maskedType = mask?.takeIf { it.shape != MaskShape.None }
-            ?.let { it.effect ?: filters.first().second.type }
+            ?.let { it.effect ?: filters.firstOrNull()?.second?.type }
 
         for ((recipe, effect) in filters) {
             val effectMask = mask.takeIf { effect.type == maskedType }
@@ -415,6 +453,105 @@ private class LayerCompositorProgram(
         }
         val result = targets[current]
         return ClipFrame(result.texture, identity, width, height, external = false)
+    }
+
+    /** The grade pass (#28) into the focused target, as `ColorMath` grades a pixel. */
+    private fun gradePass(input: Target, grading: Grading) {
+        val grade = grading.grade
+        val program = gradeProgram
+        program.use()
+        program.setSamplerTexIdUniform("uTex", input.texture, 0)
+        val exposure = 2f.pow(grade.exposure / 100f / ColorMath.GAMMA)
+        val warm = ColorMath.TEMPERATURE * grade.temperature / 100f
+        val magenta = ColorMath.TINT * grade.tint / 100f
+        program.setFloatsUniform(
+            "uGain",
+            floatArrayOf(exposure * (1 + warm), exposure * (1 - magenta), exposure * (1 - warm)),
+        )
+        program.setFloatUniform("uContrast", 1 + ColorMath.CONTRAST * grade.contrast / 100f)
+        program.setFloatUniform("uSaturation", 1 + grade.saturation / 100f)
+        val shifts = ColorMath.shifts(grade)
+        program.setIntUniform("uHasHsl", if (shifts.any { it != 0f }) 1 else 0)
+        for (i in 0 until HueRange.entries.size) {
+            program.setFloatsUniform("uH$i", shifts.copyOfRange(i * 3, i * 3 + 3))
+        }
+        val lut = grading.lut?.takeIf { grade.lut != null && grade.lutStrength > 0f }
+        val texture = lut?.let(::lutTexture)
+        program.setIntUniform("uHasLut", if (texture != null) 1 else 0)
+        // Without a LUT the sampler still needs a texture; the shader doesn't read it.
+        program.setSamplerTexIdUniform("uLut", texture?.id ?: input.texture, 1)
+        program.setFloatUniform("uLutSize", (lut?.size ?: 2).toFloat())
+        program.setFloatsUniform(
+            "uLutGrid",
+            floatArrayOf((texture?.columns ?: 1).toFloat(), (texture?.rows ?: 1).toFloat()),
+        )
+        program.setFloatsUniform("uLutMin", lut?.domainMin ?: floatArrayOf(0f, 0f, 0f))
+        program.setFloatsUniform("uLutMax", lut?.domainMax ?: floatArrayOf(1f, 1f, 1f))
+        program.setFloatUniform("uLutStrength", grade.lutStrength.coerceIn(0f, 1f))
+        program.setFloatUniform("uVignette", grade.vignette / 100f)
+        program.setFloatUniform("uSplit", grading.split ?: -1f)
+        drawQuad(program, FULL_FRAME, FULL_UNIT, identity)
+    }
+
+    /** [lut] as a texture: blue picks the tile, red runs across it and green down. */
+    private fun lutTexture(lut: CubeLut): LutTexture = lutTextures.getOrPut(lut) {
+        val n = lut.size
+        val columns = ceil(sqrt(n.toDouble())).toInt()
+        val rows = (n + columns - 1) / columns
+        val width = columns * n
+        val height = rows * n
+        val pixels = ByteBuffer.allocateDirect(width * height * 4).order(ByteOrder.nativeOrder())
+        for (b in 0 until n) {
+            val left = b % columns * n
+            val top = b / columns * n
+            for (g in 0 until n) {
+                for (r in 0 until n) {
+                    val i = lut.index(r, g, b)
+                    val at = ((top + g) * width + left + r) * 4
+                    for (c in 0 until 3) {
+                        val value = (lut.values[i + c].coerceIn(0f, 1f) * 255 + 0.5f).toInt()
+                        pixels.put(at + c, value.toByte())
+                    }
+                    pixels.put(at + 3, 255.toByte())
+                }
+            }
+        }
+        val ids = IntArray(1)
+        GLES20.glGenTextures(1, ids, 0)
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, ids[0])
+        GLES20.glTexParameteri(
+            GLES20.GL_TEXTURE_2D,
+            GLES20.GL_TEXTURE_MIN_FILTER,
+            GLES20.GL_LINEAR,
+        )
+        GLES20.glTexParameteri(
+            GLES20.GL_TEXTURE_2D,
+            GLES20.GL_TEXTURE_MAG_FILTER,
+            GLES20.GL_LINEAR,
+        )
+        GLES20.glTexParameteri(
+            GLES20.GL_TEXTURE_2D,
+            GLES20.GL_TEXTURE_WRAP_S,
+            GLES20.GL_CLAMP_TO_EDGE,
+        )
+        GLES20.glTexParameteri(
+            GLES20.GL_TEXTURE_2D,
+            GLES20.GL_TEXTURE_WRAP_T,
+            GLES20.GL_CLAMP_TO_EDGE,
+        )
+        GLES20.glTexImage2D(
+            GLES20.GL_TEXTURE_2D,
+            0,
+            GLES20.GL_RGBA,
+            width,
+            height,
+            0,
+            GLES20.GL_RGBA,
+            GLES20.GL_UNSIGNED_BYTE,
+            pixels,
+        )
+        GlUtil.checkGlError()
+        LutTexture(ids[0], columns, rows)
     }
 
     private fun blur(from: Target, to: Target, stepX: Float, stepY: Float) {

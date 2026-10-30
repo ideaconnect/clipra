@@ -7,6 +7,8 @@ import tech.idct.clipra.core.engine.render.CaptionRenderer
 import tech.idct.clipra.core.engine.render.MediaResolver
 import tech.idct.clipra.core.engine.render.TextRenderer
 import tech.idct.clipra.core.model.CaptionSpec
+import tech.idct.clipra.core.model.CubeLut
+import tech.idct.clipra.core.model.Luts
 import tech.idct.clipra.core.model.MediaAsset
 import tech.idct.clipra.core.model.TextSpec
 import tech.idct.clipra.core.model.VoiceCleanup
@@ -38,6 +40,8 @@ class ProjectMediaResolver(
 
     override fun caption(caption: CaptionSpec, current: Int, width: Int, height: Int): Bitmap =
         CaptionRenderer.render(context, caption, current, width, height)
+
+    override fun lut(id: String): CubeLut? = Luts.builtIn(id) ?: LutLibrary.of(context).lut(id)
 
     override fun image(asset: MediaAsset): Bitmap? {
         if (!isAvailable(context, asset.uri)) return null
