@@ -1,6 +1,7 @@
 package tech.idct.clipra.feature.captions
 
 import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -18,12 +19,14 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import tech.idct.clipra.core.data.di.ApplicationScope
 import tech.idct.clipra.core.data.project.OpenProjects
+import tech.idct.clipra.core.data.project.ProjectSession
 import tech.idct.clipra.core.data.settings.SettingsRepository
 import tech.idct.clipra.core.engine.media.Transcriber
 import tech.idct.clipra.core.model.CaptionOptions
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
 import tech.idct.clipra.core.model.Project
+import tech.idct.clipra.core.model.edit.ImportCaptions
 import tech.idct.clipra.core.models.AiModel
 import tech.idct.clipra.core.models.ModelCatalog
 import tech.idct.clipra.core.models.ModelGroup
@@ -50,6 +53,8 @@ data class CaptionsSetupUiState(
     val transcription: TranscriptionState = TranscriptionState.Idle,
     /** Generate was pressed before the model was downloaded. */
     val waitingForModel: Boolean = false,
+    /** The .srt picked to import held no captions (#46). */
+    val importFailed: Boolean = false,
 ) {
     /** The clips that will be transcribed. */
     val sources: List<Clip> get() = project?.let { sources(it, listenTo) }.orEmpty()
@@ -94,6 +99,7 @@ class CaptionsSetupViewModel @Inject constructor(
 
     /** Set once this screen started a transcription, so an old result doesn't count. */
     private var started = false
+    private var session: ProjectSession? = null
 
     val state: StateFlow<CaptionsSetupUiState> = mutableState.asStateFlow()
 
@@ -123,6 +129,7 @@ class CaptionsSetupViewModel @Inject constructor(
         viewModelScope.launch {
             val opened = projects.acquire(id)
             acquired = opened != null
+            session = opened
             if (opened == null) {
                 mutableState.update { it.copy(loaded = true) }
                 return@launch
@@ -165,6 +172,22 @@ class CaptionsSetupViewModel @Inject constructor(
     fun selectModel(model: AiModel) {
         mutableState.update { it.copy(model = model, waitingForModel = false) }
         viewModelScope.launch { settings.setCaptionModel(model.id) }
+    }
+
+    /**
+     * Puts the captions of the .srt file at [uri] in the project (#46), in place of any it has,
+     * and finishes as a transcription would.
+     */
+    fun importSrt(uri: Uri) {
+        viewModelScope.launch {
+            val cues = SrtFiles.read(context, uri)
+            val refused = if (cues.isEmpty()) null else session?.edit(ImportCaptions(cues))
+            if (cues.isNotEmpty() && refused == null && session != null) {
+                doneEvents.trySend(cues.size)
+            } else {
+                mutableState.update { it.copy(importFailed = true) }
+            }
+        }
     }
 
     /** Downloads [model] without generating. */

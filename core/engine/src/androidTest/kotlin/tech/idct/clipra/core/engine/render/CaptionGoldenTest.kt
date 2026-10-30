@@ -6,13 +6,22 @@ import android.graphics.Color
 import android.util.Log
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
+import tech.idct.clipra.core.engine.media.MediaCache
+import tech.idct.clipra.core.engine.media.ProjectMediaResolver
 import tech.idct.clipra.core.model.CaptionPosition
 import tech.idct.clipra.core.model.CaptionSpec
 import tech.idct.clipra.core.model.CaptionStyle
+import tech.idct.clipra.core.model.Clip
+import tech.idct.clipra.core.model.ClipType
+import tech.idct.clipra.core.model.Layer
+import tech.idct.clipra.core.model.Project
 import tech.idct.clipra.core.model.Word
+import tech.idct.clipra.core.model.edit.EditCaptionWord
+import tech.idct.clipra.core.model.edit.SplitCaption
 import java.io.File
 import java.io.FileNotFoundException
 
@@ -77,6 +86,60 @@ class CaptionGoldenTest {
 
     private fun rows(bitmap: Bitmap): Int = (0 until bitmap.height).count { y ->
         (0 until bitmap.width).any { x -> Color.alpha(bitmap.getPixel(x, y)) > 128 }
+    }
+
+    /**
+     * Edited captions (#46) are burned in as typed: a retyped word renders as if it had been
+     * right from the start, and a split caption shows only its own words, through the export's
+     * own path (the project, its resolver, the compositor).
+     */
+    @Test
+    fun editedCaptionsAreBurnedInAsTyped() {
+        val media = ProjectMediaResolver(
+            context,
+            MediaCache(File(context.cacheDir, "caption-edit-test")),
+            forExport = true,
+            maxImageSide = 1080,
+        )
+        fun project(text: String, startUs: Long = 0) = Project(
+            id = "p",
+            name = "p",
+            layers = listOf(
+                Layer(
+                    "L1",
+                    clips = listOf(
+                        Clip(
+                            id = "cap",
+                            type = ClipType.Caption,
+                            startUs = startUs,
+                            durationUs = 2_400_000 - startUs,
+                            caption = CaptionSpec(
+                                text.split(" ").mapIndexed { i, word ->
+                                    val at = startUs + i * 400_000L
+                                    Word(word, at - startUs, at - startUs + 350_000)
+                                },
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+        )
+        // "Lisbon" is spoken.
+        val atUs = 2_100_000L
+        fun frame(project: Project) = Offscreen.render(
+            context,
+            ProjectRender.timeline(project, media, WIDTH, HEIGHT),
+            atUs,
+        )
+        val typo = project("We finally made it to Lisbn")
+        val fixed = EditCaptionWord("cap", 5, "Lisbon").apply(typo)
+        val typed = frame(project("We finally made it to Lisbon"))
+        assertEquals(1.0, Offscreen.match(typed, frame(fixed), 0), 0.0)
+        assertTrue(Offscreen.match(typed, frame(typo), 0) < 0.999)
+
+        val split = SplitCaption("cap", 4, newId = { "cap-2" }).apply(fixed)
+        val alone = frame(project("to Lisbon", startUs = 1_600_000))
+        assertEquals(1.0, Offscreen.match(alone, frame(split), 0), 0.0)
     }
 
     private fun timeline(scene: Bitmap, caption: CaptionSpec) = RenderTimeline(
