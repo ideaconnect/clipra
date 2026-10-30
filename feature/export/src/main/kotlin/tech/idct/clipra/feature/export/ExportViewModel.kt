@@ -8,6 +8,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -17,17 +18,25 @@ import tech.idct.clipra.core.model.Project
 import tech.idct.clipra.core.model.Resolution
 import tech.idct.clipra.core.model.export.ExportSettings
 import tech.idct.clipra.core.model.export.VideoCodec
+import tech.idct.clipra.monetization.ads.ExportAds
+import tech.idct.clipra.monetization.billing.ProStore
 import javax.inject.Inject
 
 data class ExportUiState(
     val project: Project? = null,
     val settings: ExportSettings = ExportSettings(),
     val support: EncoderSupport = EncoderSupport(),
+    /** Clipra Pro: no ads, so no line about them. */
+    val pro: Boolean = false,
+    /** Clipra Pro's price from Google Play, for "Remove for"; null until Play answers. */
+    val proPrice: String? = null,
 )
 
 @HiltViewModel
 class ExportViewModel @Inject constructor(
     private val projects: ProjectRepository,
+    private val proStore: ProStore,
+    exportAds: ExportAds,
     savedState: SavedStateHandle,
 ) : ViewModel() {
     private val projectId: String? = savedState.get<String>("projectId")
@@ -41,6 +50,14 @@ class ExportViewModel @Inject constructor(
             val wanted = project.exportSettings ?: ExportSettings.forProject(project.format)
             mutableState.update { it.copy(project = project) }
             change(wanted)
+        }
+        // Ad 1 loads while the settings are chosen, so it is not late (rule 10).
+        viewModelScope.launch { exportAds.prepare() }
+        viewModelScope.launch { proStore.loadPrice() }
+        viewModelScope.launch {
+            combine(proStore.isPro, proStore.price, ::Pair).collect { (pro, price) ->
+                mutableState.update { it.copy(pro = pro, proPrice = price) }
+            }
         }
     }
 

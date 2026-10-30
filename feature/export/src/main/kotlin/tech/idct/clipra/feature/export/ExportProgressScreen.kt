@@ -1,5 +1,6 @@
 package tech.idct.clipra.feature.export
 
+import android.app.Activity
 import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -29,8 +30,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import tech.idct.clipra.core.data.project.ProjectRepository
 import tech.idct.clipra.core.designsystem.ClipraTheme
 import tech.idct.clipra.core.designsystem.component.ClipraCard
@@ -41,33 +46,97 @@ import tech.idct.clipra.core.designsystem.component.ScreenHeader
 import tech.idct.clipra.core.designsystem.component.SecondaryButton
 import tech.idct.clipra.core.designsystem.component.TextAction
 import tech.idct.clipra.core.designsystem.icon.ClipraIcons
+import tech.idct.clipra.core.engine.export.ExportEvent
 import tech.idct.clipra.core.engine.export.ExportFailure
 import tech.idct.clipra.core.engine.export.ExportManager
 import tech.idct.clipra.core.engine.export.ExportState
 import tech.idct.clipra.core.model.export.ExportSettings
+import tech.idct.clipra.monetization.ads.AdGate
+import tech.idct.clipra.monetization.ads.AdSlot
+import tech.idct.clipra.monetization.ads.ExportAds
 import javax.inject.Inject
 
 @HiltViewModel
 class ExportProgressViewModel @Inject constructor(
     private val exports: ExportManager,
     projects: ProjectRepository,
+    private val exportAds: ExportAds,
     @param:ApplicationContext private val context: Context,
     savedState: SavedStateHandle,
 ) : ViewModel() {
     val state: StateFlow<ExportState> = exports.state
 
+    private val startAdDue = MutableStateFlow(false)
+
+    /** The render started here, so Ad 1 is due once this screen is in front. */
+    val startAd: StateFlow<Boolean> = startAdDue.asStateFlow()
+
+    private val finishAdState = MutableStateFlow<Boolean?>(null)
+
+    /** For a finished export: whether See your video plays Ad 2 first; null until known. */
+    val finishAd: StateFlow<Boolean?> = finishAdState.asStateFlow()
+
+    private var seeing = false
+
     init {
+        // Opened after the export finished, from the notification: the video, without an ad.
+        if (exports.state.value is ExportState.Done) finishAdState.value = false
+        viewModelScope.launch {
+            exports.events.collect { event ->
+                val watching = exports.progressScreenVisible.value
+                when (event) {
+                    ExportEvent.Started -> Unit
+
+                    ExportEvent.Finished -> {
+                        exportAds.exportEnded(succeeded = true, watching = watching)
+                        finishAdState.value = exportAds.finishAdExpected()
+                    }
+
+                    ExportEvent.Failed, ExportEvent.Cancelled ->
+                        exportAds.exportEnded(succeeded = false, watching = watching)
+                }
+            }
+        }
         // Opened from Export with a project: start it. Opened from the notification: just show.
         val projectId = savedState.get<String>("projectId")
         if (projectId != null && exports.state.value !is ExportState.Running) {
             viewModelScope.launch {
                 val project = projects.load(projectId) ?: return@launch
+                exportAds.exportStarted()
                 exports.start(
                     project,
                     project.exportSettings ?: ExportSettings.forProject(project.format),
                 )
                 ExportService.start(context)
+                startAdDue.value = true
             }
+        }
+    }
+
+    /**
+     * Ad 1, over the running export (docs/product/monetization.md, section 1): the render is
+     * already going and carries on behind it. Skipped unless the rules allow it and it is ready
+     * within 2 s.
+     */
+    fun showStartAd(activity: Activity) {
+        if (!startAdDue.value) return
+        startAdDue.value = false
+        viewModelScope.launch {
+            // The screen is in front a moment after navigation shows it; never wait long.
+            withTimeoutOrNull(AdGate.LOAD_TIMEOUT_MS) {
+                exports.progressScreenVisible.first { it }
+            }
+            exportAds.show(AdSlot.Start, activity) { exports.progressScreenVisible.value }
+        }
+    }
+
+    /** See your video: Ad 2 first when the rules allow it, then [then] opens the saved video. */
+    fun seeVideo(activity: Activity, then: () -> Unit) {
+        if (seeing) return
+        seeing = true
+        viewModelScope.launch {
+            exportAds.show(AdSlot.Finish, activity) { exports.progressScreenVisible.value }
+            then()
         }
     }
 
@@ -82,7 +151,8 @@ class ExportProgressViewModel @Inject constructor(
 
 /**
  * Exporting (ExportProgress board): percent, frame count and time left, the progress bar, the
- * files being saved, Pause or Resume, Keep editing and Cancel export.
+ * files being saved, Pause or Resume, Keep editing and Cancel export. [finished] is the
+ * ExportProgress--finished state, whose See your video plays Ad 2 first.
  */
 @Composable
 fun ExportProgressScreen(
@@ -92,7 +162,10 @@ fun ExportProgressScreen(
     onResume: () -> Unit,
     onCancel: () -> Unit,
     modifier: Modifier = Modifier,
+    finished: Boolean = false,
+    onSeeVideo: () -> Unit = {},
 ) {
+    val done = (state as? ExportState.Done)?.takeIf { finished }
     val colors = ClipraTheme.colors
     val type = ClipraTheme.typography
     Column(
@@ -103,7 +176,15 @@ fun ExportProgressScreen(
             .testTag("screen:ExportProgress"),
     ) {
         ScreenHeader(
-            title = stringResource(R.string.export_progress_title),
+            title = stringResource(
+                if (done !=
+                    null
+                ) {
+                    R.string.export_finished_title
+                } else {
+                    R.string.export_progress_title
+                },
+            ),
             navigation = HeaderNavigation.Close,
             onNavigate = onKeepEditing,
         )
@@ -113,13 +194,32 @@ fun ExportProgressScreen(
                 .padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            when (state) {
-                is ExportState.Running -> Running(state)
-                is ExportState.Failed -> Failure(state.failure)
-                else -> Unit
+            when {
+                state is ExportState.Running -> Running(state)
+                state is ExportState.Failed -> Failure(state.failure)
+                done != null -> Finished(done)
             }
         }
-        if (state is ExportState.Running) {
+        if (done != null) {
+            Column(
+                modifier = Modifier.padding(horizontal = 20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                PrimaryButton(
+                    text = stringResource(R.string.export_see_video),
+                    onClick = onSeeVideo,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("see-video"),
+                )
+                Text(
+                    text = stringResource(R.string.export_ad_note),
+                    style = type.caption,
+                    color = colors.textSecondary,
+                    modifier = Modifier.padding(vertical = 16.dp),
+                )
+            }
+        } else if (state is ExportState.Running) {
             Row(
                 modifier = Modifier.padding(horizontal = 20.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -223,6 +323,69 @@ private fun Running(state: ExportState.Running) {
                 modifier = Modifier.weight(1f),
             )
             Text(text = "$percent%", style = type.chip, color = colors.accent)
+        }
+    }
+}
+
+@Composable
+private fun Finished(state: ExportState.Done) {
+    val colors = ClipraTheme.colors
+    val type = ClipraTheme.typography
+    val frames = (state.durationUs * state.settings.frameRate.fps / 1_000_000).toInt()
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(
+            text = "100%",
+            style = type.numberLarge,
+            color = colors.textPrimary,
+            modifier = Modifier.testTag("percent"),
+        )
+        Text(
+            text = stringResource(R.string.export_frames, frames, frames),
+            style = type.meta.copy(fontSize = type.body.fontSize),
+            color = colors.textSecondary,
+        )
+        Text(
+            text = stringResource(R.string.export_saved_to_gallery),
+            style = type.meta.copy(fontSize = type.body.fontSize),
+            color = colors.textSecondary,
+        )
+    }
+    ProgressBar(1f, colors.onDeviceText)
+    Text(
+        text = stringResource(
+            R.string.export_settings_line,
+            state.settings.codecLabel(),
+            state.width,
+            state.height,
+            state.settings.frameRate.fps,
+        ),
+        style = type.meta.copy(fontSize = type.chip.fontSize),
+        color = colors.textSecondary,
+    )
+    OnDeviceCard(
+        title = stringResource(R.string.export_leave_title),
+        subtitle = stringResource(R.string.export_leave_body),
+        icon = ClipraIcons.Notification,
+        modifier = Modifier.fillMaxWidth(),
+    )
+    Text(
+        text = stringResource(R.string.export_saving),
+        style = type.sectionLabel,
+        color = colors.textSecondary,
+    )
+    ClipraCard(modifier = Modifier.fillMaxWidth()) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = state.fileName,
+                style = type.bodyStrong,
+                color = colors.textPrimary,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                text = stringResource(R.string.export_file_done),
+                style = type.chip,
+                color = colors.onDeviceText,
+            )
         }
     }
 }

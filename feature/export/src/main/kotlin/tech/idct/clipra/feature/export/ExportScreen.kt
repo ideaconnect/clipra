@@ -1,6 +1,7 @@
 package tech.idct.clipra.feature.export
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
@@ -23,9 +25,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import tech.idct.clipra.core.designsystem.ClipraTheme
 import tech.idct.clipra.core.designsystem.component.ChoiceCard
+import tech.idct.clipra.core.designsystem.component.ClipraIcon
 import tech.idct.clipra.core.designsystem.component.PrimaryButton
 import tech.idct.clipra.core.designsystem.component.ScreenHeader
 import tech.idct.clipra.core.designsystem.component.Segment
@@ -61,6 +69,8 @@ fun ExportScreen(
     onExport: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    /** Free users read that two ads play, with a way to Clipra Pro; null for Pro users. */
+    ads: ExportAdsLine? = null,
 ) {
     val colors = ClipraTheme.colors
     Column(
@@ -139,7 +149,7 @@ fun ExportScreen(
                 )
             }
         }
-        Estimate(project, settings, onExport)
+        Estimate(project, settings, onExport, ads)
     }
 }
 
@@ -194,7 +204,12 @@ private fun ProjectSummary(project: Project) {
 }
 
 @Composable
-private fun Estimate(project: Project, settings: ExportSettings, onExport: () -> Unit) {
+private fun Estimate(
+    project: Project,
+    settings: ExportSettings,
+    onExport: () -> Unit,
+    ads: ExportAdsLine?,
+) {
     val colors = ClipraTheme.colors
     val type = ClipraTheme.typography
     Column {
@@ -239,7 +254,48 @@ private fun Estimate(project: Project, settings: ExportSettings, onExport: () ->
                     .height(56.dp)
                     .testTag("export-to-gallery"),
             )
+            ads?.let { AdsLine(it) }
         }
+    }
+}
+
+/** What the line under Export to Gallery says to a free user. */
+class ExportAdsLine(val proPrice: String?, val onPro: () -> Unit)
+
+/** "Two short ads play while it exports. Remove for 10,00 zł", leading to Clipra Pro. */
+@Composable
+private fun AdsLine(line: ExportAdsLine) {
+    val colors = ClipraTheme.colors
+    val type = ClipraTheme.typography
+    val remove = line.proPrice?.let { stringResource(R.string.export_ads_remove_for, it) }
+        ?: stringResource(R.string.export_ads_remove)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 44.dp)
+            .clip(ClipraTheme.shapes.button)
+            .clickable(role = Role.Button, onClick = line.onPro)
+            .testTag("export-ads-line"),
+        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        ClipraIcon(
+            icon = ClipraIcons.Crown,
+            contentDescription = null,
+            tint = colors.accent,
+            size = 14.dp,
+        )
+        Text(
+            text = buildAnnotatedString {
+                append(stringResource(R.string.export_ads_line))
+                append(' ')
+                withStyle(SpanStyle(color = colors.accent, fontWeight = FontWeight.SemiBold)) {
+                    append(remove)
+                }
+            },
+            style = type.caption,
+            color = colors.textSecondary,
+        )
     }
 }
 

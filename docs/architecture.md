@@ -150,6 +150,10 @@ Downloads run in WorkManager with a Wi-Fi-only constraint by default, resume aft
 ## 8. Monetization
 
 - Ads: GMA Next-Gen SDK interstitials with preloading, gated by `AdGate` (Pro, consent, slot rules, timeouts). Test ad units in debug.
+  - `AdGate` holds the rules of `docs/product/monetization.md`, section 1, for one export: Pro, consent, one chance per slot, the progress screen in front, success, 30 s between Ad 1 closing and the export finishing, online. `ExportAds` asks it, waits up to 2 s for a preloaded ad and shows it through `AdsGateway` (`NextGenAdsGateway`).
+  - The SDK starts only when a free user with consent opens Export, which also preloads Ad 1; the preloader refills for Ad 2. Buying Pro stops it. Nothing starts it on app start.
+  - `feature:export` drives it. The progress screen shows Ad 1 once the render has started and the screen is in front; the render never waits. When the export finishes with the progress screen in front and Ad 2 allowed, the finished state's See your video plays Ad 2, then opens the saved video. Otherwise the saved video opens at once, as from the notification.
+  - Debug builds use Google's sample app id and test interstitial unit. Release builds take `clipraAdMobAppId` and `clipraAdUnitInterstitial`.
 - Consent: UMP SDK on first launch after onboarding and from "Ad privacy choices".
   - `AdConsent` asks free users when the projects first show in a run (so after onboarding): it updates the consent information and shows the form where the law requires it. Pro users are never asked. When the update fails, the consent UMP stored earlier still applies.
   - `AdConsent.canRequestAds` is checked before every ad request; a change in "Ad privacy choices" applies to the next one.

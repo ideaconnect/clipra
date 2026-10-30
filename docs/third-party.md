@@ -16,7 +16,7 @@ Keep this list in sync with the build. Every entry needs a license that is compa
 | MediaPipe Tasks Vision and models | Face detection, segmentation, object detection | Apache-2.0 |
 | OpenCV (core, imgproc, video, calib3d only) | Motion tracking for Stabilize | Apache-2.0 (4.5.0 and later) |
 | ML Kit Translation | Offline translation | Google APIs Terms of Service |
-| Google Mobile Ads Next-Gen SDK | Interstitial ads | Google terms |
+| Google Mobile Ads Next-Gen SDK (`com.google.android.libraries.ads.mobile.sdk:ads-mobile-sdk` 1.5.0, with Play services, Cronet, Gson, Guava, OkHttp and Tink, all Apache-2.0 or BSD) | Export interstitials (`monetization`) | Google Mobile Ads SDK terms |
 | Google User Messaging Platform SDK (`com.google.android.ump:user-messaging-platform` 4.0.0, with Play services basement) | Ad consent (`monetization`) | Android Software Development Kit License |
 | Play Billing Library (`com.android.billingclient:billing-ktx` 9.1.0) | Clipra Pro purchase (`monetization`) | Android Software Development Kit License |
 | Bricolage Grotesque, Geist, Geist Mono | Fonts | SIL Open Font License 1.1 |

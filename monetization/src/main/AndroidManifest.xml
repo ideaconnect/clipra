@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!--
+    Ads for free users and Play billing (docs/architecture.md, section 9); an export ad is skipped
+    offline (docs/product/monetization.md, rule 1).
+    -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
     <application>
         <!--
         The AdMob app id. UMP looks for it here even though Clipra also passes it in code, and the

@@ -11,6 +11,7 @@ android {
 dependencies {
     implementation(project(":core:data"))
     implementation(project(":core:engine"))
+    implementation(project(":monetization"))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.core)
     implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
