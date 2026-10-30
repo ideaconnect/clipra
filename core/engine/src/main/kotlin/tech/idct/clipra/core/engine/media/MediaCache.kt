@@ -59,6 +59,12 @@ class MediaCache(private val root: File) {
         return File(root, "voice/$mediaId$cleaned-gate$percent.wav")
     }
 
+    /** Where [mediaId] speaks (#40), as microsecond ranges, one per line. */
+    fun speech(mediaId: String): File = File(root, "analysis/$mediaId.speech")
+
+    /** The beats of [mediaId] (#40): its tempo, then a beat per line, in microseconds. */
+    fun beats(mediaId: String): File = File(root, "analysis/$mediaId.beats")
+
     /** The waveform of a voice [mix]. */
     fun voiceWaveform(mix: File): File = File(mix.path.removeSuffix(".wav") + ".peaks")
 

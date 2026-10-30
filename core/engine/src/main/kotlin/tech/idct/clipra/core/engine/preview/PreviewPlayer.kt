@@ -222,6 +222,8 @@ class PreviewPlayer(private val context: Context, cache: MediaCache) {
 
         private val luts = HashMap<String, CubeLut?>()
 
+        override fun speech(asset: MediaAsset): List<LongRange>? = inner.speech(asset)
+
         override fun lut(id: String): CubeLut? = luts.getOrPut(id) { inner.lut(id) }
     }
 

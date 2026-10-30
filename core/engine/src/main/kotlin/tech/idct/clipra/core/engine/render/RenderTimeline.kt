@@ -108,6 +108,8 @@ data class RenderClip(
      */
     val animation: Animation? = null,
     val clipDurationUs: Long = durationUs,
+    /** Voices this clip ducks under (#40). */
+    val ducks: List<RenderDuck> = emptyList(),
     /** Keyframes (#21) of the transform, the opacity and the mask, in clip time. */
     val transformKeyframes: List<Keyframe<Transform>> = emptyList(),
     val opacityKeyframes: List<Keyframe<Float>> = emptyList(),
@@ -172,3 +174,9 @@ sealed interface RenderSource {
     /** Sound only (music, voiceover): no picture. */
     data class Audio(val path: String, val inPointUs: Long = 0) : RenderSource
 }
+
+/**
+ * A voice a clip ducks under (#40): where it speaks, in microseconds from the clip's start on the
+ * timeline, and how far the clip goes down then.
+ */
+data class RenderDuck(val speech: List<LongRange>, val depthDb: Float)

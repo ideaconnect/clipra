@@ -163,7 +163,10 @@ class VoiceCleaner @Inject constructor(
         }
     }
 
-    /** The media's sound as recorded, mono at 48 kHz, decoded once. */
+    /** The media's sound as recorded, mono at 48 kHz, decoded once; null without sound. */
+    fun recordedSound(asset: MediaAsset): File? =
+        synchronized(locks.getOrPut(asset.id) { Any() }) { recorded(asset) }
+
     private fun recorded(asset: MediaAsset): File? {
         val recorded = cache.voiceRecorded(asset.id)
         if (recorded.exists()) return recorded

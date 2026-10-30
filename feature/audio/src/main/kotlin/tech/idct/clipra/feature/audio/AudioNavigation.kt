@@ -56,11 +56,13 @@ private fun AudioDestination(onDone: () -> Unit, viewModel: AudioViewModel = hil
     var liveVolume by remember { mutableStateOf<Float?>(null) }
     var liveStrength by remember { mutableStateOf<Float?>(null) }
     var liveNoise by remember { mutableStateOf<Float?>(null) }
+    var liveDuck by remember { mutableStateOf<Float?>(null) }
     BackHandler(onBack = onDone)
     LaunchedEffect(state.project) {
         liveVolume = null
         liveStrength = null
         liveNoise = null
+        liveDuck = null
     }
     if (state.loaded && state.clip == null) {
         LaunchedEffect(Unit) { onDone() }
@@ -72,6 +74,7 @@ private fun AudioDestination(onDone: () -> Unit, viewModel: AudioViewModel = hil
         volume = liveVolume ?: clip.audio.volume,
         strength = liveStrength,
         noiseStrength = liveNoise,
+        duckingDepth = liveDuck,
         actions = AudioActions(
             onBack = onDone,
             onVolume = { liveVolume = it },
@@ -88,6 +91,10 @@ private fun AudioDestination(onDone: () -> Unit, viewModel: AudioViewModel = hil
             onNoise = viewModel::setNoiseOn,
             onNoiseStrength = { liveNoise = it },
             onNoiseStrengthDone = { liveNoise?.let(viewModel::setNoiseStrength) },
+            onDucking = viewModel::setDucking,
+            onDuckingDepth = { liveDuck = it },
+            onDuckingDepthDone = { liveDuck?.let(viewModel::setDuckingDepth) },
+            onBeats = viewModel::setBeats,
         ),
     )
 }

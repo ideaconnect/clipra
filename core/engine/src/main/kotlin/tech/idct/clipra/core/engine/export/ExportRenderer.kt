@@ -26,6 +26,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import tech.idct.clipra.core.engine.media.MediaCache
 import tech.idct.clipra.core.engine.media.ProjectMediaResolver
+import tech.idct.clipra.core.engine.media.SoundAnalyzer
 import tech.idct.clipra.core.engine.media.VoiceCleaner
 import tech.idct.clipra.core.engine.render.CompositionFactory
 import tech.idct.clipra.core.engine.render.PauseGate
@@ -235,6 +236,14 @@ class ExportRenderer(
                 if (!asset.hasAudio && clip.type != ClipType.Audio) continue
                 ensureActive()
                 cleaner.prepare(asset, cleanup, noise) { !isActive }
+            }
+            // The speech of every voice that ducks the others (#40).
+            val analyzer = SoundAnalyzer(cache, cleaner)
+            for (clip in project.layers.flatMap { it.clips }) {
+                if (clip.audio.ducking == null) continue
+                val asset = clip.source?.let { project.asset(it.mediaId) } ?: continue
+                ensureActive()
+                analyzer.prepareSpeech(asset)
             }
         }
 

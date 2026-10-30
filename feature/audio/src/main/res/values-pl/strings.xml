@@ -41,4 +41,12 @@
     <string name="audio_noise_title">Redukcja szumów</string>
     <string name="audio_noise_detail">Bramka widmowa na stały przydźwięk i syk</string>
     <string name="audio_noise_working">Redukcja szumów · %1$d%%</string>
+    <!-- Ducking and beats (#40) -->
+    <string name="audio_duck_title">Ścisz muzykę pod tym głosem</string>
+    <string name="audio_duck_detail">Inne klipy cichną o %1$d dB, gdy mówi</string>
+    <string name="audio_duck_depth">Ścisz o</string>
+    <string name="audio_duck_db">-%1$d dB</string>
+    <string name="audio_beats_title">Znaczniki rytmu</string>
+    <string name="audio_beats_detail">Zaznacza uderzenia; cięcia się do nich przyciągają</string>
+    <string name="audio_beats_bpm">%1$d BPM · cięcia się przyciągają</string>
 </resources>
