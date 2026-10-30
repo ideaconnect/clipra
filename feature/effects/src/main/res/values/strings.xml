@@ -193,4 +193,9 @@
     <string name="effects_cutout_similarity">Similarity</string>
     <string name="effects_cutout_smoothness">Smoothness</string>
     <string name="effects_cutout_spill">Spill removal</string>
+    <string name="effects_mask_follow_face">Follow face</string>
+    <string name="effects_mask_follow_face_note">Tracked on the phone, frame by frame</string>
+    <string name="effects_mask_tracking">Tracking face %1$d%%</string>
+    <string name="effects_mask_tracking_face">Tracking face</string>
+    <string name="effects_mask_no_face">No face found in this clip</string>
 </resources>

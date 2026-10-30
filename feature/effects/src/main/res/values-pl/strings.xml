@@ -199,4 +199,9 @@
     <string name="effects_cutout_similarity">Podobieństwo</string>
     <string name="effects_cutout_smoothness">Miękkość</string>
     <string name="effects_cutout_spill">Odbarwienie</string>
+    <string name="effects_mask_follow_face">Śledź twarz</string>
+    <string name="effects_mask_follow_face_note">Śledzona na telefonie, klatka po klatce</string>
+    <string name="effects_mask_tracking">Śledzenie twarzy %1$d%%</string>
+    <string name="effects_mask_tracking_face">Śledzi twarz</string>
+    <string name="effects_mask_no_face">W tym klipie nie znaleziono twarzy</string>
 </resources>

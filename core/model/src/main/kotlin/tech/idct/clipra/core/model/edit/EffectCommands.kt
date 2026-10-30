@@ -51,7 +51,7 @@ fun Clip.takesFilters(): Boolean = type == ClipType.Video || type == ClipType.Ph
  * The clip with [type] as its first filter, in that filter's place in the stack (#29); null
  * takes the first filter away. A [type] further down the stack moves up, keeping its settings.
  */
-private fun Clip.withFilter(type: String?, strength: Float): Clip {
+internal fun Clip.withFilter(type: String?, strength: Float): Clip {
     val stack = effects.toMutableList()
     if (type == null) {
         val first = stack.indexOfFirst { Filters.isFilter(it.type) }
