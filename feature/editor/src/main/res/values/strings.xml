@@ -22,7 +22,6 @@
     <string name="editor_clip_audio">Sound</string>
     <string name="editor_clip_adjustment">Adjustment clip</string>
     <string name="editor_clip_description">%1$s %2$s, %3$s, layer L%4$d</string>
-    <string name="editor_clip_selected">selected</string>
     <string name="editor_clip_linked">linked to the selected clip</string>
     <string name="editor_tool_add">Add</string>
     <string name="editor_tool_audio">Audio</string>

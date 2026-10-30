@@ -6,11 +6,14 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
@@ -171,7 +174,10 @@ private fun RatioGrid(selected: AspectRatio, onSelect: (AspectRatio) -> Unit) {
         modifier = Modifier.selectableGroup(),
     ) {
         rows.forEach { row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                modifier = Modifier.height(IntrinsicSize.Min),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
                 row.forEach { ratio ->
                     ChoiceCard(
                         title = ratio.label,
@@ -183,7 +189,8 @@ private fun RatioGrid(selected: AspectRatio, onSelect: (AspectRatio) -> Unit) {
                         compact = true,
                         modifier = Modifier
                             .weight(1f)
-                            .height(74.dp)
+                            .heightIn(min = 74.dp)
+                            .fillMaxHeight()
                             .testTag("ratio:${ratio.label}"),
                         leading = { isSelected -> RatioIcon(ratio, isSelected) },
                     )
@@ -217,14 +224,17 @@ private fun LayoutRow(selected: Layout, onSelect: (Layout) -> Unit) {
     val shape = ClipraTheme.shapes.button
     Row(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.selectableGroup(),
+        modifier = Modifier
+            .height(IntrinsicSize.Min)
+            .selectableGroup(),
     ) {
         Layout.entries.forEach { layout ->
             val isSelected = layout == selected
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .height(66.dp)
+                    .heightIn(min = 66.dp)
+                    .fillMaxHeight()
                     .clip(shape)
                     .background(if (isSelected) colors.accentSelectedBackground else colors.surface)
                     .border(

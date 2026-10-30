@@ -474,7 +474,10 @@ private fun AddMediaButton(x: Float, height: Float, onClick: () -> Unit) {
         onClick = onClick,
         modifier = Modifier
             .offset(x = x.dp)
-            .size(width = 44.dp, height = maxOf(height, 44f).dp)
+            .size(
+                width = ClipraDimens.TouchTarget,
+                height = maxOf(height.dp, ClipraDimens.TouchTarget),
+            )
             .semantics { role = Role.Button }
             .testTag("add-media"),
         shape = RoundedCornerShape(10.dp),
@@ -954,7 +957,7 @@ private fun clipDescription(
             layerNumber,
         ),
     )
-    if (selected) parts += stringResource(R.string.editor_clip_selected)
+    // Selected is announced from the clip's state, so it isn't said twice.
     if (linked) parts += stringResource(R.string.editor_clip_linked)
     if (missing) parts += stringResource(R.string.editor_missing_media)
     return parts.joinToString(", ")

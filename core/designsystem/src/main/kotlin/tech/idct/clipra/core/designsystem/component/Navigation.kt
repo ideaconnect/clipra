@@ -125,7 +125,8 @@ fun BottomNav(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(ClipraDimens.BottomNavHeight)
+                // Grows with large fonts (#75) instead of cutting the labels.
+                .heightIn(min = ClipraDimens.BottomNavHeight)
                 .padding(start = 12.dp, end = 12.dp, bottom = 10.dp)
                 .selectableGroup(),
             verticalAlignment = Alignment.CenterVertically,
@@ -135,7 +136,7 @@ fun BottomNav(
                 Column(
                     modifier = Modifier
                         .weight(1f)
-                        .height(56.dp)
+                        .heightIn(min = 56.dp)
                         .selectable(
                             selected = selected,
                             role = Role.Tab,

@@ -22,7 +22,6 @@
     <string name="editor_clip_audio">Dźwięk</string>
     <string name="editor_clip_adjustment">Klip korekcji</string>
     <string name="editor_clip_description">%1$s %2$s, %3$s, warstwa L%4$d</string>
-    <string name="editor_clip_selected">zaznaczony</string>
     <string name="editor_clip_linked">połączony z zaznaczonym klipem</string>
     <string name="editor_tool_add">Dodaj</string>
     <string name="editor_tool_audio">Dźwięk</string>

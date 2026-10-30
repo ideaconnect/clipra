@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -218,7 +219,9 @@ private fun Estimate(
             modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            // One line; with large fonts (#75) the rate moves under the size instead of
+            // squeezing it.
+            FlowRow(itemVerticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = stringResource(R.string.export_estimate),
                     style = type.body,
@@ -232,6 +235,8 @@ private fun Estimate(
                     ),
                     style = type.metaStrong.copy(fontSize = type.screenTitle.fontSize),
                     color = colors.textPrimary,
+                    maxLines = 1,
+                    softWrap = false,
                     modifier = Modifier.weight(1f).testTag("estimate"),
                 )
                 Text(
@@ -251,7 +256,7 @@ private fun Estimate(
                 enabled = project.durationUs > 0,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp)
+                    .heightIn(min = 56.dp)
                     .testTag("export-to-gallery"),
             )
             ads?.let { AdsLine(it) }

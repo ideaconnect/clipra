@@ -1,5 +1,8 @@
 package tech.idct.clipra.feature.export
 
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -7,6 +10,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.unit.Density
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.RoborazziOptions
 import com.github.takahirom.roborazzi.captureRoboImage
@@ -76,6 +80,34 @@ class ExportScreenTest {
         )
         compose.onNodeWithTag("export-ads-line").performClick()
         assertEquals(1, pro)
+    }
+
+    /** With the system font at 200% (#75), Export to Gallery stays on screen. */
+    @Test
+    fun exportWithLargeFonts() {
+        Locale.setDefault(Locale.US)
+        compose.setContent {
+            val density = LocalDensity.current
+            CompositionLocalProvider(LocalDensity provides Density(density.density, 2f)) {
+                ClipraTheme {
+                    ExportScreen(
+                        project = project,
+                        settings = ExportSettings(),
+                        support = EncoderSupport(),
+                        onChange = {},
+                        onExport = {},
+                        onBack = {},
+                        ads = ExportAdsLine(proPrice = "10,00 zł", onPro = {}),
+                    )
+                }
+            }
+        }
+        compose.onNodeWithTag("export-to-gallery").assertIsDisplayed()
+        compose.onRoot().captureRoboImage(
+            roborazziOptions = RoborazziOptions(
+                compareOptions = RoborazziOptions.CompareOptions(changeThreshold = 0.001f),
+            ),
+        )
     }
 
     /** The design state in Polish, to see that every label fits (#76). */

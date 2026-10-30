@@ -31,6 +31,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.semantics
@@ -172,7 +173,8 @@ fun ChoiceCard(
             if (centered) Alignment.CenterHorizontally else Alignment.Start,
         ),
     ) {
-        leading?.invoke(selected)
+        // With very large fonts (#75) the picture makes way for the words.
+        if (LocalDensity.current.fontScale < LARGE_FONT_SCALE) leading?.invoke(selected)
         Column(
             verticalArrangement = Arrangement.spacedBy(2.dp),
             horizontalAlignment = if (centered) Alignment.CenterHorizontally else Alignment.Start,
@@ -214,7 +216,7 @@ fun ChoiceCard(
  */
 enum class ChipStyle { Accent, Outline, Border, Light }
 
-/** A pill choice, 36 dp visible with a 44 dp touch area. */
+/** A pill choice, 36 dp visible with a 48 dp touch area. */
 @Composable
 fun ClipraChip(
     label: String,
@@ -268,7 +270,7 @@ fun ClipraChip(
 
 /**
  * The Clipra switch: a 48 × 28 track (44 × 26 [compact]) and a 22 dp knob. On is an accent
- * track with a dark knob. It always has switch semantics and a 44 dp touch area.
+ * track with a dark knob. It always has switch semantics and a 48 dp touch area.
  */
 @Composable
 fun ClipraSwitch(
@@ -537,3 +539,6 @@ internal fun SelectionSample() {
         LabelledSlider(label = "Volume", value = 0.8f, onValueChange = {}, valueText = "80%")
     }
 }
+
+/** From this font scale on, choice cards drop their picture to keep the words whole. */
+private const val LARGE_FONT_SCALE = 1.5f

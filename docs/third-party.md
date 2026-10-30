@@ -50,6 +50,7 @@ Used to build and test the app; none of them ship in it.
 | ktlint | Kotlin style check | MIT |
 | Robolectric | Runs Android code in JVM tests | MIT |
 | Roborazzi | Screenshot tests | Apache-2.0 |
+| Compose UI test accessibility, Accessibility Test Framework for Android | The accessibility checks of the main flows on the device (#75), the same checks Accessibility Scanner runs | Apache-2.0 |
 | FFmpeg (command line, on the developer's machine) | Generated the synthetic test clips in `core/engine/src/androidTest/assets/spike/` and encoded the voice test set | LGPL/GPL tool; not part of the build, and the generated clips carry no license |
 | LibriVox "Faraon", volume 2, chapter 1 (archive.org `faraon2_1605_librivox`) | 42 s of Polish speech for the whisper spike (`ml/whisper/src/androidTest/assets/`) | Public domain |
 | LibriVox "Grim: The Story of a Pike", chapter 1 (archive.org `storyofapike_1304_librivox`) | 10 s of speech in the voice cleanup test set (`core/engine/src/androidTest/assets/golden/voice/`), with synthetic wind and traffic noise added, and 42 s of English for the whisper spike | Public domain (CC0) |

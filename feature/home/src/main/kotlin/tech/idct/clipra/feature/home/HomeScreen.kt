@@ -10,13 +10,16 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
@@ -287,7 +290,11 @@ private fun NewProjectCard(onClick: () -> Unit) {
 @Composable
 private fun QuickActions(actions: HomeActions) {
     val feature = ClipraTheme.colors.feature
-    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+    // As tall as the tallest, which large fonts (#75) can make taller than the design's 80 dp.
+    Row(
+        modifier = Modifier.height(IntrinsicSize.Min),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
         QuickAction(
             R.string.home_quick_captions,
             ClipraIcons.Captions,
@@ -316,7 +323,8 @@ internal fun RowScope.QuickAction(
         onClick = onClick,
         modifier = Modifier
             .weight(1f)
-            .height(80.dp)
+            .heightIn(min = 80.dp)
+            .fillMaxHeight()
             .semantics { role = Role.Button },
         shape = ClipraTheme.shapes.card,
         color = colors.surface,
@@ -328,7 +336,7 @@ internal fun RowScope.QuickAction(
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
             ClipraIcon(icon = icon, contentDescription = null, tint = tint)
-            Text(text = stringResource(label), style = ClipraTheme.typography.chip, maxLines = 2)
+            Text(text = stringResource(label), style = ClipraTheme.typography.chip)
         }
     }
 }
