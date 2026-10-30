@@ -182,4 +182,15 @@
     <string name="effects_cutout_white">White</string>
     <string name="effects_cutout_yellow">Yellow</string>
     <string name="effects_cutout_red">Red</string>
+    <string name="effects_cutout_subtitle_chroma">%1$s · L%2$d · chroma key</string>
+    <string name="effects_cutout_mode_ai">Remove background (AI)</string>
+    <string name="effects_cutout_mode_chroma">Chroma key</string>
+    <string name="effects_cutout_keyed">Keyed</string>
+    <string name="effects_cutout_original">Original</string>
+    <string name="effects_cutout_key_color">Key color</string>
+    <string name="effects_cutout_pick">Pick key color from the preview</string>
+    <string name="effects_cutout_pick_hint">Tap the color to key out</string>
+    <string name="effects_cutout_similarity">Similarity</string>
+    <string name="effects_cutout_smoothness">Smoothness</string>
+    <string name="effects_cutout_spill">Spill removal</string>
 </resources>

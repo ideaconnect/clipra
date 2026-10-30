@@ -58,6 +58,9 @@ object ClipraIcons {
 
     @DrawableRes val Export = R.drawable.designsystem_ic_export
 
+    /** Picks the chroma key's colour from the picture (Cutout board, #51). */
+    @DrawableRes val Eyedropper = R.drawable.designsystem_ic_eyedropper
+
     @DrawableRes val Face = R.drawable.designsystem_ic_face
 
     @DrawableRes val Fades = R.drawable.designsystem_ic_fades
@@ -195,6 +198,7 @@ object ClipraIcons {
         "edit_by_text" to EditByText,
         "effects" to Effects,
         "export" to Export,
+        "eyedropper" to Eyedropper,
         "face" to Face,
         "fades" to Fades,
         "filter_compare" to FilterCompare,

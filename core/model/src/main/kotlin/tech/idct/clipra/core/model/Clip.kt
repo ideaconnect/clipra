@@ -336,10 +336,10 @@ enum class Behind {
 }
 
 /**
- * Person cutout (#50): on-device AI finds the people in every frame and the rest of the picture
- * goes, with [behind] showing there instead. [edgeRefine] (0 to 1) makes the edge firmer and
- * tighter; [hairDetail] (0 to 1) keeps the faint fringe the model is unsure of, such as hair.
- * See `CutoutMath`.
+ * Cutout (#50, #51): the background goes and [behind] shows there instead. Without a [key],
+ * on-device AI finds the people in every frame (person cutout): [edgeRefine] (0 to 1) makes the
+ * edge firmer and tighter, [hairDetail] (0 to 1) keeps the faint fringe the model is unsure of,
+ * such as hair. With a [key], a colour is keyed out instead (chroma key). See `CutoutMath`.
  */
 @Serializable
 data class Cutout(
@@ -348,11 +348,34 @@ data class Cutout(
     val hairDetail: Float = DEFAULT_HAIR_DETAIL,
     /** ARGB, for [Behind.Color]. */
     val color: Long = TextColors.GREEN,
+    /** Chroma key (#51); null for the person cutout. */
+    val key: ChromaKey? = null,
 ) {
     companion object {
         /** The Cutout board's defaults (40 and 70). */
         const val DEFAULT_EDGE_REFINE = 0.4f
         const val DEFAULT_HAIR_DETAIL = 0.7f
+    }
+}
+
+/**
+ * Chroma key (#51): [color] (ARGB) goes. [similarity] (0 to 1) says how close a colour must be to
+ * go with it, [smoothness] (0 to 1) how softly the edge fades, and [spill] (0 to 1) how much of
+ * the key's tint is taken off what stays, such as green light on hair.
+ */
+@Serializable
+data class ChromaKey(
+    val color: Long = DEFAULT_COLOR,
+    val similarity: Float = DEFAULT_SIMILARITY,
+    val smoothness: Float = DEFAULT_SMOOTHNESS,
+    val spill: Float = DEFAULT_SPILL,
+) {
+    companion object {
+        /** The Cutout board's defaults: a studio green, 42, 18 and 60. */
+        const val DEFAULT_COLOR = 0xFF3BB34A
+        const val DEFAULT_SIMILARITY = 0.42f
+        const val DEFAULT_SMOOTHNESS = 0.18f
+        const val DEFAULT_SPILL = 0.6f
     }
 }
 

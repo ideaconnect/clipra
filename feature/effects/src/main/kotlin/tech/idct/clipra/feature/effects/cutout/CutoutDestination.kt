@@ -61,6 +61,12 @@ internal fun CutoutDestination(onDone: () -> Unit, viewModel: CutoutViewModel = 
                 viewModel.remove()
                 onDone()
             },
+            onChroma = {
+                live = null
+                player.setLiveCutout(clip.id, null)
+                viewModel.setChroma(it)
+            },
+            onPick = viewModel::pickAt,
         ),
         preview = {
             VideoSurface(

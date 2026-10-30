@@ -188,4 +188,15 @@
     <string name="effects_cutout_white">Biały</string>
     <string name="effects_cutout_yellow">Żółty</string>
     <string name="effects_cutout_red">Czerwony</string>
+    <string name="effects_cutout_subtitle_chroma">%1$s · L%2$d · kluczowanie</string>
+    <string name="effects_cutout_mode_ai">Usuń tło (AI)</string>
+    <string name="effects_cutout_mode_chroma">Kluczowanie koloru</string>
+    <string name="effects_cutout_keyed">Kluczowane</string>
+    <string name="effects_cutout_original">Oryginał</string>
+    <string name="effects_cutout_key_color">Kolor klucza</string>
+    <string name="effects_cutout_pick">Wybierz kolor klucza z podglądu</string>
+    <string name="effects_cutout_pick_hint">Dotknij koloru do usunięcia</string>
+    <string name="effects_cutout_similarity">Podobieństwo</string>
+    <string name="effects_cutout_smoothness">Miękkość</string>
+    <string name="effects_cutout_spill">Odbarwienie</string>
 </resources>

@@ -321,9 +321,14 @@ object ProjectRender {
         } else {
             null
         }
-        // Cut out (#50) once the masks are made; the whole picture shows until then.
+        // A chroma key (#51) at once; people cut out (#50) once the masks are made, the whole
+        // picture until then.
         val cutout = clip.cutout?.let { settings ->
-            media.cutout(asset)?.let { RenderCutout(settings, it) }
+            if (settings.key != null) {
+                RenderCutout(settings, null)
+            } else {
+                media.cutout(asset)?.let { RenderCutout(settings, it) }
+            }
         }
         return renderClipOf(clip, source, voice, cutout)
     }
