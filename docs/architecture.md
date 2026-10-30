@@ -152,6 +152,10 @@ Downloads run in WorkManager with a Wi-Fi-only constraint by default, resume aft
 - Ads: GMA Next-Gen SDK interstitials with preloading, gated by `AdGate` (Pro, consent, slot rules, timeouts). Test ad units in debug.
 - Consent: UMP SDK on first launch after onboarding and from "Ad privacy choices".
 - Billing: Play Billing Library 9.x, product `clipra_pro`, acknowledgement, restore on start, entitlement cached in DataStore.
+  - `PlayBillingGateway` wraps one `BillingClient` with automatic service reconnection and pending one-time purchases; tests use a fake gateway.
+  - `ProStore` is the entitlement (`Entitlement.isPro`, from the DataStore cache). It counts a purchase once Google Play reports it purchased and `PurchaseVerifier` accepts its signature, grants Pro at once and acknowledges it (retried on every refresh until it succeeds). A pending payment grants nothing until it completes.
+  - On every start (`ClipraApplication`), when the Pro screen opens and on Restore, `ProStore.refresh` takes Google Play's list of purchases as the truth, so a refund removes Pro. When Play cannot be reached the cache stays.
+  - `PurchaseVerifier` checks the SHA1withRSA signature against the Play public key. The key comes from the Gradle property `clipraPlayLicenseKey` (or `ORG_GRADLE_PROJECT_clipraPlayLicenseKey`) and is stored masked in `BuildConfig`. A release build fails without it; a debug build without it trusts purchases.
 
 ## 9. Privacy and permissions
 
