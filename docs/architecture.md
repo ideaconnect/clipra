@@ -151,6 +151,10 @@ Downloads run in WorkManager with a Wi-Fi-only constraint by default, resume aft
 
 - Ads: GMA Next-Gen SDK interstitials with preloading, gated by `AdGate` (Pro, consent, slot rules, timeouts). Test ad units in debug.
 - Consent: UMP SDK on first launch after onboarding and from "Ad privacy choices".
+  - `AdConsent` asks free users when the projects first show in a run (so after onboarding): it updates the consent information and shows the form where the law requires it. Pro users are never asked. When the update fails, the consent UMP stored earlier still applies.
+  - `AdConsent.canRequestAds` is checked before every ad request; a change in "Ad privacy choices" applies to the next one.
+  - "Ad privacy choices" shows only where UMP requires privacy options (EEA, UK and similar) and opens UMP's privacy options form.
+  - The AdMob app id is passed to UMP in code (the Next-Gen ads SDK needs no manifest entry): Google's sample app in debug builds, `clipraAdMobAppId` in release builds, which fail without it. Debug builds test as a device in the EEA.
 - Billing: Play Billing Library 9.x, product `clipra_pro`, acknowledgement, restore on start, entitlement cached in DataStore.
   - `PlayBillingGateway` wraps one `BillingClient` with automatic service reconnection and pending one-time purchases; tests use a fake gateway.
   - `ProStore` is the entitlement (`Entitlement.isPro`, from the DataStore cache). It counts a purchase once Google Play reports it purchased and `PurchaseVerifier` accepts its signature, grants Pro at once and acknowledges it (retried on every refresh until it succeeds). A pending payment grants nothing until it completes.

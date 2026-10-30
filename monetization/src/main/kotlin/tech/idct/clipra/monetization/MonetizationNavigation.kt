@@ -72,7 +72,7 @@ private fun ProDestination(
             onBuy = { context.findActivity()?.let(viewModel::buy) },
             onRestore = viewModel::restore,
             onBackToProjects = actions.onBackToProjects,
-            onAdPrivacy = null,
+            onAdPrivacy = { context.findActivity()?.let(viewModel::adPrivacy) },
         ),
     )
 }

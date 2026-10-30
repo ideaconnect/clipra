@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import tech.idct.clipra.monetization.ads.AdConsent
 import tech.idct.clipra.monetization.billing.LaunchResult
 import tech.idct.clipra.monetization.billing.ProStore
 import tech.idct.clipra.monetization.billing.PurchaseEvent
@@ -17,24 +18,28 @@ import tech.idct.clipra.monetization.billing.RestoreResult
 import javax.inject.Inject
 
 @HiltViewModel
-class ProViewModel @Inject constructor(private val store: ProStore) : ViewModel() {
+class ProViewModel @Inject constructor(
+    private val store: ProStore,
+    private val consent: AdConsent,
+) : ViewModel() {
     private val busy = MutableStateFlow(false)
     private val message = MutableStateFlow<ProMessage?>(null)
 
     val state: StateFlow<ProUiState> =
-        combine(store.isPro, store.price, store.pending, busy, message) {
-                owned,
-                price,
-                pending,
-                busy,
-                message,
-            ->
+        combine(
+            store.isPro,
+            store.price,
+            store.pending,
+            combine(busy, message, ::Pair),
+            consent.state,
+        ) { owned, price, pending, (busy, message), consent ->
             ProUiState(
                 owned = owned,
                 price = price,
                 pending = pending,
                 busy = busy,
                 message = message,
+                adPrivacyChoices = consent.privacyOptionsRequired,
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), ProUiState())
 
@@ -79,6 +84,10 @@ class ProViewModel @Inject constructor(private val store: ProStore) : ViewModel(
             store.loadPrice()
             busy.value = false
         }
+    }
+
+    fun adPrivacy(activity: Activity) {
+        viewModelScope.launch { consent.showPrivacyOptions(activity) }
     }
 
     private companion object {

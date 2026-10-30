@@ -3,10 +3,12 @@ package tech.idct.clipra.navigation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.NavController
+import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import kotlinx.coroutines.flow.first
 import tech.idct.clipra.BuildConfig
 import tech.idct.clipra.core.designsystem.gallery.DesignSystemGallery
 import tech.idct.clipra.core.designsystem.placeholder.Board
@@ -66,7 +68,13 @@ fun ClipraNavHost(
     navController: NavHostController = rememberNavController(),
     /** Changes each time the export notification is tapped. */
     openExport: Int = 0,
+    /** Called the first time the projects show in this run, after onboarding. */
+    onProjectsShown: () -> Unit = {},
 ) {
+    LaunchedEffect(navController) {
+        navController.currentBackStackEntryFlow.first { it.destination.hasRoute<MainRoute>() }
+        onProjectsShown()
+    }
     LaunchedEffect(openExport) {
         if (openExport > 0) navController.navigate(ExportProgressRoute())
     }

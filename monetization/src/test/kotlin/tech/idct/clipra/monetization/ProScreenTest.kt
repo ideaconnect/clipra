@@ -47,7 +47,7 @@ class ProScreenTest {
 
     @Test
     fun proAsDesigned() {
-        show(ProUiState(price = "10,00 zł"))
+        show(ProUiState(price = "10,00 zł", adPrivacyChoices = true))
         compose.onNodeWithText("Buy Pro · 10,00 zł").assertIsEnabled()
         compose.onNodeWithTag("pro-price").assertExists()
         compose.onRoot().captureRoboImage(roborazziOptions = options)
@@ -60,7 +60,7 @@ class ProScreenTest {
 
     @Test
     fun owned() {
-        show(ProUiState(owned = true, price = "10,00 zł"))
+        show(ProUiState(owned = true, price = "10,00 zł", adPrivacyChoices = true))
         compose.onNodeWithText("You’re Pro").assertExists()
         compose.onNodeWithTag("pro-buy").assertDoesNotExist()
         compose.onNodeWithTag("pro-price").assertDoesNotExist()
@@ -71,10 +71,16 @@ class ProScreenTest {
 
     @Test
     fun paymentPending() {
-        show(ProUiState(price = "10,00 zł", pending = true))
+        show(ProUiState(price = "10,00 zł", pending = true, adPrivacyChoices = true))
         compose.onNodeWithTag("pro-status").assertExists()
         compose.onNodeWithTag("pro-buy").assertIsNotEnabled()
         compose.onRoot().captureRoboImage(roborazziOptions = options)
+    }
+
+    @Test
+    fun adPrivacyChoicesOnlyWhereConsentNeedsThem() {
+        show(ProUiState(price = "10,00 zł", adPrivacyChoices = false))
+        compose.onNodeWithTag("pro-ad-privacy").assertDoesNotExist()
     }
 
     @Test
@@ -90,7 +96,7 @@ class ProScreenTest {
     @Test
     @Config(qualifiers = "w1280dp-h800dp-mdpi")
     fun tabletAsDesigned() {
-        show(ProUiState(price = "10,00 zł"))
+        show(ProUiState(price = "10,00 zł", adPrivacyChoices = true))
         compose.onNodeWithText("Buy Pro · 10,00 zł").assertIsEnabled()
         compose.onRoot().captureRoboImage(roborazziOptions = options)
     }

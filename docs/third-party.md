@@ -17,7 +17,7 @@ Keep this list in sync with the build. Every entry needs a license that is compa
 | OpenCV (core, imgproc, video, calib3d only) | Motion tracking for Stabilize | Apache-2.0 (4.5.0 and later) |
 | ML Kit Translation | Offline translation | Google APIs Terms of Service |
 | Google Mobile Ads Next-Gen SDK | Interstitial ads | Google terms |
-| Google User Messaging Platform SDK | Ad consent | Google terms |
+| Google User Messaging Platform SDK (`com.google.android.ump:user-messaging-platform` 4.0.0, with Play services basement) | Ad consent (`monetization`) | Android Software Development Kit License |
 | Play Billing Library (`com.android.billingclient:billing-ktx` 9.1.0) | Clipra Pro purchase (`monetization`) | Android Software Development Kit License |
 | Bricolage Grotesque, Geist, Geist Mono | Fonts | SIL Open Font License 1.1 |
 

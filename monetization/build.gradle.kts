@@ -19,6 +19,11 @@ val obfuscatedPlayKey: String = run {
     Base64.getEncoder().encodeToString(masked)
 }
 
+// The AdMob app id. Debug builds use Google's sample app, which only serves test ads; release
+// builds take Clipra's from clipraAdMobAppId, like the Play key.
+val adMobAppId = providers.gradleProperty("clipraAdMobAppId").orNull.orEmpty().trim()
+val sampleAdMobAppId = "ca-app-pub-3940256099942544~3347511713"
+
 android {
     namespace = "tech.idct.clipra.monetization"
 
@@ -26,26 +31,41 @@ android {
         buildConfigField("String", "PLAY_LICENSE_KEY", "\"$obfuscatedPlayKey\"")
     }
 
+    buildTypes {
+        debug {
+            buildConfigField("String", "ADMOB_APP_ID", "\"$sampleAdMobAppId\"")
+            manifestPlaceholders["adMobAppId"] = sampleAdMobAppId
+        }
+        release {
+            buildConfigField("String", "ADMOB_APP_ID", "\"$adMobAppId\"")
+            manifestPlaceholders["adMobAppId"] = adMobAppId
+        }
+    }
+
     buildFeatures {
         buildConfig = true
     }
 }
 
-// Without the key a release build could never grant Pro, so it is not built at all. Debug builds
-// trust purchases when the key is missing.
-val checkPlayLicenseKey = tasks.register("checkPlayLicenseKey") {
-    val present = playLicenseKey.isNotEmpty()
+// Without the Play key a release build could never grant Pro, and without the AdMob app id it
+// could show no ads, so it is not built at all. Debug builds trust purchases when the key is
+// missing.
+val checkReleaseKeys = tasks.register("checkReleaseKeys") {
+    val playKey = playLicenseKey.isNotEmpty()
+    val appId = adMobAppId.isNotEmpty()
     doLast {
-        check(present) { "Set clipraPlayLicenseKey (the Play public key) to build a release" }
+        check(playKey) { "Set clipraPlayLicenseKey (the Play public key) to build a release" }
+        check(appId) { "Set clipraAdMobAppId (the AdMob app id) to build a release" }
     }
 }
 tasks.configureEach {
-    if (name == "preReleaseBuild") dependsOn(checkPlayLicenseKey)
+    if (name == "preReleaseBuild") dependsOn(checkReleaseKeys)
 }
 
 dependencies {
     implementation(project(":core:data"))
     implementation(libs.play.billing)
+    implementation(libs.ump)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
