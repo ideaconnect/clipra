@@ -24,6 +24,7 @@ import tech.idct.clipra.core.engine.preview.PreviewPlayer
 @Composable
 internal fun TextDestination(onDone: () -> Unit, viewModel: TextViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val templates by viewModel.templates.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val player = remember { PreviewPlayer(context, viewModel.mediaCache) }
     DisposableEffect(player) { onDispose { player.release() } }
@@ -43,10 +44,13 @@ internal fun TextDestination(onDone: () -> Unit, viewModel: TextViewModel = hilt
         val current = viewModel.state.value.clip?.text ?: return@LaunchedEffect
         if (draft != current.text) viewModel.setSpec(current.copy(text = draft))
     }
-    val finish = {
-        // Keep what was typed last.
+    // Keeps what was typed last.
+    val commitDraft = {
         val current = viewModel.state.value.clip?.text
         if (current != null && draft != current.text) viewModel.setSpec(current.copy(text = draft))
+    }
+    val finish = {
+        commitDraft()
         onDone()
     }
     BackHandler(onBack = finish)
@@ -54,11 +58,21 @@ internal fun TextDestination(onDone: () -> Unit, viewModel: TextViewModel = hilt
     TextScreen(
         state = state,
         draft = draft,
+        templates = templates,
         actions = TextActions(
             onBack = finish,
             onDraft = { draft = it },
             onSpec = { viewModel.setSpec(it.copy(text = draft)) },
             onAnimation = viewModel::setAnimation,
+            onTemplate = {
+                commitDraft()
+                viewModel.applyTemplate(it)
+            },
+            onSaveTemplate = {
+                commitDraft()
+                viewModel.saveTemplate()
+            },
+            onDeleteTemplate = viewModel::deleteTemplate,
         ),
         preview = {
             VideoSurface(
