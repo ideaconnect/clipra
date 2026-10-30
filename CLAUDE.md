@@ -16,6 +16,7 @@ Status: design complete, implementation not started. The plan is a set of issues
 | `docs/product/spec.md` | What every feature does, with the design's numbers |
 | `docs/product/monetization.md` | Ad slots, ad rules, Clipra Pro purchase flow, SDKs, Play Console checklist |
 | `docs/architecture.md` | Stack, modules, project model, media engine, AI runtimes, export, testing, budgets, licensing |
+| `docs/adr/` | Architecture decisions: media engine, project format, AI runtimes, ads and billing, Android 10+, license policy. Start with `docs/adr/README.md` |
 | `docs/third-party.md` | Dependencies and their licenses |
 | `docs/plan/ROADMAP.md` | Milestones M0 to M11 and every issue, in order |
 | `scripts/plan/` | `issues.json` (the plan as data) and `publish.py` (creates the issues and adds them to Project 6) |
@@ -49,7 +50,17 @@ If the implementation has to differ from the design (platform limits, accessibil
 
 ## Stack (see `docs/architecture.md`)
 
-Android 10 and later (minSdk 29, targetSdk 36), app id `tech.idct.clipra`. Kotlin 2.x, Jetpack Compose, Hilt, Room, DataStore, WorkManager, Media3 1.11 (Transformer, CompositionPlayer, effects) around Clipra's own layer compositor in `core:engine` (decided by the engine spike, `docs/spikes/engine.md`), whisper.cpp via JNI, ONNX Runtime Mobile (DeepFilterNet 3), RNNoise, MediaPipe Tasks Vision, ML Kit Translation, Google Mobile Ads Next-Gen SDK, UMP SDK, Play Billing Library 9.x. Decisions marked "spike" in the architecture doc are confirmed by the M0 spikes; check `docs/spikes/` and `docs/adr/` once they exist.
+Android 10 and later (minSdk 29, targetSdk 36), app id `tech.idct.clipra`. Kotlin 2.x, Jetpack Compose, Hilt, Room, DataStore, WorkManager, Media3 1.11 (Transformer, CompositionPlayer, effects) around Clipra's own layer compositor in `core:engine` (decided by the engine spike, `docs/spikes/engine.md`), whisper.cpp via JNI, ONNX Runtime Mobile (DeepFilterNet 3), RNNoise, MediaPipe models on LiteRT (not MediaPipe Tasks, which sends usage data), ML Kit Translation, Google Mobile Ads Next-Gen SDK, UMP SDK, Play Billing Library 9.x.
+
+The decisions behind this stack are recorded in `docs/adr/`:
+- [0001](docs/adr/0001-media-engine.md) media engine;
+- [0002](docs/adr/0002-project-format.md) project format;
+- [0003](docs/adr/0003-ai-runtimes.md) AI runtimes;
+- [0004](docs/adr/0004-ads-and-billing.md) ads and billing;
+- [0005](docs/adr/0005-min-sdk.md) Android 10+;
+- [0006](docs/adr/0006-license-policy.md) license policy.
+
+Follow them. A change to one of them comes with a new ADR that supersedes it. The spike reports are in `docs/spikes/`.
 
 ## Build
 
@@ -67,7 +78,7 @@ Android 10 and later (minSdk 29, targetSdk 36), app id `tech.idct.clipra`. Kotli
 2. Branch from `main` as `<issue-number>-<short-name>`.
 3. Implement in the module the architecture names. Keep feature modules independent of each other.
 4. Add tests: unit tests for logic (commands, formulas, ad rules, entitlement), golden-image tests for GL effects, screenshot tests for screens against the design.
-5. Open a pull request that says `Closes #<number>`, with before and after screenshots for UI work.
+5. Open a pull request that says `Closes #<number>`, with before and after screenshots for UI work, and go through the review checklist of `.github/pull_request_template.md` (license policy first).
 
 ## Conventions
 
