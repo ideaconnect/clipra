@@ -151,7 +151,11 @@ data class Mask(
 @Serializable
 enum class MaskShape { None, Rectangle, Oval }
 
-/** Colour adjustments, each from -100 to +100, and an optional LUT with its strength. */
+/**
+ * A clip's colour grade (#28), applied before its filters (`ColorMath` says how). Every
+ * adjustment runs from -100 to +100, 0 leaving the picture alone, on the same scale the Color
+ * board and the tablet's Color tab show.
+ */
 @Serializable
 data class ColorGrade(
     val exposure: Float = 0f,
@@ -160,9 +164,38 @@ data class ColorGrade(
     val temperature: Float = 0f,
     val tint: Float = 0f,
     val vignette: Float = 0f,
+    /** Shifts for colours in each hue range (HSL). */
+    val hsl: Map<HueRange, HslShift> = emptyMap(),
+    /** A built-in LUT (`Luts.builtInNames`) or an imported `.cube` file, by id; null for none. */
     val lut: String? = null,
+    /** How much of the LUT shows, 0 to 1. */
     val lutStrength: Float = 1f,
-)
+) {
+    /** Whether the grade changes nothing. */
+    val isNeutral: Boolean
+        get() = exposure == 0f && contrast == 0f && saturation == 0f && temperature == 0f &&
+            tint == 0f && vignette == 0f && hsl.values.all { it.isNeutral } &&
+            (lut == null || lutStrength == 0f)
+}
+
+/** The eight hue ranges of the HSL tab, by the hue at their centre in degrees. */
+@Serializable
+enum class HueRange(val degrees: Float) {
+    Reds(0f),
+    Oranges(30f),
+    Yellows(60f),
+    Greens(120f),
+    Aquas(180f),
+    Blues(225f),
+    Purples(270f),
+    Magentas(315f),
+}
+
+/** How colours of one hue range change, each from -100 to +100. */
+@Serializable
+data class HslShift(val hue: Float = 0f, val saturation: Float = 0f, val luminance: Float = 0f) {
+    val isNeutral: Boolean get() = hue == 0f && saturation == 0f && luminance == 0f
+}
 
 /**
  * Per-clip sound: volume 0 to 2 (200%), fades, the loudness target in LUFS and AI voice

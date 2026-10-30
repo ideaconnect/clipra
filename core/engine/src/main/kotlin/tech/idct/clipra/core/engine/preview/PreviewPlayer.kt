@@ -16,6 +16,8 @@ import tech.idct.clipra.core.engine.render.LiveEdits
 import tech.idct.clipra.core.engine.render.MediaResolver
 import tech.idct.clipra.core.engine.render.ProjectRender
 import tech.idct.clipra.core.model.CaptionSpec
+import tech.idct.clipra.core.model.ColorGrade
+import tech.idct.clipra.core.model.CubeLut
 import tech.idct.clipra.core.model.Effect
 import tech.idct.clipra.core.model.Format
 import tech.idct.clipra.core.model.Mask
@@ -42,6 +44,13 @@ class PreviewPlayer(private val context: Context, cache: MediaCache) {
     /** The current composition's gesture values; each rebuild starts without any. */
     private var live = LiveEdits()
 
+    /** The project shown, to rebuild when the preview comes back on screen. */
+    private var project: Project? = null
+    private var detached = false
+
+    /** The Color board's before and after (#28), kept across rebuilds. */
+    private val splits = HashMap<String, Float>()
+
     /** Called when playback reaches the end. */
     var onEnded: (() -> Unit)? = null
 
@@ -61,17 +70,36 @@ class PreviewPlayer(private val context: Context, cache: MediaCache) {
     fun setProject(project: Project, positionUs: Long) {
         val size = previewSize(project.format)
         val timeline = ProjectRender.timeline(project, media, size.width, size.height)
+        this.project = project
         live = LiveEdits()
+        splits.forEach { (clipId, split) -> live.setSplit(clipId, split) }
         player.setComposition(CompositionFactory.create(context, timeline, live = live))
         hasComposition = true
         player.seekTo(positionUs / 1_000)
         player.prepare()
     }
 
-    fun attach(surface: Surface, width: Int, height: Int) =
+    /**
+     * Shows the preview on [surface], drawing the paused frame on it. A surface that comes back
+     * after [detach] gets the composition rebuilt where it was: a paused frame isn't drawn again
+     * on it otherwise.
+     */
+    fun attach(surface: Surface, width: Int, height: Int) {
+        if (released) return
+        this.surface = surface
         player.setVideoSurface(surface, Size(width, height))
+        if (detached) project?.let { setProject(it, positionUs) } else redraw()
+        detached = false
+    }
 
-    fun detach() = player.clearVideoSurface()
+    fun detach() {
+        // The screen may release the player before its view lets go of the surface.
+        if (released) return
+        detached = true
+        // CompositionPlayer clears only the surface it was given.
+        surface?.let(player::clearVideoSurface)
+        surface = null
+    }
 
     fun play() {
         if (hasComposition) player.playWhenReady = true
@@ -106,6 +134,22 @@ class PreviewPlayer(private val context: Context, cache: MediaCache) {
         redraw()
     }
 
+    /**
+     * Like [setLiveTransform], for the Color board (#28): [grade] while a slider moves or a
+     * LUT is tried; null goes back to the clip's own.
+     */
+    fun setLiveColor(clipId: String, grade: ColorGrade?) {
+        live.setColor(clipId, grade?.let { LiveEdits.LiveColor(it, it.lut?.let(media::lut)) })
+        redraw()
+    }
+
+    /** Shows [clipId] ungraded left of [split] (a share of its width); null shows it all graded. */
+    fun setColorSplit(clipId: String, split: Float?) {
+        if (split == null) splits.remove(clipId) else splits[clipId] = split
+        live.setSplit(clipId, split)
+        redraw()
+    }
+
     /** Like [setLiveTransform], for the opacity slider. */
     fun setLiveOpacity(clipId: String, opacity: Float) {
         live.setOpacity(clipId, opacity)
@@ -113,10 +157,28 @@ class PreviewPlayer(private val context: Context, cache: MediaCache) {
     }
 
     private fun redraw() {
-        if (hasComposition && !player.playWhenReady) player.seekTo(player.currentPosition)
+        if (!hasComposition || player.playWhenReady) return
+        // A seek to where the player already is draws nothing new: step a millisecond either
+        // way, back and forth, which stays on the same frame.
+        val position = player.currentPosition
+        val back = nudgedForward || position + NUDGE_MS > player.duration
+        val target = if (back && position >= NUDGE_MS) position - NUDGE_MS else position + NUDGE_MS
+        nudgedForward = target > position
+        player.seekTo(target)
     }
 
-    fun release() = player.release()
+    /** Whether the last redraw stepped forward, so the next steps back. */
+    private var nudgedForward = false
+
+    fun release() {
+        released = true
+        player.release()
+    }
+
+    private var released = false
+
+    /** The surface the preview is on. */
+    private var surface: Surface? = null
 
     /**
      * Photos decode once per editor session instead of on every rebuild, and text draws again
@@ -147,6 +209,10 @@ class PreviewPlayer(private val context: Context, cache: MediaCache) {
         override fun image(asset: MediaAsset): Bitmap? = images.getOrPut(asset.id) {
             inner.image(asset)
         }
+
+        private val luts = HashMap<String, CubeLut?>()
+
+        override fun lut(id: String): CubeLut? = luts.getOrPut(id) { inner.lut(id) }
     }
 
     companion object {
@@ -154,6 +220,7 @@ class PreviewPlayer(private val context: Context, cache: MediaCache) {
         const val PREVIEW_SHORT_SIDE = 540
         private const val IMAGE_SIDE = PREVIEW_SHORT_SIDE * 2
         private const val MAX_TEXTS = 32
+        private const val NUDGE_MS = 1L
 
         fun previewSize(format: Format): tech.idct.clipra.core.model.Size {
             val output = format.outputSize

@@ -163,6 +163,134 @@ internal object Shaders {
     """
 
     /**
+     * A clip's colour grade (#28), a line-by-line port of `ColorMath`: exposure and white
+     * balance gains, contrast, saturation, the eight HSL ranges, a LUT (its slices laid out in a
+     * grid of tiles, blended between two slices) at its strength, and the vignette. Left of
+     * [uSplit] the picture shows as it was, for the Color board's before and after.
+     */
+    const val GRADE = PRECISION + """
+        uniform sampler2D uTex;
+        uniform sampler2D uLut;
+        uniform vec3 uGain;
+        uniform float uContrast;
+        uniform float uSaturation;
+        uniform int uHasHsl;
+        uniform vec3 uH0;
+        uniform vec3 uH1;
+        uniform vec3 uH2;
+        uniform vec3 uH3;
+        uniform vec3 uH4;
+        uniform vec3 uH5;
+        uniform vec3 uH6;
+        uniform vec3 uH7;
+        uniform int uHasLut;
+        uniform float uLutSize;
+        uniform vec2 uLutGrid;
+        uniform vec3 uLutMin;
+        uniform vec3 uLutMax;
+        uniform float uLutStrength;
+        uniform float uVignette;
+        uniform float uSplit;
+        varying vec2 vTex;
+
+        const vec3 LUMA = vec3(0.2126, 0.7152, 0.0722);
+
+        float rangeDegrees(int i) {
+            if (i == 0) return 0.0;
+            if (i == 1) return 30.0;
+            if (i == 2) return 60.0;
+            if (i == 3) return 120.0;
+            if (i == 4) return 180.0;
+            if (i == 5) return 225.0;
+            if (i == 6) return 270.0;
+            return 315.0;
+        }
+
+        vec3 rangeShift(int i) {
+            if (i == 0) return uH0;
+            if (i == 1) return uH1;
+            if (i == 2) return uH2;
+            if (i == 3) return uH3;
+            if (i == 4) return uH4;
+            if (i == 5) return uH5;
+            if (i == 6) return uH6;
+            return uH7;
+        }
+
+        vec3 hslToRgb(float h, float s, float l) {
+            vec3 k = clamp(abs(mod(h / 60.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0);
+            return l + s * (k - 0.5) * (1.0 - abs(2.0 * l - 1.0));
+        }
+
+        vec3 hsl(vec3 c) {
+            float mx = max(c.r, max(c.g, c.b));
+            float mn = min(c.r, min(c.g, c.b));
+            float chroma = mx - mn;
+            if (chroma <= 0.0) return c;
+            float l = (mx + mn) / 2.0;
+            float s = chroma / max(1.0 - abs(2.0 * l - 1.0), 0.000001);
+            float h;
+            if (mx == c.r) {
+                h = 60.0 * mod((c.g - c.b) / chroma, 6.0);
+            } else if (mx == c.g) {
+                h = 60.0 * ((c.b - c.r) / chroma + 2.0);
+            } else {
+                h = 60.0 * ((c.r - c.g) / chroma + 4.0);
+            }
+            int i = 7;
+            for (int j = 0; j < 8; j++) {
+                if (h >= rangeDegrees(j)) i = j;
+            }
+            int next = i == 7 ? 0 : i + 1;
+            float end = next == 0 ? 360.0 : rangeDegrees(next);
+            float t = (h - rangeDegrees(i)) / (end - rangeDegrees(i));
+            float f = clamp(chroma * 4.0, 0.0, 1.0);
+            vec3 shift = mix(rangeShift(i), rangeShift(next), t) * f;
+            float hue = mod(h + shift.x * 30.0, 360.0);
+            float sat = clamp(s * (1.0 + shift.y), 0.0, 1.0);
+            float lum = clamp(l * (1.0 + 0.5 * shift.z), 0.0, 1.0);
+            return hslToRgb(hue, sat, lum);
+        }
+
+        vec3 lutSlice(float index, vec2 rg) {
+            float column = mod(index, uLutGrid.x);
+            float row = floor(index / uLutGrid.x);
+            vec2 uv = (vec2(column, row) * uLutSize + rg + 0.5) / (uLutGrid * uLutSize);
+            return texture2D(uLut, uv).rgb;
+        }
+
+        vec3 lut(vec3 c) {
+            vec3 p = clamp((c - uLutMin) / (uLutMax - uLutMin), 0.0, 1.0) * (uLutSize - 1.0);
+            float slice = min(floor(p.b), uLutSize - 2.0);
+            return mix(lutSlice(slice, p.rg), lutSlice(slice + 1.0, p.rg), p.b - slice);
+        }
+
+        void main() {
+            vec4 source = texture2D(uTex, vTex);
+            if (vTex.x < uSplit) {
+                gl_FragColor = source;
+                return;
+            }
+            vec3 c = source.rgb * uGain;
+            c = (c - 0.5) * uContrast + 0.5;
+            float luma = dot(c, LUMA);
+            c = clamp(luma + (c - luma) * uSaturation, 0.0, 1.0);
+            if (uHasHsl == 1) c = hsl(c);
+            if (uHasLut == 1) c = mix(c, lut(c), uLutStrength);
+            if (uVignette != 0.0) {
+                vec2 d = (vTex - 0.5) * 2.0;
+                float f = smoothstep(0.3, 1.0, length(d) / sqrt(2.0));
+                if (uVignette > 0.0) {
+                    c *= 1.0 - 0.75 * uVignette * f;
+                } else {
+                    c += (1.0 - c) * -uVignette * 0.5 * f;
+                }
+            }
+            gl_FragColor = vec4(clamp(c, 0.0, 1.0), source.a);
+        }
+    """
+
+    /**
      * One filter (#25) on a clip's picture (straight alpha, upright): it samples the input
      * (plain, in mosaic blocks, with the colours split, or glitched), applies the CSS filter
      * functions as one colour matrix, blends an overlay (gradient or pattern) on top with

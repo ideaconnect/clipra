@@ -7,6 +7,8 @@ import tech.idct.clipra.core.model.CaptionStyle
 import tech.idct.clipra.core.model.Cells
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
+import tech.idct.clipra.core.model.CubeLut
+import tech.idct.clipra.core.model.Luts
 import tech.idct.clipra.core.model.MediaAsset
 import tech.idct.clipra.core.model.Project
 import tech.idct.clipra.core.model.TextSpec
@@ -32,6 +34,9 @@ interface MediaResolver {
 
     /** A caption (#45) at [width] × [height] with word [current] spoken (-1: none). */
     fun caption(caption: CaptionSpec, current: Int, width: Int, height: Int): Bitmap? = null
+
+    /** The LUT with [id] (#28): a built-in one, or an imported `.cube` file; null if gone. */
+    fun lut(id: String): CubeLut? = Luts.builtIn(id)
 }
 
 /** Turns a project into what the layer compositor draws (docs/architecture.md, section 4). */
@@ -63,7 +68,13 @@ object ProjectRender {
                 }
                 // A clip in a mosaic cell is laid out in it and cut to it (#17).
                 val cell = Cells.rect(project.format, clip.cell)
-                if (cell == null) rendered else rendered.map { it.copy(cell = cell) }
+                // Its grade's LUT (#28), read once.
+                val lut = clip.color?.lut?.let(media::lut)
+                if (cell == null && lut == null) {
+                    rendered
+                } else {
+                    rendered.map { it.copy(cell = cell, lut = lut) }
+                }
             }
             RenderLayer(
                 clips = clips,
@@ -184,6 +195,7 @@ object ProjectRender {
         opacityKeyframes = clip.opacity.keyframes,
         maskKeyframes = clip.maskKeyframes,
         speed = clip.speed,
+        color = clip.color,
         sourceSpanUs = clip.source?.let { it.outPointUs - it.inPointUs } ?: 0,
         effects = clip.effects,
         mask = clip.mask,

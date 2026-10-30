@@ -103,4 +103,47 @@
     <string name="effects_pixels">%d px</string>
     <string name="effects_mask_keyframe_add">Add mask keyframe at %1$s</string>
     <string name="effects_mask_keyframe_delete">Delete mask keyframe at %1$s</string>
+    <!-- Color board (#28) -->
+    <string name="effects_color_title">Color</string>
+    <string name="effects_color_subtitle">%1$s · L%2$d</string>
+    <string name="effects_color_before">Before</string>
+    <string name="effects_color_after">After</string>
+    <string name="effects_color_tab_adjust">Adjust</string>
+    <string name="effects_color_tab_hsl">HSL</string>
+    <string name="effects_color_tab_lut">LUT</string>
+    <string name="effects_color_exposure">Exposure</string>
+    <string name="effects_color_contrast">Contrast</string>
+    <string name="effects_color_saturation">Saturation</string>
+    <string name="effects_color_temperature">Temperature</string>
+    <string name="effects_color_tint">Tint</string>
+    <string name="effects_color_vignette">Vignette</string>
+    <string name="effects_color_hue">Hue</string>
+    <string name="effects_color_luminance">Luminance</string>
+    <string name="effects_color_hue_reds">Reds</string>
+    <string name="effects_color_hue_oranges">Oranges</string>
+    <string name="effects_color_hue_yellows">Yellows</string>
+    <string name="effects_color_hue_greens">Greens</string>
+    <string name="effects_color_hue_aquas">Aquas</string>
+    <string name="effects_color_hue_blues">Blues</string>
+    <string name="effects_color_hue_purples">Purples</string>
+    <string name="effects_color_hue_magentas">Magentas</string>
+    <string name="effects_color_hsl_hint">Adjusting %1$s only, for example skin tones or sky</string>
+    <string name="effects_color_lut_none">None</string>
+    <string name="effects_color_lut_built_in">Built-in</string>
+    <string name="effects_color_lut_imported">Imported</string>
+    <string name="effects_color_lut_teal_orange">Teal and orange</string>
+    <string name="effects_color_lut_warm_film">Warm film</string>
+    <string name="effects_color_lut_cool_night">Cool night</string>
+    <string name="effects_color_lut_silver_mono">Silver mono</string>
+    <string name="effects_color_lut_faded">Faded</string>
+    <string name="effects_color_lut_import">+ Import .cube</string>
+    <string name="effects_color_lut_failed">That file isn\'t a 3D .cube LUT. Tap to hide.</string>
+    <string name="effects_color_strength">Strength</string>
+    <string name="effects_color_percent">%1$d%%</string>
+    <string name="effects_color_auto">Auto</string>
+    <string name="effects_color_reset">Reset</string>
+    <plurals name="effects_color_paste">
+        <item quantity="one">Paste to %d clip</item>
+        <item quantity="other">Paste to %d clips</item>
+    </plurals>
 </resources>
