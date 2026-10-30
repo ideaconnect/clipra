@@ -155,16 +155,6 @@ class Cutouts @Inject constructor(
         }
     }
 
-    /** [frame] turned upright when the decoder left the video's rotation to the player. */
-    private fun upright(frame: Bitmap, asset: MediaAsset): Bitmap {
-        val shown = asset.displaySize
-        val turned = asset.rotation % 180 != 0 && shown.width > 0 &&
-            (frame.width > frame.height) != (shown.width > shown.height)
-        if (!turned) return frame
-        val matrix = Matrix().apply { postRotate(asset.rotation.toFloat()) }
-        return Bitmap.createBitmap(frame, 0, 0, frame.width, frame.height, matrix, true)
-    }
-
     /** Masks one frame after another, each steadied by the last. */
     private class MaskMaker(private val segmenter: SelfieSegmenter) {
         private val size = SelfieSegmenter.SIZE
@@ -247,4 +237,14 @@ class CutoutWorker @AssistedInject constructor(
                 .enqueueUniqueWork("cutout-${asset.id}", ExistingWorkPolicy.KEEP, request)
         }
     }
+}
+
+/** [frame] turned upright when the decoder left the video's rotation to the player. */
+internal fun upright(frame: Bitmap, asset: MediaAsset): Bitmap {
+    val shown = asset.displaySize
+    val turned = asset.rotation % 180 != 0 && shown.width > 0 &&
+        (frame.width > frame.height) != (shown.width > shown.height)
+    if (!turned) return frame
+    val matrix = Matrix().apply { postRotate(asset.rotation.toFloat()) }
+    return Bitmap.createBitmap(frame, 0, 0, frame.width, frame.height, matrix, true)
 }

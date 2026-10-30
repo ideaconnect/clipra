@@ -15,7 +15,8 @@ Keep this list in sync with the build. Every entry needs a license that is compa
 | libebur128 (if used) | Loudness measurement | MIT |
 | LiteRT (`com.google.ai.edge.litert:litert` 2.3.0, with `litert-api`) | Runs the MediaPipe vision models (`ml:vision`); no telemetry | Apache-2.0 |
 | MediaPipe selfie segmenter (`image_segmenter/selfie_segmenter/float16/1`, built into the APK, SHA-256 checked at build time) | Person cutout | Apache-2.0 |
-| MediaPipe face detector and object detector models | Face follow, reframe (planned) | Apache-2.0 |
+| MediaPipe face detector (`face_detector/blaze_face_short_range/float16/1`, built into the APK, SHA-256 checked at build time) | Face follow (#52), reframe | Apache-2.0 |
+| MediaPipe object detector model | Subject follow (planned) | Apache-2.0 |
 | OpenCV (core, imgproc, video, calib3d only) | Motion tracking for Stabilize | Apache-2.0 (4.5.0 and later) |
 | ML Kit Translation | Offline translation | Google APIs Terms of Service |
 | Google Mobile Ads Next-Gen SDK (`com.google.android.libraries.ads.mobile.sdk:ads-mobile-sdk` 1.5.0, with Play services, Cronet, Gson, Guava, OkHttp and Tink, all Apache-2.0 or BSD) | Export interstitials (`monetization`) | Google Mobile Ads SDK terms |

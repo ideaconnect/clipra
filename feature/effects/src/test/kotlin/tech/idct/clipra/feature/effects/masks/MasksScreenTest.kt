@@ -1,7 +1,10 @@
 package tech.idct.clipra.feature.effects.masks
 
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
@@ -67,13 +70,26 @@ class MasksScreenTest {
     private val shapes = mutableListOf<MaskShape>()
     private val masks = mutableListOf<Mask>()
 
-    private fun show(mask: Mask, locale: Locale = Locale.US) {
+    private val follows = mutableListOf<Boolean>()
+
+    private fun show(
+        mask: Mask,
+        locale: Locale = Locale.US,
+        tracking: Float? = null,
+        noFace: Boolean = false,
+    ) {
         Locale.setDefault(locale)
         val project = project(mask)
         compose.setContent {
             ClipraTheme {
                 MasksScreen(
-                    state = MasksUiState(project, project.layers[0].clips[0], loaded = true),
+                    state = MasksUiState(
+                        project,
+                        project.layers[0].clips[0],
+                        loaded = true,
+                        tracking = tracking,
+                        noFace = noFace,
+                    ),
                     mask = mask,
                     blockSize = 0.08f,
                     actions = MasksActions(
@@ -84,6 +100,7 @@ class MasksScreenTest {
                         onMaskDone = {},
                         onBlockSizeLive = {},
                         onBlockSizeDone = {},
+                        onFollowFace = { follows += it },
                     ),
                     preview = {},
                 )
@@ -124,5 +141,34 @@ class MasksScreenTest {
         compose.onNodeWithText("Outside rectangle · feather 43").assertExists()
         compose.onNodeWithTag("mask-radius").assertExists()
         compose.onRoot().captureRoboImage(roborazziOptions = options)
+    }
+
+    // Follow face (#52).
+
+    @Test
+    fun followingTheFace() {
+        val following = Mask(MaskShape.Oval, feather = 0.01f, followFace = true)
+        show(following)
+        compose.onNodeWithText("Tracking face · feather 11").assertExists()
+        compose.onNodeWithText("Tracked on the phone, frame by frame").assertExists()
+        compose.onNodeWithTag("mask-follow-face").assertIsOn()
+        compose.onRoot().captureRoboImage(roborazziOptions = options)
+        compose.onNodeWithTag("mask-follow-face").performClick()
+        assertEquals(listOf(false), follows)
+    }
+
+    @Test
+    fun trackingShowsHowFarItIs() {
+        show(Mask(MaskShape.Oval), tracking = 0.4f)
+        compose.onAllNodesWithText("Tracking face 40%").assertCountEquals(2)
+        compose.onNodeWithTag("mask-follow-face").assertIsOn()
+    }
+
+    @Test
+    fun noFaceFound() {
+        show(Mask(MaskShape.Oval), noFace = true)
+        compose.onNodeWithText("No face found in this clip").assertExists()
+        compose.onNodeWithTag("mask-follow-face").performClick()
+        assertEquals(listOf(true), follows)
     }
 }

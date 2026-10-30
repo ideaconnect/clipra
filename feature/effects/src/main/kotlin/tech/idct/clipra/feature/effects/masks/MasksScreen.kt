@@ -14,7 +14,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -29,9 +31,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import tech.idct.clipra.core.designsystem.ClipraTheme
@@ -67,6 +72,8 @@ class MasksActions(
     val onBlockSizeDone: () -> Unit,
     /** Adds a mask keyframe at the playhead, or deletes the one there (#21). */
     val onKeyframe: () -> Unit = {},
+    /** Follow face (#52) on or off. */
+    val onFollowFace: (Boolean) -> Unit = {},
 )
 
 /**
@@ -141,7 +148,7 @@ fun MasksScreen(
                     transform = clip.transformAt(state.playheadUs - clip.startUs),
                     frame = project.format.outputSize,
                     source = asset?.displaySize ?: Size(0, 0),
-                    chip = chipText(mask, outputShortSide),
+                    chip = chipText(mask, outputShortSide, state.tracking),
                     onChange = actions.onMaskLive,
                     onCommit = actions.onMask,
                     cell = Cells.rect(project.format, clip.cell),
@@ -249,48 +256,109 @@ fun MasksScreen(
                             .testTag("mask-radius"),
                     )
                 }
-                MaskKeyframe(clip, state.playheadUs, actions.onKeyframe)
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    FollowFace(
+                        on = mask.followFace || state.tracking != null,
+                        tracking = state.tracking,
+                        noFace = state.noFace,
+                        onFollowFace = actions.onFollowFace,
+                        modifier = Modifier.weight(1f),
+                    )
+                    MaskKeyframe(clip, state.playheadUs, actions.onKeyframe)
+                }
             }
         }
     }
 }
 
-/** "Add mask keyframe at 00:07.12" (Masks board, #21), or delete the one at the playhead. */
+/**
+ * Follow face (#52): a switch with how it stands, "Tracked on the phone, frame by frame", how
+ * far the tracking is, or that no face was found.
+ */
+@Composable
+private fun FollowFace(
+    on: Boolean,
+    tracking: Float?,
+    noFace: Boolean,
+    onFollowFace: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colors = ClipraTheme.colors
+    // The whole card toggles, as a switch row does.
+    Row(
+        modifier = modifier
+            .height(64.dp)
+            .clip(ClipraTheme.shapes.button)
+            .background(colors.surface)
+            .toggleable(value = on, role = Role.Switch, onValueChange = onFollowFace)
+            .padding(start = 12.dp, end = 4.dp)
+            .testTag("mask-follow-face"),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = stringResource(R.string.effects_mask_follow_face),
+                style = ClipraTheme.typography.bodyStrong,
+                color = colors.textPrimary,
+            )
+            Text(
+                text = when {
+                    tracking != null -> stringResource(
+                        R.string.effects_mask_tracking,
+                        (tracking * 100).roundToInt(),
+                    )
+
+                    noFace -> stringResource(R.string.effects_mask_no_face)
+
+                    else -> stringResource(R.string.effects_mask_follow_face_note)
+                },
+                style = ClipraTheme.typography.caption,
+                color = if (noFace && tracking == null) colors.danger else colors.textSecondary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.testTag("mask-follow-note"),
+            )
+        }
+        ClipraSwitch(checked = on, onCheckedChange = null)
+    }
+}
+
+/** A keyframe at the playhead (Masks board, #21): add one, or delete the one there. */
 @Composable
 private fun MaskKeyframe(clip: Clip, playheadUs: Long, onKeyframe: () -> Unit) {
     val colors = ClipraTheme.colors
     val time = playheadUs - clip.startUs
     val keyed = clip.maskKeyframed?.keyframeAt(time) != null
-    Row(
+    val label = if (keyed) {
+        R.string.effects_mask_keyframe_delete
+    } else {
+        R.string.effects_mask_keyframe_add
+    }
+    val description = stringResource(label, timecode(playheadUs))
+    Box(
         modifier = Modifier
-            .fillMaxWidth()
-            .height(48.dp)
+            .size(64.dp)
             .clip(ClipraTheme.shapes.button)
+            .background(if (keyed) colors.accentSelectedBackground else Color.Transparent)
             .border(1.5.dp, colors.accent, ClipraTheme.shapes.button)
             .clickable(
                 role = Role.Button,
                 enabled = time in 0..clip.durationUs,
+                onClickLabel = description,
                 onClick = onKeyframe,
             )
+            .semantics { contentDescription = description }
             .testTag("mask-keyframe"),
-        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-        verticalAlignment = Alignment.CenterVertically,
+        contentAlignment = Alignment.Center,
     ) {
         ClipraIcon(
             icon = ClipraIcons.Keyframe,
             contentDescription = null,
             tint = colors.accent,
-            size = 16.dp,
-        )
-        val label = if (keyed) {
-            R.string.effects_mask_keyframe_delete
-        } else {
-            R.string.effects_mask_keyframe_add
-        }
-        Text(
-            text = stringResource(label, timecode(playheadUs)),
-            style = ClipraTheme.typography.chip,
-            color = colors.accent,
+            size = 20.dp,
         )
     }
 }
@@ -362,11 +430,15 @@ private fun AppliesTo(
     }
 }
 
-/** "Inside oval · feather 43". */
+/** "Inside oval · feather 43", or "Tracking face · feather 12" (#52). */
 @Composable
-private fun chipText(mask: Mask, outputShortSide: Int): String {
+private fun chipText(mask: Mask, outputShortSide: Int, tracking: Float?): String {
+    if (tracking != null) {
+        return stringResource(R.string.effects_mask_tracking, (tracking * 100).roundToInt())
+    }
     val place = stringResource(
         when {
+            mask.followFace -> R.string.effects_mask_tracking_face
             mask.shape == MaskShape.Oval && mask.invert -> R.string.effects_mask_outside_oval
             mask.shape == MaskShape.Oval -> R.string.effects_mask_inside_oval
             mask.invert -> R.string.effects_mask_outside_rectangle

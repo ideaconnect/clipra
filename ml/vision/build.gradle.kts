@@ -45,12 +45,25 @@ abstract class DownloadModel : DefaultTask() {
         .joinToString("") { "%02x".format(it) }
 }
 
-// The MediaPipe selfie segmenter (Apache-2.0) from Google's model storage, pinned to its version
-// and checked with SHA-256, goes into the APK's assets at build time. It isn't kept in the
-// repository, and Clipra never hosts it.
-val segmenterUrl = "https://storage.googleapis.com/mediapipe-models/image_segmenter/" +
-    "selfie_segmenter/float16/1/selfie_segmenter.tflite"
-val segmenterSha256 = "191ac9529ae506ee0beefa6b2c945a172dab9d07d1e802a290a4e4038226658b"
+// The MediaPipe models (Apache-2.0) from Google's model storage, pinned to their versions and
+// checked with SHA-256, go into the APK's assets at build time. They aren't kept in the
+// repository, and Clipra never hosts them.
+data class VisionModel(val file: String, val path: String, val sha256: String)
+
+val models = listOf(
+    // Person cutout (#50).
+    VisionModel(
+        "selfie_segmenter.tflite",
+        "image_segmenter/selfie_segmenter/float16/1",
+        "191ac9529ae506ee0beefa6b2c945a172dab9d07d1e802a290a4e4038226658b",
+    ),
+    // Face follow (#52).
+    VisionModel(
+        "blaze_face_short_range.tflite",
+        "face_detector/blaze_face_short_range/float16/1",
+        "b4578f35940bf5a1a655214a1cce5cab13eba73c1297cd78e1a04c2380b0152f",
+    ),
+)
 
 android {
     namespace = "tech.idct.clipra.ml.vision"
@@ -68,13 +81,19 @@ android {
 androidComponents {
     onVariants { variant ->
         val name = variant.name.replaceFirstChar { it.uppercase() }
-        val task = tasks.register<DownloadModel>("download${name}VisionModels") {
-            url.set(segmenterUrl)
-            sha256.set(segmenterSha256)
-            assetPath.set("models/selfie_segmenter.tflite")
-            cache.set(layout.buildDirectory.file("models-cache/selfie_segmenter.tflite"))
+        for (model in models) {
+            val id = model.file.substringBefore('.').split('_')
+                .joinToString("") { part -> part.replaceFirstChar { it.uppercase() } }
+            val task = tasks.register<DownloadModel>("download${name}$id") {
+                url.set(
+                    "https://storage.googleapis.com/mediapipe-models/${model.path}/${model.file}",
+                )
+                sha256.set(model.sha256)
+                assetPath.set("models/${model.file}")
+                cache.set(layout.buildDirectory.file("models-cache/${model.file}"))
+            }
+            variant.sources.assets?.addGeneratedSourceDirectory(task, DownloadModel::outputDir)
         }
-        variant.sources.assets?.addGeneratedSourceDirectory(task, DownloadModel::outputDir)
     }
 }
 

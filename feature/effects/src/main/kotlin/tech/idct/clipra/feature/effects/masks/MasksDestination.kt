@@ -68,6 +68,7 @@ internal fun MasksDestination(onDone: () -> Unit, viewModel: MasksViewModel = hi
             },
             onBlockSizeDone = { liveBlock?.let(viewModel::setBlockSize) },
             onKeyframe = viewModel::toggleKeyframe,
+            onFollowFace = viewModel::followFace,
         ),
         preview = {
             VideoSurface(
