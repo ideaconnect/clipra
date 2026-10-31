@@ -106,6 +106,7 @@
     <string name="captions_translated">Captions in %1$s added</string>
     <string name="captions_translate_failed">Couldn\'t translate the captions. Try again.</string>
     <string name="captions_saved_srt">Captions saved</string>
+    <string name="captions_not_saved_srt">Couldn\'t save the captions there</string>
     <plurals name="captions_imported">
         <item quantity="one">Imported %1$d caption</item>
         <item quantity="other">Imported %1$d captions</item>

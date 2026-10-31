@@ -329,6 +329,8 @@ fun CaptionsEditScreen(
 internal fun messageText(message: CaptionsMessage): String = when (message) {
     CaptionsMessage.Saved -> stringResource(R.string.captions_saved_srt)
 
+    CaptionsMessage.NotSaved -> stringResource(R.string.captions_not_saved_srt)
+
     is CaptionsMessage.Imported ->
         pluralStringResource(R.plurals.captions_imported, message.count, message.count)
 
