@@ -821,6 +821,9 @@ private fun KeyframeMarker(
     val colors = ClipraTheme.colors
     val density = LocalDensity.current
     var offset by remember { mutableFloatStateOf(0f) }
+    // The gestures outlive a recomposition; they call the marker's latest callbacks.
+    val currentOnTap by rememberUpdatedState(onTap)
+    val currentOnMoved by rememberUpdatedState(onMoved)
     val label = stringResource(R.string.editor_keyframe_marker)
     val touch = 28f
     Box(
@@ -828,7 +831,7 @@ private fun KeyframeMarker(
             .offset(x = (x + offset - touch / 2).dp, y = (laneHeight - touch).dp)
             .size(touch.dp)
             .semantics { contentDescription = label }
-            .pointerInput(Unit) { detectTapGestures(onTap = { onTap() }) }
+            .pointerInput(Unit) { detectTapGestures(onTap = { currentOnTap() }) }
             .pointerInput(Unit) {
                 detectDragGestures(
                     onDrag = { change, amount ->
@@ -836,7 +839,7 @@ private fun KeyframeMarker(
                         offset += with(density) { amount.x.toDp().value }
                     },
                     onDragEnd = {
-                        onMoved(offset)
+                        currentOnMoved(offset)
                         offset = 0f
                     },
                     onDragCancel = { offset = 0f },
@@ -864,6 +867,9 @@ private fun TrimHandle(
 ) {
     val colors = ClipraTheme.colors
     val density = LocalDensity.current
+    // The gesture outlives a recomposition, so it calls the latest [onDrag]: one made for the
+    // clip as it was would trim from where its edge used to be (a second trim was refused).
+    val currentOnDrag by rememberUpdatedState(onDrag)
     val label = stringResource(if (start) R.string.editor_trim_start else R.string.editor_trim_end)
     Box(
         modifier = Modifier
@@ -883,9 +889,9 @@ private fun TrimHandle(
                 detectDragGestures(
                     onDrag = { change, amount ->
                         change.consume()
-                        onDrag(with(density) { amount.x.toDp().value }, false)
+                        currentOnDrag(with(density) { amount.x.toDp().value }, false)
                     },
-                    onDragEnd = { onDrag(0f, true) },
+                    onDragEnd = { currentOnDrag(0f, true) },
                 )
             }
             .testTag(if (start) "trim-start" else "trim-end"),
