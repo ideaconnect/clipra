@@ -28,6 +28,7 @@ import kotlinx.coroutines.withContext
 import tech.idct.clipra.core.engine.media.Cutouts
 import tech.idct.clipra.core.engine.media.MediaCache
 import tech.idct.clipra.core.engine.media.ProjectMediaResolver
+import tech.idct.clipra.core.engine.media.ReversedSounds
 import tech.idct.clipra.core.engine.media.SoundAnalyzer
 import tech.idct.clipra.core.engine.media.VoiceCleaner
 import tech.idct.clipra.core.engine.render.CompositionFactory
@@ -62,7 +63,8 @@ class ExportFailedException(val failure: ExportFailure, cause: Throwable? = null
  * Renders a project from its original media (#57): the same layer compositor as the preview, at
  * the export size, frame rate, codec and bitrate of [ExportSettings], with Transformer. The video
  * is written to a cache file, then published to MediaStore in Movies/Clipra. Cleaned voices
- * (#39) that are not ready yet are made first, so the export never has the noisy sound.
+ * (#39) and reversed clips' sound (#22) that are not ready yet are made first, so the export
+ * never has the noisy sound or a silent reversed clip.
  */
 @OptIn(UnstableApi::class)
 class ExportRenderer(
@@ -71,6 +73,8 @@ class ExportRenderer(
     private val voices: VoiceCleaner? = null,
     private val cutouts: Cutouts? = null,
 ) {
+    private val reversedSounds = ReversedSounds(context, cache)
+
     /** The rendered file, before it is published. */
     data class Rendered(val file: File, val width: Int, val height: Int)
 
@@ -87,6 +91,8 @@ class ExportRenderer(
         val size = settings.outputSize(project)
         voices?.let { prepareVoices(it, project) }
         cutouts?.let { prepareCutouts(it, project) }
+        // After the voices: a reversed clip plays its cleaned voice back to front.
+        withContext(Dispatchers.IO) { reversedSounds.requestAll(project) }
         val timeline = timeline(project, settings)
         val composition = withContext(Dispatchers.IO) {
             CompositionFactory.create(

@@ -36,6 +36,12 @@ interface MediaResolver {
     /** The sound of [asset] after AI voice cleanup (#39), once it is ready; null until then. */
     fun voice(asset: MediaAsset, cleanup: VoiceCleanup?, noise: Float?): String? = null
 
+    /**
+     * The sound of [asset], or of its cleaned [voice], from [fromUs] to [toUs] played back to
+     * front (#22), once it is made; null until then.
+     */
+    fun reversedSound(asset: MediaAsset, voice: String?, fromUs: Long, toUs: Long): String? = null
+
     /** A caption (#45) at [width] × [height] with word [current] spoken (-1: none). */
     fun caption(caption: CaptionSpec, current: Int, width: Int, height: Int): Bitmap? = null
 
@@ -327,6 +333,12 @@ object ProjectRender {
         } else {
             null
         }
+        // A reversed clip (#22) plays its sound back to front once that is made.
+        val reversed = if (clip.speed.reverse) {
+            media.reversedSound(asset, voice, ref.inPointUs, ref.outPointUs)
+        } else {
+            null
+        }
         // A chroma key (#51) at once; people cut out (#50) once the masks are made, the whole
         // picture until then.
         val cutout = clip.cutout?.let { settings ->
@@ -338,7 +350,8 @@ object ProjectRender {
         }
         // Steadied (#54) once the media is analysed, over the part the clip plays.
         val stabilized = clip.stabilize?.let { media.cameraMotion(asset)?.over(clip) }
-        return renderClipOf(clip, source, voice, cutout).copy(stabilized = stabilized)
+        return renderClipOf(clip, source, voice, cutout)
+            .copy(stabilized = stabilized, reversedSoundPath = reversed)
     }
 
     private fun renderClipOf(

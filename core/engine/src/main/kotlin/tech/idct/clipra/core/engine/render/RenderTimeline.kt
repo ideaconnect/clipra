@@ -99,6 +99,11 @@ data class RenderClip(
      * lined up with the source from its start.
      */
     val voicePath: String? = null,
+    /**
+     * A reversed clip's sound (#22), back to front: the [sourceSpanUs] it plays, from the
+     * source's or the cleaned voice's, starting at the clip's last moment.
+     */
+    val reversedSoundPath: String? = null,
     /** The mosaic cell (#17) the clip is laid out in and cut to; null for the whole frame. */
     val cell: CellRect? = null,
     /** The colour grade (#28), before the filters, and its LUT read from its file. */
@@ -147,6 +152,10 @@ data class RenderClip(
     /** The media offset from the source's in point that plays at [timeUs] (timeline time). */
     fun sourceOffsetAt(timeUs: Long): Long =
         SpeedCurve.sourceOffset(speed, sourceSpanUs, timeUs - startUs)
+
+    /** How much media the clip has played by [timeUs], whichever way it plays. */
+    fun playedOffsetAt(timeUs: Long): Long =
+        SpeedCurve.forwardOffset(speed, sourceSpanUs, timeUs - startUs)
 
     /** Opacity at [timeUs], including the dissolve in, starting from [base]. */
     fun opacityAt(timeUs: Long, base: Float = opacity): Float {

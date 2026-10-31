@@ -142,7 +142,7 @@
     <string name="editor_speed_custom_end">Koniec</string>
     <string name="editor_speed_value">%1$s×</string>
     <string name="editor_speed_reverse">Odwróć</string>
-    <string name="editor_speed_reverse_detail">Odtwarza klip od końca, bez dźwięku.</string>
+    <string name="editor_speed_reverse_detail">Odtwarza klip od końca, razem z dźwiękiem.</string>
     <string name="editor_speed_pitch">Wysokość dźwięku nie zmienia się przy zmianie prędkości.</string>
 
     <!-- Stabilize sheet (#54) -->

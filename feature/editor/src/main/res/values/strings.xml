@@ -140,7 +140,7 @@
     <string name="editor_speed_custom_end">End</string>
     <string name="editor_speed_value">%1$s×</string>
     <string name="editor_speed_reverse">Reverse</string>
-    <string name="editor_speed_reverse_detail">Plays the clip backwards, without its sound.</string>
+    <string name="editor_speed_reverse_detail">Plays the clip backwards, its sound too.</string>
     <string name="editor_speed_pitch">Pitch is kept when speed changes.</string>
 
     <!-- Stabilize sheet (#54) -->

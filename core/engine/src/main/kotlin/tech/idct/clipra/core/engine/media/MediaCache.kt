@@ -59,6 +59,13 @@ class MediaCache(private val root: File) {
         return File(root, "voice/$mediaId$cleaned-gate$percent.wav")
     }
 
+    /**
+     * A reversed clip's sound (#22): [key]'s sound (`ReversedSounds.key`) from [fromUs] to [toUs]
+     * of the media, back to front.
+     */
+    fun reversedSound(key: String, fromUs: Long, toUs: Long): File =
+        File(root, "reversed/$key-$fromUs-$toUs.wav")
+
     /** Where [mediaId] speaks (#40), as microsecond ranges, one per line. */
     fun speech(mediaId: String): File = File(root, "analysis/$mediaId.speech")
 

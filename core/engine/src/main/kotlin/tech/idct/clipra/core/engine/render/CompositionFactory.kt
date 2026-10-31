@@ -66,11 +66,12 @@ object CompositionFactory {
         durationUs: Long,
     ): EditedMediaItemSequence? {
         if (layer.muted) return null
-        // A held frame (rate 0) and a reversed clip are silent; other speeds and ramps play
-        // their sound at the clip's speed with its pitch kept (#22). Clips turned all the way
-        // down (such as a video whose sound was extracted) add nothing.
+        // A held frame (rate 0) is silent; other speeds and ramps play their sound at the
+        // clip's speed with its pitch kept, a reversed clip back to front once that sound is
+        // made (#22). Clips turned all the way down (such as a video whose sound was
+        // extracted) add nothing.
         val clips = layer.clips.filter {
-            it.soundSource() != null && it.audio.volume > 0f && !it.speed.reverse &&
+            it.soundSource() != null && it.audio.volume > 0f &&
                 (it.speed.rate > 0 || it.speed.ramp != null)
         }.sortedBy { it.startUs }
         if (clips.isEmpty()) return null
@@ -83,7 +84,8 @@ object CompositionFactory {
             // outgoing clip ends.
             val start = maxOf(clip.startUs, position)
             if (start >= clip.endUs) continue
-            val skipUs = clip.sourceOffsetAt(start)
+            // A reversed sound starts at the clip's last moment, so it plays forwards too.
+            val skipUs = clip.playedOffsetAt(start)
             val item = MediaItem.Builder()
                 .setUri(MediaSources.uri(path))
                 .setClippingConfiguration(
@@ -117,13 +119,17 @@ object CompositionFactory {
         return sequence.build()
     }
 
-    private fun RenderClip.soundSource(): Pair<String, Long>? = when (val source = source) {
-        is RenderSource.Video ->
-            if (source.hasAudio) (voicePath ?: source.path) to source.inPointUs else null
+    private fun RenderClip.soundSource(): Pair<String, Long>? {
+        // A reversed clip (#22) plays its own back-to-front file, from its start.
+        if (speed.reverse) return reversedSoundPath?.let { it to 0L }
+        return when (val source = source) {
+            is RenderSource.Video ->
+                if (source.hasAudio) (voicePath ?: source.path) to source.inPointUs else null
 
-        is RenderSource.Audio -> (voicePath ?: source.path) to source.inPointUs
+            is RenderSource.Audio -> (voicePath ?: source.path) to source.inPointUs
 
-        is RenderSource.Image, is RenderSource.Drawn, RenderSource.Adjustment -> null
+            is RenderSource.Image, is RenderSource.Drawn, RenderSource.Adjustment -> null
+        }
     }
 
     private fun fileDurationUs(context: Context, path: String): Long {
