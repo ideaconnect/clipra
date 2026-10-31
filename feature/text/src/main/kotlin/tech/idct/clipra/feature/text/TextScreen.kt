@@ -168,25 +168,8 @@ fun TextScreen(
                     .padding(top = 12.dp, bottom = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    TextField(draft, actions.onDraft, Modifier.weight(1f))
-                    FontButton(spec, onFont = { actions.onSpec(spec.copy(font = it)) })
-                    AlignButton(spec.align, onAlign = { actions.onSpec(spec.copy(align = it)) })
-                }
-                Swatches(
-                    title = stringResource(R.string.text_card_color),
-                    selected = spec.background,
-                    allowNone = true,
-                    onPick = { actions.onSpec(spec.copy(background = it)) },
-                    tag = "card-color",
-                )
-                Swatches(
-                    title = stringResource(R.string.text_color),
-                    selected = spec.color,
-                    allowNone = false,
-                    onPick = { it?.let { color -> actions.onSpec(spec.copy(color = color)) } },
-                    tag = "text-color",
-                )
+                TextWords(spec, draft, actions)
+                TextColorPickers(spec, actions)
                 EffectGrid(spec, onEffect = { actions.onSpec(spec.copy(effect = it)) })
                 TemplateGrid(
                     spec = spec,
@@ -195,54 +178,8 @@ fun TextScreen(
                     onSave = actions.onSaveTemplate,
                     onDelete = actions.onDeleteTemplate,
                 )
-                val animation = clip.animation ?: Animation()
-                AnimationRow(
-                    title = stringResource(R.string.text_animation_in),
-                    choices = Animations.textIn,
-                    selected = animation.enter,
-                    onPick = { actions.onAnimation(animation.copy(enter = it)) },
-                    tag = "text-in",
-                )
-                AnimationRow(
-                    title = stringResource(R.string.text_animation_out),
-                    choices = Animations.textOut,
-                    selected = animation.exit,
-                    onPick = { actions.onAnimation(animation.copy(exit = it)) },
-                    tag = "text-out",
-                )
-                var size by remember(spec.size) { mutableFloatStateOf(spec.size) }
-                LabelledSlider(
-                    label = stringResource(R.string.text_size),
-                    value = size,
-                    onValueChange = { size = it },
-                    onValueChangeFinished = { actions.onSpec(spec.copy(size = size)) },
-                    valueText = stringResource(
-                        R.string.text_pixels,
-                        (size * output.height).toInt(),
-                    ),
-                    valueRange = 0.02f..0.2f,
-                    labelWidth = 64.dp,
-                    modifier = Modifier
-                        .height(48.dp)
-                        .testTag("text-size"),
-                )
-                val weights = listOf(
-                    400 to R.string.text_weight_regular,
-                    500 to R.string.text_weight_medium,
-                    700 to R.string.text_weight_bold,
-                    800 to R.string.text_weight_heavy,
-                )
-                SegmentedControl(
-                    segments = weights.map { Segment(stringResource(it.second)) },
-                    selectedIndex = weights
-                        .indexOfFirst { it.first == spec.weight }
-                        .coerceAtLeast(0),
-                    onSelect = { actions.onSpec(spec.copy(weight = weights[it].first)) },
-                    style = SegmentedStyle.Tabs,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("text-weight"),
-                )
+                TextAnimations(clip.animation ?: Animation(), actions)
+                TextSizeAndWeight(spec, output.height, actions)
             }
         },
         previewHeight = 280.dp,
@@ -562,6 +499,87 @@ private fun CustomColor(initial: Long, onPick: (Long) -> Unit, onDismiss: () -> 
     )
 }
 
+/** The words, with the font and the alignment beside them. */
+@Composable
+internal fun TextWords(spec: TextSpec, draft: String, actions: TextActions) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        TextField(draft, actions.onDraft, Modifier.weight(1f))
+        FontButton(spec, onFont = { actions.onSpec(spec.copy(font = it)) })
+        AlignButton(spec.align, onAlign = { actions.onSpec(spec.copy(align = it)) })
+    }
+}
+
+/** The card colour (none for text over video) and the text colour. */
+@Composable
+internal fun TextColorPickers(spec: TextSpec, actions: TextActions) {
+    Swatches(
+        title = stringResource(R.string.text_card_color),
+        selected = spec.background,
+        allowNone = true,
+        onPick = { actions.onSpec(spec.copy(background = it)) },
+        tag = "card-color",
+    )
+    Swatches(
+        title = stringResource(R.string.text_color),
+        selected = spec.color,
+        allowNone = false,
+        onPick = { it?.let { color -> actions.onSpec(spec.copy(color = color)) } },
+        tag = "text-color",
+    )
+}
+
+/** Animation in and out (#33). */
+@Composable
+internal fun TextAnimations(animation: Animation, actions: TextActions) {
+    AnimationRow(
+        title = stringResource(R.string.text_animation_in),
+        choices = Animations.textIn,
+        selected = animation.enter,
+        onPick = { actions.onAnimation(animation.copy(enter = it)) },
+        tag = "text-in",
+    )
+    AnimationRow(
+        title = stringResource(R.string.text_animation_out),
+        choices = Animations.textOut,
+        selected = animation.exit,
+        onPick = { actions.onAnimation(animation.copy(exit = it)) },
+        tag = "text-out",
+    )
+}
+
+/** The size, in pixels of an output [outputHeight] high, and the weight. */
+@Composable
+internal fun TextSizeAndWeight(spec: TextSpec, outputHeight: Int, actions: TextActions) {
+    var size by remember(spec.size) { mutableFloatStateOf(spec.size) }
+    LabelledSlider(
+        label = stringResource(R.string.text_size),
+        value = size,
+        onValueChange = { size = it },
+        onValueChangeFinished = { actions.onSpec(spec.copy(size = size)) },
+        valueText = stringResource(R.string.text_pixels, (size * outputHeight).toInt()),
+        valueRange = 0.02f..0.2f,
+        labelWidth = 64.dp,
+        modifier = Modifier
+            .height(48.dp)
+            .testTag("text-size"),
+    )
+    val weights = listOf(
+        400 to R.string.text_weight_regular,
+        500 to R.string.text_weight_medium,
+        700 to R.string.text_weight_bold,
+        800 to R.string.text_weight_heavy,
+    )
+    SegmentedControl(
+        segments = weights.map { Segment(stringResource(it.second)) },
+        selectedIndex = weights.indexOfFirst { it.first == spec.weight }.coerceAtLeast(0),
+        onSelect = { actions.onSpec(spec.copy(weight = weights[it].first)) },
+        style = SegmentedStyle.Tabs,
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("text-weight"),
+    )
+}
+
 /** "00:11.00". */
 private fun timecode(us: Long): String {
     val hundredths = us / 10_000
@@ -573,7 +591,7 @@ private fun timecode(us: Long): String {
  * renderer that draws the clip, so each tile shows exactly what the effect does.
  */
 @Composable
-private fun EffectGrid(spec: TextSpec, onEffect: (String?) -> Unit) {
+internal fun EffectGrid(spec: TextSpec, onEffect: (String?) -> Unit) {
     val context = LocalContext.current
     val effects = listOf<String?>(null) + TextEffects.all
     val tiles = remember(spec.font, spec.weight, spec.color, spec.background) {

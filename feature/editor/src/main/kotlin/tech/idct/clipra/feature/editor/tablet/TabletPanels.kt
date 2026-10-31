@@ -1,0 +1,28 @@
+package tech.idct.clipra.feature.editor.tablet
+
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import tech.idct.clipra.core.model.Clip
+import tech.idct.clipra.feature.editor.EditorTool
+
+/**
+ * What a feature's panel in the tablet editor (#70) works on: the selected clip ([clipId], null
+ * when nothing is selected) at the editor's [playheadUs]. [onSelect] selects a clip the panel
+ * made, so the editor and its inspector move to it.
+ */
+class PanelScope(val clipId: String?, val playheadUs: Long, val onSelect: (String) -> Unit)
+
+/** A feature's panel, drawn in the tablet editor's pane given by its modifier. */
+typealias TabletPanel = @Composable (scope: PanelScope, modifier: Modifier) -> Unit
+
+/**
+ * The feature panels the app puts in the tablet editor (#70), so the feature modules stay apart
+ * and the editor's preview and timeline stay on screen (TabletText, TabletEffects and the other
+ * boards): a [library] on the left for a rail place, and an [inspector] on the right for a clip
+ * a feature edits. Without one the editor keeps its own: the media bin and the clip inspector,
+ * and a rail place opens its tool's screen.
+ */
+class TabletPanels(
+    val library: (EditorTool) -> TabletPanel? = { null },
+    val inspector: (Clip) -> TabletPanel? = { null },
+)
