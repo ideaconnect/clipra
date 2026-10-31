@@ -32,6 +32,10 @@ else()
   set(BUILD_ARCH armv8-a CACHE STRING "" FORCE)
 endif()
 
+# Each function and datum in its own section, so the linker can drop what translation never
+# reaches: Marian carries training, servers and formats Clipra doesn't use.
+add_compile_options(-ffunction-sections -fdata-sections)
+
 add_subdirectory(${MARIAN_SOURCE} marian EXCLUDE_FROM_ALL)
 
 add_library(clipra_translate SHARED marian_jni.cpp)
@@ -48,5 +52,12 @@ target_include_directories(clipra_translate PRIVATE
   ${MARIAN_SOURCE}/src/3rd_party
   ${CMAKE_BINARY_DIR}/marian/src)
 target_link_libraries(clipra_translate PRIVATE marian log)
+# Only the JNI functions are exported; the rest of Marian stays inside the library, where the
+# linker drops what is unused and folds identical code.
+set_target_properties(clipra_translate PROPERTIES CXX_VISIBILITY_PRESET hidden)
 # Android 15 and later run on devices with 16 KB memory pages (ADR 0003).
-target_link_options(clipra_translate PRIVATE "-Wl,-z,max-page-size=16384")
+target_link_options(clipra_translate PRIVATE
+  "-Wl,-z,max-page-size=16384"
+  "-Wl,--gc-sections"
+  "-Wl,--exclude-libs,ALL"
+  "-Wl,--icf=all")
