@@ -15,6 +15,7 @@ import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.ceil
+import kotlin.math.roundToLong
 
 /**
  * The sound of reversed clips (#22), played back to front: the stretch of media a clip plays,
@@ -79,7 +80,9 @@ class ReversedSounds @Inject constructor(
     /**
      * Writes [source]'s sound from [fromUs] to [toUs] to [out], last sample first. The samples
      * go to a forward file first, then are copied back to front block by block, so a long clip
-     * never has to fit in memory.
+     * never has to fit in memory. Where the sound track doesn't cover the stretch (it may start
+     * after the picture or end before it), silence fills in, so the file always starts at
+     * [toUs] and lasts the whole stretch.
      */
     private fun reverse(source: String, fromUs: Long, toUs: Long, out: File): Boolean {
         out.parentFile?.mkdirs()
@@ -87,6 +90,7 @@ class ReversedSounds @Inject constructor(
         val part = File.createTempFile(out.name, ".part", out.parentFile)
         try {
             var bytes = ByteArray(0)
+            var firstUs = -1L
             val format = BufferedOutputStream(forward.outputStream(), BUFFER).use { pcm ->
                 AudioDecoder.decode(context, source, fromUs, toUs) { samples, count, f, timeUs ->
                     val frames = count / f.channels
@@ -97,6 +101,7 @@ class ReversedSounds @Inject constructor(
                     val first = frameAt(fromUs)
                     val last = frameAt(toUs)
                     if (last <= first) return@decode
+                    if (firstUs < 0) firstUs = timeUs + first * 1_000_000L / f.sampleRate
                     val values = (last - first) * f.channels
                     if (bytes.size < values * 2) bytes = ByteArray(values * 2)
                     ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer()
@@ -106,10 +111,15 @@ class ReversedSounds @Inject constructor(
             } ?: return false
             val frameBytes = format.channels * 2
             val frames = forward.length() / frameBytes
+            fun framesIn(us: Long) = (us * format.sampleRate / 1e6).roundToLong()
+            val head = if (firstUs < 0) 0 else framesIn(firstUs - fromUs).coerceAtLeast(0)
+            val tail = (framesIn(toUs - fromUs) - head - frames).coerceAtLeast(0)
             RandomAccessFile(forward, "r").use { input ->
                 BufferedOutputStream(part.outputStream(), BUFFER).use { output ->
-                    output.write(PcmWav.header(format.sampleRate, format.channels, frames))
+                    val total = tail + frames + head
+                    output.write(PcmWav.header(format.sampleRate, format.channels, total))
                     val block = ByteArray(BLOCK_FRAMES * frameBytes)
+                    output.silence(tail * frameBytes)
                     val backwards = ByteArray(block.size)
                     var end = frames
                     while (end > 0) {
@@ -128,12 +138,23 @@ class ReversedSounds @Inject constructor(
                         }
                         output.write(backwards, 0, count * frameBytes)
                     }
+                    output.silence(head * frameBytes)
                 }
             }
             return part.renameTo(out)
         } finally {
             forward.delete()
             part.delete()
+        }
+    }
+
+    private fun BufferedOutputStream.silence(bytes: Long) {
+        val zeros = ByteArray(BUFFER)
+        var left = bytes
+        while (left > 0) {
+            val count = minOf(left, zeros.size.toLong()).toInt()
+            write(zeros, 0, count)
+            left -= count
         }
     }
 

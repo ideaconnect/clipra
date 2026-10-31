@@ -86,12 +86,19 @@ object CompositionFactory {
             if (start >= clip.endUs) continue
             // A reversed sound starts at the clip's last moment, so it plays forwards too.
             val skipUs = clip.playedOffsetAt(start)
+            // A sound can end before the clip's media does: a cleaned voice covers only the
+            // sound track, which may stop short of the picture. Media3 refuses a clip past the
+            // file's end, so it plays to its end and the next gap keeps later clips in time.
+            val fileUs = fileDurationUs(context, path)
+            val mediaEndUs = inPointUs + clip.sourceSpanUs
+            val endUs = minOf(mediaEndUs, fileUs)
+            if (inPointUs + skipUs >= endUs) continue
             val item = MediaItem.Builder()
                 .setUri(MediaSources.uri(path))
                 .setClippingConfiguration(
                     MediaItem.ClippingConfiguration.Builder()
                         .setStartPositionUs(inPointUs + skipUs)
-                        .setEndPositionUs(inPointUs + clip.sourceSpanUs)
+                        .setEndPositionUs(endUs)
                         .build(),
                 )
                 .build()
@@ -107,13 +114,18 @@ object CompositionFactory {
             )
             val edited = EditedMediaItem.Builder(item)
                 .setRemoveVideo(true)
-                .setDurationUs(fileDurationUs(context, path))
+                .setDurationUs(fileUs)
                 .setEffects(Effects(listOf(gain), emptyList()))
             if (clip.speed.ramp != null || clip.speed.rate != 1.0) {
                 edited.setSpeed(SpeedParameters(ClipSpeed(clip, skipUs), true))
             }
             sequence.addItem(edited.build())
-            position = clip.endUs
+            position = if (endUs < mediaEndUs) {
+                clip.startUs +
+                    SpeedCurve.timelineOffset(clip.speed, clip.sourceSpanUs, endUs - inPointUs)
+            } else {
+                clip.endUs
+            }
         }
         if (position < durationUs) sequence.addGap(durationUs - position)
         return sequence.build()
