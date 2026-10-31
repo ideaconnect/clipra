@@ -78,6 +78,33 @@ class ReversedSoundsTest {
         assertEquals(file.path, timeline.layers.single().clips.single().reversedSoundPath)
     }
 
+    /** A sound track that ends before the picture: the reversed clip is silent until it starts. */
+    @Test
+    fun aStretchPastTheSoundStartsWithSilence() {
+        val asset = ramp().copy(durationUs = 1_500_000)
+        val clip = Clip(
+            "clip",
+            ClipType.Audio,
+            0,
+            1_000_000,
+            MediaRef(asset.id, 500_000, 1_500_000),
+            speed = Speed(reverse = true),
+        )
+
+        assertTrue(ReversedSounds(context, cache).prepare(project(asset, clip), clip))
+
+        val (_, samples) = read(cache.reversedSound(asset.id, 500_000, 1_500_000))
+        val frames = samples.size / 2
+        assertTrue("$frames frames", abs(frames - RATE) <= 1)
+        // The half second past the sound's end, then the sound's second half, backwards.
+        val silent = (0 until frames).first { samples[2 * it].toInt() != 0 }
+        assertTrue("silent for $silent frames", abs(silent - RATE / 2) <= 2)
+        val start = (RATE - 3 until RATE).first { ramp(it) == samples[2 * silent].toInt() }
+        for (k in 0 until frames - silent) {
+            assertEquals("left $k", ramp(start - k), samples[2 * (silent + k)].toInt())
+        }
+    }
+
     @Test
     fun aReversedVideoExportsWithItsSound() = runBlocking {
         val gray = File(root, "gray.mp4")
