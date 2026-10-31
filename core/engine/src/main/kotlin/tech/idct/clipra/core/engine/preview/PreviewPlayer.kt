@@ -52,10 +52,6 @@ class PreviewPlayer(private val context: Context, cache: MediaCache) {
     /** The current composition's gesture values; each rebuild starts without any. */
     private var live = LiveEdits()
 
-    /** The project shown, to rebuild when the preview comes back on screen. */
-    private var project: Project? = null
-    private var detached = false
-
     /** The Color board's before and after (#28), kept across rebuilds. */
     private val splits = HashMap<String, Float>()
 
@@ -78,7 +74,6 @@ class PreviewPlayer(private val context: Context, cache: MediaCache) {
     fun setProject(project: Project, positionUs: Long) {
         val size = previewSize(project.format)
         val timeline = ProjectRender.timeline(project, media, size.width, size.height)
-        this.project = project
         live = LiveEdits()
         splits.forEach { (clipId, split) -> live.setSplit(clipId, split) }
         player.setComposition(CompositionFactory.create(context, timeline, live = live))
@@ -88,17 +83,15 @@ class PreviewPlayer(private val context: Context, cache: MediaCache) {
     }
 
     /**
-     * Shows the preview on [surface], drawing the paused frame on it. A surface that comes back
-     * after [detach], or a new one (another view, as when the layout changes, #68), gets the
-     * composition rebuilt where it was: a paused frame isn't drawn again on it otherwise.
+     * Shows the preview on [surface] and draws the paused frame on it at once from the kept
+     * frame, without building the composition again: a surface that comes back after [detach],
+     * or a new one (another view, as when the layout changes, #68).
      */
     fun attach(surface: Surface, width: Int, height: Int) {
         if (released) return
-        val fresh = surface !== this.surface
         this.surface = surface
         player.setVideoSurface(surface, Size(width, height))
-        if (detached || fresh) project?.let { setProject(it, positionUs) } else redraw()
-        detached = false
+        redraw()
     }
 
     /**
@@ -108,7 +101,6 @@ class PreviewPlayer(private val context: Context, cache: MediaCache) {
     fun detach(gone: Surface) {
         // The screen may release the player before its view lets go of the surface.
         if (released || gone !== surface) return
-        detached = true
         // CompositionPlayer clears only the surface it was given.
         player.clearVideoSurface(gone)
         surface = null
