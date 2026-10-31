@@ -4,7 +4,7 @@ Keep this list in sync with the build. Every entry needs a license that is compa
 
 | Component | Use | License (to confirm at integration) |
 |---|---|---|
-| AndroidX (Activity, Navigation, Room, DataStore, WorkManager, Hilt extensions), Jetpack Compose with Material 3, Media3 | UI, navigation, storage, background work, media engine | Apache-2.0 |
+| AndroidX (Activity, Navigation, Room, DataStore, WorkManager, Hilt extensions, ProfileInstaller), Jetpack Compose with Material 3, Media3 | UI, navigation, storage, background work, media engine | Apache-2.0 |
 | Kotlin, kotlinx.coroutines, kotlinx.serialization | Language, async, JSON | Apache-2.0 |
 | Hilt / Dagger | Dependency injection | Apache-2.0 |
 | whisper.cpp v1.9.5 (ggml-org/whisper.cpp, release tarball checked with SHA-256 at build time) | Speech to text runtime (`ml:whisper`) | MIT |
@@ -46,6 +46,7 @@ Used to build and test the app; none of them ship in it.
 | Gradle, Android Gradle Plugin, Kotlin Gradle plugins, KSP | Build | Apache-2.0 |
 | JUnit 4 | Unit tests | EPL-1.0 (tests only, not distributed) |
 | AndroidX Test, Compose UI test, kotlinx-coroutines-test | Tests | Apache-2.0 |
+| AndroidX Benchmark (Macrobenchmark, baseline profiles), UiAutomator | Startup and editor benchmarks and the baseline profile (`benchmark`, #77) | Apache-2.0 |
 | Spotless Gradle plugin | Runs ktlint over the Kotlin sources | Apache-2.0 |
 | ktlint | Kotlin style check | MIT |
 | Robolectric | Runs Android code in JVM tests | MIT |

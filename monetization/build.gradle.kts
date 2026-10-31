@@ -46,6 +46,15 @@ android {
             manifestPlaceholders["adMobAppId"] = adMobAppId
             buildConfigField("String", "AD_UNIT_INTERSTITIAL", "\"$adUnitInterstitial\"")
         }
+        // The app's benchmark builds (#77): release code with Google's test ads, so they need
+        // none of Clipra's keys.
+        create("benchmark") {
+            initWith(getByName("release"))
+            matchingFallbacks += "release"
+            buildConfigField("String", "ADMOB_APP_ID", "\"$sampleAdMobAppId\"")
+            manifestPlaceholders["adMobAppId"] = sampleAdMobAppId
+            buildConfigField("String", "AD_UNIT_INTERSTITIAL", "\"$testAdUnitInterstitial\"")
+        }
     }
 
     buildFeatures {
@@ -54,9 +63,10 @@ android {
 }
 
 // Without the Play key a release build could never grant Pro, and without the AdMob ids it could
-// show no ads, so it is not built at all. Debug builds trust purchases when the key is
-// missing.
-val checkReleaseKeys = tasks.register("checkReleaseKeys") {
+// show no ads, so it is not built at all: the app's release build runs this check
+// (app/build.gradle.kts). Debug builds trust purchases when the key is missing; benchmark builds
+// grant nothing and show Google's test ads.
+tasks.register("checkReleaseKeys") {
     val playKey = playLicenseKey.isNotEmpty()
     val appId = adMobAppId.isNotEmpty()
     val unit = adUnitInterstitial.isNotEmpty()
@@ -65,9 +75,6 @@ val checkReleaseKeys = tasks.register("checkReleaseKeys") {
         check(appId) { "Set clipraAdMobAppId (the AdMob app id) to build a release" }
         check(unit) { "Set clipraAdUnitInterstitial (the export ad unit) to build a release" }
     }
-}
-tasks.configureEach {
-    if (name == "preReleaseBuild") dependsOn(checkReleaseKeys)
 }
 
 dependencies {
