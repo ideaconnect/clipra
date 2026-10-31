@@ -128,6 +128,9 @@ data class TranslateBusy(val language: String, val step: Step) {
 sealed interface CaptionsMessage {
     data object Saved : CaptionsMessage
 
+    /** The .srt file couldn't be written, as when the place picked is gone or read-only. */
+    data object NotSaved : CaptionsMessage
+
     /** The captions are in [language] now (#47). */
     data class Translated(val language: String) : CaptionsMessage
 
@@ -197,7 +200,7 @@ class CaptionsEditViewModel @Inject constructor(
         val project = state.value.project ?: return
         viewModelScope.launch {
             val saved = runCatching { SrtFiles.write(context, uri, project) }.isSuccess
-            say(if (saved) CaptionsMessage.Saved else CaptionsMessage.Unreadable)
+            say(if (saved) CaptionsMessage.Saved else CaptionsMessage.NotSaved)
         }
     }
 

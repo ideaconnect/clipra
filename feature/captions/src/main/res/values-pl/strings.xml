@@ -110,6 +110,7 @@
     <string name="captions_translate_failed">Nie udało się przetłumaczyć napisów. Spróbuj ponownie.</string>
     <string name="captions_import_srt">Importuj .srt</string>
     <string name="captions_saved_srt">Napisy zapisane</string>
+    <string name="captions_not_saved_srt">Nie udało się tam zapisać napisów</string>
     <plurals name="captions_imported">
         <item quantity="one">Zaimportowano %1$d napis</item>
         <item quantity="few">Zaimportowano %1$d napisy</item>
