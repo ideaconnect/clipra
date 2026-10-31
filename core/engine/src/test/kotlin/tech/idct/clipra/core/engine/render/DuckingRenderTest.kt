@@ -110,4 +110,44 @@ class DuckingRenderTest {
             }.all { it.ducks.isEmpty() },
         )
     }
+
+    /** Auto-duck under speech (TabletAudio board): the music goes down under every voice. */
+    @Test
+    fun musicSetToDuckUnderSpeechGoesDownUnderAnyVoice() {
+        val quiet = project.copy(
+            layers = listOf(
+                Layer(
+                    "L1",
+                    clips = listOf(music.copy(audio = AudioSettings(duckUnderSpeech = 9f))),
+                ),
+                // This voice ducks nothing itself.
+                Layer("L2", clips = listOf(voice.copy(audio = AudioSettings()))),
+            ),
+        )
+        val timeline = ProjectRender.timeline(quiet, media, 360, 640)
+
+        assertEquals(
+            listOf(RenderDuck(listOf(3 * sec..5 * sec), 9f)),
+            timeline.layers[0].clips.single().ducks,
+        )
+        assertTrue(timeline.layers[1].clips.single().ducks.isEmpty())
+    }
+
+    /** A voice that ducks the others and music that ducks under speech: the deeper wins. */
+    @Test
+    fun theDeeperDepthWins() {
+        for ((under, expected) in listOf(18f to 18f, 6f to 12f)) {
+            val both = project.copy(
+                layers = listOf(
+                    Layer(
+                        "L1",
+                        clips = listOf(music.copy(audio = AudioSettings(duckUnderSpeech = under))),
+                    ),
+                    Layer("L2", clips = listOf(voice)),
+                ),
+            )
+            val song = ProjectRender.timeline(both, media, 360, 640).layers[0].clips.single()
+            assertEquals(expected, song.ducks.single().depthDb)
+        }
+    }
 }

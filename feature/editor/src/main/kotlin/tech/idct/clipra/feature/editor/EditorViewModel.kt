@@ -209,6 +209,8 @@ class EditorViewModel @Inject constructor(
                     // Person masks (#50) and camera motion (#54) the cache lost.
                     cutouts.requestAll(session.project)
                     stabilizer.requestAll(session.project)
+                    // The speech a clip set to duck under all speech goes down for.
+                    analyzer.requestSpeech(session.project)
                 }
                 mutableState.update { state ->
                     state.copy(

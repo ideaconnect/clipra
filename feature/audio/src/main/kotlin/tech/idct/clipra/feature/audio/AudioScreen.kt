@@ -222,7 +222,7 @@ internal fun AudioControls(
     NormalizeCard(audio, state.measured, state.measuring, actions.onLoudnessTarget)
     NoiseReductionCard(audio.noiseReduction, noiseStrength, state.voice.gating, actions)
     VoiceCleanupCard(audio.voiceCleanup, strength, state.voice, actions)
-    DuckingCard(audio.ducking, duckingDepth, actions)
+    DuckingCard(state.project?.isMusic(clip) == true, audio, duckingDepth, actions)
     BeatsCard(audio.beats, state.voice.bpm, actions.onBeats)
     SecondaryButton(
         text = stringResource(R.string.audio_apply_all),
@@ -413,14 +413,28 @@ private fun NoiseReductionCard(
     }
 }
 
-/** Ducking (#40): the switch, as the design draws it, and how far the other clips go down. */
+/**
+ * Ducking (#40): the switch, as the design draws it, and how far the clips go down. A voice
+ * ducks the others (Audio board); music ducks under all speech (TabletAudio board).
+ */
 @Composable
-private fun DuckingCard(depth: Float?, liveDepth: Float?, actions: AudioActions) {
+private fun DuckingCard(
+    music: Boolean,
+    audio: AudioSettings,
+    liveDepth: Float?,
+    actions: AudioActions,
+) {
+    val depth = if (music) audio.duckUnderSpeech else audio.ducking
     val on = depth != null
     val db = liveDepth ?: depth ?: Ducking.DEFAULT_DB
     SwitchCard(
-        title = stringResource(R.string.audio_duck_title),
-        detail = stringResource(R.string.audio_duck_detail, db.roundToInt()),
+        title = stringResource(
+            if (music) R.string.audio_duck_under_title else R.string.audio_duck_title,
+        ),
+        detail = stringResource(
+            if (music) R.string.audio_duck_under_detail else R.string.audio_duck_detail,
+            db.roundToInt(),
+        ),
         on = on,
         onToggle = actions.onDucking,
         tag = "audio-duck",

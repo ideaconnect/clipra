@@ -113,7 +113,7 @@ Screens: `Audio`, `Audio--before`, `TabletAudio`, `TabletAudio--music-selected`.
 - Loudness normalization per clip: −14 LUFS (Social, YouTube), −16 LUFS (Podcast, voice), −23 LUFS (Broadcast, EBU R128); true peak limited to −1 dBTP.
 - Noise reduction: spectral gate for steady hum and hiss, with strength.
 - AI voice cleanup on the device: DeepFilterNet 3 (best, about 8 MB) or RNNoise (lite, older devices), with strength.
-- Ducking: lower other clips under speech (default −12 dB, range −3 to −24 dB).
+- Ducking: lower other clips under speech (default −12 dB, range −3 to −24 dB). On a voice it lowers the other clips while that voice speaks; on music it is "Auto-duck under speech", which lowers the music while any other clip speaks.
 - Beat markers on music; cuts snap to beats.
 - Record voiceover onto the first free layer at the playhead. Detach audio from a video clip to a free layer.
 - "Apply to all clips with speech".

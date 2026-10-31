@@ -207,10 +207,15 @@ class AudioViewModel @Inject constructor(
         process(clip.audio.copy(noiseReduction = strength))
     }
 
-    /** Turns ducking (#40) on, at 12 dB, or off; on, the clip's speech is found. */
+    /**
+     * Turns ducking (#40) on, at 12 dB, or off. A voice ducks the other clips, and its speech is
+     * found; music ducks under all speech (TabletAudio board), which the editor finds.
+     */
     fun setDucking(on: Boolean) {
         val clip = state.value.clip ?: return
-        setAudio(clip.audio.copy(ducking = if (on) Ducking.DEFAULT_DB else null))
+        val depth = if (on) Ducking.DEFAULT_DB else null
+        if (isMusic()) return setAudio(clip.audio.copy(duckUnderSpeech = depth, ducking = null))
+        setAudio(clip.audio.copy(ducking = depth))
         if (on) {
             asset()?.let { asset ->
                 appScope.launch(Dispatchers.IO) { analyzer.prepareSpeech(asset) }
@@ -218,12 +223,22 @@ class AudioViewModel @Inject constructor(
         }
     }
 
-    /** How far the other clips go down (3 to 24 dB), when the slider is let go. */
+    /** How far the clips go down (3 to 24 dB), when the slider is let go. */
     fun setDuckingDepth(db: Float) {
         val clip = state.value.clip ?: return
-        if (clip.audio.ducking == null) return
         val whole = kotlin.math.round(db).coerceIn(Ducking.MIN_DB, Ducking.MAX_DB)
+        if (isMusic()) {
+            if (clip.audio.duckUnderSpeech == null) return
+            return setAudio(clip.audio.copy(duckUnderSpeech = whole))
+        }
+        if (clip.audio.ducking == null) return
         setAudio(clip.audio.copy(ducking = whole))
+    }
+
+    private fun isMusic(): Boolean {
+        val current = state.value
+        val clip = current.clip ?: return false
+        return current.project?.isMusic(clip) == true
     }
 
     /** Turns beat markers (#40) on or off; on, the clip's beats are found. */

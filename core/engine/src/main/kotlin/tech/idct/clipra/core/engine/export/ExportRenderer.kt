@@ -271,7 +271,8 @@ class ExportRenderer(
                 ensureActive()
                 cleaner.prepare(asset, cleanup, noise) { !isActive }
             }
-            // The speech of every voice that ducks the others (#40).
+            // The speech of every voice that ducks the others (#40), and of every clip with
+            // sound when one ducks under all speech.
             val analyzer = SoundAnalyzer(cache, cleaner)
             for (clip in project.layers.flatMap { it.clips }) {
                 if (clip.audio.ducking == null) continue
@@ -279,6 +280,8 @@ class ExportRenderer(
                 ensureActive()
                 analyzer.prepareSpeech(asset)
             }
+            ensureActive()
+            analyzer.requestSpeech(project)
         }
 
     /** The person masks (#50) of every cut-out clip, made now where the background work hasn't. */

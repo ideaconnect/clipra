@@ -46,6 +46,8 @@
     <string name="audio_duck_detail">Inne klipy cichną o %1$d dB, gdy mówi</string>
     <string name="audio_duck_depth">Ścisz o</string>
     <string name="audio_duck_db">-%1$d dB</string>
+    <string name="audio_duck_under_title">Ściszaj pod mową</string>
+    <string name="audio_duck_under_detail">Cichnie o %1$d dB, gdy ktoś mówi</string>
     <string name="audio_beats_title">Znaczniki rytmu</string>
     <string name="audio_beats_detail">Zaznacza uderzenia; cięcia się do nich przyciągają</string>
     <string name="audio_beats_bpm">%1$d BPM · cięcia się przyciągają</string>

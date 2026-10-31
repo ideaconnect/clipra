@@ -1,14 +1,23 @@
 package tech.idct.clipra.core.engine.media
 
+import android.net.Uri
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
+import tech.idct.clipra.core.engine.render.ProjectRender
+import tech.idct.clipra.core.model.AudioSettings
+import tech.idct.clipra.core.model.Clip
+import tech.idct.clipra.core.model.ClipType
+import tech.idct.clipra.core.model.Layer
 import tech.idct.clipra.core.model.MediaAsset
 import tech.idct.clipra.core.model.MediaKind
+import tech.idct.clipra.core.model.MediaRef
+import tech.idct.clipra.core.model.Project
 import tech.idct.clipra.core.models.ModelStore
 import java.io.File
 import java.util.Random
@@ -77,6 +86,82 @@ class SoundAnalyzerTest {
             assertTrue("a beat near $kick s", beats.timesUs.any { abs(it - us) <= 30_000 })
         }
         assertEquals(beats, SoundAnalyzer.readBeats(cache, asset.id))
+    }
+
+    /**
+     * Auto-duck under speech (TabletAudio board): once music asks for it, the other clips'
+     * speech is found, and the music ducks under it in the timeline.
+     */
+    @Test
+    fun musicDucksUnderTheSpeechItAsksFor() {
+        val random = Random(5)
+        val spoken = FloatArray(rate * 6) { i ->
+            val t = i.toDouble() / rate
+            val voice = if (t in 1.0..3.0) {
+                0.2 * (0.5 + 0.5 * sin(2 * PI * 4 * t)) * random.nextGaussian()
+            } else {
+                0.0
+            }
+            (0.04 * sin(2 * PI * 110 * t) + 0.002 * random.nextGaussian() + voice).toFloat()
+        }
+        val played = FloatArray(rate * 6) { i -> (0.1 * sin(2 * PI * 220 * i / rate)).toFloat() }
+        val (analyzer, cache, recorded) = setUp("autoduck-vo", spoken)
+        // The timeline reads media by URI, as imports keep them.
+        val vo = recorded.copy(uri = Uri.fromFile(File(recorded.uri)).toString())
+        val songFile = File(context.cacheDir, "autoduck-song.wav")
+        WavWriter(songFile, rate).use { it.write(played, played.size) }
+        val song = MediaAsset(
+            "autoduck-song",
+            Uri.fromFile(songFile).toString(),
+            MediaKind.Audio,
+            "song.wav",
+            6_000_000,
+            hasAudio = true,
+        )
+        val sixSeconds = 6_000_000L
+        val project = Project(
+            id = "autoduck",
+            name = "Auto-duck",
+            media = listOf(vo, song),
+            layers = listOf(
+                Layer(
+                    "L1",
+                    clips = listOf(
+                        Clip(
+                            "music",
+                            ClipType.Audio,
+                            0,
+                            sixSeconds,
+                            MediaRef(song.id, 0, sixSeconds),
+                            audio = AudioSettings(duckUnderSpeech = 12f),
+                        ),
+                    ),
+                ),
+                Layer(
+                    "L2",
+                    clips = listOf(
+                        Clip(
+                            "voice",
+                            ClipType.Audio,
+                            0,
+                            sixSeconds,
+                            MediaRef(vo.id, 0, sixSeconds),
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+        analyzer.requestSpeech(project)
+
+        assertNotNull(analyzer.speech(vo))
+        // The music's own speech isn't needed.
+        assertNull(analyzer.speech(song))
+        val media = ProjectMediaResolver(context, cache, forExport = true, maxImageSide = 0)
+        val music = ProjectRender.timeline(project, media, 360, 640).layers[0].clips.single()
+        val duck = music.ducks.single()
+        assertEquals(12f, duck.depthDb)
+        assertEquals(1_000_000.0, duck.speech.first().first.toDouble(), 100_000.0)
     }
 
     private fun setUp(
