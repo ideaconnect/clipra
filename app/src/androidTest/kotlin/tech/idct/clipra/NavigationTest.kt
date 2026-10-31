@@ -39,9 +39,16 @@ class NavigationTest {
     @Test
     fun everyPhoneBoardOpensFromTheScreenIndex() {
         // First run: onboarding leads to Home (a later run starts there), and Home (debug build)
-        // to the screen index.
+        // to the screen index. The first screen shows once the settings are read.
+        compose.waitUntil(START_MS) {
+            compose.onAllNodesWithTag("onboarding-skip").fetchSemanticsNodes().isNotEmpty() ||
+                compose.onAllNodesWithTag("home").fetchSemanticsNodes().isNotEmpty()
+        }
         if (compose.onAllNodesWithTag("onboarding-skip").fetchSemanticsNodes().isNotEmpty()) {
             compose.onNodeWithTag("onboarding-skip").performClick()
+        }
+        compose.waitUntil(START_MS) {
+            compose.onAllNodesWithTag("home").fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithTag("home").performScrollToNode(hasTestTag("link:BoardIndex"))
         compose.onNodeWithTag("link:BoardIndex").performClick()
@@ -58,5 +65,9 @@ class NavigationTest {
                 compose.runOnUiThread { dispatcher.onBackPressed() }
             }
         }
+    }
+
+    private companion object {
+        const val START_MS = 10_000L
     }
 }
