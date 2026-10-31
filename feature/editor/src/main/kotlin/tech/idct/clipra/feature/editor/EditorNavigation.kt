@@ -58,6 +58,7 @@ import tech.idct.clipra.feature.editor.stabilize.StabilizeScreen
 import tech.idct.clipra.feature.editor.tablet.InspectorActions
 import tech.idct.clipra.feature.editor.tablet.TabletEditorActions
 import tech.idct.clipra.feature.editor.tablet.TabletEditorScreen
+import tech.idct.clipra.feature.editor.tablet.TabletPanels
 import tech.idct.clipra.feature.editor.timeline.Filmstrip
 import tech.idct.clipra.feature.editor.timeline.FilmstripLoader
 import tech.idct.clipra.feature.editor.timeline.LayerHeaderActions
@@ -98,6 +99,8 @@ class EditorActions(
     val onTool: (EditorTool, ToolTarget) -> Unit,
     /** An effect's name for the tablet inspector (#69), as the Effects screens call it. */
     val effectName: @Composable (type: String) -> String = { it },
+    /** The feature panels the tablet editor hosts (#70). */
+    val tabletPanels: TabletPanels = TabletPanels(),
 )
 
 /** Registers this module's destinations. [screen] draws a board until its real screen is built. */
@@ -646,6 +649,7 @@ private fun EditorRoute(
             filmstrip = filmstrip,
             waveforms = waveforms,
             thumbnail = filmstrips::thumbnail,
+            panels = actions.tabletPanels,
         )
     } else {
         EditorScreen(

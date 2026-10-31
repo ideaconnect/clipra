@@ -7,6 +7,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -39,6 +40,7 @@ import tech.idct.clipra.core.model.TextColors
 import tech.idct.clipra.core.model.TextSpec
 import tech.idct.clipra.core.model.TextTemplate
 import tech.idct.clipra.core.model.TextTemplates
+import kotlin.math.roundToInt
 import androidx.compose.ui.text.style.TextAlign as ComposeTextAlign
 
 /**
@@ -49,35 +51,51 @@ import androidx.compose.ui.text.style.TextAlign as ComposeTextAlign
  */
 @Composable
 internal fun TemplateGrid(
-    spec: TextSpec,
+    spec: TextSpec?,
     templates: List<TextTemplate>,
     onTemplate: (TextTemplate) -> Unit,
-    onSave: () -> Unit,
+    onSave: (() -> Unit)?,
     onDelete: (String) -> Unit,
 ) {
     val context = LocalContext.current
-    val samples = TemplateSample.entries.associate { it.id to stringResource(it.sample) }
-    val tiles = remember(templates, samples) {
-        templates.associate { template ->
-            val look = template.spec
-            template.id to TextRenderer.render(
-                context,
-                look.copy(
-                    text = samples[template.id] ?: look.text,
-                    size = (look.size * TILE_SCALE).coerceIn(TILE_TEXT_MIN, TILE_TEXT_MAX),
-                    background = look.background ?: TextColors.BLACK,
-                ),
-                card = true,
-                TILE_WIDTH,
-                TILE_HEIGHT,
-            ).asImageBitmap()
+    val samples = templateSamples()
+    // The last place is Save as template, when there is a look to save.
+    val choices: List<TextTemplate?> = if (onSave != null) templates + null else templates
+    BoxWithConstraints(Modifier.testTag("text-templates")) {
+        // Drawn in the shape the tiles have here, so no tile is cut at its sides.
+        val tileWidth = (maxWidth - 8.dp * (TEMPLATE_COLUMNS - 1)) / TEMPLATE_COLUMNS
+        val tiles = remember(templates, samples, tileWidth) {
+            val width = (TILE_HEIGHT * tileWidth.value / TILE_DP).roundToInt()
+                .coerceAtLeast(TILE_HEIGHT)
+            templates.associate { template ->
+                val look = template.spec
+                template.id to TextRenderer.render(
+                    context,
+                    look.copy(
+                        text = samples[template.id] ?: look.text,
+                        size = (look.size * TILE_SCALE).coerceIn(TILE_TEXT_MIN, TILE_TEXT_MAX),
+                        background = look.background ?: TextColors.BLACK,
+                    ),
+                    card = true,
+                    width,
+                    TILE_HEIGHT,
+                ).asImageBitmap()
+            }
         }
+        TemplateTiles(spec, choices, tiles, onTemplate, onSave, onDelete)
     }
-    val choices: List<TextTemplate?> = templates + null
-    Column(
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.testTag("text-templates"),
-    ) {
+}
+
+@Composable
+private fun TemplateTiles(
+    spec: TextSpec?,
+    choices: List<TextTemplate?>,
+    tiles: Map<String, ImageBitmap>,
+    onTemplate: (TextTemplate) -> Unit,
+    onSave: (() -> Unit)?,
+    onDelete: (String) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
             text = stringResource(R.string.text_templates),
             style = ClipraTheme.typography.sectionLabel,
@@ -88,14 +106,14 @@ internal fun TemplateGrid(
                 row.forEach { template ->
                     val tile = Modifier.weight(1f)
                     if (template == null) {
-                        SaveTile(onSave, tile.testTag("save-template"))
+                        SaveTile(onSave ?: {}, tile.testTag("save-template"))
                     } else {
                         val saved = template.id.startsWith(TextTemplates.SAVED)
                         TemplateTile(
                             name = TemplateSample.of(template.id)?.let { stringResource(it.title) }
                                 ?: template.spec.text.lineSequence().first(),
                             tile = tiles.getValue(template.id),
-                            selected = sameLook(template.spec, spec),
+                            selected = spec != null && sameLook(template.spec, spec),
                             onClick = { onTemplate(template) },
                             onDelete = if (saved) ({ onDelete(template.id) }) else null,
                             modifier = tile.testTag("template:${template.id}"),
@@ -108,11 +126,14 @@ internal fun TemplateGrid(
     }
 }
 
-/** Whether [spec] has [template]'s look, whatever its words and card colour. */
+/**
+ * Whether [spec] has [template]'s look, whatever its words, card colour and effect: the effect
+ * is picked on its own, and the template stays outlined (TabletText board).
+ */
 private fun sameLook(template: TextSpec, spec: TextSpec): Boolean =
     template.font == spec.font && template.weight == spec.weight &&
         template.size == spec.size && template.color == spec.color &&
-        template.align == spec.align && template.effect == spec.effect
+        template.align == spec.align
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -194,6 +215,11 @@ private fun TileName(name: String, color: Color) {
     )
 }
 
+/** The words each built-in template's tile shows, by template id, in the user's language. */
+@Composable
+internal fun templateSamples(): Map<String, String> =
+    TemplateSample.entries.associate { it.id to stringResource(it.sample) }
+
 /** The built-in templates' names and the words their tiles show, in the user's language. */
 private enum class TemplateSample(val id: String, val title: Int, val sample: Int) {
     Card("card", R.string.text_template_card, R.string.text_template_card_sample),
@@ -222,7 +248,6 @@ private const val TEMPLATE_COLUMNS = 3
 // Tiles are 46 dp high as in the design, drawn at this size in pixels; the words keep their
 // sizes relative to each other, within what fits a tile.
 private const val TILE_DP = 46
-private const val TILE_WIDTH = 216
 private const val TILE_HEIGHT = 92
 private const val TILE_SCALE = 3.6f
 private const val TILE_TEXT_MIN = 0.18f

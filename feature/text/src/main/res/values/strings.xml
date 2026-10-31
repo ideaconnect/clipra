@@ -71,4 +71,8 @@
     <string name="text_template_end_credits_sample">The end</string>
     <string name="text_template_save">Save as template</string>
     <string name="text_template_delete">Delete template</string>
+    <string name="text_add">Add text</string>
+    <string name="text_new_words">Your text</string>
+    <string name="text_library_hint">Select a text clip to change its look, or tap a template to add text in it.</string>
+    <string name="text_inspector_place">L%1$d · %2$.1f s</string>
 </resources>

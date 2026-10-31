@@ -71,4 +71,8 @@
     <string name="text_template_end_credits_sample">Koniec</string>
     <string name="text_template_save">Zapisz szablon</string>
     <string name="text_template_delete">Usuń szablon</string>
+    <string name="text_add">Dodaj tekst</string>
+    <string name="text_new_words">Twój tekst</string>
+    <string name="text_library_hint">Zaznacz tekst, aby zmienić jego wygląd, albo stuknij szablon, aby dodać nowy.</string>
+    <string name="text_inspector_place">L%1$d · %2$.1f s</string>
 </resources>

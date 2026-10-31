@@ -59,7 +59,9 @@ class EffectStackViewModel @Inject constructor(
     savedState: SavedStateHandle,
 ) : ViewModel() {
     private val projectId: String? = savedState["projectId"]
-    private val clipId: String? = savedState["clipId"]
+
+    /** The clip whose stack this is; the tablet editor's panel (#70) follows its selection. */
+    private val clipId = MutableStateFlow<String?>(savedState["clipId"])
 
     /** Where the editor's playhead was; the preview shows this moment. */
     val playheadUs: Long = savedState["playheadUs"] ?: 0L
@@ -77,15 +79,20 @@ class EffectStackViewModel @Inject constructor(
                 mutableState.value = mutableState.value.copy(loaded = true)
                 return@launch
             }
-            combine(opened.state, clipboard.effects) { session, copied ->
+            combine(opened.state, clipboard.effects, clipId) { session, copied, id ->
                 EffectStackUiState(
                     project = session.project,
-                    clip = clipId?.let { id -> session.project.findClip(id)?.second },
+                    clip = id?.let { session.project.findClip(it)?.second },
                     loaded = true,
                     copied = copied,
                 )
             }.collect { mutableState.value = it }
         }
+    }
+
+    /** The stack of [id] from now on (the tablet editor's selection, #70). */
+    fun select(id: String?) {
+        clipId.value = id
     }
 
     fun add(type: String) = edit { AddEffect(it, type) }

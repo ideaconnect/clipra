@@ -131,23 +131,7 @@ fun EffectStackScreen(
                     .padding(top = 12.dp, bottom = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                if (effects.isEmpty()) {
-                    Text(
-                        text = stringResource(R.string.effects_stack_empty),
-                        style = ClipraTheme.typography.body,
-                        color = colors.textSecondary,
-                        modifier = Modifier.testTag("stack-empty"),
-                    )
-                }
-                effects.forEachIndexed { index, effect ->
-                    EffectCard(clip, effects, index, effect, actions)
-                }
-                if (adding) {
-                    AddPicker(state.addable) { type ->
-                        adding = false
-                        actions.onAdd(type)
-                    }
-                }
+                EffectStackList(state, effects, actions, adding, onAdded = { adding = false })
             }
         },
         previewHeight = PREVIEW_HEIGHT,
@@ -192,6 +176,38 @@ fun EffectStackScreen(
             }
         },
     )
+}
+
+/**
+ * The stack's cards in the order the effects apply, and the add picker while [adding]; [onAdded]
+ * closes it once an effect is picked.
+ */
+@Composable
+internal fun EffectStackList(
+    state: EffectStackUiState,
+    effects: List<Effect>,
+    actions: EffectStackActions,
+    adding: Boolean,
+    onAdded: () -> Unit,
+) {
+    val clip = state.clip ?: return
+    if (effects.isEmpty()) {
+        Text(
+            text = stringResource(R.string.effects_stack_empty),
+            style = ClipraTheme.typography.body,
+            color = ClipraTheme.colors.textSecondary,
+            modifier = Modifier.testTag("stack-empty"),
+        )
+    }
+    effects.forEachIndexed { index, effect ->
+        EffectCard(clip, effects, index, effect, actions)
+    }
+    if (adding) {
+        AddPicker(state.addable) { type ->
+            onAdded()
+            actions.onAdd(type)
+        }
+    }
 }
 
 /** One effect of the stack: its place, name, switch, strength and how to move or remove it. */

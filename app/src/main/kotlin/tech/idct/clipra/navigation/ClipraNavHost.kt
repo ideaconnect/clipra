@@ -13,7 +13,9 @@ import tech.idct.clipra.BuildConfig
 import tech.idct.clipra.core.designsystem.gallery.DesignSystemGallery
 import tech.idct.clipra.core.designsystem.placeholder.Board
 import tech.idct.clipra.core.designsystem.placeholder.BoardPlaceholder
+import tech.idct.clipra.core.model.ClipType
 import tech.idct.clipra.core.model.Layout
+import tech.idct.clipra.core.model.edit.takesFilters
 import tech.idct.clipra.feature.audio.AudioActionsNavigation
 import tech.idct.clipra.feature.audio.AudioRoute
 import tech.idct.clipra.feature.audio.audioScreens
@@ -28,10 +30,14 @@ import tech.idct.clipra.feature.editor.EditorTool
 import tech.idct.clipra.feature.editor.LayersRoute
 import tech.idct.clipra.feature.editor.ToolTarget
 import tech.idct.clipra.feature.editor.editorScreens
+import tech.idct.clipra.feature.editor.tablet.TabletPanel
+import tech.idct.clipra.feature.editor.tablet.TabletPanels
 import tech.idct.clipra.feature.effects.ColorRoute
 import tech.idct.clipra.feature.effects.CutoutRoute
+import tech.idct.clipra.feature.effects.EffectStackPanel
 import tech.idct.clipra.feature.effects.EffectStackRoute
 import tech.idct.clipra.feature.effects.EffectsActions
+import tech.idct.clipra.feature.effects.FiltersLibraryPanel
 import tech.idct.clipra.feature.effects.FiltersRoute
 import tech.idct.clipra.feature.effects.MasksRoute
 import tech.idct.clipra.feature.effects.ReframeRoute
@@ -59,6 +65,8 @@ import tech.idct.clipra.feature.settings.LicensesRoute
 import tech.idct.clipra.feature.settings.SettingsNavigationActions
 import tech.idct.clipra.feature.settings.SettingsRoute
 import tech.idct.clipra.feature.settings.settingsScreens
+import tech.idct.clipra.feature.text.TextInspectorPanel
+import tech.idct.clipra.feature.text.TextLibraryPanel
 import tech.idct.clipra.feature.text.TextNavigationActions
 import tech.idct.clipra.feature.text.TextRoute
 import tech.idct.clipra.feature.text.textScreens
@@ -147,6 +155,7 @@ fun ClipraNavHost(
                 },
                 onTool = { tool, target -> navController.navigate(toolRoute(tool, target)) },
                 effectName = { filterName(it) },
+                tabletPanels = tabletPanels,
             ),
         )
         effectsScreens(
@@ -265,6 +274,43 @@ private fun NavController.open(from: Board, to: Board) {
     navigate(to.route) {
         if (from in passThroughBoards) popUpTo(from.route) { inclusive = true }
     }
+}
+
+/**
+ * The feature panels the tablet editor hosts (#70): Text's library on its rail place and its
+ * inspector for text clips; the Filters library on Effects, with the effect stack for the clip.
+ */
+private val tabletPanels = TabletPanels(
+    library = { tool ->
+        when (tool) {
+            EditorTool.Text -> textLibrary
+            EditorTool.Filters -> filtersLibrary
+            else -> null
+        }
+    },
+    inspector = { place, clip ->
+        when {
+            clip.type == ClipType.Text || clip.type == ClipType.TextCard -> textInspector
+            place == EditorTool.Filters && clip.takesFilters() -> effectStack
+            else -> null
+        }
+    },
+)
+
+private val textLibrary: TabletPanel = { scope, modifier ->
+    TextLibraryPanel(scope.clipId, scope.playheadUs, scope.onSelect, modifier)
+}
+
+private val textInspector: TabletPanel = { scope, modifier ->
+    scope.clipId?.let { TextInspectorPanel(it, modifier) }
+}
+
+private val filtersLibrary: TabletPanel = { scope, modifier ->
+    FiltersLibraryPanel(scope.clipId, scope.playheadUs, modifier)
+}
+
+private val effectStack: TabletPanel = { scope, modifier ->
+    scope.clipId?.let { EffectStackPanel(it, modifier) }
 }
 
 /** The screen each editor tool opens; most are placeholders until their issues land. */

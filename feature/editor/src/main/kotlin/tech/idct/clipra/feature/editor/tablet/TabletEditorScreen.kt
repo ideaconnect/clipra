@@ -110,6 +110,7 @@ fun TabletEditorScreen(
     filmstrip: @Composable (Clip, Float, Float) -> Unit = { _, _, _ -> },
     waveforms: WaveformLoader? = null,
     thumbnail: suspend (mediaId: String) -> ImageBitmap? = { null },
+    panels: TabletPanels = TabletPanels(),
 ) {
     val colors = ClipraTheme.colors
     val project = state.project ?: return
@@ -123,7 +124,15 @@ fun TabletEditorScreen(
     }
     var tab by rememberSaveable { mutableStateOf(InspectorTab.Clip) }
     var fullscreen by rememberSaveable { mutableStateOf(false) }
+    // The rail's place: the media bin (null) or a feature's library (#70).
+    var pane by rememberSaveable { mutableStateOf<EditorTool?>(null) }
+    val library = pane?.let(panels.library)
     val selected = state.selectedClipId?.let { project.findClip(it) }
+    val scope = PanelScope(
+        clipId = selected?.second?.id,
+        playheadUs = state.playheadUs,
+        onSelect = { callbacks.timeline.onSelect(it) },
+    )
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -151,22 +160,32 @@ fun TabletEditorScreen(
                     )
                     ToolRail(
                         items = rail,
-                        selectedIndex = 0,
+                        selectedIndex = if (library == null) 0 else railTools.indexOf(pane) + 1,
                         onSelect = { index ->
-                            if (index > 0) callbacks.onTool(railTools[index - 1])
+                            val tool = railTools.getOrNull(index - 1)
+                            when {
+                                tool == null -> pane = null
+                                panels.library(tool) != null -> pane = tool
+                                else -> callbacks.onTool(tool)
+                            }
                         },
                         modifier = Modifier.edge(colors.borderSubtle, end = true),
                     )
-                    MediaBin(
-                        project = project,
-                        onImport = callbacks.onPickVisual,
-                        onAdd = actions.onAddMedia,
-                        thumbnail = thumbnail,
-                        modifier = Modifier
-                            .width(BIN_WIDTH.dp)
-                            .fillMaxHeight()
-                            .edge(colors.borderSubtle, end = true),
-                    )
+                    val left = Modifier
+                        .width(BIN_WIDTH.dp)
+                        .fillMaxHeight()
+                        .edge(colors.borderSubtle, end = true)
+                    if (library != null) {
+                        library(scope, left)
+                    } else {
+                        MediaBin(
+                            project = project,
+                            onImport = callbacks.onPickVisual,
+                            onAdd = actions.onAddMedia,
+                            thumbnail = thumbnail,
+                            modifier = left,
+                        )
+                    }
                 }
                 PreviewPane(
                     project = project,
@@ -183,19 +202,27 @@ fun TabletEditorScreen(
                         .fillMaxHeight(),
                 )
                 if (!fullscreen) {
-                    Inspector(
-                        project = project,
-                        selected = selected,
-                        tab = tab,
-                        onTab = { tab = it },
-                        callbacks = callbacks,
-                        actions = actions.inspector,
-                        playheadUs = state.playheadUs,
-                        modifier = Modifier
-                            .width(INSPECTOR_WIDTH.dp)
-                            .fillMaxHeight()
-                            .edge(colors.borderSubtle, start = true),
-                    )
+                    val right = Modifier
+                        .width(INSPECTOR_WIDTH.dp)
+                        .fillMaxHeight()
+                        .edge(colors.borderSubtle, start = true)
+                    // A feature's own inspector for the clips it edits, such as text (#70).
+                    val place = pane.takeIf { library != null }
+                    val inspector = selected?.second?.let { panels.inspector(place, it) }
+                    if (inspector != null) {
+                        inspector(scope, right)
+                    } else {
+                        Inspector(
+                            project = project,
+                            selected = selected,
+                            tab = tab,
+                            onTab = { tab = it },
+                            callbacks = callbacks,
+                            actions = actions.inspector,
+                            playheadUs = state.playheadUs,
+                            modifier = right,
+                        )
+                    }
                 }
             }
             if (!fullscreen) {
