@@ -216,6 +216,8 @@ Downloads run in WorkManager with a Wi-Fi-only constraint by default, resume aft
 | Export 1080p30, 42 s, 3 layers | under 60 s on a mid-range phone |
 | Whisper base on 42 s of speech | under 20 s on a mid-range phone **(spike)** |
 
+How each one is measured on the device matrix, and the baseline profile that keeps startup fast: `docs/release/performance.md` (#77).
+
 ## 12. Licensing
 
 The app is Apache-2.0. Dependencies must be Apache-2.0, MIT, BSD, ISC, Zlib or similar permissive licenses; fonts OFL; models with permissive licenses (Whisper MIT, DeepFilterNet MIT/Apache-2.0, MediaPipe models Apache-2.0). Closed Google SDKs (ads, UMP, Play Billing, ML Kit) are used under their own terms. Do not add GPL or AGPL code; LGPL only as a separately loaded library and only after review. Record every dependency in `docs/third-party.md`.

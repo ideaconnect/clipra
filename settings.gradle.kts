@@ -41,3 +41,5 @@ include(
     ":feature:settings",
 )
 include(":monetization")
+// Startup and timeline benchmarks, and the baseline profile (#77); run on real phones.
+include(":benchmark")
