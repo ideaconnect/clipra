@@ -74,6 +74,10 @@ class ExportScreenTest {
     private val designSettings =
         ExportSettings(extras = setOf(ExportExtra.Cover, ExportExtra.Project))
 
+    /** The cover frame beside the project's name, in the board's sunset colour. */
+    private val cover = Bitmap.createBitmap(36, 64, Bitmap.Config.ARGB_8888)
+        .apply { eraseColor(Color.rgb(107, 77, 122)) }
+
     @Test
     fun exportWithoutAv1() {
         Locale.setDefault(Locale.US)
@@ -87,6 +91,7 @@ class ExportScreenTest {
                     onExport = {},
                     onBack = {},
                     ads = ExportAdsLine(proPrice = "10,00 zł", onPro = { pro++ }),
+                    preview = ExportPreview(cover = cover),
                 )
             }
         }

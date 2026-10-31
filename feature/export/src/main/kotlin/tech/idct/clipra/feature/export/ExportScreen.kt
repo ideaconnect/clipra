@@ -1,5 +1,7 @@
 package tech.idct.clipra.feature.export
 
+import android.graphics.Bitmap
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -26,6 +28,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -104,7 +108,7 @@ fun ExportScreen(
                 .padding(horizontal = 16.dp, vertical = 4.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            ProjectSummary(project)
+            ProjectSummary(project, preview.cover)
             ExportOptions(project, settings, support, onChange)
             AlsoSave(project, settings, onChange)
         }
@@ -273,8 +277,9 @@ private fun Section(title: String, content: @Composable () -> Unit) {
     }
 }
 
+/** The project's name and length beside its cover frame, as the Export board shows it. */
 @Composable
-private fun ProjectSummary(project: Project) {
+private fun ProjectSummary(project: Project, cover: Bitmap?) {
     val colors = ClipraTheme.colors
     val type = ClipraTheme.typography
     Row(
@@ -288,8 +293,18 @@ private fun ProjectSummary(project: Project) {
                 modifier = Modifier
                     .size((ratio.width * scale).dp, (ratio.height * scale).dp)
                     .clip(RoundedCornerShape(6.dp))
-                    .background(colors.surfaceRaised),
-            )
+                    .background(colors.surfaceRaised)
+                    .testTag("export-cover"),
+            ) {
+                cover?.let {
+                    Image(
+                        bitmap = remember(it) { it.asImageBitmap() },
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
+            }
         }
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(text = project.name, style = type.sectionTitle, color = colors.textPrimary)
