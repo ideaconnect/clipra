@@ -263,4 +263,12 @@
     <string name="editor_add_adjustment">Adjustment clip</string>
     <string name="editor_adjustment_label">fx Adjustment</string>
     <string name="editor_clip_description_unnamed">%1$s, %2$s, layer L%3$d</string>
+    <string name="editor_tablet_no_sounds">No sound yet. Import music, or record a voiceover.</string>
+    <string name="editor_tablet_record_hint">Recording lands on the first free layer at the playhead. Cleanup runs offline while you keep editing.</string>
+    <string name="editor_tablet_sound_voice">Voice</string>
+    <string name="editor_tablet_sound_music">Music</string>
+    <string name="editor_tablet_sound_clip">Clip audio</string>
+    <string name="editor_tablet_sound_of">%1$s audio</string>
+    <string name="editor_tablet_sound_recorded">recorded</string>
+    <string name="editor_tablet_ai_clean">AI clean</string>
 </resources>

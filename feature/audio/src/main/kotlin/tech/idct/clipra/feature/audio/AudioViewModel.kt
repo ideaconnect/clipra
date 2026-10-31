@@ -88,7 +88,9 @@ class AudioViewModel @Inject constructor(
     savedState: SavedStateHandle,
 ) : ViewModel() {
     private val projectId: String? = savedState["projectId"]
-    private val clipId: String? = savedState["clipId"]
+
+    /** The clip whose sound this is; the tablet editor's inspector (#70) follows its selection. */
+    private val clipId = MutableStateFlow<String?>(savedState["clipId"])
     private var session: ProjectSession? = null
     private val mutableState = MutableStateFlow(AudioUiState())
 
@@ -105,18 +107,33 @@ class AudioViewModel @Inject constructor(
                 mutableState.update { it.copy(loaded = true) }
                 return@launch
             }
-            launch { loadWaveform(opened.project) }
+            launch { clipId.collectLatest { loadWaveform(opened.project) } }
             launch { watchVoice() }
-            opened.state.collect { session ->
+            combine(opened.state, clipId, ::Pair).collect { (session, id) ->
                 mutableState.update {
                     it.copy(
                         project = session.project,
-                        clip = clipId?.let { id -> session.project.findClip(id)?.second },
+                        clip = id?.let { session.project.findClip(it)?.second },
                         loaded = true,
                     )
                 }
             }
         }
+    }
+
+    /** The sound of [id] from now on, measured afresh (the tablet editor's selection, #70). */
+    fun select(id: String?) {
+        if (id == clipId.value) return
+        mutableState.update {
+            it.copy(
+                waveform = null,
+                measured = null,
+                recorded = null,
+                measuring = true,
+                voice = it.voice.copy(cleanedWaveform = null, bpm = null),
+            )
+        }
+        clipId.value = id
     }
 
     /** Commits the clip's volume and fades. */
@@ -275,7 +292,12 @@ class AudioViewModel @Inject constructor(
         }
         combine(cache.voiceVersion, state) { version, current ->
             val audio = current.clip?.audio
-            Triple(version, audio?.voiceCleanup to audio?.noiseReduction, current.project != null)
+            // A new clip (the tablet's selection) is measured too.
+            Triple(
+                version to current.clip?.id,
+                audio?.voiceCleanup to audio?.noiseReduction,
+                current.project != null,
+            )
         }.filter { it.third }
             .distinctUntilChanged()
             .collectLatest { (_, processing) ->
@@ -312,7 +334,7 @@ class AudioViewModel @Inject constructor(
     }
 
     private suspend fun loadWaveform(project: Project) {
-        val clip = clipId?.let { project.findClip(it)?.second } ?: return
+        val clip = clipId.value?.let { project.findClip(it)?.second } ?: return
         val asset = clip.source?.let { project.asset(it.mediaId) } ?: return
         val media = ProjectMediaResolver(context, cache, forExport = false, maxImageSide = 0)
         val waveform = withContext(Dispatchers.IO) {
@@ -327,7 +349,7 @@ class AudioViewModel @Inject constructor(
      * last measured gets the new measurement, so the export stays on target.
      */
     private suspend fun measure(project: Project) {
-        val clip = clipId?.let { project.findClip(it)?.second }
+        val clip = clipId.value?.let { project.findClip(it)?.second }
         val source = clip?.source
         val asset = source?.let { project.asset(it.mediaId) }
         var recorded: Loudness.Measurement? = null

@@ -267,4 +267,12 @@
     <string name="editor_add_adjustment">Klip korekcji</string>
     <string name="editor_adjustment_label">fx Korekcja</string>
     <string name="editor_clip_description_unnamed">%1$s, %2$s, warstwa L%3$d</string>
+    <string name="editor_tablet_no_sounds">Nie ma jeszcze dźwięku. Zaimportuj muzykę albo nagraj lektora.</string>
+    <string name="editor_tablet_record_hint">Nagranie trafia na pierwszą wolną warstwę przy głowicy. Oczyszczanie działa offline, a ty edytujesz dalej.</string>
+    <string name="editor_tablet_sound_voice">Głos</string>
+    <string name="editor_tablet_sound_music">Muzyka</string>
+    <string name="editor_tablet_sound_clip">Dźwięk klipu</string>
+    <string name="editor_tablet_sound_of">Dźwięk %1$s</string>
+    <string name="editor_tablet_sound_recorded">nagrane</string>
+    <string name="editor_tablet_ai_clean">AI czysty</string>
 </resources>

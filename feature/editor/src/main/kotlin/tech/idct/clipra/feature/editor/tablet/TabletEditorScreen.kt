@@ -66,6 +66,7 @@ import tech.idct.clipra.feature.editor.timeline.Timeline
 import tech.idct.clipra.feature.editor.timeline.TimelineGeometry
 import tech.idct.clipra.feature.editor.timeline.WaveformLoader
 import tech.idct.clipra.feature.editor.timeline.formatTimecode
+import tech.idct.clipra.feature.editor.voiceover.VoiceoverPanel
 import kotlin.math.roundToInt
 
 /** What only the tablet editor asks for (#69), next to the phone editor's [EditorCallbacks]. */
@@ -127,6 +128,9 @@ fun TabletEditorScreen(
     // The rail's place: the media bin (null) or a feature's library (#70).
     var pane by rememberSaveable { mutableStateOf<EditorTool?>(null) }
     val library = pane?.let(panels.library)
+    // The Audio place is the editor's own: the project's sounds, Import and Record (#70).
+    val audio = pane == EditorTool.Audio && library == null
+    val place = pane.takeIf { library != null || audio }
     val selected = state.selectedClipId?.let { project.findClip(it) }
     val scope = PanelScope(
         clipId = selected?.second?.id,
@@ -160,12 +164,15 @@ fun TabletEditorScreen(
                     )
                     ToolRail(
                         items = rail,
-                        selectedIndex = if (library == null) 0 else railTools.indexOf(pane) + 1,
+                        selectedIndex = place?.let { railTools.indexOf(it) + 1 } ?: 0,
                         onSelect = { index ->
                             val tool = railTools.getOrNull(index - 1)
                             when {
                                 tool == null -> pane = null
-                                panels.library(tool) != null -> pane = tool
+
+                                tool == EditorTool.Audio || panels.library(tool) != null ->
+                                    pane = tool
+
                                 else -> callbacks.onTool(tool)
                             }
                         },
@@ -175,8 +182,21 @@ fun TabletEditorScreen(
                         .width(BIN_WIDTH.dp)
                         .fillMaxHeight()
                         .edge(colors.borderSubtle, end = true)
-                    if (library != null) {
+                    val voiceover = state.voiceover
+                    if (voiceover != null) {
+                        // Recording a voiceover (#41) takes the left pane, as on TabletAudio.
+                        VoiceoverPanel(voiceover, callbacks.voiceover, left)
+                    } else if (library != null) {
                         library(scope, left)
+                    } else if (audio) {
+                        AudioLibrary(
+                            project = project,
+                            selectedClipId = state.selectedClipId,
+                            onSelect = { callbacks.timeline.onSelect(it) },
+                            onImport = callbacks.onPickAudio,
+                            onRecord = callbacks.onVoiceover,
+                            modifier = left,
+                        )
                     } else {
                         MediaBin(
                             project = project,
@@ -207,7 +227,6 @@ fun TabletEditorScreen(
                         .fillMaxHeight()
                         .edge(colors.borderSubtle, start = true)
                     // A feature's own inspector for the clips it edits, such as text (#70).
-                    val place = pane.takeIf { library != null }
                     val inspector = selected?.second?.let { panels.inspector(place, it) }
                     if (inspector != null) {
                         inspector(scope, right)

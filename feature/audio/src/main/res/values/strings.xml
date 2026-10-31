@@ -49,4 +49,5 @@
     <string name="audio_beats_title">Beat markers</string>
     <string name="audio_beats_detail">Marks the beat; cuts snap to it</string>
     <string name="audio_beats_bpm">%1$d BPM · cuts snap</string>
+    <string name="audio_inspector_place">Clip on layer L%1$d</string>
 </resources>

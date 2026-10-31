@@ -155,65 +155,84 @@ fun AudioScreen(
                 .padding(top = 8.dp, bottom = 16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            CompareCard(
-                clip,
-                state.waveform,
-                state.voice.cleanedWaveform.takeIf {
-                    audio.voiceCleanup != null || audio.noiseReduction != null
-                },
-                audio.copy(volume = volume),
-                state.recorded,
-                state.measured,
-                state.measuring,
-            )
-            LabelledSlider(
-                label = stringResource(R.string.audio_volume),
-                value = volume,
-                onValueChange = actions.onVolume,
-                onValueChangeFinished = actions.onVolumeDone,
-                valueText = stringResource(R.string.audio_percent, (volume * 100).roundToInt()),
-                valueRange = 0f..2f,
-                labelWidth = 80.dp,
-                modifier = Modifier
-                    .height(52.dp)
-                    .testTag("audio-volume"),
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                FadeField(
-                    label = stringResource(R.string.audio_fade_in),
-                    valueUs = audio.fadeInUs,
-                    maxUs = clip.durationUs,
-                    onPick = { actions.onAudio(audio.copy(fadeInUs = it)) },
-                    modifier = Modifier
-                        .weight(1f)
-                        .testTag("audio-fade-in"),
-                )
-                FadeField(
-                    label = stringResource(R.string.audio_fade_out),
-                    valueUs = audio.fadeOutUs,
-                    maxUs = clip.durationUs,
-                    onPick = { actions.onAudio(audio.copy(fadeOutUs = it)) },
-                    modifier = Modifier
-                        .weight(1f)
-                        .testTag("audio-fade-out"),
-                )
-            }
-            NormalizeCard(audio, state.measured, state.measuring, actions.onLoudnessTarget)
-            NoiseReductionCard(audio.noiseReduction, noiseStrength, state.voice.gating, actions)
-            VoiceCleanupCard(audio.voiceCleanup, strength, state.voice, actions)
-            DuckingCard(audio.ducking, duckingDepth, actions)
-            BeatsCard(audio.beats, state.voice.bpm, actions.onBeats)
-            SecondaryButton(
-                text = stringResource(R.string.audio_apply_all),
-                onClick = actions.onApplyToAll,
-                leadingIcon = ClipraIcons.Copy,
-                outlined = true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("audio-apply-all"),
-            )
+            AudioControls(state, clip, volume, actions, strength, noiseStrength, duckingDepth)
         }
     }
+}
+
+/**
+ * The clip's sound settings: the waveform with its loudness before and after, volume, fades,
+ * normalization, noise reduction, voice cleanup, ducking and beats, and Apply to all. The phone's
+ * Audio board and the tablet's Audio inspector (#70) both show them.
+ */
+@Composable
+internal fun AudioControls(
+    state: AudioUiState,
+    clip: Clip,
+    volume: Float,
+    actions: AudioActions,
+    strength: Float?,
+    noiseStrength: Float?,
+    duckingDepth: Float?,
+) {
+    val audio = clip.audio
+    CompareCard(
+        clip,
+        state.waveform,
+        state.voice.cleanedWaveform.takeIf {
+            audio.voiceCleanup != null || audio.noiseReduction != null
+        },
+        audio.copy(volume = volume),
+        state.recorded,
+        state.measured,
+        state.measuring,
+    )
+    LabelledSlider(
+        label = stringResource(R.string.audio_volume),
+        value = volume,
+        onValueChange = actions.onVolume,
+        onValueChangeFinished = actions.onVolumeDone,
+        valueText = stringResource(R.string.audio_percent, (volume * 100).roundToInt()),
+        valueRange = 0f..2f,
+        labelWidth = 80.dp,
+        modifier = Modifier
+            .height(52.dp)
+            .testTag("audio-volume"),
+    )
+    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        FadeField(
+            label = stringResource(R.string.audio_fade_in),
+            valueUs = audio.fadeInUs,
+            maxUs = clip.durationUs,
+            onPick = { actions.onAudio(audio.copy(fadeInUs = it)) },
+            modifier = Modifier
+                .weight(1f)
+                .testTag("audio-fade-in"),
+        )
+        FadeField(
+            label = stringResource(R.string.audio_fade_out),
+            valueUs = audio.fadeOutUs,
+            maxUs = clip.durationUs,
+            onPick = { actions.onAudio(audio.copy(fadeOutUs = it)) },
+            modifier = Modifier
+                .weight(1f)
+                .testTag("audio-fade-out"),
+        )
+    }
+    NormalizeCard(audio, state.measured, state.measuring, actions.onLoudnessTarget)
+    NoiseReductionCard(audio.noiseReduction, noiseStrength, state.voice.gating, actions)
+    VoiceCleanupCard(audio.voiceCleanup, strength, state.voice, actions)
+    DuckingCard(audio.ducking, duckingDepth, actions)
+    BeatsCard(audio.beats, state.voice.bpm, actions.onBeats)
+    SecondaryButton(
+        text = stringResource(R.string.audio_apply_all),
+        onClick = actions.onApplyToAll,
+        leadingIcon = ClipraIcons.Copy,
+        outlined = true,
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("audio-apply-all"),
+    )
 }
 
 /**
