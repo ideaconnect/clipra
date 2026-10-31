@@ -46,6 +46,8 @@
     <string name="audio_duck_detail">Other clips drop %1$d dB while it speaks</string>
     <string name="audio_duck_depth">Lower by</string>
     <string name="audio_duck_db">-%1$d dB</string>
+    <string name="audio_duck_under_title">Auto-duck under speech</string>
+    <string name="audio_duck_under_detail">Drops %1$d dB while anyone speaks</string>
     <string name="audio_beats_title">Beat markers</string>
     <string name="audio_beats_detail">Marks the beat; cuts snap to it</string>
     <string name="audio_beats_bpm">%1$d BPM · cuts snap</string>

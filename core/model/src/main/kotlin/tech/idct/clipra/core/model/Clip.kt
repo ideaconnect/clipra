@@ -226,6 +226,11 @@ data class AudioSettings(
      * null for none.
      */
     val ducking: Float? = null,
+    /**
+     * Auto-duck under speech (TabletAudio board), the other way round: this clip, music say,
+     * drops by this many dB (3 to 24) while any other clip speaks; null for none.
+     */
+    val duckUnderSpeech: Float? = null,
     /** Beat markers (#40) on this clip, which cuts snap to. */
     val beats: Boolean = false,
 )

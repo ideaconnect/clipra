@@ -101,7 +101,7 @@ object ProjectRender {
                     val cell = Cells.rect(project.format, clip.cell)
                     // Its grade's LUT (#28), read once.
                     val lut = clip.color?.lut?.let(media::lut)
-                    // The voices it ducks under (#40).
+                    // The voices it ducks under (#40), and the speech it ducks under itself.
                     val ducks = ducksFor(project, clip, voices)
                     if (cell == null && lut == null && ducks.isEmpty()) {
                         rendered
@@ -119,18 +119,27 @@ object ProjectRender {
         )
     }
 
-    /** A voice that ducks the others (#40): its speech on the timeline. */
+    /**
+     * A clip that speaks (#40): its speech on the timeline, and how far it ducks the others, if
+     * it is set to.
+     */
     private class Voice(
         val clipId: String,
         val mediaId: String,
         val speech: List<LongRange>,
-        val depthDb: Float,
+        val depthDb: Float?,
     )
 
-    /** Every clip set to duck the others, with its speech mapped onto the timeline. */
-    private fun voicesOf(project: Project, media: MediaResolver): List<Voice> =
-        project.layers.filter { !it.muted }.flatMap { it.clips }.mapNotNull { clip ->
-            val depth = clip.audio.ducking ?: return@mapNotNull null
+    /**
+     * Every clip whose speech is known, mapped onto the timeline. Only clips set to duck the
+     * others need it, unless a clip ducks under all speech.
+     */
+    private fun voicesOf(project: Project, media: MediaResolver): List<Voice> {
+        val clips = project.layers.filter { !it.muted }.flatMap { it.clips }
+        val underAll = clips.any { it.audio.duckUnderSpeech != null }
+        return clips.mapNotNull { clip ->
+            val depth = clip.audio.ducking
+            if (depth == null && !underAll) return@mapNotNull null
             val ref = clip.source ?: return@mapNotNull null
             val asset = project.asset(ref.mediaId) ?: return@mapNotNull null
             val speech = media.speech(asset) ?: return@mapNotNull null
@@ -143,17 +152,24 @@ object ProjectRender {
             }
             Voice(clip.id, ref.mediaId, onTimeline, depth)
         }
+    }
 
-    /** The voices [clip] ducks under: every other one, not of its own media, in its time. */
+    /**
+     * The voices [clip] ducks under: every other one, not of its own media, in its time, by its
+     * depth; and when [clip] ducks under all speech, every voice by the deeper of the two.
+     */
     private fun ducksFor(project: Project, clip: Clip, voices: List<Voice>): List<RenderDuck> {
         if (clip.type != ClipType.Audio && clip.type != ClipType.Video) return emptyList()
+        val under = clip.audio.duckUnderSpeech
         return voices.filter { it.clipId != clip.id && it.mediaId != clip.source?.mediaId }
             .mapNotNull { voice ->
+                val depth =
+                    listOfNotNull(voice.depthDb, under).maxOrNull() ?: return@mapNotNull null
                 val local = voice.speech.filter {
                     it.last >= clip.startUs && it.first <= clip.endUs
                 }
                     .map { (it.first - clip.startUs)..(it.last - clip.startUs) }
-                if (local.isEmpty()) null else RenderDuck(local, voice.depthDb)
+                if (local.isEmpty()) null else RenderDuck(local, depth)
             }
     }
 

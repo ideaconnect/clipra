@@ -330,6 +330,39 @@ class AudioScreenTest {
         assertEquals(listOf(false), beats)
     }
 
+    /** Music ducks under all speech instead (TabletAudio board), by its own depth. */
+    @Test
+    fun musicDucksUnderSpeech() {
+        Locale.setDefault(Locale.US)
+        val song = Clip(
+            id = "guitar",
+            type = ClipType.Audio,
+            startUs = 0,
+            durationUs = 42_000_000,
+            source = MediaRef("guitar", 0, 42_000_000),
+            audio = AudioSettings(duckUnderSpeech = 9f),
+        )
+        val withMusic = project.copy(
+            media = project.media +
+                MediaAsset("guitar", "content://2", MediaKind.Audio, "lisbon-guitar.mp3"),
+            layers = project.layers + Layer("L2", clips = listOf(song)),
+        )
+        compose.setContent {
+            ClipraTheme {
+                AudioScreen(
+                    state = AudioUiState(withMusic, song, waveform, loaded = true),
+                    volume = 1f,
+                    actions = AudioActions({}, {}, {}, {}, {}),
+                )
+            }
+        }
+        compose.onNodeWithTag("audio-duck").performScrollTo()
+        compose.onNodeWithText("Auto-duck under speech").assertExists()
+        compose.onNodeWithText("Drops 9 dB while anyone speaks").assertExists()
+        compose.onNodeWithText("-9 dB").assertExists()
+        compose.onNodeWithTag("audio-duck").captureRoboImage(roborazziOptions = options)
+    }
+
     @Test
     fun levelsAfterFollowVolumeAndNormalization() {
         val measured = Loudness.Measurement(-22.8f, -3.1f)
