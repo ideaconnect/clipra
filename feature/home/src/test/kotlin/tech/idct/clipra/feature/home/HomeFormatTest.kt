@@ -1,11 +1,14 @@
 package tech.idct.clipra.feature.home
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
+import tech.idct.clipra.core.models.ModelCatalog
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
+import java.util.Locale
 
 class HomeFormatTest {
     private val zone: ZoneId = ZoneOffset.UTC
@@ -41,5 +44,29 @@ class HomeFormatTest {
         assertEquals("1:18", formatDuration(78_400_000))
         assertEquals("2:05", formatDuration(125_000_000))
         assertEquals("1:02:03", formatDuration(3_723_000_000))
+    }
+
+    /** The AI card as on the Main board: "On-device AI ready", Whisper Base and DeepFilterNet 3. */
+    @Test
+    fun theAiCardNamesTheDownloadedModels() {
+        val installed = listOf(
+            ModelCatalog.translateEnPl,
+            ModelCatalog.deepFilterNet,
+            ModelCatalog.whisperBase,
+        )
+
+        val status = aiStatus(installed, "Whisper %1${'$'}s", Locale.US)
+
+        assertEquals(
+            AiStatus(ready = true, summary = "Whisper Base · DeepFilterNet 3 · English → Polish"),
+            status,
+        )
+    }
+
+    /** Without a captions model the card says what the models are for. */
+    @Test
+    fun theAiCardIsNotReadyWithoutCaptions() {
+        assertNull(aiStatus(emptyList(), "Whisper %1${'$'}s", Locale.US))
+        assertNull(aiStatus(listOf(ModelCatalog.deepFilterNet), "Whisper %1${'$'}s", Locale.US))
     }
 }

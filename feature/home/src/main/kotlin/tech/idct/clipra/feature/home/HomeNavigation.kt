@@ -11,6 +11,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -91,6 +92,10 @@ private fun HomeRoute(
 ) {
     val recent by viewModel.recent.collectAsStateWithLifecycle()
     val now by viewModel.now.collectAsStateWithLifecycle()
+    val installed by viewModel.installedModels.collectAsStateWithLifecycle()
+    val whisper = stringResource(R.string.home_ai_whisper)
+    val locale = LocalConfiguration.current.locales[0]
+    val aiStatus = installed?.let { aiStatus(it, whisper, locale) }
     var renaming by remember { mutableStateOf<ProjectSummary?>(null) }
     var deleting by remember { mutableStateOf<ProjectSummary?>(null) }
     val copyName = stringResource(R.string.home_copy_name)
@@ -110,7 +115,7 @@ private fun HomeRoute(
             TabletHomeScreen(
                 recent = recent,
                 nowMillis = now,
-                aiStatus = null,
+                aiStatus = aiStatus,
                 pro = actions.proOffer(),
                 actions = HomeActions(
                     onNewProject = actions.onNewProject,
@@ -145,7 +150,7 @@ private fun HomeRoute(
             HomeScreen(
                 recent = recent,
                 nowMillis = now,
-                aiStatus = null,
+                aiStatus = aiStatus,
                 actions = actions,
                 projectActions = projectActions,
             )
