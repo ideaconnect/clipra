@@ -56,4 +56,19 @@
     <string name="text_animation_wave">Wave</string>
     <string name="text_animation_glitch">Glitch in</string>
     <string name="text_animation_fade">Fade</string>
+    <string name="text_templates">Templates</string>
+    <string name="text_template_card">Text card</string>
+    <string name="text_template_title">Title</string>
+    <string name="text_template_lower_third">Lower third</string>
+    <string name="text_template_subtitle">Subtitle</string>
+    <string name="text_template_callout">Callout</string>
+    <string name="text_template_end_credits">End credits</string>
+    <string name="text_template_card_sample">DAY TWO</string>
+    <string name="text_template_title_sample">TITLE</string>
+    <string name="text_template_lower_third_sample">Lisbon, PT</string>
+    <string name="text_template_subtitle_sample">Hello there</string>
+    <string name="text_template_callout_sample">Look!</string>
+    <string name="text_template_end_credits_sample">The end</string>
+    <string name="text_template_save">Save as template</string>
+    <string name="text_template_delete">Delete template</string>
 </resources>

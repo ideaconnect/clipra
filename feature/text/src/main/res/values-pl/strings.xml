@@ -56,4 +56,19 @@
     <string name="text_animation_wave">Fala</string>
     <string name="text_animation_glitch">Glitch</string>
     <string name="text_animation_fade">Przenikanie</string>
+    <string name="text_templates">Szablony</string>
+    <string name="text_template_card">Plansza</string>
+    <string name="text_template_title">Tytuł</string>
+    <string name="text_template_lower_third">Belka</string>
+    <string name="text_template_subtitle">Napis</string>
+    <string name="text_template_callout">Dymek</string>
+    <string name="text_template_end_credits">Napisy końcowe</string>
+    <string name="text_template_card_sample">DZIEŃ DRUGI</string>
+    <string name="text_template_title_sample">TYTUŁ</string>
+    <string name="text_template_lower_third_sample">Lizbona, PT</string>
+    <string name="text_template_subtitle_sample">Cześć</string>
+    <string name="text_template_callout_sample">Patrz!</string>
+    <string name="text_template_end_credits_sample">Koniec</string>
+    <string name="text_template_save">Zapisz szablon</string>
+    <string name="text_template_delete">Usuń szablon</string>
 </resources>

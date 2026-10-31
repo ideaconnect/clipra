@@ -81,6 +81,8 @@ import tech.idct.clipra.core.model.TextAlign
 import tech.idct.clipra.core.model.TextColors
 import tech.idct.clipra.core.model.TextEffects
 import tech.idct.clipra.core.model.TextSpec
+import tech.idct.clipra.core.model.TextTemplate
+import tech.idct.clipra.core.model.TextTemplates
 import android.graphics.Color as AndroidColor
 import androidx.compose.ui.text.style.TextAlign as ComposeTextAlign
 import tech.idct.clipra.core.fonts.R as FontsR
@@ -92,6 +94,10 @@ class TextActions(
     val onSpec: (TextSpec) -> Unit,
     /** The text's animation in and out (#33). */
     val onAnimation: (Animation) -> Unit = {},
+    /** Templates (#34): apply one, save the clip's look as one, delete a saved one. */
+    val onTemplate: (TextTemplate) -> Unit = {},
+    val onSaveTemplate: () -> Unit = {},
+    val onDeleteTemplate: (String) -> Unit = {},
 )
 
 /**
@@ -107,6 +113,7 @@ fun TextScreen(
     actions: TextActions,
     preview: @Composable () -> Unit,
     modifier: Modifier = Modifier,
+    templates: List<TextTemplate> = TextTemplates.builtIn,
 ) {
     val colors = ClipraTheme.colors
     val project = state.project ?: return
@@ -162,7 +169,7 @@ fun TextScreen(
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    TextField(draft, actions.onDraft, fill)
+                    TextField(draft, actions.onDraft, Modifier.weight(1f))
                     FontButton(spec, onFont = { actions.onSpec(spec.copy(font = it)) })
                     AlignButton(spec.align, onAlign = { actions.onSpec(spec.copy(align = it)) })
                 }
@@ -181,6 +188,13 @@ fun TextScreen(
                     tag = "text-color",
                 )
                 EffectGrid(spec, onEffect = { actions.onSpec(spec.copy(effect = it)) })
+                TemplateGrid(
+                    spec = spec,
+                    templates = templates,
+                    onTemplate = actions.onTemplate,
+                    onSave = actions.onSaveTemplate,
+                    onDelete = actions.onDeleteTemplate,
+                )
                 val animation = clip.animation ?: Animation()
                 AnimationRow(
                     title = stringResource(R.string.text_animation_in),
