@@ -521,7 +521,7 @@ private fun deepFilterNetDetail(status: ModelStatus): String {
 
         else -> stringResource(
             R.string.audio_engine_get,
-            Formatter.formatShortFileSize(context, model.download?.bytes ?: 0),
+            Formatter.formatShortFileSize(context, model.downloadBytes),
         )
     }
 }

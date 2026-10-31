@@ -8,6 +8,7 @@
     <string name="models_accelerator">Używaj NPU lub GPU telefonu, gdy to możliwe</string>
     <string name="models_group_captions">Napisy · Whisper</string>
     <string name="models_group_voice">Czyszczenie głosu</string>
+    <string name="models_group_translation">Tłumaczenie napisów · offline, osobno dla pary języków</string>
     <string name="models_default">Domyślny</string>
     <string name="models_lite">lekki</string>
     <string name="models_get">Pobierz</string>

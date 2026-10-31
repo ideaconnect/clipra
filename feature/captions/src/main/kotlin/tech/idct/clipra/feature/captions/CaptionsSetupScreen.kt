@@ -288,7 +288,7 @@ private fun ModelOption(
     val shape = ClipraTheme.shapes.button
     val context = LocalContext.current
     val status = model.status
-    val bytes = (status as? ModelStatus.Installed)?.bytes ?: model.model.download?.bytes ?: 0
+    val bytes = (status as? ModelStatus.Installed)?.bytes ?: model.model.downloadBytes
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -434,7 +434,7 @@ private fun GenerateBar(state: CaptionsSetupUiState, actions: CaptionsSetupActio
 
         status !is ModelStatus.Installed -> stringResource(
             R.string.captions_download_generate,
-            Formatter.formatShortFileSize(context, state.model.download?.bytes ?: 0),
+            Formatter.formatShortFileSize(context, state.model.downloadBytes),
         )
 
         else -> stringResource(R.string.captions_generate)

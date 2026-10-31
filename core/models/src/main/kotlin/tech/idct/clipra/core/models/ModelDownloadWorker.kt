@@ -35,7 +35,7 @@ class ModelDownloadWorker @AssistedInject constructor(
         // Without it (started from the background on Android 12 and later) the download still
         // runs, without a notification, and resumes if the system stops it.
         val foreground = runCatching { setForeground(foregroundInfo(model, 0)) }.isSuccess
-        val total = model.download?.bytes ?: 0
+        val total = model.downloadBytes
         var reported = 0L
         return try {
             withContext(Dispatchers.IO) {
@@ -76,11 +76,11 @@ class ModelDownloadWorker @AssistedInject constructor(
     private fun notification(model: AiModel, bytes: Long): android.app.Notification {
         val context = applicationContext
         createChannel(context)
-        val total = model.download?.bytes ?: 1
+        val total = model.downloadBytes.coerceAtLeast(1)
         val percent = (bytes * 100 / total).toInt()
         return NotificationCompat.Builder(context, CHANNEL)
             .setSmallIcon(ClipraIcons.Download)
-            .setContentTitle(context.getString(R.string.models_notification_title, model.name))
+            .setContentTitle(context.getString(R.string.models_notification_title, model.title()))
             .setProgress(100, percent, bytes == 0L)
             .setOngoing(true)
             .setOnlyAlertOnce(true)

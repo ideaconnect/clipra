@@ -31,7 +31,7 @@ data class OnboardingUiState(
     /** What Start editing downloads, in bytes: the selected models not on the phone yet. */
     val downloadBytes: Long
         get() = choices.filter { it.selected && !it.installed }
-            .sumOf { it.model.download?.bytes ?: 0 }
+            .sumOf { it.model.downloadBytes }
 }
 
 /** The models onboarding offers (Onboarding board): Base and DeepFilterNet 3 preselected. */

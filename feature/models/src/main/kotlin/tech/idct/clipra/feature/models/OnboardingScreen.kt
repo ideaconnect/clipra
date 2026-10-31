@@ -247,7 +247,7 @@ private fun ChoiceRow(choice: DownloadChoice, onToggle: () -> Unit) {
             text = if (choice.installed) {
                 stringResource(R.string.models_installed)
             } else {
-                Formatter.formatShortFileSize(context, choice.model.download?.bytes ?: 0)
+                Formatter.formatShortFileSize(context, choice.model.downloadBytes)
             },
             style = type.meta.copy(fontSize = type.caption.fontSize),
             color = colors.textSecondary,
