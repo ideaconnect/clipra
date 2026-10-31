@@ -14,6 +14,7 @@ dependencies {
     implementation(project(":core:models"))
     api(project(":ml:voice"))
     implementation(project(":ml:whisper"))
+    implementation(project(":ml:translate"))
     implementation(project(":ml:vision"))
     api(libs.androidx.media3.common)
     api(libs.androidx.media3.effect)

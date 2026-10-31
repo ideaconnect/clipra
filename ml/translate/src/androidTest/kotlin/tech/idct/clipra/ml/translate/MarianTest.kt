@@ -43,6 +43,10 @@ class MarianTest {
             assertTrue(polish[1], "świat" in polish[1].lowercase())
             assertTrue(polish[2], "Alfam" in polish[2])
         }
+        // A second model in the same process, as a pair through English loads two.
+        Marian.open(model, vocab, shortlist).use { marian ->
+            assertTrue("Lizbon" in marian.translate(listOf("We finally made it to Lisbon"))[0])
+        }
     }
 
     /** The file of [url], unpacked, once its download matches [sha256]. */

@@ -90,6 +90,21 @@
     </plurals>
     <string name="captions_save_srt">Save .srt</string>
     <string name="captions_import_srt">Import .srt</string>
+    <!-- Translation (#47) -->
+    <string name="captions_translate_short">Translate</string>
+    <string name="captions_language_original">%1$s · original</string>
+    <string name="captions_language_heard">Original</string>
+    <string name="captions_translate_title">Translate captions</string>
+    <string name="captions_translate_body">Runs on this phone. The captions never leave it.</string>
+    <string name="captions_translate_spoken">The captions are in</string>
+    <string name="captions_translate_from">From %1$s into</string>
+    <string name="captions_translate_download">Download %1$s</string>
+    <string name="captions_translate_ready">On this phone</string>
+    <string name="captions_translate_downloading">Downloading…</string>
+    <string name="captions_translate_waiting_wifi">Waiting for Wi-Fi</string>
+    <string name="captions_translating">Translating…</string>
+    <string name="captions_translated">Captions in %1$s added</string>
+    <string name="captions_translate_failed">Couldn\'t translate the captions. Try again.</string>
     <string name="captions_saved_srt">Captions saved</string>
     <plurals name="captions_imported">
         <item quantity="one">Imported %1$d caption</item>

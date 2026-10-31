@@ -163,6 +163,10 @@ Java_tech_idct_clipra_ml_translate_Marian_open(JNIEnv* env, jclass, jstring mode
   std::vector<char*> argv;
   for (auto& arg : args) argv.push_back(&arg[0]);
   try {
+    // Marian registers its loggers each time it reads options, and spdlog refuses a name it
+    // already has: drop them, or the second model loaded (any pair through English) fails.
+    spdlog::drop("general");
+    spdlog::drop("valid");
     auto options = marian::parseOptions(static_cast<int>(argv.size()), argv.data(),
                                         marian::cli::mode::translation, true);
     return reinterpret_cast<jlong>(new Translator(options));
