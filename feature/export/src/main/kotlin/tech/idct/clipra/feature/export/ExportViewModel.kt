@@ -158,7 +158,8 @@ class ExportViewModel @Inject constructor(
     fun start(onStarted: (projectId: String) -> Unit) {
         val project = state.value.project ?: return
         viewModelScope.launch {
-            projects.save(project.copy(exportSettings = state.value.settings))
+            // A phone too full to save the settings is too full to export; the export says so.
+            runCatching { projects.save(project.copy(exportSettings = state.value.settings)) }
             onStarted(project.id)
         }
     }

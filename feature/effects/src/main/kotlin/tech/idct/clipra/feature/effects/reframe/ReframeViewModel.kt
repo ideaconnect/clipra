@@ -11,6 +11,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -157,9 +158,11 @@ class ReframeViewModel @Inject constructor(
                     start.motion,
                     boxes,
                 ).copy(id = randomId(), name = name, createdAtMillis = System.currentTimeMillis())
-                // Saved even if the board goes now, so the copy is never half made.
-                appScope.launch { repository.save(copy) }.join()
-                mutableState.update { it.copy(creating = null, created = copy.id) }
+                // Saved even if the board goes now, so the copy is never half made. A phone too
+                // full to save it leaves the board as it was.
+                val saved = appScope.async { runCatching { repository.save(copy) }.isSuccess }
+                    .await()
+                mutableState.update { it.copy(creating = null, created = copy.id.takeIf { saved }) }
             } catch (cancelled: CancellationException) {
                 mutableState.update { it.copy(creating = null) }
                 throw cancelled

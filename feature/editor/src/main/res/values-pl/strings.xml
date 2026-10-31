@@ -195,6 +195,7 @@
     <string name="editor_voiceover_file_n">lektor %1$d.m4a</string>
     <string name="editor_message_needs_microphone">Zezwól na dostęp do mikrofonu, aby nagrać lektora</string>
     <string name="editor_message_mic_unavailable">Nie udało się włączyć mikrofonu</string>
+    <string name="editor_message_not_saved">Nie udało się zapisać zmian. Zwolnij miejsce w telefonie, a zostaną zapisane.</string>
 
     <!-- Tablet editor (#69) -->
     <string name="editor_tablet_close">Zamknij projekt</string>

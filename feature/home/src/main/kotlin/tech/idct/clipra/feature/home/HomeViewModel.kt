@@ -46,15 +46,17 @@ class HomeViewModel @Inject constructor(
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), clock.nowMillis())
 
+    // A phone too full to write can fail any of these; the list then stays as it was.
+
     fun rename(id: String, name: String) {
-        viewModelScope.launch { projects.rename(id, name.trim()) }
+        viewModelScope.launch { runCatching { projects.rename(id, name.trim()) } }
     }
 
     fun duplicate(id: String, name: String) {
-        viewModelScope.launch { projects.duplicate(id, name) }
+        viewModelScope.launch { runCatching { projects.duplicate(id, name) } }
     }
 
     fun delete(id: String) {
-        viewModelScope.launch { projects.delete(id) }
+        viewModelScope.launch { runCatching { projects.delete(id) } }
     }
 }
