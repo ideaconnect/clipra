@@ -1,12 +1,12 @@
-# Clipra privacy policy (draft)
+# Clipra privacy policy
 
-Draft for https://idct.tech (#78). Publish it there, with the Polish version (`privacy-policy.pl.md`), and give its address in Play Console (App content > Privacy policy). Fill in the date when it goes live.
+Published on 31 October 2026 at https://idct.tech/clipra/privacy, with the Polish version (`privacy-policy.pl.md`) at https://idct.tech/clipra/prywatnosc. Give the English address in Play Console (App content > Privacy policy). When the policy changes, change this file and the page together, with a new date.
 
 ---
 
 ## Clipra privacy policy
 
-Last updated: [date]
+Last updated: 31 October 2026
 
 Clipra is a video editor for Android by IDCT Bartosz Pachołek ("we"). Its promise is simple: no account, no upload, no watermark. This policy explains what that means for your data.
 
@@ -32,6 +32,10 @@ Clipra isn't directed at children under 16.
 
 We hold no personal data about you, so there is nothing for us to give you, change or delete. For data Google processes for ads and purchases, see [Google's privacy policy](https://policies.google.com/privacy). Deleting Clipra deletes everything it stored on your phone, except the files you saved to your gallery or folders.
 
+### This website
+
+The Clipra pages are part of idct.tech. How the site handles visits and the messages you send through the contact form is described in the [site's privacy policy](https://idct.tech/privacy), and the [cookie list](https://idct.tech/cookies) names every cookie.
+
 ### Changes and contact
 
-If this policy changes, the new version will be here, with its date. Questions are welcome through the contact form at https://idct.tech.
+If this policy changes, the new version will be here, with its date. Questions are welcome through the [contact form](https://idct.tech/contact), or write to IDCT Bartosz Pachołek, ul. Kaszubska 12/8C, 70-403 Szczecin, Poland.

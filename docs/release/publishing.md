@@ -70,11 +70,11 @@ Also in the listing:
 - **Category:** Video Players & Editors.
 - **Contact email:** the support address shown on the listing.
 - **Website:** idct.tech.
-- **Privacy policy:** the URL where `privacy-policy.md` (and the Polish `privacy-policy.pl.md`) are published on idct.tech.
+- **Privacy policy:** https://idct.tech/clipra/privacy (Polish: https://idct.tech/clipra/prywatnosc), published from `privacy-policy.md` and `privacy-policy.pl.md`. Settings > Privacy policy links to it in the app.
 
 ## 7. Before the first production release
 
 - Play Console setup done (`play-console.md`, #66): Clipra Pro, the ads declaration, data safety, content rating, target audience.
-- The privacy policy and `app-ads.txt` are live on idct.tech.
+- The privacy policy is live on idct.tech (done 31 October 2026); `app-ads.txt` is live too, with the AdMob publisher id.
 - The budgets are met on the mid-range phones (`performance.md`, #77).
 - The closed test is complete, if the account needs one.

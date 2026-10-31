@@ -1,12 +1,12 @@
-# Polityka prywatności Clipra (szkic)
+# Polityka prywatności Clipra
 
-Szkic dla https://idct.tech (#78), polska wersja `privacy-policy.md`. Uzupełnij datę przy publikacji.
+Opublikowana 31 października 2026 na https://idct.tech/clipra/prywatnosc, polska wersja `privacy-policy.md`. Przy zmianie polityki zmień ten plik i stronę razem, z nową datą.
 
 ---
 
 ## Polityka prywatności Clipra
 
-Ostatnia aktualizacja: [data]
+Ostatnia aktualizacja: 31 października 2026
 
 Clipra to edytor wideo na Androida od IDCT Bartosz Pachołek („my”). Jej obietnica jest prosta: bez konta, bez wysyłania, bez znaku wodnego. Ta polityka wyjaśnia, co to znaczy dla Twoich danych.
 
@@ -32,6 +32,10 @@ Clipra nie jest przeznaczona dla dzieci poniżej 16 lat.
 
 Nie przechowujemy żadnych Twoich danych osobowych, więc nie mamy czego udostępnić, zmienić ani usunąć. Dane przetwarzane przez Google na potrzeby reklam i zakupów opisuje [polityka prywatności Google](https://policies.google.com/privacy?hl=pl). Odinstalowanie Clipry usuwa wszystko, co zapisała na telefonie, poza plikami zapisanymi w galerii lub folderach.
 
+### Ta strona
+
+Strony Clipry są częścią idct.tech. Jak strona obsługuje odwiedziny i wiadomości wysłane przez formularz kontaktowy, opisuje [polityka prywatności strony](https://idct.tech/privacy) (po angielsku), a [lista plików cookie](https://idct.tech/cookies) wymienia każdy z nich.
+
 ### Zmiany i kontakt
 
-Jeśli ta polityka się zmieni, nowa wersja pojawi się tutaj, z datą. Pytania prosimy kierować przez formularz kontaktowy na https://idct.tech.
+Jeśli ta polityka się zmieni, nowa wersja pojawi się tutaj, z datą. Pytania prosimy kierować przez [formularz kontaktowy](https://idct.tech/contact) albo na adres IDCT Bartosz Pachołek, ul. Kaszubska 12/8C, 70-403 Szczecin.

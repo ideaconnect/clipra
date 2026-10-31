@@ -44,6 +44,7 @@ class SettingsScreenTest {
         onModels = { calls += "models" },
         onAdPrivacy = { calls += "privacy" },
         onLicenses = { calls += "licenses" },
+        onPrivacyPolicy = { calls += "policy" },
     )
 
     // A free user in Poland on a phone without an AV1 encoder.
@@ -76,8 +77,9 @@ class SettingsScreenTest {
         compose.onNodeWithText("HEVC").performScrollTo().performClick()
         compose.onNodeWithTag("settings-models").performScrollTo().performClick()
         compose.onNodeWithTag("settings-ad-privacy").performScrollTo().performClick()
+        compose.onNodeWithTag("settings-privacy-policy").performScrollTo().performClick()
         compose.onNodeWithTag("settings-licenses").performScrollTo().performClick()
-        assertEquals(listOf("pro", "restore", "models", "privacy", "licenses"), calls)
+        assertEquals(listOf("pro", "restore", "models", "privacy", "policy", "licenses"), calls)
         assertEquals(listOf(ExportSettings(codec = VideoCodec.HEVC)), defaults)
     }
 
@@ -118,6 +120,8 @@ class SettingsScreenTest {
         compose.onNodeWithText("You’re Pro").assertExists()
         compose.onNodeWithText("Clipra Pro is restored.").assertExists()
         compose.onNodeWithTag("settings-ad-privacy").assertDoesNotExist()
+        // The privacy policy is there for everyone.
+        compose.onNodeWithTag("settings-privacy-policy").assertExists()
         compose.onRoot().captureRoboImage(roborazziOptions = options)
     }
 }

@@ -28,6 +28,8 @@
     <string name="settings_cancel">Anuluj</string>
     <string name="settings_models">Modele AI</string>
     <string name="settings_privacy">Prywatność</string>
+    <string name="settings_privacy_policy">Polityka prywatności</string>
+    <string name="settings_privacy_policy_url">https://idct.tech/clipra/prywatnosc</string>
     <string name="settings_on_device">Na tym telefonie</string>
     <string name="settings_on_device_detail">Twoje nagrania, transkrypcje i zmiany nigdy nie opuszczają tego telefonu.</string>
     <string name="settings_about">O aplikacji</string>
