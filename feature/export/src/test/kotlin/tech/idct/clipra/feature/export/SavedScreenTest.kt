@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ApplicationProvider
@@ -19,10 +20,12 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import tech.idct.clipra.core.designsystem.ClipraTheme
 import tech.idct.clipra.core.engine.export.ExportState
+import tech.idct.clipra.core.engine.export.SavedExtra
+import tech.idct.clipra.core.model.export.ExportExtra
 import tech.idct.clipra.core.model.export.ExportSettings
 import java.util.Locale
 
-/** Saved to Gallery (design/screens/phone/ExportDone.png). */
+/** Saved to Gallery (design/screens/phone/ExportDone.png), with its cover and project. */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34], qualifiers = "w390dp-h844dp-xhdpi")
 class SavedScreenTest {
@@ -38,6 +41,19 @@ class SavedScreenTest {
         settings = ExportSettings(),
         width = 1080,
         height = 1920,
+        extras = listOf(
+            SavedExtra(
+                ExportExtra.Cover,
+                "lisbon-weekend.jpg",
+                "content://media/external/images/1",
+            ),
+            SavedExtra(
+                ExportExtra.Project,
+                "lisbon-weekend.otio",
+                "content://media/external/file/2",
+            ),
+        ),
+        captionsBurnedIn = true,
     )
 
     @Test
@@ -57,6 +73,8 @@ class SavedScreenTest {
                 )
             }
         }
+        compose.onNodeWithText("lisbon-weekend.jpg · cover").assertExists()
+        compose.onNodeWithText("H.264 · captions burned in").assertExists()
         compose.onRoot().captureRoboImage(
             roborazziOptions = RoborazziOptions(
                 compareOptions = RoborazziOptions.CompareOptions(changeThreshold = 0.001f),

@@ -1,6 +1,7 @@
 package tech.idct.clipra.core.engine.export
 
 import android.content.Context
+import android.net.Uri
 import android.os.SystemClock
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
@@ -21,6 +22,8 @@ import tech.idct.clipra.core.engine.media.MediaCache
 import tech.idct.clipra.core.engine.media.VoiceCleaner
 import tech.idct.clipra.core.engine.render.PauseGate
 import tech.idct.clipra.core.model.Project
+import tech.idct.clipra.core.model.Srt
+import tech.idct.clipra.core.model.export.CaptionMode
 import tech.idct.clipra.core.model.export.ExportSettings
 import java.text.Normalizer
 import javax.inject.Inject
@@ -56,6 +59,10 @@ sealed interface ExportState {
         val settings: ExportSettings,
         val width: Int,
         val height: Int,
+        /** The files saved next to the video (#59). */
+        val extras: List<SavedExtra> = emptyList(),
+        /** Whether the video has captions drawn into it. */
+        val captionsBurnedIn: Boolean = false,
     ) : ExportState
 
     data class Failed(val projectId: String, val failure: ExportFailure) : ExportState
@@ -76,6 +83,7 @@ class ExportManager @Inject constructor(
     cutouts: Cutouts,
 ) {
     private val renderer = ExportRenderer(context, cache, voices, cutouts)
+    private val extras = ExportExtras(context)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val mutableState = MutableStateFlow<ExportState>(ExportState.Idle)
     private val mutableEvents = MutableSharedFlow<ExportEvent>(extraBufferCapacity = 8)
@@ -121,16 +129,34 @@ class ExportManager @Inject constructor(
                     onProgress(progress)
                 }
                 val size = rendered.file.length()
-                val uri = renderer.publish(rendered.file, running.fileName)
+                val uri: Uri
+                val name: String
+                val saved: List<SavedExtra>
+                try {
+                    uri = renderer.publish(rendered.file, running.fileName)
+                    // MediaStore adds a number when the name is taken; the extras follow it.
+                    name = extras.displayName(uri) ?: running.fileName
+                    saved = extras.save(
+                        project,
+                        settings,
+                        rendered.file,
+                        name.substringBeforeLast('.'),
+                    ) { renderer.cover(project, settings) }
+                } finally {
+                    rendered.file.delete()
+                }
                 mutableState.value = ExportState.Done(
                     projectId = project.id,
                     uri = uri.toString(),
-                    fileName = running.fileName,
+                    fileName = name,
                     sizeBytes = size,
                     durationUs = project.durationUs,
                     settings = settings,
                     width = rendered.width,
                     height = rendered.height,
+                    extras = saved,
+                    captionsBurnedIn = settings.captions == CaptionMode.BurnIn &&
+                        Srt.cues(project).isNotEmpty(),
                 )
                 mutableEvents.tryEmit(ExportEvent.Finished)
             } catch (cancelled: CancellationException) {

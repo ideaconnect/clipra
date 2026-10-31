@@ -65,4 +65,15 @@
     <string name="export_see_video">See your video</string>
     <string name="export_ad_note">A short ad plays first. Clipra Pro removes it.</string>
     <string name="export_pro_subtitle_price">Clipra Pro · %1$s, one payment</string>
+    <string name="export_also_save">Also save</string>
+    <string name="export_extra_captions">Captions .srt</string>
+    <string name="export_extra_audio">Audio only .m4a</string>
+    <string name="export_extra_cover">Cover .jpg</string>
+    <string name="export_extra_project">Project .otio</string>
+    <string name="export_saved_extra">%1$s · %2$s</string>
+    <string name="export_saved_kind_captions">captions</string>
+    <string name="export_saved_kind_audio">audio</string>
+    <string name="export_saved_kind_cover">cover</string>
+    <string name="export_saved_kind_project">project</string>
+    <string name="export_saved_captions_burned">captions burned in</string>
 </resources>

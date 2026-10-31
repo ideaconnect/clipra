@@ -67,4 +67,15 @@
     <string name="export_see_video">Zobacz swój film</string>
     <string name="export_ad_note">Najpierw krótka reklama. Clipra Pro ją usuwa.</string>
     <string name="export_pro_subtitle_price">Clipra Pro · %1$s, jedna płatność</string>
+    <string name="export_also_save">Zapisz też</string>
+    <string name="export_extra_captions">Napisy .srt</string>
+    <string name="export_extra_audio">Sam dźwięk .m4a</string>
+    <string name="export_extra_cover">Okładka .jpg</string>
+    <string name="export_extra_project">Projekt .otio</string>
+    <string name="export_saved_extra">%1$s · %2$s</string>
+    <string name="export_saved_kind_captions">napisy</string>
+    <string name="export_saved_kind_audio">dźwięk</string>
+    <string name="export_saved_kind_cover">okładka</string>
+    <string name="export_saved_kind_project">projekt</string>
+    <string name="export_saved_captions_burned">napisy wtopione</string>
 </resources>

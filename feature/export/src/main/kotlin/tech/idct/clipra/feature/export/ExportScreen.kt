@@ -1,6 +1,7 @@
 package tech.idct.clipra.feature.export
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,9 +21,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -34,16 +37,20 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import tech.idct.clipra.core.designsystem.ClipraTheme
 import tech.idct.clipra.core.designsystem.component.ChoiceCard
+import tech.idct.clipra.core.designsystem.component.ClipraChip
 import tech.idct.clipra.core.designsystem.component.ClipraIcon
 import tech.idct.clipra.core.designsystem.component.PrimaryButton
 import tech.idct.clipra.core.designsystem.component.ScreenHeader
 import tech.idct.clipra.core.designsystem.component.Segment
 import tech.idct.clipra.core.designsystem.component.SegmentedControl
 import tech.idct.clipra.core.designsystem.icon.ClipraIcons
+import tech.idct.clipra.core.designsystem.theme.ClipraDimens
 import tech.idct.clipra.core.model.FrameRate
 import tech.idct.clipra.core.model.Project
 import tech.idct.clipra.core.model.Resolution
+import tech.idct.clipra.core.model.Srt
 import tech.idct.clipra.core.model.export.CaptionMode
+import tech.idct.clipra.core.model.export.ExportExtra
 import tech.idct.clipra.core.model.export.ExportQuality
 import tech.idct.clipra.core.model.export.ExportSettings
 import tech.idct.clipra.core.model.export.VideoCodec
@@ -149,9 +156,90 @@ fun ExportScreen(
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
+            AlsoSave(project, settings, onChange)
         }
         Estimate(project, settings, onExport, ads)
     }
+}
+
+/**
+ * Also save (#59): the files that go next to the video, as check chips. Captions are offered when
+ * the project has some, and are on and fixed while they are a separate file anyway; the sound
+ * when something plays some.
+ */
+@Composable
+private fun AlsoSave(
+    project: Project,
+    settings: ExportSettings,
+    onChange: (ExportSettings) -> Unit,
+) {
+    val hasCaptions = remember(project) { Srt.cues(project).isNotEmpty() }
+    Section(stringResource(R.string.export_also_save)) {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            ALSO_SAVE.forEach { extra ->
+                if (extra == ExportExtra.Captions && !hasCaptions) return@forEach
+                if (extra == ExportExtra.Audio && !project.hasSound) return@forEach
+                val fixed = extra == ExportExtra.Captions && settings.captions == CaptionMode.Srt
+                val checked = fixed || extra in settings.extras
+                ClipraChip(
+                    label = stringResource(extra.labelRes()),
+                    selected = checked,
+                    onClick = {
+                        val extras = if (checked) {
+                            settings.extras - extra
+                        } else {
+                            settings.extras +
+                                extra
+                        }
+                        onChange(settings.copy(extras = extras))
+                    },
+                    enabled = !fixed,
+                    role = Role.Checkbox,
+                    leading = { CheckMark(checked, enabled = !fixed) },
+                    modifier = Modifier.testTag("extra:${extra.name}"),
+                )
+            }
+        }
+    }
+}
+
+/** The square check box of an Also save chip. */
+@Composable
+private fun CheckMark(checked: Boolean, enabled: Boolean) {
+    val colors = ClipraTheme.colors
+    val shape = RoundedCornerShape(5.dp)
+    val on = if (enabled) colors.accent else colors.textDisabled
+    Box(
+        modifier = Modifier
+            .size(18.dp)
+            .clip(shape)
+            .background(if (checked) on else Color.Transparent)
+            .border(ClipraDimens.BorderWidth, if (checked) on else colors.textDisabled, shape),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (checked) {
+            ClipraIcon(
+                icon = ClipraIcons.Check,
+                contentDescription = null,
+                tint = colors.onAccent,
+                size = 14.dp,
+            )
+        }
+    }
+}
+
+/** The phone board's two first (Cover, Project), then the tablet board's others. */
+private val ALSO_SAVE =
+    listOf(ExportExtra.Cover, ExportExtra.Project, ExportExtra.Captions, ExportExtra.Audio)
+
+private fun ExportExtra.labelRes(): Int = when (this) {
+    ExportExtra.Captions -> R.string.export_extra_captions
+    ExportExtra.Audio -> R.string.export_extra_audio
+    ExportExtra.Cover -> R.string.export_extra_cover
+    ExportExtra.Project -> R.string.export_extra_project
 }
 
 @Composable

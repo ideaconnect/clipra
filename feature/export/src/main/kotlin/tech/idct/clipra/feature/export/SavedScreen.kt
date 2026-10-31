@@ -12,6 +12,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,6 +21,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
@@ -58,6 +60,8 @@ import tech.idct.clipra.core.designsystem.component.ScreenHeader
 import tech.idct.clipra.core.designsystem.component.SecondaryButton
 import tech.idct.clipra.core.designsystem.icon.ClipraIcons
 import tech.idct.clipra.core.engine.export.ExportState
+import tech.idct.clipra.core.engine.export.SavedExtra
+import tech.idct.clipra.core.model.export.ExportExtra
 import java.util.Locale
 
 /**
@@ -143,13 +147,16 @@ fun SavedScreen(
                         style = mono,
                         color = colors.textSecondary,
                     )
+                    val burned = stringResource(R.string.export_saved_captions_burned)
                     Text(
-                        text = saved.settings.codecLabel(),
+                        text = saved.settings.codecLabel() +
+                            if (saved.captionsBurnedIn) " · $burned" else "",
                         style = mono,
                         color = colors.textSecondary,
                     )
                 }
             }
+            if (saved.extras.isNotEmpty()) SavedExtras(saved.extras)
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 PrimaryButton(
                     text = stringResource(R.string.export_share),
@@ -197,6 +204,42 @@ fun SavedScreen(
                 .heightIn(min = 56.dp),
         )
     }
+}
+
+/** The files saved next to the video (#59): "lisbon-weekend.jpg · cover". */
+@Composable
+private fun SavedExtras(extras: List<SavedExtra>) {
+    val colors = ClipraTheme.colors
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+        modifier = Modifier.testTag("saved-extras"),
+    ) {
+        extras.forEach { extra ->
+            Text(
+                text = stringResource(
+                    R.string.export_saved_extra,
+                    extra.fileName,
+                    stringResource(extra.extra.kindRes()),
+                ),
+                style = ClipraTheme.typography.caption,
+                color = colors.textSecondaryAlt,
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .background(colors.surface)
+                    .heightIn(min = 30.dp)
+                    .wrapContentHeight()
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
+            )
+        }
+    }
+}
+
+private fun ExportExtra.kindRes(): Int = when (this) {
+    ExportExtra.Captions -> R.string.export_saved_kind_captions
+    ExportExtra.Audio -> R.string.export_saved_kind_audio
+    ExportExtra.Cover -> R.string.export_saved_kind_cover
+    ExportExtra.Project -> R.string.export_saved_kind_project
 }
 
 /** The saved video: its first frame, and inline playback after a tap on play. */

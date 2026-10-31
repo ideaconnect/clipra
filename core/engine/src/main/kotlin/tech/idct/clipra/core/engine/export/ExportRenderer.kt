@@ -2,6 +2,7 @@ package tech.idct.clipra.core.engine.export
 
 import android.content.ContentValues
 import android.content.Context
+import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Environment
 import android.os.Handler
@@ -32,6 +33,8 @@ import tech.idct.clipra.core.engine.media.VoiceCleaner
 import tech.idct.clipra.core.engine.render.CompositionFactory
 import tech.idct.clipra.core.engine.render.PauseGate
 import tech.idct.clipra.core.engine.render.ProjectRender
+import tech.idct.clipra.core.engine.render.RenderTimeline
+import tech.idct.clipra.core.engine.render.StillRenderer
 import tech.idct.clipra.core.model.ClipType
 import tech.idct.clipra.core.model.Project
 import tech.idct.clipra.core.model.export.ExportSettings
@@ -84,19 +87,7 @@ class ExportRenderer(
         val size = settings.outputSize(project)
         voices?.let { prepareVoices(it, project) }
         cutouts?.let { prepareCutouts(it, project) }
-        val media = ProjectMediaResolver(
-            context,
-            cache,
-            forExport = true,
-            maxImageSide = maxOf(size.width, size.height),
-        )
-        val timeline = ProjectRender.timeline(
-            project,
-            media,
-            size.width,
-            size.height,
-            settings.frameRate.fps,
-        )
+        val timeline = timeline(project, settings)
         val composition = withContext(Dispatchers.IO) {
             CompositionFactory.create(
                 context,
@@ -139,7 +130,10 @@ class ExportRenderer(
         return Rendered(output, size.width, size.height)
     }
 
-    /** Copies [file] into the gallery (Movies/Clipra) as [displayName]; returns its content URI. */
+    /**
+     * Copies [file] into the gallery (Movies/Clipra) as [displayName]; returns its content URI.
+     * The file stays, for the extras made from it (#59); the caller deletes it.
+     */
     suspend fun publish(file: File, displayName: String): Uri = withContext(Dispatchers.IO) {
         val resolver = context.contentResolver
         val values = ContentValues().apply {
@@ -166,10 +160,41 @@ class ExportRenderer(
         } catch (e: java.io.IOException) {
             resolver.delete(uri, null, null)
             throw ExportFailedException(ExportFailure.Storage, e)
-        } finally {
-            file.delete()
         }
         uri
+    }
+
+    /**
+     * The frame at [ExportSettings.coverUs] as the video shows it, at the export size: the cover
+     * saved next to it (#59).
+     */
+    suspend fun cover(project: Project, settings: ExportSettings): Bitmap {
+        val timeline = timeline(project, settings)
+        val stills = StillRenderer(context)
+        try {
+            val at = settings.coverUs.coerceIn(0, maxOf(0, timeline.durationUs - 1))
+            return stills.render(timeline, at)
+        } finally {
+            stills.release()
+        }
+    }
+
+    /** The project at the export size from original media, captions only when burned in. */
+    private fun timeline(project: Project, settings: ExportSettings): RenderTimeline {
+        val size = settings.outputSize(project)
+        val media = ProjectMediaResolver(
+            context,
+            cache,
+            forExport = true,
+            maxImageSide = maxOf(size.width, size.height),
+        )
+        return ProjectRender.timeline(
+            settings.drawn(project),
+            media,
+            size.width,
+            size.height,
+            settings.frameRate.fps,
+        )
     }
 
     private fun buildTransformer(

@@ -165,7 +165,11 @@ Downloads run in WorkManager with a Wi-Fi-only constraint by default, resume aft
 - Transformer renders the composition from original media with the chosen resolution, frame rate, codec and bitrate (formula in `docs/product/spec.md`).
 - Encoder capability check with `MediaCodecList` before showing options: HEVC and AV1 availability, 2160p support.
 - Runs in a foreground service with a progress notification (media-processing foreground service type on Android 15 and later, data sync before that), supports pause, resume and cancel.
-- Writes to MediaStore (Movies/Clipra). Extras: cover JPEG (frame at the playhead), `.srt`, audio-only `.m4a`, `.otio` (OpenTimelineIO JSON written by our own serializer).
+- Writes to MediaStore (Movies/Clipra). Captions are drawn into the video only when they are burned in.
+- Extras (#59, `ExportExtras`) are named like the video and saved where Android keeps each kind. They are saved after the video, each on its own, so one that fails costs nothing else:
+  - the cover JPEG: the frame at the editor's playhead, drawn by `StillRenderer` at the export size, in Pictures/Clipra;
+  - the audio-only `.m4a`: the video's AAC track copied without re-encoding, in Music/Clipra;
+  - the `.srt` and the `.otio`, in Download/Clipra. The `.otio` is OpenTimelineIO JSON written by our own serializer (`Otio`). It has a video track per layer and an audio track for a layer's sound, with L1 at the bottom, gaps, dissolves and other transitions, and speed as `LinearTimeWarp`. Media are referenced by their URIs; text, captions and adjustment clips have no file and keep their words in metadata.
 - Notifies `monetization` of start, finish, failure and whether the progress screen is visible, so the ad rules in `docs/product/monetization.md` can be applied.
 
 ## 8. Monetization

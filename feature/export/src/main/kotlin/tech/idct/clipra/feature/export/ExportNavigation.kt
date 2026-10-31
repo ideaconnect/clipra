@@ -30,9 +30,12 @@ import tech.idct.clipra.core.engine.export.ExportState
 import tech.idct.clipra.monetization.billing.ProStore
 import javax.inject.Inject
 
-/** Export for [projectId]; null opens the placeholder board (debug screen index). */
+/**
+ * Export for [projectId]; null opens the placeholder board (debug screen index). [playheadUs] is
+ * where the editor's playhead was: the cover's frame (#59).
+ */
 @Serializable
-data class ExportRoute(val projectId: String? = null)
+data class ExportRoute(val projectId: String? = null, val playheadUs: Long = 0)
 
 /** The running export; [projectId] starts one, null shows the one in progress. */
 @Serializable
