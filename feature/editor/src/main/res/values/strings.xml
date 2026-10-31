@@ -193,6 +193,7 @@
     <string name="editor_voiceover_file_n">voiceover %1$d.m4a</string>
     <string name="editor_message_needs_microphone">Allow the microphone to record a voiceover</string>
     <string name="editor_message_mic_unavailable">Couldn\'t open the microphone</string>
+    <string name="editor_message_not_saved">Couldn\'t save your edits. Free up space on the phone and they\'ll be saved.</string>
 
     <!-- Tablet editor (#69) -->
     <string name="editor_tablet_close">Close the project</string>

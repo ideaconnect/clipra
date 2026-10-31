@@ -6,9 +6,11 @@ import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import tech.idct.clipra.core.model.Project
+import java.io.IOException
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ProjectAutosaverTest {
@@ -72,5 +74,33 @@ class ProjectAutosaverTest {
         advanceTimeBy(2_000)
         runCurrent()
         assertEquals(1, recorder.saves.size)
+    }
+
+    /** A full phone: the save fails, nothing ends, and the edit is saved once there is room. */
+    @Test
+    fun aFailedSaveIsTriedAgainUntilItWorks() = runTest {
+        val saved = mutableListOf<String>()
+        var full = true
+        val saver = ProjectAutosaver(
+            scope = backgroundScope,
+            save = {
+                if (full) throw IOException("No space left on device")
+                saved += it.name
+            },
+            nowMs = { testScheduler.currentTime },
+        )
+        saver.submit(project("edit"))
+        advanceTimeBy(301)
+        runCurrent()
+        assertTrue(saver.failing.value)
+        saver.flush()
+        assertTrue(saved.isEmpty())
+
+        // Room again: the next retry saves it without a new edit.
+        full = false
+        advanceTimeBy(5_400)
+        runCurrent()
+        assertEquals(listOf("edit"), saved)
+        assertFalse(saver.failing.value)
     }
 }

@@ -31,6 +31,9 @@ class ProjectSession(
 
     val project: Project get() = state.value.project
 
+    /** Whether edits can't be saved now, as when the phone's storage is full. */
+    val saveFailing: StateFlow<Boolean> get() = autosaver.failing
+
     /** Applies [command]; returns why it was refused, or null when it was applied. */
     fun edit(command: EditCommand): EditRejected? = synchronized(history) {
         try {

@@ -147,6 +147,9 @@ enum class EditorMessage {
     NeedsSound,
     NeedsMicrophone,
     MicrophoneUnavailable,
+
+    /** Edits couldn't be saved, as when the phone's storage is full; they are tried again. */
+    NotSaved,
 }
 
 @HiltViewModel
@@ -182,6 +185,12 @@ class EditorViewModel @Inject constructor(
             if (opened == null) {
                 mutableState.update { it.copy(loaded = true) }
                 return@launch
+            }
+            // Saving can fail, as when the phone is full; the edits are kept and tried again.
+            launch {
+                opened.saveFailing.collect { failing ->
+                    if (failing) mutableState.update { it.copy(message = EditorMessage.NotSaved) }
+                }
             }
             // Beat markers (#40) follow the project and each finished analysis.
             launch {

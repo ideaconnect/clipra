@@ -1,7 +1,11 @@
 package tech.idct.clipra.core.data.project
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -20,9 +24,18 @@ class ProjectAutosaver(
     private val nowMs: () -> Long,
     private val quietMs: Long = 300,
     private val maxDelayMs: Long = 1_000,
+    private val retryMs: Long = 5_000,
 ) {
     private val edits = Channel<Project>(Channel.CONFLATED)
     private val lock = Mutex()
+    private val mutableFailing = MutableStateFlow(false)
+
+    /**
+     * Whether the last save failed, as when the phone's storage is full. The edits stay unsaved
+     * and are tried again with each edit and every [retryMs] until a save works; a failed save
+     * never ends the app.
+     */
+    val failing: StateFlow<Boolean> = mutableFailing.asStateFlow()
 
     @Volatile
     private var unsaved: Project? = null
@@ -46,7 +59,8 @@ class ProjectAutosaver(
 
     private suspend fun run() {
         while (true) {
-            edits.receive()
+            // After a failed save the latest edit is tried again a while later, edits or not.
+            if (failing.value) withTimeoutOrNull(retryMs) { edits.receive() } else edits.receive()
             val deadline = nowMs() + maxDelayMs
             while (true) {
                 val wait = minOf(quietMs, deadline - nowMs())
@@ -59,7 +73,15 @@ class ProjectAutosaver(
     }
 
     private suspend fun saveNow(project: Project) {
-        save(project)
+        try {
+            save(project)
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            mutableFailing.value = true
+            return
+        }
+        mutableFailing.value = false
         if (unsaved === project) unsaved = null
     }
 }

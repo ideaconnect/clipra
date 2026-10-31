@@ -63,34 +63,43 @@ class NewProjectViewModel @Inject constructor(
         withTextCard: Boolean = textCard,
     ) {
         viewModelScope.launch {
-            val project = projects.create(name, mutableFormat.value)
-            if (!withTextCard) {
-                onCreated(project.id, null)
-                return@launch
-            }
-            val card = Clip(
-                id = randomId(),
-                type = ClipType.TextCard,
-                startUs = 0,
-                durationUs = CARD_US,
-                text = TextSpec(
-                    text = title,
-                    font = TextFonts.BRICOLAGE,
-                    weight = 800,
-                    size = 0.08f,
-                    color = TextColors.WHITE,
-                    background = TextColors.BLACK,
-                ),
-            )
-            val main = project.layers.first()
-            projects.save(
-                project.copy(
-                    layers =
-                    listOf(main.copy(clips = listOf(card))) + project.layers.drop(1),
-                ),
-            )
-            onCreated(project.id, card.id)
+            // A phone too full to write keeps New project open instead of ending the app.
+            val (projectId, cardId) = runCatching {
+                make(name, title, withTextCard)
+            }.getOrNull() ?: return@launch
+            onCreated(projectId, cardId)
         }
+    }
+
+    /** Makes the project, with a text card when [withTextCard]; its id and the card's. */
+    private suspend fun make(
+        name: String,
+        title: String,
+        withTextCard: Boolean,
+    ): Pair<String, String?> {
+        val project = projects.create(name, mutableFormat.value)
+        if (!withTextCard) return project.id to null
+        val card = Clip(
+            id = randomId(),
+            type = ClipType.TextCard,
+            startUs = 0,
+            durationUs = CARD_US,
+            text = TextSpec(
+                text = title,
+                font = TextFonts.BRICOLAGE,
+                weight = 800,
+                size = 0.08f,
+                color = TextColors.WHITE,
+                background = TextColors.BLACK,
+            ),
+        )
+        val main = project.layers.first()
+        projects.save(
+            project.copy(
+                layers = listOf(main.copy(clips = listOf(card))) + project.layers.drop(1),
+            ),
+        )
+        return project.id to card.id
     }
 
     private companion object {

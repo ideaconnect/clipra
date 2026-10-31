@@ -443,4 +443,5 @@ internal fun EditorMessage.textRes(): Int = when (this) {
     EditorMessage.NeedsSound -> R.string.editor_message_needs_sound
     EditorMessage.NeedsMicrophone -> R.string.editor_message_needs_microphone
     EditorMessage.MicrophoneUnavailable -> R.string.editor_message_mic_unavailable
+    EditorMessage.NotSaved -> R.string.editor_message_not_saved
 }
