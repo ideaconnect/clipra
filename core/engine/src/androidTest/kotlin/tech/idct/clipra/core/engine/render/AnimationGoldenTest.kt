@@ -27,7 +27,8 @@ import java.io.File
  * Animations on the GPU (#33), through the compositor that preview and export share: an
  * animated clip renders, at any moment, exactly as a still clip holding the animation's values;
  * text in renders as the text renderer draws it at that moment; and both look the same at
- * preview size as at export size. So animations play identically in preview and export.
+ * preview size as at export size. So animations play identically in preview and export. Every
+ * preset is checked, clips' and text's alike.
  */
 @RunWith(AndroidJUnit4::class)
 class AnimationGoldenTest {
@@ -133,6 +134,71 @@ class AnimationGoldenTest {
             frame(15),
         )
         assertTrue(lit(early) < lit(later))
+    }
+
+    /** Every clip animation (#33), in, out and loop, at two moments of its run. */
+    @Test
+    fun everyClipAnimationIsTheClipWhereItsAnimationPutsIt() {
+        val cases = Animations.clipIn.map { Animation(enter = it) to listOf(200_000L, 400_000L) } +
+            Animations.clipOut.map {
+                Animation(exit = it) to listOf(DURATION - 400_000, DURATION - 200_000)
+            } +
+            Animations.clipLoop.map { Animation(loop = it) to listOf(700_000L, 1_300_000L) }
+        for ((animation, times) in cases) {
+            val name = animation.enter ?: animation.exit ?: animation.loop
+            val frames = times.map { time ->
+                val motion = Animations.motion(animation, Transform(), time, DURATION)
+                val animated = render(clip(animation = animation), time, 540, 960)
+                val still = render(clip(motion.transform, motion.opacity), time, 540, 960)
+                assertSimilar("$name at $time", still, animated, 4, 0.999)
+                animated
+            }
+            assertTrue("$name moves", Offscreen.match(frames[0], frames[1], 16) < 0.999)
+        }
+    }
+
+    /** Every text animation (#33), in and out, drawn as the text renderer draws its moment. */
+    @Test
+    fun everyTextAnimationIsDrawnAsItsRendererDrawsIt() {
+        val spec =
+            TextSpec(
+                "Day two",
+                size = 0.1f,
+                color = TextColors.WHITE,
+                background = TextColors.BLACK,
+            )
+        val media = ProjectMediaResolver(
+            context,
+            MediaCache(File(context.cacheDir, "animation-test")),
+            forExport = true,
+            maxImageSide = 2048,
+        )
+        val cases = Animations.textIn.map { Animation(enter = it) to listOf(200_000L, 400_000L) } +
+            Animations.textOut.map {
+                Animation(exit = it) to listOf(DURATION - 400_000, DURATION - 200_000)
+            }
+        for ((animation, times) in cases) {
+            val name = animation.enter ?: animation.exit
+            val card =
+                Clip("card", ClipType.TextCard, 0, DURATION, text = spec, animation = animation)
+            val project = Project(
+                id = "text",
+                name = "Text",
+                format = Format(),
+                layers = listOf(Layer("L1", clips = listOf(card))),
+            )
+            for (time in times) {
+                val frame =
+                    Offscreen.render(
+                        context,
+                        ProjectRender.timeline(project, media, 540, 960),
+                        time,
+                    )
+                val motion = Animations.textMotion(animation, time, DURATION)
+                val expected = TextRenderer.render(context, spec, card = true, 540, 960, motion)
+                assertSimilar("$name at $time", expected, frame, 8, 0.995)
+            }
+        }
     }
 
     private fun lit(bitmap: Bitmap): Int {
