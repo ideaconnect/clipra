@@ -10,6 +10,7 @@ import android.net.Uri
 import tech.idct.clipra.core.model.MediaAsset
 import tech.idct.clipra.core.model.MediaKind
 import java.io.File
+import java.io.IOException
 
 /** Stills for Home, the media bin and the timeline's filmstrips, cached as JPEG files. */
 object Thumbnails {
@@ -85,9 +86,18 @@ object Thumbnails {
 
     /**
      * A photo decoded no larger than [maxSide] on its long side, keeping memory small, and turned
-     * upright by its EXIF orientation, as galleries show it.
+     * upright by its EXIF orientation, as galleries show it. Null when it can't be read, as a
+     * photo deleted from the gallery or no longer shared with Clipra.
      */
-    fun decodePhoto(context: Context, uri: Uri, maxSide: Int): Bitmap? {
+    fun decodePhoto(context: Context, uri: Uri, maxSide: Int): Bitmap? = try {
+        readPhoto(context, uri, maxSide)
+    } catch (_: IOException) {
+        null
+    } catch (_: SecurityException) {
+        null
+    }
+
+    private fun readPhoto(context: Context, uri: Uri, maxSide: Int): Bitmap? {
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         context.contentResolver.openInputStream(uri)?.use {
             BitmapFactory.decodeStream(it, null, bounds)
