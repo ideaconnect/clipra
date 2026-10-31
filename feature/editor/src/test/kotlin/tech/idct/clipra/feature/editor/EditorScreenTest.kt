@@ -30,6 +30,7 @@ import tech.idct.clipra.core.designsystem.ClipraTheme
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
 import tech.idct.clipra.core.model.Layer
+import tech.idct.clipra.core.model.LinkGroup
 import tech.idct.clipra.core.model.MediaAsset
 import tech.idct.clipra.core.model.MediaKind
 import tech.idct.clipra.core.model.MediaRef
@@ -121,6 +122,8 @@ class EditorScreenTest {
                 ),
             ),
         ),
+        // The caption moves and gets cut with the clip it was heard in, as on the board.
+        links = listOf(LinkGroup("heard", listOf("sunset", "cap"))),
     )
 
     private val noop = EditorCallbacks(

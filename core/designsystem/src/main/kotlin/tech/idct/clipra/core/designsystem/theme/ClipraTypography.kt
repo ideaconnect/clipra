@@ -66,6 +66,7 @@ data class ClipraTypography(
     val meta: TextStyle,
     val metaStrong: TextStyle,
     val clipLabel: TextStyle,
+    val clipTitle: TextStyle,
     val numberLarge: TextStyle,
     val numberMedium: TextStyle,
 )
@@ -111,6 +112,7 @@ val ClipraDefaultTypography = ClipraTypography(
     meta = mono(11, 400),
     metaStrong = mono(15, 600),
     clipLabel = mono(10, 600),
+    clipTitle = ui(10, 600),
     numberLarge = display(56, 800),
     numberMedium = display(32, 800),
 )
