@@ -66,7 +66,15 @@ Clipra itself collects nothing. Media, transcripts, captions and edits stay on t
 - **Can users request that data be deleted?** The app keeps no data off the device. Ad data follows Google's policies; link to https://policies.google.com/technologies/partner-sites in the policy.
 - **Not declared, because none of it leaves the device:** photos and videos, audio, files and docs, messages, contacts, location (precise), personal info.
 
-Check these answers against Google's current SDK guidance when filling in the form: [Google Mobile Ads SDK data disclosure](https://developers.google.com/admob/android/privacy/play-data-disclosure). If offline translation ships with ML Kit (#47, undecided), add its analytics too: the language pair, an installation id, device info and timings, for Analytics.
+Check these answers against Google's current SDK guidance when filling in the form: [Google Mobile Ads SDK data disclosure](https://developers.google.com/admob/android/privacy/play-data-disclosure) and the Play Billing Library's own data safety guidance. The billing library (9.1) logs its diagnostics to Google through Google's data transport (`com.google.android.datatransport`, the Clearcut backend), for every user, since Clipra connects to billing on each start to restore Clipra Pro; declare what that guidance lists for it.
+
+What the SDKs add to the release manifest (audited 2026-10-31, `processBenchmarkManifest`):
+
+- **Google Mobile Ads SDK:** `INTERNET`, `ACCESS_NETWORK_STATE`, `AD_ID`, `READ_BASIC_PHONE_STATE` (a normal permission, no prompt), its ad activity and Play's `hsdp` shim. It starts only when a free user with consent opens Export (`NextGenAdsGateway`); the consent form is never shown to Pro users (`AdConsent`).
+- **Play Billing:** `BILLING`, its proxy activities, and the data transport services above.
+- **LiteRT:** Play's asset delivery (`ai-delivery`, `asset-delivery`), unused by Clipra; its extraction services are disabled and nothing starts it.
+- **ONNX Runtime:** its 1DS telemetry provider is removed (`ml:voice`), see `docs/third-party.md`.
+- No other provider starts at launch besides AndroidX Startup (emoji, lifecycle, profile installer). If offline translation ships with ML Kit (#47, undecided), add its analytics too: the language pair, an installation id, device info and timings, for Analytics.
 
 ## 6. Testing (acceptance of #66)
 

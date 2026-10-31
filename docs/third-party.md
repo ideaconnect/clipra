@@ -13,14 +13,14 @@ Keep this list in sync with the build. Every entry needs a license that is compa
 | DeepFilterNet 3 | AI voice cleanup model, downloaded; Clipra's Kotlin port of its libDF processing (`ml:voice`) | MIT or Apache-2.0 (dual) |
 | RNNoise v0.2 | Lite voice cleanup, vendored with its weights in `ml/voice/src/main/cpp/rnnoise` (origin in `SOURCE.md`) | BSD-3-Clause |
 | libebur128 (if used) | Loudness measurement | MIT |
-| LiteRT (`com.google.ai.edge.litert:litert` 2.3.0, with `litert-api`) | Runs the MediaPipe vision models (`ml:vision`); no telemetry | Apache-2.0 |
+| LiteRT (`com.google.ai.edge.litert:litert` 2.3.0, with `litert-api`, which brings Play's `ai-delivery` and `asset-delivery`, unused) | Runs the MediaPipe vision models (`ml:vision`); no telemetry | Apache-2.0 |
 | MediaPipe selfie segmenter (`image_segmenter/selfie_segmenter/float16/1`, built into the APK, SHA-256 checked at build time) | Person cutout | Apache-2.0 |
 | MediaPipe face detector (`face_detector/blaze_face_short_range/float16/1`, built into the APK, SHA-256 checked at build time) | Face follow (#52), reframe | Apache-2.0 |
 | MediaPipe object detector model | Subject follow (planned) | Apache-2.0 |
 | ML Kit Translation | Offline translation | Google APIs Terms of Service |
 | Google Mobile Ads Next-Gen SDK (`com.google.android.libraries.ads.mobile.sdk:ads-mobile-sdk` 1.5.0, with Play services, Cronet, Gson, Guava, OkHttp and Tink, all Apache-2.0 or BSD) | Export interstitials (`monetization`) | Google Mobile Ads SDK terms |
 | Google User Messaging Platform SDK (`com.google.android.ump:user-messaging-platform` 4.0.0, with Play services basement) | Ad consent (`monetization`) | Android Software Development Kit License |
-| Play Billing Library (`com.android.billingclient:billing-ktx` 9.1.0) | Clipra Pro purchase (`monetization`) | Android Software Development Kit License |
+| Play Billing Library (`com.android.billingclient:billing-ktx` 9.1.0, with Google's data transport for its diagnostics) | Clipra Pro purchase (`monetization`) | Android Software Development Kit License |
 | Bricolage Grotesque, Geist, Geist Mono | Fonts | SIL Open Font License 1.1 |
 
 The fonts are the variable TTFs from the google/fonts repository, bundled in `core/fonts/src/main/res/font` (shared by the interface and the text renderer) with their licenses in `core/designsystem/src/main/assets/licenses`:
