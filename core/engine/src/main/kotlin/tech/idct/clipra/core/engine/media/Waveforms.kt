@@ -54,7 +54,8 @@ object Waveforms {
 
     /**
      * The waveform of the sound in [source] ([durationUs] long, 0 when unknown), kept in [file];
-     * such as a cleaned voice (#39). Null when it has no sound.
+     * such as a cleaned voice (#39). Null when it has no sound. A source that can't be read, as
+     * media deleted meanwhile, throws here, on the caller's thread.
      */
     fun waveform(context: Context, source: String, durationUs: Long, file: File): Waveform? {
         if (file.exists()) return Waveform(file.readBytes())
@@ -64,28 +65,36 @@ object Waveforms {
         var peaks = IntArray(if (known) (durationUs / Waveform.BUCKET_US + 1).toInt() else 0)
         val sliceUs = if (known) durationUs / slices else Long.MAX_VALUE
         var sound = true
+        // A slice's failure would end the app on its own thread; the caller gets it instead.
+        val failures = arrayOfNulls<Throwable>(slices)
         val threads = (0 until slices).map { slice ->
             thread(name = "clipra-waveform-$slice") {
                 val from = slice * sliceUs
                 val to = if (slice == slices - 1) Long.MAX_VALUE else from + sliceUs
-                val format = AudioDecoder.decode(context, source, from, to) {
-                        samples,
-                        count,
-                        format,
-                        timeUs,
-                    ->
-                    if (!known) {
-                        val frames = count.toLong() / format.channels
-                        val endUs = timeUs + frames * 1_000_000 / format.sampleRate
-                        val needed = (endUs / Waveform.BUCKET_US).toInt() + 1
-                        if (needed > peaks.size) peaks = peaks.copyOf(needed)
+                val format = try {
+                    AudioDecoder.decode(context, source, from, to) {
+                            samples,
+                            count,
+                            format,
+                            timeUs,
+                        ->
+                        if (!known) {
+                            val frames = count.toLong() / format.channels
+                            val endUs = timeUs + frames * 1_000_000 / format.sampleRate
+                            val needed = (endUs / Waveform.BUCKET_US).toInt() + 1
+                            if (needed > peaks.size) peaks = peaks.copyOf(needed)
+                        }
+                        fold(peaks, samples, count, format, timeUs)
                     }
-                    fold(peaks, samples, count, format, timeUs)
+                } catch (failure: Exception) {
+                    failures[slice] = failure
+                    return@thread
                 }
                 if (format == null) sound = false
             }
         }
         threads.forEach { it.join() }
+        failures.firstOrNull { it != null }?.let { throw it }
         if (!sound) return null
         val bytes = ByteArray(peaks.size) { level(peaks[it]) }
         file.parentFile?.mkdirs()
