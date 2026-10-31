@@ -72,7 +72,7 @@ Follow them. A change to one of them comes with a new ADR that supersedes it. Th
 - `./gradlew assembleDebug` builds the app. `./gradlew testDebugUnitTest :core:model:test` runs the unit tests and `./gradlew lintDebug` runs Android lint. With an emulator running, `./gradlew connectedDebugAndroidTest` runs the instrumented tests.
 - `./gradlew spotlessCheck` checks the Kotlin style with ktlint; `./gradlew spotlessApply` fixes most findings.
 - Screenshot tests (Roborazzi on Robolectric, `clipra.android.screenshots`) keep their reference images in `<module>/src/test/screenshots`. `./gradlew recordRoborazziDebug` records them after an intended UI change; CI compares with `-Proborazzi.test.verify=true`. Robolectric tests use `@Config(sdk = [34])`, since newer SDKs need a Java 21 test JVM.
-- CI runs the style check, the debug build, the unit tests and lint on every pull request and on `main`, and attaches the debug APK to the run. A pull request is ready only when CI is green.
+- CI runs the style check, the debug build, the unit tests and lint on every pull request and on `main`, compiles the instrumented tests without running them, and attaches the debug APK to the run. A pull request is ready only when CI is green.
 - Develop on the phone and tablet emulators; debug builds include x86_64 for them, release builds are arm64-v8a only. Speed is measured on real phones in a later phase: `./gradlew :benchmark:connectedBenchmarkAndroidTest` runs the startup and editor benchmarks on the app's `benchmark` build, and `docs/release/performance.md` covers the rest of the budgets and the baseline profile.
 - New modules use the convention plugins in `build-logic/`. New libraries go into `gradle/libs.versions.toml` and `docs/third-party.md`.
 
