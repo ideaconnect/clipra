@@ -78,4 +78,6 @@
     <string name="export_saved_kind_cover">okładka</string>
     <string name="export_saved_kind_project">projekt</string>
     <string name="export_saved_captions_burned">napisy wtopione</string>
+    <string name="export_tablet_note">Renderuje z oryginałów, nie z proxy. Działa dalej w tle.</string>
+    <string name="export_cover_strip">Klatki projektu: stuknij jedną, aby była okładką</string>
 </resources>

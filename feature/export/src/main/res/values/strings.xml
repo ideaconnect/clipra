@@ -76,4 +76,6 @@
     <string name="export_saved_kind_cover">cover</string>
     <string name="export_saved_kind_project">project</string>
     <string name="export_saved_captions_burned">captions burned in</string>
+    <string name="export_tablet_note">Renders from original media, not proxies. Keeps going in the background.</string>
+    <string name="export_cover_strip">The project\'s frames: tap one to make it the cover</string>
 </resources>
