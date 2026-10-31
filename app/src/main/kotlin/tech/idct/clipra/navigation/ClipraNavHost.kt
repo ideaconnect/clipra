@@ -17,6 +17,7 @@ import tech.idct.clipra.core.model.ClipType
 import tech.idct.clipra.core.model.Layout
 import tech.idct.clipra.core.model.edit.takesFilters
 import tech.idct.clipra.feature.audio.AudioActionsNavigation
+import tech.idct.clipra.feature.audio.AudioInspectorPanel
 import tech.idct.clipra.feature.audio.AudioRoute
 import tech.idct.clipra.feature.audio.audioScreens
 import tech.idct.clipra.feature.captions.CaptionsEditRoute
@@ -278,7 +279,8 @@ private fun NavController.open(from: Board, to: Board) {
 
 /**
  * The feature panels the tablet editor hosts (#70): Text's library on its rail place and its
- * inspector for text clips; the Filters library on Effects, with the effect stack for the clip.
+ * inspector for text clips; the Filters library on Effects, with the effect stack for the clip;
+ * and on the editor's own Audio place, the Audio inspector for a clip with sound.
  */
 private val tabletPanels = TabletPanels(
     library = { tool ->
@@ -291,7 +293,12 @@ private val tabletPanels = TabletPanels(
     inspector = { place, clip ->
         when {
             clip.type == ClipType.Text || clip.type == ClipType.TextCard -> textInspector
+
             place == EditorTool.Filters && clip.takesFilters() -> effectStack
+
+            place == EditorTool.Audio &&
+                (clip.type == ClipType.Audio || clip.type == ClipType.Video) -> audioInspector
+
             else -> null
         }
     },
@@ -311,6 +318,10 @@ private val filtersLibrary: TabletPanel = { scope, modifier ->
 
 private val effectStack: TabletPanel = { scope, modifier ->
     scope.clipId?.let { EffectStackPanel(it, modifier) }
+}
+
+private val audioInspector: TabletPanel = { scope, modifier ->
+    scope.clipId?.let { AudioInspectorPanel(it, modifier) }
 }
 
 /** The screen each editor tool opens; most are placeholders until their issues land. */

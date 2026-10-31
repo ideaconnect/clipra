@@ -15,6 +15,7 @@ import androidx.navigation.toRoute
 import kotlinx.serialization.Serializable
 import tech.idct.clipra.core.designsystem.component.ReadableWidth
 import tech.idct.clipra.core.designsystem.placeholder.Board
+import tech.idct.clipra.core.model.Clip
 
 /** The sound of [clipId] in [projectId]; no project opens the placeholder board (screen index). */
 @Serializable
@@ -54,50 +55,77 @@ fun NavGraphBuilder.audioScreens(
 @Composable
 private fun AudioDestination(onDone: () -> Unit, viewModel: AudioViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    var liveVolume by remember { mutableStateOf<Float?>(null) }
-    var liveStrength by remember { mutableStateOf<Float?>(null) }
-    var liveNoise by remember { mutableStateOf<Float?>(null) }
-    var liveDuck by remember { mutableStateOf<Float?>(null) }
     BackHandler(onBack = onDone)
+    if (state.loaded && state.clip == null) {
+        LaunchedEffect(Unit) { onDone() }
+        return
+    }
+    val clip = state.clip ?: return
+    val editing = audioEditing(viewModel, state, clip, onDone)
+    ReadableWidth {
+        AudioScreen(
+            state = state,
+            volume = editing.volume,
+            strength = editing.strength,
+            noiseStrength = editing.noise,
+            duckingDepth = editing.duck,
+            actions = editing.actions,
+        )
+    }
+}
+
+/** The sliders' values while they move, and the actions that commit each change. */
+internal class AudioEditing(
+    val volume: Float,
+    val strength: Float?,
+    val noise: Float?,
+    val duck: Float?,
+    val actions: AudioActions,
+)
+
+/** Editing [clip]'s sound through [viewModel]; a slider is one undo step when let go. */
+@Composable
+internal fun audioEditing(
+    viewModel: AudioViewModel,
+    state: AudioUiState,
+    clip: Clip,
+    onBack: () -> Unit,
+): AudioEditing {
+    var liveVolume by remember(clip.id) { mutableStateOf<Float?>(null) }
+    var liveStrength by remember(clip.id) { mutableStateOf<Float?>(null) }
+    var liveNoise by remember(clip.id) { mutableStateOf<Float?>(null) }
+    var liveDuck by remember(clip.id) { mutableStateOf<Float?>(null) }
     LaunchedEffect(state.project) {
         liveVolume = null
         liveStrength = null
         liveNoise = null
         liveDuck = null
     }
-    if (state.loaded && state.clip == null) {
-        LaunchedEffect(Unit) { onDone() }
-        return
-    }
-    val clip = state.clip ?: return
-    ReadableWidth {
-        AudioScreen(
-            state = state,
-            volume = liveVolume ?: clip.audio.volume,
-            strength = liveStrength,
-            noiseStrength = liveNoise,
-            duckingDepth = liveDuck,
-            actions = AudioActions(
-                onBack = onDone,
-                onVolume = { liveVolume = it },
-                onVolumeDone = {
-                    liveVolume?.let { viewModel.setAudio(clip.audio.copy(volume = it)) }
-                },
-                onAudio = viewModel::setAudio,
-                onLoudnessTarget = viewModel::setLoudnessTarget,
-                onVoice = viewModel::setVoiceOn,
-                onEngine = viewModel::chooseEngine,
-                onStrength = { liveStrength = it },
-                onStrengthDone = { liveStrength?.let(viewModel::setVoiceStrength) },
-                onApplyToAll = viewModel::applyVoiceToAll,
-                onNoise = viewModel::setNoiseOn,
-                onNoiseStrength = { liveNoise = it },
-                onNoiseStrengthDone = { liveNoise?.let(viewModel::setNoiseStrength) },
-                onDucking = viewModel::setDucking,
-                onDuckingDepth = { liveDuck = it },
-                onDuckingDepthDone = { liveDuck?.let(viewModel::setDuckingDepth) },
-                onBeats = viewModel::setBeats,
-            ),
-        )
-    }
+    return AudioEditing(
+        volume = liveVolume ?: clip.audio.volume,
+        strength = liveStrength,
+        noise = liveNoise,
+        duck = liveDuck,
+        actions = AudioActions(
+            onBack = onBack,
+            onVolume = { liveVolume = it },
+            onVolumeDone = {
+                liveVolume?.let { viewModel.setAudio(clip.audio.copy(volume = it)) }
+            },
+            onAudio = viewModel::setAudio,
+            onLoudnessTarget = viewModel::setLoudnessTarget,
+            onVoice = viewModel::setVoiceOn,
+            onEngine = viewModel::chooseEngine,
+            onStrength = { liveStrength = it },
+            onStrengthDone = { liveStrength?.let(viewModel::setVoiceStrength) },
+            onApplyToAll = viewModel::applyVoiceToAll,
+            onNoise = viewModel::setNoiseOn,
+            onNoiseStrength = { liveNoise = it },
+            onNoiseStrengthDone = { liveNoise?.let(viewModel::setNoiseStrength) },
+            onDucking = viewModel::setDucking,
+            onDuckingDepth = { liveDuck = it },
+            onDuckingDepthDone = { liveDuck?.let(viewModel::setDuckingDepth) },
+            onBeats = viewModel::setBeats,
+        ),
+    )
 }

@@ -49,4 +49,5 @@
     <string name="audio_beats_title">Znaczniki rytmu</string>
     <string name="audio_beats_detail">Zaznacza uderzenia; cięcia się do nich przyciągają</string>
     <string name="audio_beats_bpm">%1$d BPM · cięcia się przyciągają</string>
+    <string name="audio_inspector_place">Klip na warstwie L%1$d</string>
 </resources>
