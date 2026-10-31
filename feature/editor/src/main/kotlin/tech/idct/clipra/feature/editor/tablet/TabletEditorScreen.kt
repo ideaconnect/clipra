@@ -131,11 +131,20 @@ fun TabletEditorScreen(
     // The Audio place is the editor's own: the project's sounds, Import and Record (#70).
     val audio = pane == EditorTool.Audio && library == null
     val place = pane.takeIf { library != null || audio }
+    val wide = place?.let(panels.wide) == true
+    // What a panel marks on the timeline, such as Edit by text's cuts.
+    var marks by remember { mutableStateOf<List<LongRange>>(emptyList()) }
+    LaunchedEffect(place) { marks = emptyList() }
     val selected = state.selectedClipId?.let { project.findClip(it) }
     val scope = PanelScope(
         clipId = selected?.second?.id,
         playheadUs = state.playheadUs,
         onSelect = { callbacks.timeline.onSelect(it) },
+        onSeek = { callbacks.timeline.onSeek(it) },
+        onOpen = { tool ->
+            if (panels.library(tool) != null) pane = tool else callbacks.onTool(tool)
+        },
+        onMarks = { marks = it },
     )
     Box(
         modifier = modifier
@@ -164,7 +173,11 @@ fun TabletEditorScreen(
                     )
                     ToolRail(
                         items = rail,
-                        selectedIndex = place?.let { railTools.indexOf(it) + 1 } ?: 0,
+                        // Edit by text belongs to Captions, as on TabletTranscript.
+                        selectedIndex = place?.let {
+                            val shown = if (it == EditorTool.Transcript) EditorTool.Captions else it
+                            railTools.indexOf(shown) + 1
+                        } ?: 0,
                         onSelect = { index ->
                             val tool = railTools.getOrNull(index - 1)
                             when {
@@ -178,8 +191,12 @@ fun TabletEditorScreen(
                         },
                         modifier = Modifier.edge(colors.borderSubtle, end = true),
                     )
-                    val left = Modifier
-                        .width(BIN_WIDTH.dp)
+                    val width = if (wide) {
+                        Modifier.weight(WIDE_WEIGHT)
+                    } else {
+                        Modifier.width(BIN_WIDTH.dp)
+                    }
+                    val left = width
                         .fillMaxHeight()
                         .edge(colors.borderSubtle, end = true)
                     val voiceover = state.voiceover
@@ -221,13 +238,13 @@ fun TabletEditorScreen(
                         .weight(1f)
                         .fillMaxHeight(),
                 )
-                if (!fullscreen) {
+                if (!fullscreen && !wide) {
                     val right = Modifier
                         .width(INSPECTOR_WIDTH.dp)
                         .fillMaxHeight()
                         .edge(colors.borderSubtle, start = true)
                     // A feature's own inspector for the clips it edits, such as text (#70).
-                    val inspector = selected?.second?.let { panels.inspector(place, it) }
+                    val inspector = panels.inspector(place, selected?.second)
                     if (inspector != null) {
                         inspector(scope, right)
                     } else {
@@ -275,6 +292,7 @@ fun TabletEditorScreen(
                         beats = state.beats,
                         headers = actions.layers,
                         snap = state.snap,
+                        marked = marks,
                     )
                 }
             }
@@ -577,6 +595,9 @@ internal fun Modifier.edge(
 private const val MAIN_WEIGHT = 420f
 private const val TIMELINE_WEIGHT = 300f
 private const val BIN_WIDTH = 300
+
+/** A wide library against the preview's 1, as TabletTranscript's text beside its preview. */
+private const val WIDE_WEIGHT = 1.05f
 private const val INSPECTOR_WIDTH = 320
 
 /** The tablet timeline is 48 dp a second where the phone's is 32. */
