@@ -356,7 +356,10 @@ private val editByText: TabletPanel = { scope, modifier ->
     )
 }
 
-/** The screen each editor tool opens; most are placeholders until their issues land. */
+/**
+ * The screen each editor tool opens. Layer, Speed, Animate and Stabilize open as panels inside
+ * the editor and never come here; they map to the layers screen only to keep the `when` whole.
+ */
 private fun toolRoute(tool: EditorTool, target: ToolTarget): Any = when (tool) {
     EditorTool.Audio -> AudioRoute(target.projectId, target.clipId, target.playheadUs)
     EditorTool.Text -> TextRoute(target.projectId, target.clipId, target.playheadUs)
