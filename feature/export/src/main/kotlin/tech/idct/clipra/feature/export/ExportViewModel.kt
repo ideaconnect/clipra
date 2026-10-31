@@ -42,7 +42,10 @@ data class ExportUiState(
     val pro: Boolean = false,
     /** Clipra Pro's price from Google Play, for "Remove for"; null until Play answers. */
     val proPrice: String? = null,
-    /** The cover frame and the frames along the project, which the tablet shows (#70). */
+    /**
+     * The cover frame, in the phone's header and the tablet's preview, and the frames along the
+     * project, which the tablet shows (#70).
+     */
     val cover: Bitmap? = null,
     val strip: List<Bitmap> = emptyList(),
 )
@@ -77,6 +80,7 @@ class ExportViewModel @Inject constructor(
             mutableState.update { it.copy(project = project) }
             // The cover is the frame at the playhead (#59).
             change(wanted.copy(coverUs = playheadUs))
+            drawCover(playheadUs)
         }
         // Ad 1 loads while the settings are chosen, so it is not late (rule 10).
         viewModelScope.launch { exportAds.prepare() }
@@ -98,8 +102,8 @@ class ExportViewModel @Inject constructor(
     }
 
     /**
-     * Draws the cover and [count] frames along the project from the proxies, for the tablet's
-     * Export (#70); the phone has no room for them.
+     * Draws [count] frames along the project from the proxies, for the tablet's Export (#70);
+     * the phone has no room for them.
      */
     fun loadPreview(count: Int) {
         if (previewJob != null) return
@@ -110,7 +114,6 @@ class ExportViewModel @Inject constructor(
             }
             mutableState.update { it.copy(strip = strip) }
         }
-        drawCover()
     }
 
     /** Makes the frame at [atUs] the cover (#59), as a tap on the tablet's filmstrip does. */
