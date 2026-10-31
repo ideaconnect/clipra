@@ -71,6 +71,6 @@ Check these answers against Google's current SDK guidance when filling in the fo
 ## 6. Testing (acceptance of #66)
 
 1. Add license testers: Settings > License testing, with the testers' Google accounts.
-2. Upload a signed release build to the internal test track (#78). The first upload is by hand in the console.
+2. Upload a signed release build to the internal test track (#78, `publishing.md`). The first upload is by hand in the console.
 3. On a tester's phone, install from the internal track. Buy Clipra Pro: the test card is offered, no money moves, and the export ads stop. Uninstall, reinstall and open: Pro is restored. Refund in the console: Pro is revoked on the next start.
 4. Free tester: the release build with the real ad unit shows Google's test ads only if the tester's device is added as a test device in AdMob. Never click real ads.

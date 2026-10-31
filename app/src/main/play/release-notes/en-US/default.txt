@@ -1,0 +1,1 @@
+The first release of Clipra: a video editor with layers, Edit by text, Auto captions, voice cleanup, Cutout and auto-reframe, all running on your phone. No account, no upload, no watermark.

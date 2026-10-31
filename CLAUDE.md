@@ -19,6 +19,7 @@ Status: design complete, implementation not started. The plan is a set of issues
 | `docs/adr/` | Architecture decisions: media engine, project format, AI runtimes, ads and billing, Android 10+, license policy. Start with `docs/adr/README.md` |
 | `docs/third-party.md` | Dependencies and their licenses |
 | `docs/plan/ROADMAP.md` | Milestones M0 to M11 and every issue, in order |
+| `docs/release/` | Play Console setup, publishing a release, the performance runbook, privacy policy drafts |
 | `scripts/plan/` | `issues.json` (the plan as data) and `publish.py` (creates the issues and adds them to Project 6) |
 | `app/` | The Android app: application class, main activity and the navigation that connects the feature modules |
 | `core/`, `ml/`, `feature/`, `monetization/` | The modules of `docs/architecture.md`, section 2 |
@@ -26,6 +27,8 @@ Status: design complete, implementation not started. The plan is a set of issues
 | `core/designsystem/` | The theme (`ClipraTheme.colors`, `.typography`, `.shapes`), components, the icon set (`ClipraIcons`) and the debug gallery |
 | `gradle/libs.versions.toml` | The version of every library and Gradle plugin |
 | `.github/workflows/ci.yml` | CI: Kotlin style, debug build, unit tests and lint on every pull request and on `main` |
+| `.github/workflows/release.yml` | The signed release bundle, built when a `v1.2.3` tag is pushed (`docs/release/publishing.md`) |
+| `app/src/main/play/` | The Play store listing, release notes and graphics (EN, PL) |
 
 ## How to use the design
 
