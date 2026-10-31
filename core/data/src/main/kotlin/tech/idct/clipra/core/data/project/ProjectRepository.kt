@@ -28,7 +28,8 @@ data class ProjectSummary(
     val resolution: Resolution,
     val durationUs: Long,
     val updatedAtMillis: Long,
-    val thumbnailMediaId: String?,
+    /** One media id per cell of [layout], row by row, null where there is nothing to show. */
+    val pictures: List<String?> = emptyList(),
 )
 
 /** The time source for "last edited"; injectable for tests. */
@@ -112,16 +113,20 @@ class ProjectRepository @Inject constructor(
         return ProjectSession(project, scope, save = ::save)
     }
 
-    private fun Project.toIndexEntry(nowMillis: Long) = ProjectIndexEntry(
-        id = id,
-        name = name,
-        updatedAtMillis = nowMillis,
-        ratio = format.ratio.name,
-        layout = format.layout.name,
-        resolution = format.resolution.name,
-        durationUs = durationUs,
-        thumbnailMediaId = layers.firstOrNull()?.clips?.firstOrNull()?.source?.mediaId,
-    )
+    private fun Project.toIndexEntry(nowMillis: Long): ProjectIndexEntry {
+        val pictures = cellPictures()
+        return ProjectIndexEntry(
+            id = id,
+            name = name,
+            updatedAtMillis = nowMillis,
+            ratio = format.ratio.name,
+            layout = format.layout.name,
+            resolution = format.resolution.name,
+            durationUs = durationUs,
+            thumbnailMediaId = pictures.firstNotNullOfOrNull { it },
+            cellMediaIds = pictures.joinToString(",") { it.orEmpty() },
+        )
+    }
 
     private fun ProjectIndexEntry.toSummary() = ProjectSummary(
         id = id,
@@ -131,7 +136,8 @@ class ProjectRepository @Inject constructor(
         resolution = enumOrDefault(resolution, Resolution.FHD),
         durationUs = durationUs,
         updatedAtMillis = updatedAtMillis,
-        thumbnailMediaId = thumbnailMediaId,
+        pictures = cellMediaIds?.split(',')?.map { it.ifEmpty { null } }
+            ?: listOf(thumbnailMediaId),
     )
 
     private inline fun <reified E : Enum<E>> enumOrDefault(name: String, default: E): E =

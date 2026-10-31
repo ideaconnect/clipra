@@ -17,14 +17,18 @@ import kotlinx.coroutines.flow.Flow
  */
 @Database(
     entities = [ProjectIndexEntry::class],
-    version = 2,
-    autoMigrations = [AutoMigration(from = 1, to = 2)],
+    version = 3,
+    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3)],
 )
 abstract class ClipraDatabase : RoomDatabase() {
     abstract fun projectIndexDao(): ProjectIndexDao
 }
 
-/** One row per project on Home: name, format badge, duration, last edited, thumbnail. */
+/**
+ * One row per project on Home: name, format badge, duration, last edited, and the pictures in
+ * its frame: [cellMediaIds] holds one media id per cell, comma-separated, empty for a cell with
+ * nothing; rows saved before it was added have only [thumbnailMediaId].
+ */
 @Entity(tableName = "project_index")
 data class ProjectIndexEntry(
     @PrimaryKey val id: String,
@@ -35,6 +39,7 @@ data class ProjectIndexEntry(
     @ColumnInfo(defaultValue = "FHD") val resolution: String = "FHD",
     @ColumnInfo(defaultValue = "0") val durationUs: Long = 0,
     val thumbnailMediaId: String? = null,
+    val cellMediaIds: String? = null,
 )
 
 @Dao
