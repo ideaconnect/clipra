@@ -245,7 +245,7 @@ private fun LengthCard(state: EditByTextUiState, playing: Boolean, onPlay: () ->
 /** One source: its name, layer and start, then its tokens flowing like text. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun SourceText(
+internal fun SourceText(
     source: TranscriptSource,
     state: EditByTextUiState,
     onToken: (Token) -> Unit,
@@ -325,7 +325,7 @@ private fun TokenChip(token: Token, cut: Boolean, spoken: Boolean, onClick: () -
 
 /** "4 found · um, uh, you know": how many fillers, and which. */
 @Composable
-private fun fillerNote(state: EditByTextUiState): String {
+internal fun fillerNote(state: EditByTextUiState): String {
     val words = state.sources.flatMap { it.tokens }.filter { it.kind == TokenKind.Filler }
         .map { it.text.lowercase().trim { c -> !c.isLetter() && c != ' ' } }
         .distinct()
@@ -335,7 +335,7 @@ private fun fillerNote(state: EditByTextUiState): String {
 }
 
 @Composable
-private fun NoTranscript(onAutoCaptions: () -> Unit) {
+internal fun NoTranscript(onAutoCaptions: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -402,7 +402,7 @@ private fun Legend() {
 }
 
 /** 0:42.0, or 00:05.5 as a [clock]. */
-private fun length(us: Long, clock: Boolean = false): String {
+internal fun length(us: Long, clock: Boolean = false): String {
     val minutes = us / 60_000_000
     val seconds = us / 1_000_000 % 60
     val tenths = us / 100_000 % 10
@@ -410,4 +410,4 @@ private fun length(us: Long, clock: Boolean = false): String {
     return String.format(Locale.ROOT, pattern, minutes, seconds, tenths)
 }
 
-private fun seconds(us: Long) = String.format(Locale.getDefault(), "%.1f", us / 1e6)
+internal fun seconds(us: Long) = String.format(Locale.getDefault(), "%.1f", us / 1e6)

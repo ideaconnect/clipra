@@ -8,8 +8,9 @@ import tech.idct.clipra.feature.editor.EditorTool
 /**
  * What a feature's panel in the tablet editor (#70) works on: the selected clip ([clipId], null
  * when nothing is selected) at the editor's [playheadUs]. [onSelect] selects a clip the panel
- * made, so the editor and its inspector move to it; [onSeek] moves the editor's playhead; and
- * [onOpen] opens a tool's own screen, such as Edit by text.
+ * made, so the editor and its inspector move to it; [onSeek] moves the editor's playhead;
+ * [onOpen] opens a tool, in place when it has a library here, else on its own screen; and
+ * [onMarks] shows times on the timeline, such as what Edit by text will cut.
  */
 class PanelScope(
     val clipId: String?,
@@ -17,6 +18,7 @@ class PanelScope(
     val onSelect: (String) -> Unit,
     val onSeek: (Long) -> Unit = {},
     val onOpen: (EditorTool) -> Unit = {},
+    val onMarks: (List<LongRange>) -> Unit = {},
 )
 
 /** A feature's panel, drawn in the tablet editor's pane given by its modifier. */
@@ -32,5 +34,10 @@ typealias TabletPanel = @Composable (scope: PanelScope, modifier: Modifier) -> U
  */
 class TabletPanels(
     val library: (EditorTool) -> TabletPanel? = { null },
+    /**
+     * Whether a tool's library takes the width of the library and the inspector together, the
+     * preview beside it (TabletTranscript).
+     */
+    val wide: (EditorTool) -> Boolean = { false },
     val inspector: (place: EditorTool?, clip: Clip?) -> TabletPanel? = { _, _ -> null },
 )

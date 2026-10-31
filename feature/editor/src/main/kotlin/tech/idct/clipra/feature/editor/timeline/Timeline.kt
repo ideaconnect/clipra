@@ -50,6 +50,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
@@ -131,6 +132,8 @@ fun Timeline(
     beats: Map<String, List<Long>> = emptyMap(),
     headers: LayerHeaderActions? = null,
     snap: Boolean = true,
+    /** Times that Edit by text will cut (#70, TabletTranscript), hatched across every layer. */
+    marked: List<LongRange> = emptyList(),
 ) {
     val colors = ClipraTheme.colors
     val density = LocalDensity.current
@@ -259,8 +262,41 @@ fun Timeline(
                         }
                     }
                 }
+                if (marked.isNotEmpty()) Marks(marked, geometry)
                 Playhead(geometry.playheadX)
             }
+        }
+    }
+}
+
+/** [ranges] as bands of the cut colour with stripes and edges, the height of the timeline. */
+@Composable
+private fun Marks(ranges: List<LongRange>, geometry: TimelineGeometry) {
+    val band = ClipraTheme.colors.cutBand
+    val edge = ClipraTheme.colors.danger
+    val stripe = edge.copy(alpha = STRIPE_ALPHA)
+    Canvas(
+        modifier = Modifier
+            .fillMaxSize()
+            .testTag("timeline-marks"),
+    ) {
+        val step = 8.dp.toPx()
+        val stroke = 1.5.dp.toPx()
+        for (range in ranges) {
+            val from = geometry.x(range.first).dp.toPx()
+            val to = geometry.x(range.last).dp.toPx()
+            if (to < 0 || from > size.width) continue
+            drawRect(band, Offset(from, 0f), Size(to - from, size.height))
+            clipRect(left = from, right = to) {
+                var x = from - size.height
+                while (x < to) {
+                    val start = Offset(x, size.height)
+                    drawLine(stripe, start, Offset(x + size.height, 0f), stroke)
+                    x += step
+                }
+            }
+            drawLine(edge, Offset(from, 0f), Offset(from, size.height), stroke)
+            drawLine(edge, Offset(to, 0f), Offset(to, size.height), stroke)
         }
     }
 }
@@ -1008,3 +1044,6 @@ private fun Modifier.dashedOutline(color: Color): Modifier = drawBehind {
 /** A text clip's words, or the media's file name. */
 internal fun clipName(project: Project, clip: Clip): String =
     clip.text?.text ?: clip.source?.let { project.asset(it.mediaId)?.displayName }.orEmpty()
+
+/** How strongly a mark's stripes show over its band. */
+private const val STRIPE_ALPHA = 0.5f

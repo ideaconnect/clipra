@@ -25,6 +25,7 @@ import tech.idct.clipra.feature.captions.CaptionsLookPanel
 import tech.idct.clipra.feature.captions.CaptionsNavigationActions
 import tech.idct.clipra.feature.captions.CaptionsSetupRoute
 import tech.idct.clipra.feature.captions.CaptionsTranscriptPanel
+import tech.idct.clipra.feature.captions.EditByTextPanel
 import tech.idct.clipra.feature.captions.TranscriptRoute
 import tech.idct.clipra.feature.captions.captionsScreens
 import tech.idct.clipra.feature.editor.EditorActions
@@ -291,9 +292,11 @@ private val tabletPanels = TabletPanels(
             EditorTool.Text -> textLibrary
             EditorTool.Filters -> filtersLibrary
             EditorTool.Captions -> captionsLibrary
+            EditorTool.Transcript -> editByText
             else -> null
         }
     },
+    wide = { tool -> tool == EditorTool.Transcript },
     inspector = { place, clip ->
         when {
             place == EditorTool.Captions -> captionsLook
@@ -343,6 +346,15 @@ private val captionsLibrary: TabletPanel = { scope, modifier ->
 }
 
 private val captionsLook: TabletPanel = { _, modifier -> CaptionsLookPanel(modifier) }
+
+private val editByText: TabletPanel = { scope, modifier ->
+    EditByTextPanel(
+        onMarks = scope.onMarks,
+        onDone = { scope.onOpen(EditorTool.Captions) },
+        onAutoCaptions = { scope.onOpen(EditorTool.Captions) },
+        modifier = modifier,
+    )
+}
 
 /** The screen each editor tool opens; most are placeholders until their issues land. */
 private fun toolRoute(tool: EditorTool, target: ToolTarget): Any = when (tool) {

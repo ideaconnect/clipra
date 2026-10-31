@@ -108,4 +108,5 @@
     <string name="captions_transcript">Transkrypcja</string>
     <string name="captions_look">Wygląd napisów</string>
     <string name="captions_none_yet">Nie ma jeszcze napisów. Automatyczne napisy zapiszą je z mowy, na tym urządzeniu.</string>
+    <string name="captions_make_cuts">Wytnij</string>
 </resources>
