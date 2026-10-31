@@ -142,7 +142,9 @@ fun ClipraNavHost(
             screen,
             EditorActions(
                 onClose = { navController.popBackStack() },
-                onExport = { navController.navigate(ExportRoute(it)) },
+                onExport = { id, playheadUs ->
+                    navController.navigate(ExportRoute(id, playheadUs))
+                },
                 onTool = { tool, target -> navController.navigate(toolRoute(tool, target)) },
                 effectName = { filterName(it) },
             ),

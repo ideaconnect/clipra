@@ -93,7 +93,8 @@ data class ToolTarget(val projectId: String, val clipId: String?, val playheadUs
 /** Where the editor leads; the app connects it to the other features. */
 class EditorActions(
     val onClose: () -> Unit,
-    val onExport: (projectId: String) -> Unit,
+    /** Export, with where the playhead is: the cover's frame (#59). */
+    val onExport: (projectId: String, playheadUs: Long) -> Unit,
     val onTool: (EditorTool, ToolTarget) -> Unit,
     /** An effect's name for the tablet inspector (#69), as the Effects screens call it. */
     val effectName: @Composable (type: String) -> String = { it },
@@ -368,7 +369,7 @@ private fun EditorRoute(
         },
         onExport = {
             viewModel.flush()
-            actions.onExport(project.id)
+            actions.onExport(project.id, state.playheadUs)
         },
         onPlayPause = play@{
             if (recording) return@play

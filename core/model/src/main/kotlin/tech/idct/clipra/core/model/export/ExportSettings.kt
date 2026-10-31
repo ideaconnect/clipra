@@ -1,11 +1,13 @@
 package tech.idct.clipra.core.model.export
 
 import kotlinx.serialization.Serializable
+import tech.idct.clipra.core.model.ClipType
 import tech.idct.clipra.core.model.Format
 import tech.idct.clipra.core.model.FrameRate
 import tech.idct.clipra.core.model.Project
 import tech.idct.clipra.core.model.Resolution
 import tech.idct.clipra.core.model.Size
+import tech.idct.clipra.core.model.Srt
 import java.util.Locale
 import kotlin.math.roundToInt
 
@@ -28,6 +30,22 @@ enum class ExportQuality(val factor: Double) {
 @Serializable
 enum class CaptionMode { BurnIn, Srt, Off }
 
+/** The files Export can save next to the video (#59, "Also save"), named like it. */
+@Serializable
+enum class ExportExtra(val extension: String, val mimeType: String) {
+    /** The captions as SubRip. */
+    Captions("srt", "application/x-subrip"),
+
+    /** The sound alone, as it is in the video. */
+    Audio("m4a", "audio/mp4"),
+
+    /** The frame at the playhead. */
+    Cover("jpg", "image/jpeg"),
+
+    /** The timeline as OpenTimelineIO JSON, for other editors. */
+    Project("otio", "application/octet-stream"),
+}
+
 /**
  * Export options (Export board, docs/product/spec.md section 16). The output keeps the project's
  * ratio; [resolution] is its short side.
@@ -39,8 +57,34 @@ data class ExportSettings(
     val codec: VideoCodec = VideoCodec.H264,
     val quality: ExportQuality = ExportQuality.Recommended,
     val captions: CaptionMode = CaptionMode.BurnIn,
+    /** What else to save next to the video (#59). */
+    val extras: Set<ExportExtra> = emptySet(),
+    /** The cover's moment on the timeline: where the playhead was when Export opened. */
+    val coverUs: Long = 0,
 ) {
     fun outputSize(project: Project): Size = project.format.copy(resolution = resolution).outputSize
+
+    /** The project as the video shows it: caption clips only when they are burned in. */
+    fun drawn(project: Project): Project = if (captions == CaptionMode.BurnIn) {
+        project
+    } else {
+        project.copy(
+            layers = project.layers.map { layer ->
+                layer.copy(clips = layer.clips.filter { it.type != ClipType.Caption })
+            },
+        )
+    }
+
+    /**
+     * The files this export saves next to the video: the [extras], and the captions also when
+     * they are a separate file. Captions only when there are some, sound only when some plays.
+     */
+    fun savedExtras(project: Project): Set<ExportExtra> = buildSet {
+        addAll(extras)
+        if (captions == CaptionMode.Srt) add(ExportExtra.Captions)
+        if (Srt.cues(project).isEmpty()) remove(ExportExtra.Captions)
+        if (!project.hasSound) remove(ExportExtra.Audio)
+    }
 
     /**
      * The video bitrate: the H.264 base for the resolution at 30 fps (720p 7.5, 1080p 12,

@@ -31,6 +31,16 @@ data class Project(
     val durationUs: Long
         get() = layers.maxOfOrNull { layer -> layer.clips.maxOfOrNull { it.endUs } ?: 0L } ?: 0L
 
+    /** Whether any clip plays sound: an audio clip, or a video with a sound track. */
+    val hasSound: Boolean
+        get() = layers.any { layer ->
+            layer.clips.any { clip ->
+                val asset = clip.source?.let { asset(it.mediaId) }
+                (clip.type == ClipType.Audio && asset != null) ||
+                    (clip.type == ClipType.Video && asset?.hasAudio == true)
+            }
+        }
+
     fun layerIndexOf(layerId: String): Int = layers.indexOfFirst { it.id == layerId }
 
     fun asset(id: String): MediaAsset? = media.firstOrNull { it.id == id }

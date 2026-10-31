@@ -43,6 +43,7 @@ class ExportViewModel @Inject constructor(
     savedState: SavedStateHandle,
 ) : ViewModel() {
     private val projectId: String? = savedState.get<String>("projectId")
+    private val playheadUs: Long = savedState.get<Long>("playheadUs") ?: 0L
     private val mutableState = MutableStateFlow(ExportUiState())
 
     val state: StateFlow<ExportUiState> = mutableState.asStateFlow()
@@ -56,7 +57,8 @@ class ExportViewModel @Inject constructor(
                 frameRate = project.format.frameRate,
             )
             mutableState.update { it.copy(project = project) }
-            change(wanted)
+            // The cover is the frame at the playhead (#59).
+            change(wanted.copy(coverUs = playheadUs))
         }
         // Ad 1 loads while the settings are chosen, so it is not late (rule 10).
         viewModelScope.launch { exportAds.prepare() }
