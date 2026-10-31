@@ -10,6 +10,8 @@ android {
         // The ABIs the app ships (arm64-v8a) and runs on emulators (x86_64).
         ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        // What ONNX Runtime's native code reaches by name, kept when the app is shrunk.
+        consumerProguardFiles("consumer-rules.pro")
     }
 
     externalNativeBuild {

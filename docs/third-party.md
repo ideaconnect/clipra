@@ -9,7 +9,7 @@ Keep this list in sync with the build. Every entry needs a license that is compa
 | Hilt / Dagger | Dependency injection | Apache-2.0 |
 | whisper.cpp v1.9.5 (ggml-org/whisper.cpp, release tarball checked with SHA-256 at build time) | Speech to text runtime (`ml:whisper`) | MIT |
 | OpenAI Whisper models (ggml conversions) | Speech to text models | MIT |
-| ONNX Runtime (`com.microsoft.onnxruntime:onnxruntime-android` 1.31.0) | Runs DeepFilterNet 3 | MIT |
+| ONNX Runtime (`com.microsoft.onnxruntime:onnxruntime-android` 1.31.0) | Runs DeepFilterNet 3. Its 1DS telemetry provider is removed from the manifest and telemetry is turned off (`ml:voice`) | MIT |
 | DeepFilterNet 3 | AI voice cleanup model, downloaded; Clipra's Kotlin port of its libDF processing (`ml:voice`) | MIT or Apache-2.0 (dual) |
 | RNNoise v0.2 | Lite voice cleanup, vendored with its weights in `ml/voice/src/main/cpp/rnnoise` (origin in `SOURCE.md`) | BSD-3-Clause |
 | libebur128 (if used) | Loudness measurement | MIT |

@@ -1,7 +1,6 @@
 package tech.idct.clipra.ml.voice
 
 import ai.onnxruntime.OnnxTensor
-import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtSession
 import java.io.File
 import java.nio.FloatBuffer
@@ -13,7 +12,7 @@ import java.nio.FloatBuffer
 class OnnxDeepFilterModel(folder: File, threads: Int = defaultThreads()) :
     DeepFilterModel,
     AutoCloseable {
-    private val env = OrtEnvironment.getEnvironment()
+    private val env = OnnxRuntime.environment
     private val options = OrtSession.SessionOptions().apply {
         setIntraOpNumThreads(threads)
         setOptimizationLevel(OrtSession.SessionOptions.OptLevel.ALL_OPT)

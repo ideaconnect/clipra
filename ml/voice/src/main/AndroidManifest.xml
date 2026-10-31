@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <application>
+        <!-- ONNX Runtime starts Microsoft's 1DS telemetry from this provider when the app starts.
+             Clipra's runtimes send nothing (ADR 0003), so it goes; OnnxRuntime turns telemetry
+             off as well. -->
+        <provider
+            android:name="ai.onnxruntime.TelemetryInitializer"
+            tools:node="remove" />
+    </application>
+</manifest>
