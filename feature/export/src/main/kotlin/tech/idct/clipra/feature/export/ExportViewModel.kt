@@ -1,10 +1,15 @@
 package tech.idct.clipra.feature.export
 
+import android.content.Context
+import android.graphics.Bitmap
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,6 +21,10 @@ import kotlinx.coroutines.withContext
 import tech.idct.clipra.core.data.project.ProjectRepository
 import tech.idct.clipra.core.data.settings.SettingsRepository
 import tech.idct.clipra.core.engine.encoder.VideoEncoders
+import tech.idct.clipra.core.engine.media.MediaCache
+import tech.idct.clipra.core.engine.media.ProjectMediaResolver
+import tech.idct.clipra.core.engine.render.ProjectRender
+import tech.idct.clipra.core.engine.render.StillRenderer
 import tech.idct.clipra.core.model.Project
 import tech.idct.clipra.core.model.Resolution
 import tech.idct.clipra.core.model.export.ExportSettings
@@ -23,6 +32,7 @@ import tech.idct.clipra.core.model.export.VideoCodec
 import tech.idct.clipra.monetization.ads.ExportAds
 import tech.idct.clipra.monetization.billing.ProStore
 import javax.inject.Inject
+import kotlin.math.roundToInt
 
 data class ExportUiState(
     val project: Project? = null,
@@ -32,10 +42,15 @@ data class ExportUiState(
     val pro: Boolean = false,
     /** Clipra Pro's price from Google Play, for "Remove for"; null until Play answers. */
     val proPrice: String? = null,
+    /** The cover frame and the frames along the project, which the tablet shows (#70). */
+    val cover: Bitmap? = null,
+    val strip: List<Bitmap> = emptyList(),
 )
 
 @HiltViewModel
 class ExportViewModel @Inject constructor(
+    @param:ApplicationContext private val context: Context,
+    private val cache: MediaCache,
     private val projects: ProjectRepository,
     private val proStore: ProStore,
     private val settings: SettingsRepository,
@@ -45,6 +60,9 @@ class ExportViewModel @Inject constructor(
     private val projectId: String? = savedState.get<String>("projectId")
     private val playheadUs: Long = savedState.get<Long>("playheadUs") ?: 0L
     private val mutableState = MutableStateFlow(ExportUiState())
+    private val stills by lazy { StillRenderer(context) }
+    private var previewJob: Job? = null
+    private var coverJob: Job? = null
 
     val state: StateFlow<ExportUiState> = mutableState.asStateFlow()
 
@@ -79,6 +97,60 @@ class ExportViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Draws the cover and [count] frames along the project from the proxies, for the tablet's
+     * Export (#70); the phone has no room for them.
+     */
+    fun loadPreview(count: Int) {
+        if (previewJob != null) return
+        val project = state.value.project ?: return
+        previewJob = viewModelScope.launch {
+            val strip = (0 until count).mapNotNull { i ->
+                frame(project, project.durationUs * (2 * i + 1) / (2 * count), STRIP_SIDE)
+            }
+            mutableState.update { it.copy(strip = strip) }
+        }
+        drawCover()
+    }
+
+    /** Makes the frame at [atUs] the cover (#59), as a tap on the tablet's filmstrip does. */
+    fun setCover(atUs: Long) {
+        change(state.value.settings.copy(coverUs = atUs))
+        drawCover(atUs)
+    }
+
+    private fun drawCover(atUs: Long = state.value.settings.coverUs) {
+        val project = state.value.project ?: return
+        coverJob?.cancel()
+        coverJob = viewModelScope.launch {
+            val cover = frame(project, atUs, COVER_SIDE)
+            mutableState.update { it.copy(cover = cover) }
+        }
+    }
+
+    /** [project]'s frame at [atUs] from the proxies, its long side [side] px. */
+    private suspend fun frame(project: Project, atUs: Long, side: Int): Bitmap? = try {
+        val output = project.format.outputSize
+        val scale = side.toFloat() / maxOf(output.width, output.height)
+        val width = (output.width * scale / 2).roundToInt() * 2
+        val height = (output.height * scale / 2).roundToInt() * 2
+        val timeline = withContext(Dispatchers.Default) {
+            ProjectRender.timeline(
+                project,
+                ProjectMediaResolver(context, cache, forExport = false, maxImageSide = side),
+                width,
+                height,
+            )
+        }
+        stills.render(timeline, atUs.coerceIn(0, maxOf(0, project.durationUs - 1)))
+    } catch (cancelled: CancellationException) {
+        throw cancelled
+    } catch (_: Exception) {
+        null
+    }
+
+    override fun onCleared() = stills.release()
+
     /** Remembers the settings in the project and hands over to the export (#58). */
     fun start(onStarted: (projectId: String) -> Unit) {
         val project = state.value.project ?: return
@@ -108,5 +180,10 @@ class ExportViewModel @Inject constructor(
             }.toSet(),
         )
         return fitted to support
+    }
+
+    private companion object {
+        const val COVER_SIDE = 1280
+        const val STRIP_SIDE = 160
     }
 }

@@ -1,5 +1,7 @@
 package tech.idct.clipra.feature.export
 
+import android.graphics.Bitmap
+import android.graphics.Color
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -26,9 +28,13 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import tech.idct.clipra.core.designsystem.ClipraTheme
+import tech.idct.clipra.core.designsystem.adaptive.LocalWindowLayout
+import tech.idct.clipra.core.designsystem.adaptive.WindowLayout
+import tech.idct.clipra.core.model.AspectRatio
 import tech.idct.clipra.core.model.CaptionSpec
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
+import tech.idct.clipra.core.model.Format
 import tech.idct.clipra.core.model.Layer
 import tech.idct.clipra.core.model.Project
 import tech.idct.clipra.core.model.Word
@@ -234,5 +240,52 @@ class ExportScreenTest {
         compose.onNodeWithTag("extra:Captions").performScrollTo().assertIsNotSelected()
         settings = settings.copy(captions = CaptionMode.Srt)
         compose.onNodeWithTag("extra:Captions").assertIsSelected().assertIsNotEnabled()
+    }
+
+    /**
+     * Export on a tablet (#70, design/screens/tablet/TabletExport.png): the cover large over the
+     * filmstrip and Also save, the options, estimate and Export to Gallery beside.
+     */
+    @Test
+    @Config(qualifiers = "w1280dp-h800dp-land-mdpi")
+    fun tabletExport() {
+        Locale.setDefault(Locale.US)
+        val covers = mutableListOf<Long>()
+        val frame = Bitmap.createBitmap(64, 36, Bitmap.Config.ARGB_8888)
+            .apply { eraseColor(Color.rgb(107, 77, 122)) }
+        val wide = project.copy(format = Format(ratio = AspectRatio.Landscape16x9))
+        compose.setContent {
+            CompositionLocalProvider(LocalWindowLayout provides WindowLayout.Tablet) {
+                ClipraTheme {
+                    ExportScreen(
+                        project = wide,
+                        settings = ExportSettings(
+                            extras = setOf(ExportExtra.Captions, ExportExtra.Cover),
+                            coverUs = 7_120_000,
+                        ),
+                        support = EncoderSupport(),
+                        onChange = {},
+                        onExport = {},
+                        onBack = {},
+                        ads = ExportAdsLine(proPrice = "10,00 zł", onPro = {}),
+                        preview = ExportPreview(
+                            cover = frame,
+                            strip = List(12) { frame },
+                            coverUs = 7_120_000,
+                            onCover = { covers += it },
+                        ),
+                    )
+                }
+            }
+        }
+        compose.onNodeWithText("1920 × 1080 · 30 fps").assertExists()
+        compose.onNodeWithText("00:07.12").assertExists()
+        compose.onRoot().captureRoboImage(
+            roborazziOptions = RoborazziOptions(
+                compareOptions = RoborazziOptions.CompareOptions(changeThreshold = 0.001f),
+            ),
+        )
+        compose.onNodeWithTag("export-strip").performClick()
+        assertEquals(1, covers.size)
     }
 }

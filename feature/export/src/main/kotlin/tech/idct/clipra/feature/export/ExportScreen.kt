@@ -36,6 +36,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import tech.idct.clipra.core.designsystem.ClipraTheme
+import tech.idct.clipra.core.designsystem.adaptive.LocalWindowLayout
+import tech.idct.clipra.core.designsystem.adaptive.WindowLayout
 import tech.idct.clipra.core.designsystem.component.ChoiceCard
 import tech.idct.clipra.core.designsystem.component.ClipraChip
 import tech.idct.clipra.core.designsystem.component.ClipraIcon
@@ -79,7 +81,13 @@ fun ExportScreen(
     modifier: Modifier = Modifier,
     /** Free users read that two ads play, with a way to Clipra Pro; null for Pro users. */
     ads: ExportAdsLine? = null,
+    /** The cover frame and the filmstrip the tablet shows (#70, TabletExport). */
+    preview: ExportPreview = ExportPreview(),
 ) {
+    if (LocalWindowLayout.current == WindowLayout.Tablet) {
+        TabletExport(project, settings, support, onChange, onExport, onBack, ads, preview, modifier)
+        return
+    }
     val colors = ClipraTheme.colors
     Column(
         modifier = modifier
@@ -97,68 +105,79 @@ fun ExportScreen(
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             ProjectSummary(project)
-            Section(stringResource(R.string.export_resolution)) {
-                SegmentedControl(
-                    segments = Resolution.entries.map { resolution ->
-                        val size = settings.copy(resolution = resolution).outputSize(project)
-                        Segment(
-                            label = resolution.exportLabel(),
-                            detail = "${size.width}×${size.height}",
-                            enabled = resolution in support.resolutions,
-                        )
-                    },
-                    selectedIndex = settings.resolution.ordinal,
-                    onSelect = { onChange(settings.copy(resolution = Resolution.entries[it])) },
-                    modifier = Modifier.fillMaxWidth().testTag("resolution"),
-                )
-            }
-            Section(stringResource(R.string.export_frame_rate)) {
-                SegmentedControl(
-                    segments = FrameRate.entries.map { Segment(it.fps.toString()) },
-                    selectedIndex = settings.frameRate.ordinal,
-                    onSelect = { onChange(settings.copy(frameRate = FrameRate.entries[it])) },
-                    monospace = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-            Section(stringResource(R.string.export_codec)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    VideoCodec.entries.forEach { codec ->
-                        val available = codec in support.codecs
-                        val note = codec.noteRes(available)
-                        ChoiceCard(
-                            title = codec.label(),
-                            subtitle = stringResource(note),
-                            selected = codec == settings.codec,
-                            enabled = available,
-                            onClick = { onChange(settings.copy(codec = codec)) },
-                            compact = true,
-                            modifier = Modifier
-                                .weight(1f)
-                                .testTag("codec:${codec.name}"),
-                        )
-                    }
-                }
-            }
-            Section(stringResource(R.string.export_quality)) {
-                SegmentedControl(
-                    segments = ExportQuality.entries.map { Segment(stringResource(it.labelRes())) },
-                    selectedIndex = settings.quality.ordinal,
-                    onSelect = { onChange(settings.copy(quality = ExportQuality.entries[it])) },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-            Section(stringResource(R.string.export_captions)) {
-                SegmentedControl(
-                    segments = CaptionMode.entries.map { Segment(stringResource(it.labelRes())) },
-                    selectedIndex = settings.captions.ordinal,
-                    onSelect = { onChange(settings.copy(captions = CaptionMode.entries[it])) },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
+            ExportOptions(project, settings, support, onChange)
             AlsoSave(project, settings, onChange)
         }
         Estimate(project, settings, onExport, ads)
+    }
+}
+
+/** Resolution, frame rate, codec, quality and captions; phone and tablet show them alike. */
+@Composable
+internal fun ExportOptions(
+    project: Project,
+    settings: ExportSettings,
+    support: EncoderSupport,
+    onChange: (ExportSettings) -> Unit,
+) {
+    Section(stringResource(R.string.export_resolution)) {
+        SegmentedControl(
+            segments = Resolution.entries.map { resolution ->
+                val size = settings.copy(resolution = resolution).outputSize(project)
+                Segment(
+                    label = resolution.exportLabel(),
+                    detail = "${size.width}×${size.height}",
+                    enabled = resolution in support.resolutions,
+                )
+            },
+            selectedIndex = settings.resolution.ordinal,
+            onSelect = { onChange(settings.copy(resolution = Resolution.entries[it])) },
+            modifier = Modifier.fillMaxWidth().testTag("resolution"),
+        )
+    }
+    Section(stringResource(R.string.export_frame_rate)) {
+        SegmentedControl(
+            segments = FrameRate.entries.map { Segment(it.fps.toString()) },
+            selectedIndex = settings.frameRate.ordinal,
+            onSelect = { onChange(settings.copy(frameRate = FrameRate.entries[it])) },
+            monospace = true,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+    Section(stringResource(R.string.export_codec)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            VideoCodec.entries.forEach { codec ->
+                val available = codec in support.codecs
+                val note = codec.noteRes(available)
+                ChoiceCard(
+                    title = codec.label(),
+                    subtitle = stringResource(note),
+                    selected = codec == settings.codec,
+                    enabled = available,
+                    onClick = { onChange(settings.copy(codec = codec)) },
+                    compact = true,
+                    modifier = Modifier
+                        .weight(1f)
+                        .testTag("codec:${codec.name}"),
+                )
+            }
+        }
+    }
+    Section(stringResource(R.string.export_quality)) {
+        SegmentedControl(
+            segments = ExportQuality.entries.map { Segment(stringResource(it.labelRes())) },
+            selectedIndex = settings.quality.ordinal,
+            onSelect = { onChange(settings.copy(quality = ExportQuality.entries[it])) },
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+    Section(stringResource(R.string.export_captions)) {
+        SegmentedControl(
+            segments = CaptionMode.entries.map { Segment(stringResource(it.labelRes())) },
+            selectedIndex = settings.captions.ordinal,
+            onSelect = { onChange(settings.copy(captions = CaptionMode.entries[it])) },
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
 }
 
@@ -168,7 +187,7 @@ fun ExportScreen(
  * when something plays some.
  */
 @Composable
-private fun AlsoSave(
+internal fun AlsoSave(
     project: Project,
     settings: ExportSettings,
     onChange: (ExportSettings) -> Unit,
@@ -293,7 +312,7 @@ private fun ProjectSummary(project: Project) {
 }
 
 @Composable
-private fun Estimate(
+internal fun Estimate(
     project: Project,
     settings: ExportSettings,
     onExport: () -> Unit,

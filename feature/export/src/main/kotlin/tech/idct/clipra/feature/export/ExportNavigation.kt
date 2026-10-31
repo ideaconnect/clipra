@@ -23,6 +23,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.Serializable
+import tech.idct.clipra.core.designsystem.adaptive.LocalWindowLayout
+import tech.idct.clipra.core.designsystem.adaptive.WindowLayout
 import tech.idct.clipra.core.designsystem.component.ReadableWidth
 import tech.idct.clipra.core.designsystem.placeholder.Board
 import tech.idct.clipra.core.engine.export.ExportManager
@@ -90,17 +92,23 @@ fun NavGraphBuilder.exportScreens(screen: @Composable (Board) -> Unit, actions: 
 private fun ExportRoute(actions: ExportActions, viewModel: ExportViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val project = state.project ?: return
-    ReadableWidth {
-        ExportScreen(
-            project = project,
-            settings = state.settings,
-            support = state.support,
-            onChange = viewModel::change,
-            onExport = { viewModel.start(actions.onStarted) },
-            onBack = actions.onBack,
-            ads = if (state.pro) null else ExportAdsLine(state.proPrice, actions.onPro),
-        )
-    }
+    val tablet = LocalWindowLayout.current == WindowLayout.Tablet
+    LaunchedEffect(tablet) { if (tablet) viewModel.loadPreview(STRIP_FRAMES) }
+    ExportScreen(
+        project = project,
+        settings = state.settings,
+        support = state.support,
+        onChange = viewModel::change,
+        onExport = { viewModel.start(actions.onStarted) },
+        onBack = actions.onBack,
+        ads = if (state.pro) null else ExportAdsLine(state.proPrice, actions.onPro),
+        preview = ExportPreview(
+            cover = state.cover,
+            strip = state.strip,
+            coverUs = state.settings.coverUs,
+            onCover = viewModel::setCover,
+        ),
+    )
 }
 
 @Composable
@@ -195,3 +203,6 @@ private tailrec fun Context.findActivity(): Activity? = when (this) {
     is ContextWrapper -> baseContext.findActivity()
     else -> null
 }
+
+/** Frames in the tablet's filmstrip (#70). */
+private const val STRIP_FRAMES = 12
