@@ -1,6 +1,6 @@
 # 0003. AI runtimes: everything on the device, official models only
 
-- Status: Accepted
+- Status: Accepted; the Translation row is superseded by [0007](0007-offline-translation.md)
 - Date: 2026-10-28, updated 2026-10-30 (#50, #54)
 - Issues: #7 (spike), #39, #43, #44, #50, #52, #54
 
@@ -15,7 +15,7 @@ Clipra promises no account and no upload. User media, transcripts and edits neve
 | Lite voice cleanup | RNNoise, compiled in | Weights from the official xiph/rnnoise source |
 | Person cutout, face follow | LiteRT (`ml:vision`) | MediaPipe models from Google's model storage, versioned paths, built into the APK at build time |
 | Stabilization | Kotlin, no library (`MotionEstimator`) | No model |
-| Translation | ML Kit on-device translation | Language packs managed by ML Kit |
+| Translation | Superseded by 0007: Marian NMT (`ml:translate`), not ML Kit, which sends usage analytics | Mozilla's Firefox Translations models, pinned by run path and SHA-256 |
 
 Rules for every model:
 - It runs on the phone.

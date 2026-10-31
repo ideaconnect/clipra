@@ -6,10 +6,11 @@ Each record says what was decided, why, and what follows from it, so every contr
 |---|---|---|
 | [0001](0001-media-engine.md) | Media engine: Clipra's layer compositor inside Media3 | Accepted |
 | [0002](0002-project-format.md) | Project format: versioned JSON documents, edits as commands | Accepted |
-| [0003](0003-ai-runtimes.md) | AI runtimes: everything on the device, official models only | Accepted |
+| [0003](0003-ai-runtimes.md) | AI runtimes: everything on the device, official models only | Accepted; translation superseded by 0007 |
 | [0004](0004-ads-and-billing.md) | Ads and billing: two export ads, a one-time Clipra Pro | Accepted |
 | [0005](0005-min-sdk.md) | Android 10 and later | Accepted |
-| [0006](0006-license-policy.md) | License policy: Apache-2.0 app, permissive dependencies only | Accepted |
+| [0006](0006-license-policy.md) | License policy: Apache-2.0 app, permissive dependencies only | Accepted, amended by 0007 |
+| [0007](0007-offline-translation.md) | Offline translation: Marian with Mozilla's Firefox Translations models | Accepted |
 
 ## Template
 

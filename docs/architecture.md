@@ -31,7 +31,7 @@ core:models              AI model manifest, downloads (WorkManager), verificatio
 ml:whisper               whisper.cpp JNI, model files, transcription pipeline
 ml:voice                 DeepFilterNet 3 (ONNX Runtime), RNNoise (JNI)
 ml:vision                MediaPipe models on LiteRT: selfie segmenter, face detector, subject tracking; motion tracking for Stabilize (Kotlin, no library)
-ml:translate             ML Kit on-device translation
+ml:translate             Marian NMT (JNI), Firefox Translations models
 feature:home             Home, new project
 feature:editor           Timeline, preview, tools, inspector (phone and tablet)
 feature:effects          Filters, transitions, masks, color, cutout, reframe
@@ -119,7 +119,7 @@ Transcript(clipId, words: List<Word(text, start, end, confidence, kind: Word|Fil
 | Auto-reframe (#53) | The face detector (Follow: Face) or the person masks of the cutout (Follow: Subject, by the middle of the mask; less than 5 % of the picture counts as nobody). No model of its own | `Reframer` (`core:engine`) samples each shot that covers the frame ten times a second. `Reframe` (`core:model`) does the rest. Gaps take the nearest sighting. The path is smoothed by a Gaussian-weighted local line, sigma from 2 s (Smooth) to 0.15 s (Quick): the plain Gaussian mid-clip, and it keeps a steady move going at the ends. A leash keeps the subject within 80 % of half the crop window. The path becomes transform keyframes, as few as keep it within 0.4 % of the frame. The copy is a new project in the new ratio; titles are moved inside the title-safe area, measured by `TextRenderer.box` |
 | Person cutout | MediaPipe selfie segmenter model (Apache-2.0, 256 × 256) on LiteRT (Apache-2.0) | Masks per frame, steadied and cached; see below |
 | Subject follow | MediaPipe object detector plus a simple tracker | Fallback to face, then centre |
-| Translation | ML Kit on-device translation (Google terms) | Language packs downloaded on demand; non-English pairs pivot through English |
+| Translation | Marian NMT, browsermt fork (MIT), via JNI; Mozilla's Firefox Translations models (MPL-2.0 data, ADR 0007) | Downloaded per direction on demand (about 32 MB each); non-English pairs pivot through English. Nothing is sent |
 | Stabilization | No model and no library: Shi-Tomasi corners, pyramidal Lucas-Kanade tracking and a RANSAC similarity fit per frame, written in Kotlin (`ml:vision` `MotionEstimator`) on 320 px wide grey frames. OpenCV was planned; the few routines needed are small, so the download stays the same and there is no native build to maintain | Analysed from the proxy in the background (WorkManager, one thread per core) and cached per media; the steps are kept in fractions of the picture keyed by media time, so trims, speed and reverse keep working. `Stabilizing` smooths the path with a Gaussian (wider with strength) and picks one zoom per clip; the compositor reads each frame through the correction matrix in its first draw, so preview and export match, and cutout masks and followed faces go through the same transform. No gyro data or learned model in v1 |
 
 **MediaPipe models run on LiteRT, not MediaPipe Tasks (#50).** The Tasks libraries send usage events (task name, app version) through Google's datatransport to Clearcut, with no switch to turn them off; that is network traffic the product doesn't allow. LiteRT (`com.google.ai.edge.litert:litert`, the TensorFlow Lite runtime) has no telemetry and runs the same official model files, so `ml:vision` does the small pre- and post-processing itself (for the selfie segmenter: the picture squeezed to 256 × 256, RGB in 0 to 1, a confidence per pixel out).
@@ -139,7 +139,7 @@ Every model runs on the phone and comes from its official source. Clipra never h
 | DeepFilterNet 3 (`DeepFilterNet3_onnx.tar.gz`) | GitHub `Rikorose/DeepFilterNet`, `models/` folder | Downloaded, pinned to a release tag |
 | MediaPipe face detector, selfie segmenter, object detector | Google's MediaPipe model storage (`storage.googleapis.com/mediapipe-models`), versioned paths | Built into the APK, downloaded and checked with SHA-256 at build time (`ml:vision`'s `downloadVisionModels`; the selfie segmenter `float16/1`, 249,537 bytes) |
 | RNNoise | Weights compiled in from the official xiph/rnnoise source | Built in |
-| ML Kit translation packs | Google, through ML Kit | Managed by ML Kit |
+| Firefox Translations models | Mozilla's model registry on Google Cloud Storage (`moz-fx-translations-data--303e-prod-translations-data`) | Pinned by the training run's path, SHA-256 |
 
 Downloads run in WorkManager with a Wi-Fi-only constraint by default, resume after interruptions, are verified by SHA-256 before use, are stored in app-specific storage, and are listed on the AI models screen with their size. In `core:models`, `ModelCatalog` is the manifest and `ModelManager` gives each model's state (built in, missing, waiting, downloading, installed) from the files on disk and the download work. `ModelDownloadWorker` runs as a data sync foreground service with a progress notification. It downloads into `<model>.part` and continues it with a range request after a lost connection, a stopped worker or a restart. It checks the size and SHA-256, unpacks archives (DeepFilterNet's tar.gz, read by our own small tar reader), and only then moves the files into `files/models/<model>/` and marks them installed. A failed check deletes the partial file; a source that answers 403, 404 or 410 fails without retrying. If a source moves or a file changes, the download fails with a clear message; the fix ships in an app update, never through another host. Every size the app shows is real: the manifest's byte count before download, the bytes on disk after, formatted with `Formatter.formatShortFileSize` (decimal units from Android 8 on, like the system's storage screens).
 
@@ -195,7 +195,7 @@ Downloads run in WorkManager with a Wi-Fi-only constraint by default, resume aft
 
 - No analytics SDK by default. If crash reporting is added it must be opt-in and must not send media or transcripts.
 - Photo Picker for media import (no broad storage permission). Microphone only when recording a voiceover. Notifications for export and model download progress. `INTERNET` is declared by `core:models` for the downloads (and later by the ad and billing SDKs).
-- Network: model downloads straight from the official sources (Hugging Face, GitHub, Google), ads (free users), billing. Those hosts see an ordinary download request (IP address, user agent) and nothing about the user's media; the privacy policy names them.
+- Network: model downloads straight from the official sources (Hugging Face, GitHub, Google, and Mozilla's model storage on Google Cloud), ads (free users), billing. Those hosts see an ordinary download request (IP address, user agent) and nothing about the user's media; the privacy policy names them.
 
 ## 10. Testing
 
@@ -220,4 +220,4 @@ How each one is measured on the device matrix, and the baseline profile that kee
 
 ## 12. Licensing
 
-The app is Apache-2.0. Dependencies must be Apache-2.0, MIT, BSD, ISC, Zlib or similar permissive licenses; fonts OFL; models with permissive licenses (Whisper MIT, DeepFilterNet MIT/Apache-2.0, MediaPipe models Apache-2.0). Closed Google SDKs (ads, UMP, Play Billing, ML Kit) are used under their own terms. Do not add GPL or AGPL code; LGPL only as a separately loaded library and only after review. Record every dependency in `docs/third-party.md`.
+The app is Apache-2.0. Dependencies must be Apache-2.0, MIT, BSD, ISC, Zlib or similar permissive licenses; fonts OFL; models with permissive licenses (Whisper MIT, DeepFilterNet MIT/Apache-2.0, MediaPipe models Apache-2.0). Model data under MPL-2.0 (Firefox Translations models) is allowed when downloaded at run time and used unmodified (ADR 0007). Closed Google SDKs (ads, UMP, Play Billing) are used under their own terms. Do not add GPL or AGPL code; LGPL only as a separately loaded library and only after review. Record every dependency in `docs/third-party.md`.
