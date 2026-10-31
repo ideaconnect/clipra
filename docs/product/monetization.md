@@ -66,6 +66,8 @@ There is no backend. Verify the purchase signature on the device against the app
 
 ## 4. Play Console and policy checklist
 
+The step-by-step setup, with what to enter in each form, is in `docs/release/play-console.md`.
+
 - Ads declaration: "Contains ads" = yes.
 - Data safety: declare what the ads SDK collects (device or advertising identifiers, diagnostics). Clipra itself collects no user content.
 - `com.google.android.gms.permission.AD_ID` permission (added by the ads SDK) is expected for ads.
