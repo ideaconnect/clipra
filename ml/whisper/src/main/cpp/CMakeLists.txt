@@ -17,10 +17,18 @@ if(ANDROID_ABI STREQUAL "x86_64")
     endforeach()
 endif()
 
+# Each function and datum in its own section, so the linker can drop what Clipra never calls.
+add_compile_options(-ffunction-sections -fdata-sections)
+
 add_subdirectory(${WHISPER_SOURCE} whisper)
 
 add_library(clipra_whisper SHARED whisper_jni.cpp)
 target_link_libraries(clipra_whisper whisper log)
 target_compile_options(clipra_whisper PRIVATE -O3 -fvisibility=hidden)
-# 16 KB memory pages, as Google Play requires (docs/architecture.md, section 1).
-target_link_options(clipra_whisper PRIVATE "-Wl,-z,max-page-size=16384")
+# 16 KB memory pages, as Google Play requires (docs/architecture.md, section 1). Only the JNI
+# functions are exported, so the linker drops what is unused and folds identical code.
+target_link_options(clipra_whisper PRIVATE
+    "-Wl,-z,max-page-size=16384"
+    "-Wl,--gc-sections"
+    "-Wl,--exclude-libs,ALL"
+    "-Wl,--icf=all")
