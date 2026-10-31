@@ -11,6 +11,8 @@
     <string name="home_ai_ready">AI na urządzeniu gotowe</string>
     <string name="home_ai_title">AI na urządzeniu</string>
     <string name="home_ai_setup">Napisy i czyszczenie głosu</string>
+    <!-- A captions model in the AI card: "Whisper Base". -->
+    <string name="home_ai_whisper">Whisper %1$s</string>
     <string name="home_recent">Ostatnie</string>
     <plurals name="home_recent_count">
         <item quantity="one">%d projekt</item>

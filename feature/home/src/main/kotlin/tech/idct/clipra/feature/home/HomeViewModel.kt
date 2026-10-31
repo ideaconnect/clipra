@@ -7,11 +7,15 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import tech.idct.clipra.core.data.project.ProjectRepository
 import tech.idct.clipra.core.data.project.ProjectSummary
 import tech.idct.clipra.core.data.project.WallClock
+import tech.idct.clipra.core.models.AiModel
+import tech.idct.clipra.core.models.ModelManager
+import tech.idct.clipra.core.models.ModelStatus
 import javax.inject.Inject
 
 @HiltViewModel
@@ -20,7 +24,16 @@ class HomeViewModel @Inject constructor(
     private val clock: WallClock,
     /** The pictures in the project frames. */
     val pictures: CachedProjectPictures,
+    models: ModelManager,
 ) : ViewModel() {
+    /** The downloaded models on the phone, for the AI card; null until they are known. */
+    val installedModels: StateFlow<List<AiModel>?> = models.models
+        .map { states ->
+            states.filter { !it.model.builtIn && it.status is ModelStatus.Installed }
+                .map { it.model }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
     /** Recent projects, last edited first; null until the index has loaded. */
     val recent: StateFlow<List<ProjectSummary>?> = projects.observeRecent()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)

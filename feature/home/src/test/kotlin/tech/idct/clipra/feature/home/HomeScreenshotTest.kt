@@ -87,28 +87,31 @@ class HomeScreenshotTest {
     @After
     fun restoreZone() = TimeZone.setDefault(zone)
 
+    /** The design's AI card: Whisper Base and DeepFilterNet 3 are on the phone. */
+    private val ready = AiStatus(ready = true, summary = "Whisper Base · DeepFilterNet 3")
+
     @Test
-    fun home() = capture(projects)
+    fun home() = capture(projects, ready)
 
     /** The design state in Polish, to see that every label fits (#76). */
     @Test
     @Config(qualifiers = "pl-w390dp-h844dp-xhdpi")
     fun homeInPolish() {
         Locale.setDefault(Locale.forLanguageTag("pl-PL"))
-        capture(projects)
+        capture(projects, ready)
     }
 
     @Test
     fun homeWithoutProjects() = capture(emptyList())
 
-    private fun capture(recent: List<ProjectSummary>) {
+    private fun capture(recent: List<ProjectSummary>, aiStatus: AiStatus? = null) {
         compose.setContent {
             ClipraTheme {
                 CompositionLocalProvider(LocalProjectPictures provides DesignPictures) {
                     HomeScreen(
                         recent = recent,
                         nowMillis = now,
-                        aiStatus = null,
+                        aiStatus = aiStatus,
                         actions = HomeActions({}, {}, {}, {}, {}, {}, {}, {}),
                         projectActions = ProjectActions({}, {}, {}),
                     )

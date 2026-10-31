@@ -1,9 +1,12 @@
 package tech.idct.clipra.feature.home
 
+import tech.idct.clipra.core.models.AiModel
+import tech.idct.clipra.core.models.ModelGroup
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
+import java.util.Locale
 
 /** How long ago a project was edited, in the buckets Home shows ("Edited 2 h ago"). */
 sealed interface EditedAgo {
@@ -59,4 +62,17 @@ fun formatDuration(us: Long): String {
     } else {
         "%d:%02d".format(minutes, seconds)
     }
+}
+
+/**
+ * The AI card's status (Main board): ready once a captions model is on the phone, naming the
+ * downloaded models group by group, as "Whisper Base · DeepFilterNet 3"; null before that, when
+ * the card says what the models are for. [whisper] names a captions model ("Whisper %1$s").
+ */
+fun aiStatus(installed: List<AiModel>, whisper: String, locale: Locale): AiStatus? {
+    if (installed.none { it.group == ModelGroup.Captions }) return null
+    val names = installed.sortedBy { it.group.ordinal }.map { model ->
+        if (model.group == ModelGroup.Captions) whisper.format(model.name) else model.title(locale)
+    }
+    return AiStatus(ready = true, summary = names.joinToString(" · "))
 }
