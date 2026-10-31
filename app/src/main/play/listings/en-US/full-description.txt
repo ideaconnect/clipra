@@ -1,0 +1,35 @@
+Clipra is a video editor for your phone and tablet that keeps your videos to yourself. No account, no upload, no watermark. Every AI feature runs on your device.
+
+LAYERS, NOT TRACKS
+Put anything on any layer: video, photos, text, captions, sound. Higher layers cover lower ones, and every layer plays sound. Picture in picture is just a smaller clip on a higher layer. 16 blend modes, opacity, crop, keyframes for position, scale, rotation and masks.
+
+EDIT BY TEXT
+Clipra writes down what is said and lets you edit the video like a document. Cut filler words in one tap, remove long pauses, or tap any word to cut it. Everything after stays in sync on every layer.
+
+AUTO CAPTIONS
+Captions made on your phone with Whisper, in the language spoken. Five styles, including karaoke that highlights each word. Fix words, split and merge captions, and export or import .srt files.
+
+AI ON YOUR DEVICE
+- Voice cleanup removes wind, traffic and room noise
+- Cutout removes the background behind people, or use a chroma key
+- Follow face keeps a mask on a face, for blurring or highlighting
+- Auto-reframe makes a vertical, square or 4:5 copy that follows the subject
+- Stabilize smooths handheld shake
+AI models are downloaded once, straight from their official sources, and then work offline.
+
+EVERYTHING ELSE YOU NEED
+- 24 filters and 24 transitions
+- Color adjustments, HSL and LUT files
+- Text cards, titles and lower thirds with effects, animations and your own templates
+- Speed from 0.25x to 4x, speed ramps, freeze frame and reverse
+- Loudness normalization, fades, ducking under speech, beat markers and voiceover
+- Tablets get a full three-pane layout
+
+EXPORT
+Up to 4K at up to 60 fps, in H.264, HEVC or AV1 where your phone has the encoder. Clipra shows the output size and the estimated file size before you export. You can also save the cover, the sound, the captions and an OpenTimelineIO file of the project.
+
+FREE, WITH ADS ONLY AT EXPORT
+Every feature is free. Clipra shows two fullscreen ads per export, one when it starts and one when it is done, and never while you edit. Clipra Pro is a one-time purchase that removes them. Nothing else is behind Pro.
+
+PRIVATE BY DESIGN
+Your videos, transcripts and edits never leave your phone. Clipra uses the network only to download AI models (on Wi-Fi by default), to show ads to free users and for Google Play purchases.
