@@ -34,7 +34,7 @@ What to enter in Google Play Console and AdMob before monetized builds can ship 
 
 ## 4. App content (Policy > App content)
 
-- **Privacy policy:** the URL of the policy published on idct.tech (#78; draft in `docs/release/privacy-policy.md`).
+- **Privacy policy:** https://idct.tech/clipra/privacy, published 31 October 2026 from `docs/release/privacy-policy.md` (Polish: https://idct.tech/clipra/prywatnosc). The app links it under Settings > Privacy policy.
 - **Ads:** "Yes, my app contains ads".
 - **App access:** "All functionality is available without special access". There are no accounts or logins.
 - **Target audience:** 18 and over (or 16 and over). Not designed for children: Clipra isn't in the Families program, and its ads SDK isn't Families-certified.

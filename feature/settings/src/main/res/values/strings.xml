@@ -28,6 +28,8 @@
     <string name="settings_cancel">Cancel</string>
     <string name="settings_models">AI models</string>
     <string name="settings_privacy">Privacy</string>
+    <string name="settings_privacy_policy">Privacy policy</string>
+    <string name="settings_privacy_policy_url">https://idct.tech/clipra/privacy</string>
     <string name="settings_on_device">On this phone</string>
     <string name="settings_on_device_detail">Your media, transcripts and edits never leave this phone.</string>
     <string name="settings_about">About</string>

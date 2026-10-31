@@ -1,11 +1,15 @@
 package tech.idct.clipra.feature.settings
 
 import android.app.Activity
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.ContextWrapper
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraphBuilder
@@ -54,6 +58,7 @@ private fun SettingsDestination(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val policy = stringResource(R.string.settings_privacy_policy_url)
     ReadableWidth {
         SettingsScreen(
             state = state,
@@ -66,8 +71,18 @@ private fun SettingsDestination(
                 onModels = actions.onModels,
                 onAdPrivacy = { context.findActivity()?.let(viewModel::adPrivacy) },
                 onLicenses = actions.onLicenses,
+                onPrivacyPolicy = { context.openPage(policy) },
             ),
         )
+    }
+}
+
+/** Opens [url] in the browser; nothing happens on a phone without one. */
+private fun Context.openPage(url: String) {
+    try {
+        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+    } catch (_: ActivityNotFoundException) {
+        // No browser on this phone.
     }
 }
 
