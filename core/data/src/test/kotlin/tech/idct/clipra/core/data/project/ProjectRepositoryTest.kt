@@ -30,6 +30,7 @@ import tech.idct.clipra.core.model.Layer
 import tech.idct.clipra.core.model.Layout
 import tech.idct.clipra.core.model.MediaAsset
 import tech.idct.clipra.core.model.MediaKind
+import tech.idct.clipra.core.model.MediaRef
 import tech.idct.clipra.core.model.Resolution
 import tech.idct.clipra.core.model.edit.AddClip
 import tech.idct.clipra.core.model.edit.EditRejected
@@ -103,6 +104,16 @@ class ProjectRepositoryTest {
 
         assertEquals(listOf(first.id, second.id), recent.map { it.id })
         assertEquals(42_000_000L, recent.first().durationUs)
+    }
+
+    /** Home's frames show each cell's first picture (Main board). */
+    @Test
+    fun theIndexKeepsEachCellsPicture() = runTest {
+        val project = repository.create("Unboxing split-screen", Format(layout = Layout.Split2))
+        val sky = Clip("a", ClipType.Video, 0, 5_000_000, MediaRef("sky", 0, 5_000_000), cell = 1)
+        repository.save(project.copy(layers = listOf(Layer("L1", clips = listOf(sky)))))
+
+        assertEquals(listOf(null, "sky"), repository.observeRecent().first().single().pictures)
     }
 
     @Test

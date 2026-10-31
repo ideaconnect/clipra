@@ -37,12 +37,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
@@ -456,7 +459,7 @@ internal fun ProjectCard(
     }
 }
 
-/** The format frame, sized to the project's ratio, with the badges over it. */
+/** The format frame, sized to the project's ratio, with its pictures and the badges over it. */
 @Composable
 private fun Thumbnail(project: ProjectSummary) {
     val colors = ClipraTheme.colors
@@ -469,7 +472,7 @@ private fun Thumbnail(project: ProjectSummary) {
         contentAlignment = Alignment.Center,
     ) {
         val (width, height) = frameSize(project.ratio)
-        LayoutFrame(project.layout, width, height)
+        LayoutFrame(project.layout, width, height, project.pictures)
         Badge(
             text = formatBadge(project.ratio, project.layout, project.resolution.label),
             modifier = Modifier
@@ -492,7 +495,7 @@ private fun frameSize(ratio: AspectRatio): Pair<Dp, Dp> {
 }
 
 @Composable
-private fun LayoutFrame(layout: Layout, width: Dp, height: Dp) {
+private fun LayoutFrame(layout: Layout, width: Dp, height: Dp, pictures: List<String?>) {
     val colors = ClipraTheme.colors
     LayoutCells(
         layout = layout,
@@ -503,7 +506,26 @@ private fun LayoutFrame(layout: Layout, width: Dp, height: Dp) {
         modifier = Modifier
             .clip(RoundedCornerShape(4.dp))
             .background(colors.background),
-    )
+    ) { index ->
+        pictures.getOrNull(index)?.let { CellPicture(it) }
+    }
+}
+
+/** A cell's photo or video, cropped to the cell; nothing until its thumbnail has loaded. */
+@Composable
+private fun CellPicture(mediaId: String) {
+    val pictures = LocalProjectPictures.current
+    val picture by produceState<ImageBitmap?>(null, pictures, mediaId) {
+        value = pictures.picture(mediaId)
+    }
+    picture?.let {
+        Image(
+            bitmap = it,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize(),
+        )
+    }
 }
 
 @Composable

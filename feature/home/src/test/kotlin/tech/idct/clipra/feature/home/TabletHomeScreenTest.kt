@@ -1,5 +1,6 @@
 package tech.idct.clipra.feature.home
 
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -46,7 +47,28 @@ class TabletHomeScreenTest {
         resolution: Resolution,
         seconds: Long,
         updated: Long,
-    ) = ProjectSummary(id, name, ratio, layout, resolution, seconds * 1_000_000, updated, null)
+    ) = ProjectSummary(
+        id,
+        name,
+        ratio,
+        layout,
+        resolution,
+        seconds * 1_000_000,
+        updated,
+        pictures[id].orEmpty(),
+    )
+
+    /** The design's pictures, by project. */
+    private val pictures = mapOf(
+        "1" to listOf("sunset"),
+        "2" to listOf("sunset"),
+        "3" to listOf("teaser"),
+        "4" to listOf("run"),
+        "5" to DesignPictures.tiles,
+        "6" to listOf("studio"),
+        "7" to listOf("hills"),
+        "8" to listOf("nata"),
+    )
 
     private val projects = listOf(
         summary(
@@ -137,31 +159,33 @@ class TabletHomeScreenTest {
     private fun show(format: Format, pro: ProOffer, recent: List<ProjectSummary> = projects) {
         compose.setContent {
             ClipraTheme {
-                TabletHomeScreen(
-                    recent = recent,
-                    nowMillis = now,
-                    aiStatus = null,
-                    pro = pro,
-                    actions = HomeActions(
-                        onNewProject = {},
-                        onOpenProject = { calls += "open:$it" },
-                        onAutoCaptions = { calls += "captions" },
-                        onTextCard = {},
-                        onMosaic = { calls += "mosaic" },
-                        onModels = { calls += "models" },
-                        onSettings = {},
-                        onPro = { calls += "pro" },
-                    ),
-                    projectActions = ProjectActions({}, {}, {}),
-                    panel = NewProjectPanel(
-                        format = format,
-                        onFormatChange = { calls += "format:${it.ratio.label}" },
-                        onCreate = { calls += "create" },
-                        fourKSupported = true,
-                        onTextCard = { calls += "text-card" },
-                        onImport = { calls += "import" },
-                    ),
-                )
+                CompositionLocalProvider(LocalProjectPictures provides DesignPictures) {
+                    TabletHomeScreen(
+                        recent = recent,
+                        nowMillis = now,
+                        aiStatus = null,
+                        pro = pro,
+                        actions = HomeActions(
+                            onNewProject = {},
+                            onOpenProject = { calls += "open:$it" },
+                            onAutoCaptions = { calls += "captions" },
+                            onTextCard = {},
+                            onMosaic = { calls += "mosaic" },
+                            onModels = { calls += "models" },
+                            onSettings = {},
+                            onPro = { calls += "pro" },
+                        ),
+                        projectActions = ProjectActions({}, {}, {}),
+                        panel = NewProjectPanel(
+                            format = format,
+                            onFormatChange = { calls += "format:${it.ratio.label}" },
+                            onCreate = { calls += "create" },
+                            fourKSupported = true,
+                            onTextCard = { calls += "text-card" },
+                            onImport = { calls += "import" },
+                        ),
+                    )
+                }
             }
         }
     }

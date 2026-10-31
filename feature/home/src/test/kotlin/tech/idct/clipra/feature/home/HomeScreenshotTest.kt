@@ -1,5 +1,6 @@
 package tech.idct.clipra.feature.home
 
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -29,6 +30,14 @@ class HomeScreenshotTest {
     private val now = 1_761_675_000_000L
     private val hour = 3_600_000L
     private val day = 24 * hour
+
+    /** The design's pictures, by project. */
+    private val pictures = mapOf(
+        "1" to listOf("sunset"),
+        "2" to listOf("teaser"),
+        "3" to listOf("run"),
+        "4" to DesignPictures.tiles,
+    )
 
     private val projects = listOf(
         summary(
@@ -95,13 +104,15 @@ class HomeScreenshotTest {
     private fun capture(recent: List<ProjectSummary>) {
         compose.setContent {
             ClipraTheme {
-                HomeScreen(
-                    recent = recent,
-                    nowMillis = now,
-                    aiStatus = null,
-                    actions = HomeActions({}, {}, {}, {}, {}, {}, {}, {}),
-                    projectActions = ProjectActions({}, {}, {}),
-                )
+                CompositionLocalProvider(LocalProjectPictures provides DesignPictures) {
+                    HomeScreen(
+                        recent = recent,
+                        nowMillis = now,
+                        aiStatus = null,
+                        actions = HomeActions({}, {}, {}, {}, {}, {}, {}, {}),
+                        projectActions = ProjectActions({}, {}, {}),
+                    )
+                }
             }
         }
         compose.onRoot().captureRoboImage(
@@ -119,5 +130,14 @@ class HomeScreenshotTest {
         resolution: Resolution,
         seconds: Long,
         updated: Long,
-    ) = ProjectSummary(id, name, ratio, layout, resolution, seconds * 1_000_000, updated, null)
+    ) = ProjectSummary(
+        id,
+        name,
+        ratio,
+        layout,
+        resolution,
+        seconds * 1_000_000,
+        updated,
+        pictures[id].orEmpty(),
+    )
 }

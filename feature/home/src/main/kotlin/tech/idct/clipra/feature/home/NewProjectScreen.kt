@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
@@ -266,7 +267,10 @@ private fun LayoutRow(selected: Layout, onSelect: (Layout) -> Unit) {
     }
 }
 
-/** The layout's cells in a frame: splits stack in portrait and sit side by side in landscape. */
+/**
+ * The layout's cells in a frame: splits stack in portrait and sit side by side in landscape.
+ * [content] draws into each cell, numbered row by row from the top left.
+ */
 @Composable
 internal fun LayoutCells(
     layout: Layout,
@@ -275,25 +279,28 @@ internal fun LayoutCells(
     height: Dp,
     cell: Color,
     modifier: Modifier = Modifier,
+    content: @Composable BoxScope.(index: Int) -> Unit = {},
 ) {
     val (rows, columns) = layout.grid(portrait)
     Column(
         modifier = modifier.size(width, height),
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
-        repeat(rows) {
+        repeat(rows) { row ->
             Row(
                 modifier = Modifier.weight(1f),
                 horizontalArrangement = Arrangement.spacedBy(2.dp),
             ) {
-                repeat(columns) {
+                repeat(columns) { column ->
                     Box(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxSize()
                             .clip(RoundedCornerShape(2.dp))
                             .background(cell),
-                    )
+                    ) {
+                        content(row * columns + column)
+                    }
                 }
             }
         }

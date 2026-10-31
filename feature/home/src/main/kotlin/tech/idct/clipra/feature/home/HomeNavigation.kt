@@ -5,6 +5,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -99,54 +100,56 @@ private fun HomeRoute(
         onDelete = { deleting = it },
     )
 
-    if (LocalWindowLayout.current == WindowLayout.Tablet) {
-        // New project sits beside the projects (#71), with its own state.
-        val creating: NewProjectViewModel = hiltViewModel()
-        val format by creating.format.collectAsStateWithLifecycle()
-        val name = stringResource(R.string.home_new_default_name)
-        val title = stringResource(R.string.home_new_card_title)
-        TabletHomeScreen(
-            recent = recent,
-            nowMillis = now,
-            aiStatus = null,
-            pro = actions.proOffer(),
-            actions = HomeActions(
-                onNewProject = actions.onNewProject,
-                onOpenProject = actions.onOpenProject,
-                onAutoCaptions = actions.onAutoCaptions,
-                onTextCard = actions.onTextCard,
-                onMosaic = { creating.preset(Layout.Grid2x2) },
-                onModels = actions.onModels,
-                onSettings = actions.onSettings,
-                onPro = actions.onPro,
-            ),
-            projectActions = projectActions,
-            panel = NewProjectPanel(
-                format = format,
-                onFormatChange = creating::change,
-                onCreate = { creating.create(name, title, newProject.onCreated) },
-                fourKSupported = creating.fourKSupported,
-                onTextCard = {
-                    creating.create(name, title, newProject.onCreated, withTextCard = true)
-                },
-                onImport = {
-                    creating.create(
-                        name,
-                        title,
-                        { id, _ -> newProject.onCreatedToImport(id) },
-                        withTextCard = false,
-                    )
-                },
-            ),
-        )
-    } else {
-        HomeScreen(
-            recent = recent,
-            nowMillis = now,
-            aiStatus = null,
-            actions = actions,
-            projectActions = projectActions,
-        )
+    CompositionLocalProvider(LocalProjectPictures provides viewModel.pictures) {
+        if (LocalWindowLayout.current == WindowLayout.Tablet) {
+            // New project sits beside the projects (#71), with its own state.
+            val creating: NewProjectViewModel = hiltViewModel()
+            val format by creating.format.collectAsStateWithLifecycle()
+            val name = stringResource(R.string.home_new_default_name)
+            val title = stringResource(R.string.home_new_card_title)
+            TabletHomeScreen(
+                recent = recent,
+                nowMillis = now,
+                aiStatus = null,
+                pro = actions.proOffer(),
+                actions = HomeActions(
+                    onNewProject = actions.onNewProject,
+                    onOpenProject = actions.onOpenProject,
+                    onAutoCaptions = actions.onAutoCaptions,
+                    onTextCard = actions.onTextCard,
+                    onMosaic = { creating.preset(Layout.Grid2x2) },
+                    onModels = actions.onModels,
+                    onSettings = actions.onSettings,
+                    onPro = actions.onPro,
+                ),
+                projectActions = projectActions,
+                panel = NewProjectPanel(
+                    format = format,
+                    onFormatChange = creating::change,
+                    onCreate = { creating.create(name, title, newProject.onCreated) },
+                    fourKSupported = creating.fourKSupported,
+                    onTextCard = {
+                        creating.create(name, title, newProject.onCreated, withTextCard = true)
+                    },
+                    onImport = {
+                        creating.create(
+                            name,
+                            title,
+                            { id, _ -> newProject.onCreatedToImport(id) },
+                            withTextCard = false,
+                        )
+                    },
+                ),
+            )
+        } else {
+            HomeScreen(
+                recent = recent,
+                nowMillis = now,
+                aiStatus = null,
+                actions = actions,
+                projectActions = projectActions,
+            )
+        }
     }
 
     renaming?.let { project ->

@@ -18,6 +18,8 @@ import javax.inject.Inject
 class HomeViewModel @Inject constructor(
     private val projects: ProjectRepository,
     private val clock: WallClock,
+    /** The pictures in the project frames. */
+    val pictures: CachedProjectPictures,
 ) : ViewModel() {
     /** Recent projects, last edited first; null until the index has loaded. */
     val recent: StateFlow<List<ProjectSummary>?> = projects.observeRecent()
