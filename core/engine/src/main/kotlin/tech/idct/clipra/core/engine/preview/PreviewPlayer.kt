@@ -39,7 +39,11 @@ import kotlin.math.roundToInt
  */
 @OptIn(UnstableApi::class, ExperimentalApi::class)
 class PreviewPlayer(private val context: Context, cache: MediaCache) {
-    private val player = CompositionPlayer.Builder(context).build()
+    // The replayable cache keeps the last frame, so a gesture redraws it through the compositor
+    // without a seek.
+    private val player = CompositionPlayer.Builder(context)
+        .experimentalSetEnableReplayableCache(true)
+        .build()
     private val media = CachingResolver(ProjectMediaResolver(context, cache, false, IMAGE_SIDE))
 
     /** CompositionPlayer can't seek or play before it has a composition. */
@@ -176,19 +180,15 @@ class PreviewPlayer(private val context: Context, cache: MediaCache) {
         redraw()
     }
 
+    /**
+     * Draws the paused frame again with the current gesture values: the compositor runs on the
+     * last frame again, with no seek. A seek per change used to cancel the one before, so a
+     * drag showed nothing until it stopped.
+     */
     private fun redraw() {
         if (!hasComposition || player.playWhenReady) return
-        // A seek to where the player already is draws nothing new: step a millisecond either
-        // way, back and forth, which stays on the same frame.
-        val position = player.currentPosition
-        val back = nudgedForward || position + NUDGE_MS > player.duration
-        val target = if (back && position >= NUDGE_MS) position - NUDGE_MS else position + NUDGE_MS
-        nudgedForward = target > position
-        player.seekTo(target)
+        player.experimentalRedrawLastFrame()
     }
-
-    /** Whether the last redraw stepped forward, so the next steps back. */
-    private var nudgedForward = false
 
     fun release() {
         released = true
@@ -258,7 +258,6 @@ class PreviewPlayer(private val context: Context, cache: MediaCache) {
         const val PREVIEW_SHORT_SIDE = 540
         private const val IMAGE_SIDE = PREVIEW_SHORT_SIDE * 2
         private const val MAX_TEXTS = 32
-        private const val NUDGE_MS = 1L
 
         fun previewSize(format: Format): tech.idct.clipra.core.model.Size {
             val output = format.outputSize
