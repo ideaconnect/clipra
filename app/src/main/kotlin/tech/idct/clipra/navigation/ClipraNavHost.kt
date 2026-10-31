@@ -21,8 +21,10 @@ import tech.idct.clipra.feature.audio.AudioInspectorPanel
 import tech.idct.clipra.feature.audio.AudioRoute
 import tech.idct.clipra.feature.audio.audioScreens
 import tech.idct.clipra.feature.captions.CaptionsEditRoute
+import tech.idct.clipra.feature.captions.CaptionsLookPanel
 import tech.idct.clipra.feature.captions.CaptionsNavigationActions
 import tech.idct.clipra.feature.captions.CaptionsSetupRoute
+import tech.idct.clipra.feature.captions.CaptionsTranscriptPanel
 import tech.idct.clipra.feature.captions.TranscriptRoute
 import tech.idct.clipra.feature.captions.captionsScreens
 import tech.idct.clipra.feature.editor.EditorActions
@@ -280,18 +282,24 @@ private fun NavController.open(from: Board, to: Board) {
 /**
  * The feature panels the tablet editor hosts (#70): Text's library on its rail place and its
  * inspector for text clips; the Filters library on Effects, with the effect stack for the clip;
- * and on the editor's own Audio place, the Audio inspector for a clip with sound.
+ * on the editor's own Audio place, the Audio inspector for a clip with sound; and on Captions the
+ * transcript, with the captions' look beside it.
  */
 private val tabletPanels = TabletPanels(
     library = { tool ->
         when (tool) {
             EditorTool.Text -> textLibrary
             EditorTool.Filters -> filtersLibrary
+            EditorTool.Captions -> captionsLibrary
             else -> null
         }
     },
     inspector = { place, clip ->
         when {
+            place == EditorTool.Captions -> captionsLook
+
+            clip == null -> null
+
             clip.type == ClipType.Text || clip.type == ClipType.TextCard -> textInspector
 
             place == EditorTool.Filters && clip.takesFilters() -> effectStack
@@ -323,6 +331,18 @@ private val effectStack: TabletPanel = { scope, modifier ->
 private val audioInspector: TabletPanel = { scope, modifier ->
     scope.clipId?.let { AudioInspectorPanel(it, modifier) }
 }
+
+private val captionsLibrary: TabletPanel = { scope, modifier ->
+    CaptionsTranscriptPanel(
+        playheadUs = scope.playheadUs,
+        onSeek = scope.onSeek,
+        onEditByText = { scope.onOpen(EditorTool.Transcript) },
+        onAutoCaptions = { scope.onOpen(EditorTool.Captions) },
+        modifier = modifier,
+    )
+}
+
+private val captionsLook: TabletPanel = { _, modifier -> CaptionsLookPanel(modifier) }
 
 /** The screen each editor tool opens; most are placeholders until their issues land. */
 private fun toolRoute(tool: EditorTool, target: ToolTarget): Any = when (tool) {

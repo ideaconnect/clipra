@@ -105,4 +105,7 @@
     <string name="captions_not_here">Tutaj nie da się tego zrobić</string>
     <string name="captions_locked">Ta warstwa jest zablokowana</string>
     <string name="captions_import_srt_instead">Zamiast tego importuj .srt</string>
+    <string name="captions_transcript">Transkrypcja</string>
+    <string name="captions_look">Wygląd napisów</string>
+    <string name="captions_none_yet">Nie ma jeszcze napisów. Automatyczne napisy zapiszą je z mowy, na tym urządzeniu.</string>
 </resources>

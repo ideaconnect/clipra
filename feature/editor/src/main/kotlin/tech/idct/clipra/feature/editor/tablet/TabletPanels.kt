@@ -8,9 +8,16 @@ import tech.idct.clipra.feature.editor.EditorTool
 /**
  * What a feature's panel in the tablet editor (#70) works on: the selected clip ([clipId], null
  * when nothing is selected) at the editor's [playheadUs]. [onSelect] selects a clip the panel
- * made, so the editor and its inspector move to it.
+ * made, so the editor and its inspector move to it; [onSeek] moves the editor's playhead; and
+ * [onOpen] opens a tool's own screen, such as Edit by text.
  */
-class PanelScope(val clipId: String?, val playheadUs: Long, val onSelect: (String) -> Unit)
+class PanelScope(
+    val clipId: String?,
+    val playheadUs: Long,
+    val onSelect: (String) -> Unit,
+    val onSeek: (Long) -> Unit = {},
+    val onOpen: (EditorTool) -> Unit = {},
+)
 
 /** A feature's panel, drawn in the tablet editor's pane given by its modifier. */
 typealias TabletPanel = @Composable (scope: PanelScope, modifier: Modifier) -> Unit
@@ -19,10 +26,11 @@ typealias TabletPanel = @Composable (scope: PanelScope, modifier: Modifier) -> U
  * The feature panels the app puts in the tablet editor (#70), so the feature modules stay apart
  * and the editor's preview and timeline stay on screen (TabletText, TabletEffects and the other
  * boards): a [library] on the left for a rail place, and an [inspector] on the right for a clip
- * a feature edits, given the rail place open (null for the media bin). Without one the editor
+ * a feature edits (or with none selected, for a place such as Captions that edits the whole
+ * project), given the rail place open (null for the media bin). Without one the editor
  * keeps its own: the media bin and the clip inspector, and a rail place opens its tool's screen.
  */
 class TabletPanels(
     val library: (EditorTool) -> TabletPanel? = { null },
-    val inspector: (place: EditorTool?, clip: Clip) -> TabletPanel? = { _, _ -> null },
+    val inspector: (place: EditorTool?, clip: Clip?) -> TabletPanel? = { _, _ -> null },
 )

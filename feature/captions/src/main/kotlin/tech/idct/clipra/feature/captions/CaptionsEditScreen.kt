@@ -65,6 +65,7 @@ import tech.idct.clipra.core.designsystem.component.SegmentedStyle
 import tech.idct.clipra.core.designsystem.component.TextAction
 import tech.idct.clipra.core.designsystem.icon.ClipraIcons
 import tech.idct.clipra.core.model.CaptionPosition
+import tech.idct.clipra.core.model.CaptionSpec
 import tech.idct.clipra.core.model.CaptionStyle
 import tech.idct.clipra.core.model.CaptionStyles
 import tech.idct.clipra.core.model.CaptionText
@@ -194,45 +195,7 @@ fun CaptionsEditScreen(
                 }
                 // The look steps aside while searching or editing a word, for the captions.
                 if (look != null && find == null && pick == null) {
-                    Row(
-                        modifier = Modifier
-                            .horizontalScroll(rememberScrollState())
-                            .selectableGroup(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        STYLES.forEach { (style, label) ->
-                            ClipraChip(
-                                label = stringResource(label),
-                                selected = look.style == style,
-                                onClick = { actions.onStyle(style) },
-                                selectedStyle = ChipStyle.Outline,
-                                modifier = Modifier.testTag("style:${style.name}"),
-                            )
-                        }
-                    }
-                    SegmentedControl(
-                        segments = POSITIONS.map { Segment(stringResource(it.second)) },
-                        selectedIndex = POSITIONS.indexOfFirst { it.first == look.position },
-                        onSelect = { actions.onPosition(POSITIONS[it].first) },
-                        style = SegmentedStyle.Tabs,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag("captions-position"),
-                    )
-                    val shown = scale ?: look.scale
-                    val points = (CaptionStyles.look(look.style).basePt * shown).roundToInt()
-                    LabelledSlider(
-                        label = stringResource(R.string.captions_size),
-                        value = shown,
-                        onValueChange = actions.onScale,
-                        onValueChangeFinished = actions.onScaleDone,
-                        valueText = stringResource(R.string.captions_points, points),
-                        valueRange = 0.5f..2f,
-                        labelWidth = 64.dp,
-                        modifier = Modifier
-                            .height(44.dp)
-                            .testTag("captions-size"),
-                    )
+                    CaptionsLook(look, scale, actions)
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
@@ -343,7 +306,7 @@ fun CaptionsEditScreen(
 }
 
 @Composable
-private fun messageText(message: CaptionsMessage): String = when (message) {
+internal fun messageText(message: CaptionsMessage): String = when (message) {
     CaptionsMessage.Saved -> stringResource(R.string.captions_saved_srt)
 
     is CaptionsMessage.Imported ->
@@ -357,13 +320,76 @@ private fun messageText(message: CaptionsMessage): String = when (message) {
 }
 
 /**
+ * The look every caption shares: the five styles, the position and the size ([scale] while its
+ * slider moves). [wrap] lays the styles out in rows, as the tablet's inspector (#70); the phone
+ * scrolls them in one.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+internal fun CaptionsLook(
+    look: CaptionSpec,
+    scale: Float?,
+    actions: CaptionsEditActions,
+    wrap: Boolean = false,
+) {
+    val chips: @Composable () -> Unit = {
+        STYLES.forEach { (style, label) ->
+            ClipraChip(
+                label = stringResource(label),
+                selected = look.style == style,
+                onClick = { actions.onStyle(style) },
+                selectedStyle = ChipStyle.Outline,
+                modifier = Modifier.testTag("style:${style.name}"),
+            )
+        }
+    }
+    if (wrap) {
+        FlowRow(
+            modifier = Modifier.selectableGroup(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) { chips() }
+    } else {
+        Row(
+            modifier = Modifier
+                .horizontalScroll(rememberScrollState())
+                .selectableGroup(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) { chips() }
+    }
+    SegmentedControl(
+        segments = POSITIONS.map { Segment(stringResource(it.second)) },
+        selectedIndex = POSITIONS.indexOfFirst { it.first == look.position },
+        onSelect = { actions.onPosition(POSITIONS[it].first) },
+        style = SegmentedStyle.Tabs,
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("captions-position"),
+    )
+    val shown = scale ?: look.scale
+    val points = (CaptionStyles.look(look.style).basePt * shown).roundToInt()
+    LabelledSlider(
+        label = stringResource(R.string.captions_size),
+        value = shown,
+        onValueChange = actions.onScale,
+        onValueChangeFinished = actions.onScaleDone,
+        valueText = stringResource(R.string.captions_points, points),
+        valueRange = 0.5f..2f,
+        labelWidth = 64.dp,
+        modifier = Modifier
+            .height(44.dp)
+            .testTag("captions-size"),
+    )
+}
+
+/**
  * A caption: its time, and its words with the ones to check underlined and the ones search
  * [found] marked. Tap a word to edit it; the word being edited ([picked]) is marked and kept in
  * view above the word bar.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun CaptionRow(
+internal fun CaptionRow(
     clip: Clip,
     active: Boolean,
     found: Set<Int>,
@@ -460,7 +486,7 @@ private fun subtitle(state: CaptionsEditUiState): String? {
 }
 
 /** 00:08.30 (minutes, seconds, hundredths), or 00:08.3 with [tenths]. */
-private fun clock(us: Long, tenths: Boolean = false): String {
+internal fun clock(us: Long, tenths: Boolean = false): String {
     val minutes = us / 60_000_000
     val seconds = us / 1_000_000 % 60
     return if (tenths) {
@@ -470,7 +496,7 @@ private fun clock(us: Long, tenths: Boolean = false): String {
     }
 }
 
-private val STYLES = listOf(
+internal val STYLES = listOf(
     CaptionStyle.Clean to R.string.captions_style_clean,
     CaptionStyle.BoldPop to R.string.captions_style_bold_pop,
     CaptionStyle.Boxed to R.string.captions_style_boxed,
@@ -478,7 +504,7 @@ private val STYLES = listOf(
     CaptionStyle.Minimal to R.string.captions_style_minimal,
 )
 
-private val POSITIONS = listOf(
+internal val POSITIONS = listOf(
     CaptionPosition.Top to R.string.captions_top,
     CaptionPosition.Middle to R.string.captions_middle,
     CaptionPosition.Bottom to R.string.captions_bottom,

@@ -99,4 +99,7 @@
     <string name="captions_not_here">Can\'t do that here</string>
     <string name="captions_locked">That layer is locked</string>
     <string name="captions_import_srt_instead">Import .srt instead</string>
+    <string name="captions_transcript">Transcript</string>
+    <string name="captions_look">Captions look</string>
+    <string name="captions_none_yet">No captions yet. Auto captions writes them from the speech, on this device.</string>
 </resources>

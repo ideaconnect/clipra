@@ -136,6 +136,8 @@ fun TabletEditorScreen(
         clipId = selected?.second?.id,
         playheadUs = state.playheadUs,
         onSelect = { callbacks.timeline.onSelect(it) },
+        onSeek = { callbacks.timeline.onSeek(it) },
+        onOpen = callbacks.onTool,
     )
     Box(
         modifier = modifier
@@ -227,7 +229,7 @@ fun TabletEditorScreen(
                         .fillMaxHeight()
                         .edge(colors.borderSubtle, start = true)
                     // A feature's own inspector for the clips it edits, such as text (#70).
-                    val inspector = selected?.second?.let { panels.inspector(place, it) }
+                    val inspector = panels.inspector(place, selected?.second)
                     if (inspector != null) {
                         inspector(scope, right)
                     } else {
