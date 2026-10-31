@@ -130,7 +130,6 @@ class AccessibilityTest {
                     Resolution.FHD,
                     42 * sec,
                     0,
-                    null,
                 ),
             ),
             nowMillis = 3_600_000,

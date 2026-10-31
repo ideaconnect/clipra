@@ -66,6 +66,11 @@ jobs:
         if: ${{ !cancelled() && steps.assemble.outcome == 'success' }}
         run: ./gradlew testDebugUnitTest :core:model:test -Proborazzi.test.verify=true
 
+      # The instrumented tests run on emulators and phones, not here; they must still compile.
+      - name: Compile the instrumented tests
+        if: ${{ !cancelled() && steps.assemble.outcome == 'success' }}
+        run: ./gradlew compileDebugAndroidTestKotlin
+
       - name: Run Android lint
         if: ${{ !cancelled() && steps.assemble.outcome == 'success' }}
         run: ./gradlew lintDebug
