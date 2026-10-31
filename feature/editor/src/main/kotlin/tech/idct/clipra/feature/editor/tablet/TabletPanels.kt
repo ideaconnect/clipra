@@ -19,10 +19,10 @@ typealias TabletPanel = @Composable (scope: PanelScope, modifier: Modifier) -> U
  * The feature panels the app puts in the tablet editor (#70), so the feature modules stay apart
  * and the editor's preview and timeline stay on screen (TabletText, TabletEffects and the other
  * boards): a [library] on the left for a rail place, and an [inspector] on the right for a clip
- * a feature edits. Without one the editor keeps its own: the media bin and the clip inspector,
- * and a rail place opens its tool's screen.
+ * a feature edits, given the rail place open (null for the media bin). Without one the editor
+ * keeps its own: the media bin and the clip inspector, and a rail place opens its tool's screen.
  */
 class TabletPanels(
     val library: (EditorTool) -> TabletPanel? = { null },
-    val inspector: (Clip) -> TabletPanel? = { null },
+    val inspector: (place: EditorTool?, clip: Clip) -> TabletPanel? = { _, _ -> null },
 )

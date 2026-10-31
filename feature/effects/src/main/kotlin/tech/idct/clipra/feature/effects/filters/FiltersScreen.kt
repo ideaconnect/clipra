@@ -266,12 +266,13 @@ private fun Categories(category: FilterCategory, actions: FiltersActions) {
 }
 
 @Composable
-private fun Grid(
+internal fun Grid(
     category: FilterCategory,
     selected: String?,
     thumbnails: Map<String, Bitmap>,
     onPick: (String?) -> Unit,
     modifier: Modifier = Modifier,
+    columns: Int = PICKER_COLUMNS,
 ) {
     val shown = listOf<String?>(null) + when (category) {
         FilterCategory.All -> Filters.all
@@ -279,7 +280,7 @@ private fun Grid(
         FilterCategory.Stylized -> Filters.stylized
     }
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        shown.chunked(PICKER_COLUMNS).forEach { row ->
+        shown.chunked(columns).forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 row.forEach { type ->
                     PickerTile(
@@ -292,7 +293,7 @@ private fun Grid(
                             .testTag("filter:${type ?: "none"}"),
                     )
                 }
-                repeat(PICKER_COLUMNS - row.size) { Spacer(modifier = Modifier.weight(1f)) }
+                repeat(columns - row.size) { Spacer(modifier = Modifier.weight(1f)) }
             }
         }
     }

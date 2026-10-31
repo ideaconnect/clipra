@@ -224,4 +224,7 @@
     <string name="reframe_name_square">Square</string>
     <string name="reframe_name_portrait">Portrait</string>
     <string name="reframe_name_wide">Wide</string>
+    <string name="effects_tap_to_apply">Tap to apply</string>
+    <string name="effects_library_hint">Select a video or photo to give it a filter.</string>
+    <string name="effects_stack_add_description">Add effect</string>
 </resources>

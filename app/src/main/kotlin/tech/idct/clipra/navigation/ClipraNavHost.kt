@@ -15,6 +15,7 @@ import tech.idct.clipra.core.designsystem.placeholder.Board
 import tech.idct.clipra.core.designsystem.placeholder.BoardPlaceholder
 import tech.idct.clipra.core.model.ClipType
 import tech.idct.clipra.core.model.Layout
+import tech.idct.clipra.core.model.edit.takesFilters
 import tech.idct.clipra.feature.audio.AudioActionsNavigation
 import tech.idct.clipra.feature.audio.AudioRoute
 import tech.idct.clipra.feature.audio.audioScreens
@@ -33,8 +34,10 @@ import tech.idct.clipra.feature.editor.tablet.TabletPanel
 import tech.idct.clipra.feature.editor.tablet.TabletPanels
 import tech.idct.clipra.feature.effects.ColorRoute
 import tech.idct.clipra.feature.effects.CutoutRoute
+import tech.idct.clipra.feature.effects.EffectStackPanel
 import tech.idct.clipra.feature.effects.EffectStackRoute
 import tech.idct.clipra.feature.effects.EffectsActions
+import tech.idct.clipra.feature.effects.FiltersLibraryPanel
 import tech.idct.clipra.feature.effects.FiltersRoute
 import tech.idct.clipra.feature.effects.MasksRoute
 import tech.idct.clipra.feature.effects.ReframeRoute
@@ -274,13 +277,23 @@ private fun NavController.open(from: Board, to: Board) {
 }
 
 /**
- * The feature panels the tablet editor hosts (#70): Text's library on its rail place, and its
- * inspector for text clips.
+ * The feature panels the tablet editor hosts (#70): Text's library on its rail place and its
+ * inspector for text clips; the Filters library on Effects, with the effect stack for the clip.
  */
 private val tabletPanels = TabletPanels(
-    library = { tool -> if (tool == EditorTool.Text) textLibrary else null },
-    inspector = { clip ->
-        if (clip.type == ClipType.Text || clip.type == ClipType.TextCard) textInspector else null
+    library = { tool ->
+        when (tool) {
+            EditorTool.Text -> textLibrary
+            EditorTool.Filters -> filtersLibrary
+            else -> null
+        }
+    },
+    inspector = { place, clip ->
+        when {
+            clip.type == ClipType.Text || clip.type == ClipType.TextCard -> textInspector
+            place == EditorTool.Filters && clip.takesFilters() -> effectStack
+            else -> null
+        }
     },
 )
 
@@ -290,6 +303,14 @@ private val textLibrary: TabletPanel = { scope, modifier ->
 
 private val textInspector: TabletPanel = { scope, modifier ->
     scope.clipId?.let { TextInspectorPanel(it, modifier) }
+}
+
+private val filtersLibrary: TabletPanel = { scope, modifier ->
+    FiltersLibraryPanel(scope.clipId, scope.playheadUs, modifier)
+}
+
+private val effectStack: TabletPanel = { scope, modifier ->
+    scope.clipId?.let { EffectStackPanel(it, modifier) }
 }
 
 /** The screen each editor tool opens; most are placeholders until their issues land. */

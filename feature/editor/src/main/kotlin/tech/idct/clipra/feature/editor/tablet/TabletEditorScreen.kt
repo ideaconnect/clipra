@@ -207,7 +207,8 @@ fun TabletEditorScreen(
                         .fillMaxHeight()
                         .edge(colors.borderSubtle, start = true)
                     // A feature's own inspector for the clips it edits, such as text (#70).
-                    val inspector = selected?.second?.let(panels.inspector)
+                    val place = pane.takeIf { library != null }
+                    val inspector = selected?.second?.let { panels.inspector(place, it) }
                     if (inspector != null) {
                         inspector(scope, right)
                     } else {

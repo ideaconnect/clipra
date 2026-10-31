@@ -230,4 +230,7 @@
     <string name="reframe_name_square">Kwadrat</string>
     <string name="reframe_name_portrait">Pion</string>
     <string name="reframe_name_wide">Poziom</string>
+    <string name="effects_tap_to_apply">Stuknij, aby nałożyć</string>
+    <string name="effects_library_hint">Zaznacz wideo lub zdjęcie, aby nałożyć filtr.</string>
+    <string name="effects_stack_add_description">Dodaj efekt</string>
 </resources>

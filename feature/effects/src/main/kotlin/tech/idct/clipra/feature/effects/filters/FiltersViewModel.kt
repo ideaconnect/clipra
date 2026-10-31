@@ -13,6 +13,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -62,10 +63,15 @@ class FiltersViewModel @Inject constructor(
     savedState: SavedStateHandle,
 ) : ViewModel() {
     private val projectId: String? = savedState["projectId"]
-    private val clipId: String? = savedState["clipId"]
+
+    /** The clip being filtered; the tablet editor's panel (#70) follows its selection. */
+    private val clipId = MutableStateFlow<String?>(savedState["clipId"])
 
     /** Where the editor's playhead was; the preview and thumbnails show this moment. */
     val playheadUs: Long = savedState["playheadUs"] ?: 0L
+
+    /** The moment the thumbnails show: the playhead, or where the tablet's panel was opened. */
+    private var thumbnailsAt = playheadUs
 
     private var session: ProjectSession? = null
     private val stills = StillRenderer(context)
@@ -82,16 +88,29 @@ class FiltersViewModel @Inject constructor(
                 mutableState.update { it.copy(loaded = true) }
                 return@launch
             }
-            opened.state.collect { session ->
+            combine(opened.state, clipId, ::Pair).collect { (session, id) ->
                 mutableState.update {
                     it.copy(
                         project = session.project,
-                        clip = clipId?.let { id -> session.project.findClip(id)?.second },
+                        clip = id?.let { session.project.findClip(it)?.second },
                         loaded = true,
                     )
                 }
             }
         }
+    }
+
+    /**
+     * Filters [id] from now on, its thumbnails showing [atUs] (the tablet editor's selection,
+     * #70); a new clip gets new thumbnails.
+     */
+    fun select(id: String?, atUs: Long) {
+        if (id == clipId.value) return
+        thumbnailJob?.cancel()
+        thumbnailJob = null
+        thumbnailsAt = atUs
+        clipId.value = id
+        mutableState.update { it.copy(thumbnails = emptyMap()) }
     }
 
     fun category(category: FilterCategory) = mutableState.update { it.copy(category = category) }
@@ -129,7 +148,8 @@ class FiltersViewModel @Inject constructor(
         val asset = project.asset(source.mediaId) ?: return
         thumbnailJob = viewModelScope.launch {
             val sourceTimeUs =
-                clip.mediaTimeAt((playheadUs - clip.startUs).coerceAtLeast(0)) ?: source.inPointUs
+                clip.mediaTimeAt((thumbnailsAt - clip.startUs).coerceAtLeast(0))
+                    ?: source.inPointUs
             val still = withContext(Dispatchers.IO) {
                 Thumbnails.still(context, asset, mediaCache, sourceTimeUs, maxOf(width, height) * 2)
                     ?.let { centreCrop(it, width, height) }
