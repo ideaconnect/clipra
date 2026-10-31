@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.graphics.RectF
 import android.graphics.Typeface
 import android.text.Layout
 import android.text.StaticLayout
@@ -40,18 +41,9 @@ object TextRenderer {
         val canvas = Canvas(bitmap)
         if (card) canvas.drawColor((spec.background ?: DEFAULT_CARD).toInt())
         if (spec.text.isBlank()) return bitmap
-        val paint = TextPaint(Paint.ANTI_ALIAS_FLAG or Paint.SUBPIXEL_TEXT_FLAG).apply {
-            typeface = typeface(context, spec.font)
-            textSize = spec.size * height
-            color = spec.color.toInt()
-            fontVariationSettings = variation(spec.font, spec.weight)
-        }
-        val wrap = (width * SAFE_WIDTH).toInt().coerceAtLeast(1)
-        val layout = StaticLayout.Builder.obtain(spec.text, 0, spec.text.length, paint, wrap)
-            .setAlignment(alignment(spec.align))
-            .setIncludePad(false)
-            .setLineSpacing(0f, LINE_SPACING)
-            .build()
+        val paint = paint(context, spec, height)
+        val wrap = wrapWidth(width)
+        val layout = layout(spec, paint, wrap)
         canvas.translate((width - wrap) / 2f, (height - layout.height) / 2f)
         val effect = TextEffectPainter(layout, paint, spec, card)
         if (motion == null) {
@@ -67,6 +59,42 @@ object TextRenderer {
         }
         return bitmap
     }
+
+    /**
+     * Where [spec]'s words show in a [width] × [height] frame, in fractions of it, before the
+     * clip's transform: what Auto-reframe keeps inside a new frame (#53). Null without words.
+     */
+    fun box(context: Context, spec: TextSpec, width: Int, height: Int): RectF? {
+        if (spec.text.isBlank()) return null
+        val wrap = wrapWidth(width)
+        val layout = layout(spec, paint(context, spec, height), wrap)
+        val left = (width - wrap) / 2f
+        val top = (height - layout.height) / 2f
+        val lines = 0 until layout.lineCount
+        return RectF(
+            (left + lines.minOf { layout.getLineLeft(it) }) / width,
+            top / height,
+            (left + lines.maxOf { layout.getLineRight(it) }) / width,
+            (top + layout.height) / height,
+        )
+    }
+
+    private fun paint(context: Context, spec: TextSpec, height: Int) =
+        TextPaint(Paint.ANTI_ALIAS_FLAG or Paint.SUBPIXEL_TEXT_FLAG).apply {
+            typeface = typeface(context, spec.font)
+            textSize = spec.size * height
+            color = spec.color.toInt()
+            fontVariationSettings = variation(spec.font, spec.weight)
+        }
+
+    private fun wrapWidth(width: Int) = (width * SAFE_WIDTH).toInt().coerceAtLeast(1)
+
+    private fun layout(spec: TextSpec, paint: TextPaint, wrap: Int): StaticLayout =
+        StaticLayout.Builder.obtain(spec.text, 0, spec.text.length, paint, wrap)
+            .setAlignment(alignment(spec.align))
+            .setIncludePad(false)
+            .setLineSpacing(0f, LINE_SPACING)
+            .build()
 
     /** The bundled typeface of [family]; unknown names fall back to Geist. */
     fun typeface(context: Context, family: String): Typeface = context.resources.getFont(

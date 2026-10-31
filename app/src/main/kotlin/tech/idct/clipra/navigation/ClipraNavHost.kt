@@ -149,7 +149,18 @@ fun ClipraNavHost(
                 effectName = { filterName(it) },
             ),
         )
-        effectsScreens(screen, EffectsActions(onDone = { navController.popBackStack() }))
+        effectsScreens(
+            screen,
+            EffectsActions(
+                onDone = { navController.popBackStack() },
+                // The copy opens in place of the project it came from; Back goes Home.
+                onReframed = { id ->
+                    navController.navigate(EditorRoute(id)) {
+                        popUpTo<EditorRoute> { inclusive = true }
+                    }
+                },
+            ),
+        )
         textScreens(screen, TextNavigationActions(onDone = { navController.popBackStack() }))
         captionsScreens(
             screen,
@@ -267,7 +278,7 @@ private fun toolRoute(tool: EditorTool, target: ToolTarget): Any = when (tool) {
     EditorTool.Transcript -> TranscriptRoute(target.projectId)
     EditorTool.Color -> ColorRoute(target.projectId, target.clipId, target.playheadUs)
     EditorTool.Cutout -> CutoutRoute(target.projectId, target.clipId, target.playheadUs)
-    EditorTool.Reframe -> ReframeRoute
+    EditorTool.Reframe -> ReframeRoute(target.projectId, target.playheadUs)
     EditorTool.Masks -> MasksRoute(target.projectId, target.clipId, target.playheadUs)
     EditorTool.Effects -> EffectStackRoute(target.projectId, target.clipId!!, target.playheadUs)
     EditorTool.Layer, EditorTool.Speed, EditorTool.Animate, EditorTool.Stabilize -> LayersRoute

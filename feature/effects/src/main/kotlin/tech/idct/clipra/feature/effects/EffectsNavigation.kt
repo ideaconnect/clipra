@@ -10,6 +10,7 @@ import tech.idct.clipra.feature.effects.color.ColorDestination
 import tech.idct.clipra.feature.effects.cutout.CutoutDestination
 import tech.idct.clipra.feature.effects.filters.FiltersDestination
 import tech.idct.clipra.feature.effects.masks.MasksDestination
+import tech.idct.clipra.feature.effects.reframe.ReframeDestination
 import tech.idct.clipra.feature.effects.stack.EffectStackDestination
 import tech.idct.clipra.feature.effects.transitions.TransitionsDestination
 
@@ -60,8 +61,9 @@ data class CutoutRoute(
     val playheadUs: Long = 0,
 )
 
+/** Auto-reframe of [projectId] (#53) at [playheadUs]; no project opens the placeholder board. */
 @Serializable
-data object ReframeRoute
+data class ReframeRoute(val projectId: String? = null, val playheadUs: Long = 0)
 
 /**
  * The boards this module builds, from design/README.md ("Effects and look" and "On-device AI").
@@ -83,14 +85,18 @@ object EffectsBoards {
     val reframe = Board(
         id = "Reframe",
         title = R.string.effects_title_reframe,
-        route = ReframeRoute,
+        route = ReframeRoute(),
     )
 
     val all = listOf(filters, transitions, masks, color, cutout, reframe)
 }
 
 /** Where the effect screens lead; the app connects it. */
-class EffectsActions(val onDone: () -> Unit)
+class EffectsActions(
+    val onDone: () -> Unit,
+    /** A reframed copy (#53) was made: the editor opens it. */
+    val onReframed: (projectId: String) -> Unit = {},
+)
 
 /** Registers this module's destinations. [screen] draws a board until its real screen is built. */
 fun NavGraphBuilder.effectsScreens(screen: @Composable (Board) -> Unit, actions: EffectsActions) {
@@ -130,5 +136,16 @@ fun NavGraphBuilder.effectsScreens(screen: @Composable (Board) -> Unit, actions:
             CutoutDestination(onDone = actions.onDone)
         }
     }
-    composable<ReframeRoute> { screen(EffectsBoards.reframe) }
+    composable<ReframeRoute> { entry ->
+        val route = entry.toRoute<ReframeRoute>()
+        if (route.projectId == null) {
+            screen(EffectsBoards.reframe)
+        } else {
+            ReframeDestination(
+                playheadUs = route.playheadUs,
+                onDone = actions.onDone,
+                onCreated = actions.onReframed,
+            )
+        }
+    }
 }
