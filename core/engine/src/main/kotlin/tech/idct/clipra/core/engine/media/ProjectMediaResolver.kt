@@ -63,6 +63,14 @@ class ProjectMediaResolver(
         return cleanup?.let { cache.voiceMix(asset.id, it) }?.takeIf { it.exists() }?.path
     }
 
+    override fun reversedSound(
+        asset: MediaAsset,
+        voice: String?,
+        fromUs: Long,
+        toUs: Long,
+    ): String? = cache.reversedSound(ReversedSounds.key(asset, voice), fromUs, toUs)
+        .takeIf { it.exists() }?.path
+
     override fun caption(caption: CaptionSpec, current: Int, width: Int, height: Int): Bitmap =
         CaptionRenderer.render(context, caption, current, width, height)
 
