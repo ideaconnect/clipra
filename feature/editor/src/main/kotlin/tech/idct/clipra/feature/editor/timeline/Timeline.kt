@@ -697,8 +697,12 @@ private fun ClipBlock(
         val labelStart = if (handles) maxOf(inset + 5, HANDLE_WIDTH + 2) else inset + 5
         val duration = formatClipDuration(clip.durationUs + geometry.duration(trimEnd - trimStart))
         val badgeBelow = laneHeight >= TimelineGeometry.VIDEO_LANE
+        // Words sit in the middle of a short lane, as the Editor board draws them.
+        val centred = !missing && clip.type in WORDS && !badgeBelow
         Row(
-            modifier = Modifier.padding(start = labelStart.dp, top = 4.dp),
+            modifier = Modifier
+                .align(if (centred) Alignment.CenterStart else Alignment.TopStart)
+                .padding(start = labelStart.dp, top = if (centred) 0.dp else 4.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -794,6 +798,9 @@ private fun ClipBlock(
 }
 
 private const val HANDLE_WIDTH = 12f
+
+/** Clips that show words, not media, in their label. */
+private val WORDS = setOf(ClipType.Text, ClipType.TextCard, ClipType.Caption, ClipType.Adjustment)
 
 /** How tall a beat tick is, in dp. */
 private const val BEAT_TICK = 5f
@@ -937,6 +944,36 @@ private fun ClipLabel(clip: Clip, project: Project, missing: Boolean, modifier: 
         else -> clipName(project, clip)
     }
     if (name.isEmpty()) return
+    // Words rather than media (Editor board): straight on the clip's colour, after a T for text
+    // and a link mark for captions that move with their video.
+    if (!missing && clip.type in WORDS) {
+        val mark = when (clip.type) {
+            ClipType.Text, ClipType.TextCard -> ClipraIcons.Text
+
+            ClipType.Caption -> ClipraIcons.Link.takeIf {
+                project.links.any { clip.id in it.clipIds }
+            }
+
+            else -> null
+        }
+        Row(
+            modifier = modifier,
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(3.dp),
+        ) {
+            mark?.let {
+                ClipraIcon(it, contentDescription = null, tint = colors.textPrimary, size = 10.dp)
+            }
+            Text(
+                text = name,
+                style = ClipraTheme.typography.clipTitle,
+                color = colors.textPrimary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        return
+    }
     Text(
         text = name,
         style = ClipraTheme.typography.clipLabel,

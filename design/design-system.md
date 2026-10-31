@@ -46,7 +46,7 @@ Values are in `tokens.json`. This page explains how they are used. Units: phone 
 
 - Layers are numbered from the bottom: L1 is the lowest, the highest number is on top. Anything can go on any layer. The layer header shows the number chip plus hide, mute and lock.
 - Phone: 32 px per second, playhead fixed at x 195 (centre). Tablet: 48 px per second with a 120 dp layer header column.
-- Clip anatomy: label chip top-left (Geist Mono 10), video frames, a 13 dp audio strip at the bottom of video clips, link icon top-right when linked, trim handles 12 dp wide in accent when selected.
+- Clip anatomy: label chip top-left (Geist Mono 10) with the media's name; text, caption and adjustment clips show their words straight on their colour instead (Geist 10 semibold), after a T for text and a link mark for linked captions; video frames, a 13 dp audio strip at the bottom of video clips, link icon top-right when linked, trim handles 12 dp wide in accent when selected.
 - Linked partners of the selected clip get a 1.5 dp dashed accent outline.
 - Transitions sit on cuts as a small white tile with the transition icon.
 - Music shows beat markers as accent ticks on the top edge when beat detection is on.
