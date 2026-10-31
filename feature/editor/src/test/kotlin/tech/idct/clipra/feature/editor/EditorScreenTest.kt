@@ -21,6 +21,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.RoborazziOptions
 import com.github.takahirom.roborazzi.captureRoboImage
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -212,6 +213,33 @@ class EditorScreenTest {
                 )
             }
         }
+        compose.onRoot().captureRoboImage(roborazziOptions = options)
+    }
+
+    /** On a short lane the duration badge follows the clip's name instead of covering it. */
+    @Test
+    fun editorWithASelectedVoiceover() {
+        Locale.setDefault(Locale.US)
+        compose.setContent {
+            ClipraTheme {
+                EditorScreen(
+                    state = EditorUiState(
+                        project = project,
+                        loaded = true,
+                        selectedClipId = "voice",
+                        playheadUs = 18_000_000,
+                    ),
+                    playing = false,
+                    callbacks = noop,
+                    preview = {},
+                )
+            }
+        }
+        val name = compose.onNodeWithText("voiceover.m4a", useUnmergedTree = true)
+            .fetchSemanticsNode().boundsInRoot
+        val badge = compose.onNodeWithText("10.0s", useUnmergedTree = true)
+            .fetchSemanticsNode().boundsInRoot
+        assertTrue(badge.left >= name.right)
         compose.onRoot().captureRoboImage(roborazziOptions = options)
     }
 
