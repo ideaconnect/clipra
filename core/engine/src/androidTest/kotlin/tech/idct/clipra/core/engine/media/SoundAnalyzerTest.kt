@@ -140,7 +140,13 @@ class SoundAnalyzerTest {
                 Layer(
                     "L2",
                     clips = listOf(
-                        Clip("voice", ClipType.Audio, 0, sixSeconds, MediaRef(vo.id, 0, sixSeconds)),
+                        Clip(
+                            "voice",
+                            ClipType.Audio,
+                            0,
+                            sixSeconds,
+                            MediaRef(vo.id, 0, sixSeconds),
+                        ),
                     ),
                 ),
             ),
