@@ -17,7 +17,8 @@ Keep this list in sync with the build. Every entry needs a license that is compa
 | MediaPipe selfie segmenter (`image_segmenter/selfie_segmenter/float16/1`, built into the APK, SHA-256 checked at build time) | Person cutout | Apache-2.0 |
 | MediaPipe face detector (`face_detector/blaze_face_short_range/float16/1`, built into the APK, SHA-256 checked at build time) | Face follow (#52), reframe | Apache-2.0 |
 | MediaPipe object detector model | Subject follow (planned) | Apache-2.0 |
-| ML Kit Translation | Offline translation | Google APIs Terms of Service |
+| Marian NMT, browsermt fork (`browsermt/marian-dev` at 2781d735, built from source in `ml:translate`, each archive checked with SHA-256), with SentencePiece (Apache-2.0), ruy (Apache-2.0), cpuinfo (BSD-2-Clause), simd_utils (BSD-2-Clause), intgemm (MIT) and the code Marian builds in (CLI11 BSD-3, cnpy, faiss, mio, phf, spdlog, yaml-cpp, zstr MIT, pathie-cpp BSD-2, zlib, half_float BSD, sse_mathfun zlib); notices in `feature/settings/src/main/assets/licenses/Marian.txt` | Offline caption translation (#47) | MIT and the licenses listed |
+| Mozilla Firefox Translations models (downloaded at run time from Mozilla's model registry, unmodified) | Translation models | MPL-2.0 (model data, ADR 0007) |
 | Google Mobile Ads Next-Gen SDK (`com.google.android.libraries.ads.mobile.sdk:ads-mobile-sdk` 1.5.0, with Play services, Cronet, Gson, Guava, OkHttp and Tink, all Apache-2.0 or BSD) | Export interstitials (`monetization`) | Google Mobile Ads SDK terms |
 | Google User Messaging Platform SDK (`com.google.android.ump:user-messaging-platform` 4.0.0, with Play services basement) | Ad consent (`monetization`) | Android Software Development Kit License |
 | Play Billing Library (`com.android.billingclient:billing-ktx` 9.1.0, with Google's data transport for its diagnostics) | Clipra Pro purchase (`monetization`) | Android Software Development Kit License |

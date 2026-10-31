@@ -49,6 +49,16 @@ val OpenSourceComponents = listOf(
     OpenSourceComponent("Hilt and Dagger", "Apache-2.0", "licenses/Apache-2.0.txt"),
     OpenSourceComponent("whisper.cpp", "MIT", "licenses/MIT-whisper.cpp.txt"),
     OpenSourceComponent("ONNX Runtime", "MIT", "licenses/MIT-ONNXRuntime.txt"),
+    OpenSourceComponent(
+        "Marian NMT, with SentencePiece, ruy, intgemm and the code it builds in",
+        "MIT, Apache-2.0, BSD, zlib",
+        "licenses/Marian.txt",
+    ),
+    OpenSourceComponent(
+        "Firefox Translations models (Mozilla), downloaded unmodified",
+        "MPL-2.0",
+        "licenses/MPL-2.0.txt",
+    ),
     OpenSourceComponent("LiteRT", "Apache-2.0", "licenses/Apache-2.0.txt"),
     OpenSourceComponent("MediaPipe selfie segmenter", "Apache-2.0", "licenses/Apache-2.0.txt"),
     OpenSourceComponent("MediaPipe face detector", "Apache-2.0", "licenses/Apache-2.0.txt"),

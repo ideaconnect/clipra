@@ -92,14 +92,22 @@ class CaptionsEditActions(
     val onSaveSrt: () -> Unit = {},
     val onImportSrt: () -> Unit = {},
     val onDismissMessage: () -> Unit = {},
+    /** Shows the captions in a language, "" for the captions as heard (#47). */
+    val onShowLanguage: (String) -> Unit = {},
+    /** Opens Translate offline (#47). */
+    val onTranslate: () -> Unit = {},
+    /** Says what the captions are in, when no transcript does. */
+    val onPickSource: (String) -> Unit = {},
+    val onTranslateTo: (String) -> Unit = {},
+    val onCloseTranslate: () -> Unit = {},
 )
 
 /**
  * The CaptionsEdit board (#45): the preview, the five styles, position and size for every
  * caption, and the captions in time order with the words Whisper was unsure of underlined. Tap
  * a caption to see it. Tap a word to retype it, split the caption there or merge it with the
- * next; search and replace in every caption; save and import .srt (#46). Translation comes
- * with #47.
+ * next; search and replace in every caption; save and import .srt (#46); translate offline
+ * and switch between the languages (#47).
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -141,6 +149,12 @@ fun CaptionsEditScreen(
                 navigation = HeaderNavigation.Back,
                 onNavigate = actions.onDone,
                 actions = {
+                    IconAction(
+                        icon = ClipraIcons.Captions,
+                        contentDescription = stringResource(R.string.captions_import_srt),
+                        onClick = actions.onImportSrt,
+                        modifier = Modifier.testTag("captions-import-srt"),
+                    )
                     IconAction(
                         icon = ClipraIcons.Search,
                         contentDescription = stringResource(R.string.captions_search),
@@ -196,6 +210,10 @@ fun CaptionsEditScreen(
                 // The look steps aside while searching or editing a word, for the captions.
                 if (look != null && find == null && pick == null) {
                     CaptionsLook(look, scale, actions)
+                }
+                // The languages, once there is a translation (#47).
+                if (state.translations.isNotEmpty()) {
+                    LanguageChips(state, actions, withTranslate = false)
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
@@ -288,16 +306,18 @@ fun CaptionsEditScreen(
                             .testTag("captions-save-srt"),
                     )
                     SecondaryButton(
-                        text = stringResource(R.string.captions_import_srt),
-                        onClick = actions.onImportSrt,
-                        leadingIcon = ClipraIcons.Captions,
+                        text = stringResource(R.string.captions_translate_short),
+                        onClick = actions.onTranslate,
+                        leadingIcon = ClipraIcons.Translate,
+                        enabled = captions.isNotEmpty(),
                         modifier = Modifier
                             .weight(1f)
-                            .testTag("captions-import-srt"),
+                            .testTag("captions-translate"),
                     )
                 }
             }
         }
+        state.translate?.let { TranslateDialog(it, actions) }
         SnackbarHost(
             snackbar,
             modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 80.dp),
@@ -317,6 +337,13 @@ internal fun messageText(message: CaptionsMessage): String = when (message) {
     CaptionsMessage.NotHere -> stringResource(R.string.captions_not_here)
 
     CaptionsMessage.Locked -> stringResource(R.string.captions_locked)
+
+    is CaptionsMessage.Translated -> stringResource(
+        R.string.captions_translated,
+        name(message.language, LocalConfiguration.current.locales[0]),
+    )
+
+    CaptionsMessage.TranslationFailed -> stringResource(R.string.captions_translate_failed)
 }
 
 /**

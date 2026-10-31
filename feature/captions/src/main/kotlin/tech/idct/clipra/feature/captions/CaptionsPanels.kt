@@ -76,6 +76,11 @@ fun CaptionsTranscriptPanel(
             onSaveSrt = { state.project?.let { saveSrt.launch(SrtFiles.fileName(it)) } },
             onImportSrt = { importSrt.launch(SrtFiles.types) },
             onDismissMessage = viewModel::dismissMessage,
+            onShowLanguage = { viewModel.showLanguage(it) },
+            onTranslate = viewModel::openTranslate,
+            onPickSource = viewModel::pickSource,
+            onTranslateTo = viewModel::translate,
+            onCloseTranslate = viewModel::closeTranslate,
         ),
         onAutoCaptions = onAutoCaptions,
         modifier = modifier,
@@ -162,6 +167,8 @@ internal fun CaptionsTranscript(
             style = type.caption,
             color = colors.textSecondary,
         )
+        // The languages and Translate (#47), as the TabletCaptions board shows them.
+        LanguageChips(state, actions, withTranslate = true)
         if (message != null) {
             Text(text = message, style = type.caption, color = colors.accent)
         }
@@ -238,6 +245,7 @@ internal fun CaptionsTranscript(
             }
         }
     }
+    state.translate?.let { TranslateDialog(it, actions) }
 }
 
 /**

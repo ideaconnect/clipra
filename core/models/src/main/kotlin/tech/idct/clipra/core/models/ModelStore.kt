@@ -27,12 +27,14 @@ class ModelStore(val root: File) {
     fun remove(model: AiModel) {
         folder(model).deleteRecursively()
         staging(model).deleteRecursively()
-        partial(model).delete()
+        model.files.indices.forEach { partial(model, it).delete() }
     }
 
     internal fun folder(model: AiModel) = File(root, model.id)
 
-    internal fun partial(model: AiModel) = File(root, "${model.id}.part")
+    /** The download in progress of [model]'s file number [index] (0 is its main file). */
+    internal fun partial(model: AiModel, index: Int = 0) =
+        File(root, if (index == 0) "${model.id}.part" else "${model.id}.$index.part")
 
     internal fun staging(model: AiModel) = File(root, "${model.id}.new")
 

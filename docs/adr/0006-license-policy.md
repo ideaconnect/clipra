@@ -1,6 +1,6 @@
 # 0006. License policy: Apache-2.0 app, permissive dependencies only
 
-- Status: Accepted
+- Status: Accepted, amended by [0007](0007-offline-translation.md) (model data under MPL-2.0)
 - Date: 2026-10-28
 - Issues: #8
 
@@ -11,8 +11,9 @@ Clipra is Apache-2.0 and ships on Google Play. Copyleft code in the APK would bi
 - **What may ship:**
   - code under Apache-2.0, MIT, BSD, ISC, Zlib or a similar permissive license;
   - fonts under the SIL Open Font License;
-  - models under permissive licenses (Whisper MIT, DeepFilterNet MIT or Apache-2.0, MediaPipe Apache-2.0).
-- **Google's closed SDKs** (Mobile Ads, UMP, Play Billing, ML Kit) are used under their own terms.
+  - models under permissive licenses (Whisper MIT, DeepFilterNet MIT or Apache-2.0, MediaPipe Apache-2.0);
+  - model data under MPL-2.0 (Mozilla's Firefox Translations models, 0007), when it is downloaded at run time, used unmodified and not compiled into the app.
+- **Google's closed SDKs** (Mobile Ads, UMP, Play Billing) are used under their own terms.
 - **Never** GPL or AGPL code. LGPL only as a separately loaded library, and only after review.
 - **Tools that don't ship** (build and test tools, FFmpeg on a developer's machine for test clips) are listed separately and may have other licenses.
 - **Every dependency** is listed in `docs/third-party.md` with its use and license, in the same pull request that adds it. Its version goes in `gradle/libs.versions.toml`, at least two weeks old.

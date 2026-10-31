@@ -8,6 +8,7 @@
     <string name="models_accelerator">Use the phone\'s NPU or GPU when it can</string>
     <string name="models_group_captions">Captions · Whisper</string>
     <string name="models_group_voice">Voice cleanup</string>
+    <string name="models_group_translation">Caption translation · offline, per language pair</string>
     <string name="models_default">Default</string>
     <string name="models_lite">lite</string>
     <string name="models_get">Get</string>

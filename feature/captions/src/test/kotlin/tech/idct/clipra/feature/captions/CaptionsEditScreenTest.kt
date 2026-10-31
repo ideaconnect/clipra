@@ -32,6 +32,7 @@ import tech.idct.clipra.core.model.LinkGroup
 import tech.idct.clipra.core.model.Project
 import tech.idct.clipra.core.model.Transcript
 import tech.idct.clipra.core.model.Word
+import tech.idct.clipra.core.model.edit.TranslateCaptions
 import tech.idct.clipra.core.models.ModelCatalog
 import java.util.Locale
 
@@ -169,6 +170,9 @@ class CaptionsEditScreenTest {
         val replaced = mutableListOf<Pair<String, String>>()
         var saved = 0
         var imported = 0
+        val shown = mutableListOf<String>()
+        var translateOpened = 0
+        val translatedTo = mutableListOf<String>()
     }
 
     private fun show(
@@ -177,6 +181,8 @@ class CaptionsEditScreenTest {
         find: String? = null,
         message: CaptionsMessage? = null,
         locale: Locale = Locale.US,
+        project: Project = this.project,
+        translate: TranslateSheet? = null,
     ) {
         Locale.setDefault(locale)
         compose.setContent {
@@ -187,6 +193,7 @@ class CaptionsEditScreenTest {
                         loaded = true,
                         playheadUs = 8_300_000,
                         message = message,
+                        translate = translate,
                     ),
                     scale = null,
                     actions = CaptionsEditActions(
@@ -203,6 +210,9 @@ class CaptionsEditScreenTest {
                         onReplaceAll = { find, with -> calls.replaced += find to with },
                         onSaveSrt = { calls.saved++ },
                         onImportSrt = { calls.imported++ },
+                        onShowLanguage = { calls.shown += it },
+                        onTranslate = { calls.translateOpened++ },
+                        onTranslateTo = { calls.translatedTo += it },
                     ),
                     preview = {
                         Box(
@@ -276,6 +286,71 @@ class CaptionsEditScreenTest {
         compose.onNodeWithTag("captions-import-srt").performClick()
         assertEquals(1, calls.saved)
         assertEquals(1, calls.imported)
+    }
+
+    /** #47: the captions in Polish, with the chips to switch back. */
+    @Test
+    fun aTranslationIsShownWithItsLanguages() {
+        val calls = Calls()
+        val polish = listOf(
+            "W końcu dotarliśmy do Lizbony",
+            "Światło tutaj jest nierealne",
+            "Jutro jedziemy tramwajem do Alfamy",
+            "a potem pociągiem do Sintry",
+            "jeśli pogoda się utrzyma",
+        )
+        val translated = TranslateCaptions(
+            "pl",
+            captions.map { it.id }.zip(polish).toMap(),
+        ).apply(project)
+        show(calls, project = translated)
+        compose.onNodeWithText("dotarliśmy").assertExists()
+        compose.onNodeWithText("EN · original").assertExists()
+        compose.onRoot().captureRoboImage(roborazziOptions = options)
+
+        compose.onNodeWithTag("captions-language:").performClick()
+        compose.onNodeWithTag("captions-translate").performClick()
+        assertEquals(listOf(""), calls.shown)
+        assertEquals(1, calls.translateOpened)
+    }
+
+    private val sheet = TranslateSheet(
+        from = "en",
+        targets = listOf(TranslateTarget("pl", 0), TranslateTarget("de", 25_720_702)),
+        sources = listOf("en", "pl", "de"),
+    )
+
+    @Test
+    fun translateOfflineOffersTheLanguages() {
+        val calls = Calls()
+        show(calls, translate = sheet)
+        compose.onNodeWithText("From English into").assertExists()
+        compose.onNodeWithText("On this phone").assertExists()
+        compose.onNodeWithText("Download 26 MB").assertExists()
+        compose.onRoot().captureRoboImage(roborazziOptions = options)
+        compose.onNodeWithTag("translate-to:pl").performClick()
+        assertEquals(listOf("pl"), calls.translatedTo)
+    }
+
+    @Test
+    fun aTranslationUnderWayShowsItsStep() {
+        val calls = Calls()
+        show(
+            calls,
+            translate = sheet.copy(busy = TranslateBusy("de", TranslateBusy.Step.WaitingForWifi)),
+        )
+        compose.onNodeWithText("Waiting for Wi-Fi").assertExists()
+        // Nothing else starts while one runs.
+        compose.onNodeWithTag("translate-to:pl").performClick()
+        assertEquals(emptyList<String>(), calls.translatedTo)
+    }
+
+    @Test
+    @Config(qualifiers = "pl-w390dp-h844dp-xhdpi")
+    fun translateOfflineInPolish() {
+        show(translate = sheet, locale = Locale.forLanguageTag("pl-PL"))
+        compose.onNodeWithText("Z języka: Angielski na").assertExists()
+        compose.onRoot().captureRoboImage(roborazziOptions = options)
     }
 
     @Test

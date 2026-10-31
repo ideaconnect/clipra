@@ -53,7 +53,7 @@ If the implementation has to differ from the design (platform limits, accessibil
 
 ## Stack (see `docs/architecture.md`)
 
-Android 10 and later (minSdk 29, targetSdk 36), app id `tech.idct.clipra`. Kotlin 2.x, Jetpack Compose, Hilt, Room, DataStore, WorkManager, Media3 1.11 (Transformer, CompositionPlayer, effects) around Clipra's own layer compositor in `core:engine` (decided by the engine spike, `docs/spikes/engine.md`), whisper.cpp via JNI, ONNX Runtime Mobile (DeepFilterNet 3), RNNoise, MediaPipe models on LiteRT (not MediaPipe Tasks, which sends usage data), ML Kit Translation, Google Mobile Ads Next-Gen SDK, UMP SDK, Play Billing Library 9.x.
+Android 10 and later (minSdk 29, targetSdk 36), app id `tech.idct.clipra`. Kotlin 2.x, Jetpack Compose, Hilt, Room, DataStore, WorkManager, Media3 1.11 (Transformer, CompositionPlayer, effects) around Clipra's own layer compositor in `core:engine` (decided by the engine spike, `docs/spikes/engine.md`), whisper.cpp via JNI, ONNX Runtime Mobile (DeepFilterNet 3), RNNoise, MediaPipe models on LiteRT (not MediaPipe Tasks, which sends usage data), Marian NMT with Mozilla's Firefox Translations models (not ML Kit, which sends usage data), Google Mobile Ads Next-Gen SDK, UMP SDK, Play Billing Library 9.x.
 
 The decisions behind this stack are recorded in `docs/adr/`:
 - [0001](docs/adr/0001-media-engine.md) media engine;
@@ -61,7 +61,8 @@ The decisions behind this stack are recorded in `docs/adr/`:
 - [0003](docs/adr/0003-ai-runtimes.md) AI runtimes;
 - [0004](docs/adr/0004-ads-and-billing.md) ads and billing;
 - [0005](docs/adr/0005-min-sdk.md) Android 10+;
-- [0006](docs/adr/0006-license-policy.md) license policy.
+- [0006](docs/adr/0006-license-policy.md) license policy;
+- [0007](docs/adr/0007-offline-translation.md) offline translation.
 
 Follow them. A change to one of them comes with a new ADR that supersedes it. The spike reports are in `docs/spikes/`.
 

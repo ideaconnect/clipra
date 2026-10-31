@@ -1,5 +1,7 @@
 package tech.idct.clipra.core.model
 
+import tech.idct.clipra.core.model.edit.captionsIn
+import tech.idct.clipra.core.model.edit.shownCaptionLanguage
 import java.util.Locale
 
 /** SubRip (.srt) captions (#46): what Save .srt writes and Import .srt reads. */
@@ -7,11 +9,13 @@ object Srt {
     /** One caption: when it shows on the timeline, and its text. */
     data class Cue(val startUs: Long, val endUs: Long, val text: String)
 
-    /** The project's caption clips as cues, in time order, with the words as typed. */
-    fun cues(project: Project): List<Cue> = project.layers
-        .flatMap { it.clips }
-        .filter { it.type == ClipType.Caption && it.caption != null }
-        .sortedBy { it.startUs }
+    /**
+     * The captions shown as cues, in time order, with the words as typed: the language chosen
+     * (#47), or the captions as heard when no caption layer shows.
+     */
+    fun cues(project: Project): List<Cue> = project
+        .captionsIn(project.shownCaptionLanguage() ?: "")
+        .filter { it.caption != null }
         .map { Cue(it.startUs, it.endUs, it.caption!!.text) }
 
     fun write(cues: List<Cue>): String = buildString {

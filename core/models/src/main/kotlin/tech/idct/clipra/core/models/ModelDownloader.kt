@@ -41,21 +41,27 @@ class ModelDownloader(private val store: ModelStore, private val fetcher: Fetche
         onProgress: (Long) -> Unit = {},
         stopped: () -> Boolean = { false },
     ) {
-        val file = model.download ?: return
-        if (store.isInstalled(model)) return
+        if (model.files.isEmpty() || store.isInstalled(model)) return
         store.root.mkdirs()
-        val partial = store.partial(model)
-        if (partial.length() > file.bytes) partial.delete()
-        if (partial.length() < file.bytes) fetch(file, partial, onProgress, stopped)
-        if (stopped()) return
-        if (partial.length() != file.bytes) {
-            throw IOException("Download ended at ${partial.length()} of ${file.bytes} bytes")
+        // The files one after the other, each resumed and checked on its own.
+        var done = 0L
+        for ((index, file) in model.files.withIndex()) {
+            val partial = store.partial(model, index)
+            if (partial.length() > file.bytes) partial.delete()
+            if (partial.length() < file.bytes) {
+                fetch(file, partial, { onProgress(done + it) }, stopped)
+            }
+            if (stopped()) return
+            if (partial.length() != file.bytes) {
+                throw IOException("Download ended at ${partial.length()} of ${file.bytes} bytes")
+            }
+            if (sha256(partial) != file.sha256) {
+                partial.delete()
+                throw CorruptDownloadException("${file.name} does not match its SHA-256")
+            }
+            done += file.bytes
         }
-        if (sha256(partial) != file.sha256) {
-            partial.delete()
-            throw CorruptDownloadException("${file.name} does not match its SHA-256")
-        }
-        install(model, file, partial)
+        install(model)
     }
 
     private fun fetch(
@@ -91,17 +97,35 @@ class ModelDownloader(private val store: ModelStore, private val fetcher: Fetche
         }
     }
 
-    private fun install(model: AiModel, file: ModelFile, partial: File) {
+    private fun install(model: AiModel) {
         val staged = store.staging(model)
         staged.deleteRecursively()
         staged.mkdirs()
-        if (model.unpacked.isEmpty()) {
-            check(partial.renameTo(File(staged, file.name))) { "Cannot move ${file.name}" }
-        } else {
-            unpack(model, partial, staged)
+        for ((index, file) in model.files.withIndex()) {
+            val partial = store.partial(model, index)
+            when {
+                index == 0 && model.unpacked.isNotEmpty() -> unpack(model, partial, staged)
+
+                file.unpackedBytes != null -> gunzip(file, partial, staged)
+
+                else -> check(partial.renameTo(File(staged, file.name))) {
+                    "Cannot move ${file.name}"
+                }
+            }
             partial.delete()
         }
         store.install(model, staged)
+    }
+
+    /** Unpacks a gzipped [file] and checks its size. */
+    private fun gunzip(file: ModelFile, gz: File, into: File) {
+        val out = File(into, file.installedName)
+        GZIPInputStream(gz.inputStream().buffered()).use { input ->
+            out.outputStream().use { input.copyTo(it) }
+        }
+        if (out.length() != file.unpackedBytes) {
+            throw CorruptDownloadException("${file.name} unpacks to ${out.length()} bytes")
+        }
     }
 
     /** Keeps the archive's files the model lists, flattened, and checks their sizes. */

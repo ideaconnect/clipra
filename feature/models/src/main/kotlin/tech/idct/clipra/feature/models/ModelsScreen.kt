@@ -29,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -130,7 +131,7 @@ fun ModelsScreen(state: ModelsUiState, actions: ModelsActions, modifier: Modifie
     removing?.let { model ->
         AlertDialog(
             onDismissRequest = { removing = null },
-            title = { Text(stringResource(R.string.models_remove_title, model.name)) },
+            title = { Text(stringResource(R.string.models_remove_title, model.shownName())) },
             text = { Text(stringResource(R.string.models_remove_body)) },
             confirmButton = {
                 TextButton(
@@ -224,7 +225,7 @@ private fun ModelRow(
     val type = ClipraTheme.typography
     val model = state.model
     val status = state.status
-    val downloadBytes = model.download?.bytes ?: 0
+    val downloadBytes = model.downloadBytes
     val detail = when (status) {
         ModelStatus.BuiltIn -> stringResource(R.string.models_lite)
 
@@ -268,7 +269,7 @@ private fun ModelRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Text(
-                    text = model.name,
+                    text = model.shownName(),
                     style = type.bodyStrong,
                     color = colors.textPrimary,
                     maxLines = 1,
@@ -292,7 +293,8 @@ private fun ModelRow(
                 )
 
                 is ModelStatus.Installed -> {
-                    val description = stringResource(R.string.models_remove_model, model.name)
+                    val description =
+                        stringResource(R.string.models_remove_model, model.shownName())
                     TextAction(
                         text = stringResource(R.string.models_installed),
                         onClick = onRemove,
@@ -308,7 +310,8 @@ private fun ModelRow(
                 )
 
                 is ModelStatus.Missing -> {
-                    val description = stringResource(R.string.models_download_model, model.name)
+                    val description =
+                        stringResource(R.string.models_download_model, model.shownName())
                     PrimaryButton(
                         text = stringResource(
                             if (failed) R.string.models_retry else R.string.models_get,
@@ -376,4 +379,9 @@ private fun ClipraColors.modelColor(model: AiModel): Color = when (model) {
 private val GROUPS = listOf(
     ModelGroup.Captions to R.string.models_group_captions,
     ModelGroup.VoiceCleanup to R.string.models_group_voice,
+    ModelGroup.Translation to R.string.models_group_translation,
 )
+
+/** The model's name, a translation direction's languages in the app's language (#47). */
+@Composable
+private fun AiModel.shownName(): String = title(LocalConfiguration.current.locales[0])

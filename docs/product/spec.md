@@ -188,7 +188,7 @@ Screens: `Models`, `Models--tiny-downloaded`, `Onboarding`.
 - Shows total storage used by speech and voice models.
 - Download on Wi-Fi only (default on). Use the phone's NPU or GPU when it can (default on).
 - Face and subject tracking models are built into the app.
-- Models come straight from their official sources: Whisper from the whisper.cpp project on Hugging Face, DeepFilterNet 3 from its GitHub repository, translation packs through ML Kit. Each file is checked before use.
+- Models come straight from their official sources: Whisper from the whisper.cpp project on Hugging Face, DeepFilterNet 3 from its GitHub repository, translation models from Mozilla's Firefox Translations registry. Each file is checked before use.
 - Sizes are real: before a download, the size of the official file; once installed, the size of the files on disk. They are shown in decimal units, as Android's storage settings count them (1 MB = 1,000,000 bytes), so Whisper Base shows 148 MB. The sizes in the design are placeholders.
 
 ## 19. First run

@@ -83,7 +83,7 @@ class ModelManager @Inject constructor(
     suspend fun cancel(model: AiModel) {
         workManager.cancelUniqueWork(workName(model))
         withContext(Dispatchers.IO) {
-            store.partial(model).delete()
+            model.files.indices.forEach { store.partial(model, it).delete() }
             store.staging(model).deleteRecursively()
         }
         removed.update { it + 1 }
@@ -123,16 +123,17 @@ class ModelManager @Inject constructor(
     private fun status(model: AiModel, info: WorkInfo?): ModelStatus {
         if (model.builtIn) return ModelStatus.BuiltIn
         if (store.isInstalled(model)) return ModelStatus.Installed(store.bytesOnDisk(model))
-        val total = model.download?.bytes ?: 0
+        val total = model.downloadBytes
+        val fetched = model.files.indices.sumOf { store.partial(model, it).length() }
         return when (info?.state) {
             WorkInfo.State.RUNNING -> ModelStatus.Downloading(
-                info.progress.getLong(ModelDownloadWorker.KEY_BYTES, store.partial(model).length()),
+                info.progress.getLong(ModelDownloadWorker.KEY_BYTES, fetched),
                 total,
             )
 
             WorkInfo.State.ENQUEUED, WorkInfo.State.BLOCKED -> ModelStatus.Waiting(
                 wifiOnly = info.constraints.requiredNetworkType == NetworkType.UNMETERED,
-                bytes = store.partial(model).length(),
+                bytes = fetched,
             )
 
             WorkInfo.State.FAILED -> ModelStatus.Missing(

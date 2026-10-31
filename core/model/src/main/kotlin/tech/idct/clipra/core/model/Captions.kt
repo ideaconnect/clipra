@@ -13,7 +13,8 @@ enum class CaptionPosition { Top, Middle, Bottom }
 /**
  * A caption clip (#45): its [words], timed from the clip's start, so the caption moves with its
  * clip; how it looks; where it sits; and its [scale] on the style's own size. [highlight] marks
- * the word being spoken; [maxTwoLines] shrinks long captions to fit two lines.
+ * the word being spoken; [maxTwoLines] shrinks long captions to fit two lines. A translation
+ * (#47) has its [language] (ISO 639-1); captions as heard have none.
  */
 @Serializable
 data class CaptionSpec(
@@ -23,6 +24,7 @@ data class CaptionSpec(
     val scale: Float = 1f,
     val highlight: Boolean = true,
     val maxTwoLines: Boolean = true,
+    val language: String = "",
 ) {
     val text: String get() = words.joinToString(" ") { it.text }
 }

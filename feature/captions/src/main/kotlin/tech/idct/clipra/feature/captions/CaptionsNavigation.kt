@@ -211,6 +211,11 @@ private fun CaptionsEditDestination(
                 onSaveSrt = { state.project?.let { saveSrt.launch(SrtFiles.fileName(it)) } },
                 onImportSrt = { importSrt.launch(SrtFiles.types) },
                 onDismissMessage = viewModel::dismissMessage,
+                onShowLanguage = { viewModel.showLanguage(it) },
+                onTranslate = viewModel::openTranslate,
+                onPickSource = viewModel::pickSource,
+                onTranslateTo = viewModel::translate,
+                onCloseTranslate = viewModel::closeTranslate,
             ),
             preview = {
                 VideoSurface(

@@ -74,7 +74,7 @@ What the SDKs add to the release manifest (audited 2026-10-31, `processBenchmark
 - **Play Billing:** `BILLING`, its proxy activities, and the data transport services above.
 - **LiteRT:** Play's asset delivery (`ai-delivery`, `asset-delivery`), unused by Clipra; its extraction services are disabled and nothing starts it.
 - **ONNX Runtime:** its 1DS telemetry provider is removed (`ml:voice`), see `docs/third-party.md`.
-- No other provider starts at launch besides AndroidX Startup (emoji, lifecycle, profile installer). If offline translation ships with ML Kit (#47, undecided), add its analytics too: the language pair, an installation id, device info and timings, for Analytics.
+- No other provider starts at launch besides AndroidX Startup (emoji, lifecycle, profile installer). Offline translation (#47) runs Marian on the phone and sends nothing (ADR 0007); its model downloads come from Mozilla's storage like the other model downloads.
 
 ## 6. Testing (acceptance of #66)
 

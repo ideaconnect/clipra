@@ -135,6 +135,51 @@ class ModelDownloaderTest {
         assertFalse(store.isInstalled(packed))
     }
 
+    /** A translation direction (#47): three gzipped files, each checked, then unpacked. */
+    @Test
+    fun aModelOfSeveralGzippedFilesFetchesAndUnpacksEach() {
+        val parts = listOf(
+            "model.bin" to Random(3).nextBytes(5_000),
+            "vocab.spm" to Random(4).nextBytes(800),
+            "lex.bin" to Random(5).nextBytes(1_200),
+        )
+        val packed = parts.map { (name, data) -> "$name.gz" to gzip(data) }
+        val files = parts.zip(packed).map { (part, gz) ->
+            ModelFile(
+                "https://example.invalid/${gz.first}",
+                gz.second.size.toLong(),
+                sha(gz.second),
+                unpackedBytes = part.second.size.toLong(),
+            )
+        }
+        val pair = AiModel(
+            id = "pair",
+            name = "en-pl",
+            group = ModelGroup.Translation,
+            download = files[0],
+            moreFiles = files.drop(1),
+        )
+        val server = Fetcher { url, offset ->
+            FakeServer(packed.first { url.endsWith(it.first) }.second).open(url, offset)
+        }
+        val progress = mutableListOf<Long>()
+
+        ModelDownloader(store, server).download(pair, onProgress = { progress += it })
+
+        for ((name, data) in parts) assertArrayEquals(data, store.file(pair, name)!!.readBytes())
+        assertEquals(pair.installedBytes, store.bytesOnDisk(pair))
+        // Progress counts across the files and never goes back.
+        assertEquals(pair.downloadBytes, progress.last())
+        assertEquals(progress.sorted(), progress)
+        pair.files.indices.forEach { assertFalse(store.partial(pair, it).exists()) }
+    }
+
+    private fun gzip(data: ByteArray): ByteArray {
+        val out = ByteArrayOutputStream()
+        GZIPOutputStream(out).use { it.write(data) }
+        return out.toByteArray()
+    }
+
     private fun model(content: ByteArray) = AiModel(
         id = "test",
         name = "Test",
