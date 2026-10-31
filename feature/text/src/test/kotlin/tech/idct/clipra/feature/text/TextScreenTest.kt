@@ -3,6 +3,7 @@ package tech.idct.clipra.feature.text
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -12,6 +13,7 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.test.performTouchInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.RoborazziOptions
 import com.github.takahirom.roborazzi.captureRoboImage
@@ -30,6 +32,8 @@ import tech.idct.clipra.core.model.TextAlign
 import tech.idct.clipra.core.model.TextColors
 import tech.idct.clipra.core.model.TextFonts
 import tech.idct.clipra.core.model.TextSpec
+import tech.idct.clipra.core.model.TextTemplate
+import tech.idct.clipra.core.model.TextTemplates
 import java.util.Locale
 
 /** The Text board: "Day two" on a black card (design/screens/phone/Text.png). */
@@ -93,7 +97,7 @@ class TextScreenTest {
     @Test
     fun textCard() {
         show(card)
-        compose.onNodeWithText("Text card").assertExists()
+        compose.onAllNodesWithText("Text card")[0].assertExists()
         compose.onNodeWithText("Layer L3 · 00:11.00 - 00:14.00").assertExists()
         compose.onAllNodesWithContentDescription("Black")[0].assertIsSelected()
         compose.onRoot().captureRoboImage(roborazziOptions = options)
@@ -145,6 +149,51 @@ class TextScreenTest {
         assertEquals(Animation(enter = "typewriter", exit = "fade"), animated.last())
         compose.onNodeWithTag("text-in:none").performSemanticsAction(SemanticsActions.OnClick)
         assertEquals(Animation(), animated.last())
+    }
+
+    /**
+     * Templates (#34): the board's six, drawn in their looks, and a saved one; a tap applies,
+     * "Save as template" keeps the look, a long press deletes a saved one.
+     */
+    @Test
+    fun textTemplates() {
+        val applied = mutableListOf<TextTemplate>()
+        val deleted = mutableListOf<String>()
+        var saves = 0
+        val saved = TextTemplate("saved:1", card.copy(text = "Sunset", effect = "neon"))
+        // The clip already has Text card's look, with its own words.
+        val spec = TextTemplates.builtIn[0].spec.copy(text = "Day two")
+        val project = project(spec)
+        compose.setContent {
+            ClipraTheme {
+                TextScreen(
+                    state = TextUiState(project, project.layers[2].clips[0], loaded = true),
+                    draft = spec.text,
+                    actions = TextActions(
+                        onBack = {},
+                        onDraft = {},
+                        onSpec = {},
+                        onTemplate = { applied += it },
+                        onSaveTemplate = { saves++ },
+                        onDeleteTemplate = { deleted += it },
+                    ),
+                    preview = {},
+                    templates = TextTemplates.builtIn + saved,
+                )
+            }
+        }
+        compose.onNodeWithTag("template:card").assertIsSelected()
+        compose.onNodeWithTag("save-template").performScrollTo()
+        compose.onNodeWithTag("text-templates").captureRoboImage(roborazziOptions = options)
+        compose.onNodeWithTag("template:lower_third").performClick()
+        assertEquals("lower_third", applied.last().id)
+        compose.onNodeWithTag("save-template").performClick()
+        assertEquals(1, saves)
+        compose.onNodeWithTag("template:saved:1").performTouchInput { longClick() }
+        assertEquals(listOf("saved:1"), deleted)
+        // Built-ins can't be deleted.
+        compose.onNodeWithTag("template:title").performTouchInput { longClick() }
+        assertEquals(listOf("saved:1"), deleted)
     }
 
     /** The design state in Polish, to see that every label fits (#76). */
