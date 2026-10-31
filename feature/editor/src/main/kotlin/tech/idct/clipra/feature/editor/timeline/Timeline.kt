@@ -13,6 +13,7 @@ import androidx.compose.foundation.gestures.rememberScrollableState
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.gestures.transformable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -689,14 +690,21 @@ private fun ClipBlock(
                     .height((laneHeight * 0.55f).dp),
             )
         }
-        // The label and the duration badge stick to the visible left edge.
+        // The label and the duration badge stick to the visible left edge, clear of the start
+        // handle. A short lane has no room for the badge under the label, so it follows it.
         val inset = (-x).coerceIn(0f, (width - 60f).coerceAtLeast(0f))
-        ClipLabel(
-            clip,
-            project,
-            missing,
-            modifier = Modifier.padding(start = (inset + 5).dp, top = 4.dp),
-        )
+        val handles = selected && !locked && !dragging
+        val labelStart = if (handles) maxOf(inset + 5, HANDLE_WIDTH + 2) else inset + 5
+        val duration = formatClipDuration(clip.durationUs + geometry.duration(trimEnd - trimStart))
+        val badgeBelow = laneHeight >= TimelineGeometry.VIDEO_LANE
+        Row(
+            modifier = Modifier.padding(start = labelStart.dp, top = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            ClipLabel(clip, project, missing, modifier = Modifier.weight(1f, fill = false))
+            if (selected && !badgeBelow) DurationBadge(duration, Modifier)
+        }
         // Beat markers (#40): a tick at each beat along the top.
         beats[clip.id]?.takeIf { it.isNotEmpty() }?.let { times ->
             Canvas(
@@ -730,20 +738,15 @@ private fun ClipBlock(
                     .testTag("fx:${clip.id}"),
             )
         }
-        if (selected) {
-            Text(
-                text = formatClipDuration(clip.durationUs + geometry.duration(trimEnd - trimStart)),
-                style = ClipraTheme.typography.clipLabel,
-                color = colors.onAccent,
-                modifier = Modifier
+        if (selected && badgeBelow) {
+            DurationBadge(
+                duration,
+                Modifier
                     .align(Alignment.BottomStart)
                     .padding(
                         start = (inset + 14).dp,
                         bottom = (TimelineGeometry.AUDIO_STRIP + 3).dp,
-                    )
-                    .clip(RoundedCornerShape(5.dp))
-                    .background(colors.accent)
-                    .padding(horizontal = 5.dp, vertical = 2.dp),
+                    ),
             )
         }
     }
@@ -944,6 +947,22 @@ private fun ClipLabel(clip: Clip, project: Project, missing: Boolean, modifier: 
             .clip(RoundedCornerShape(5.dp))
             .background(colors.background.copy(alpha = 0.8f))
             .padding(horizontal = 5.dp, vertical = 1.dp),
+    )
+}
+
+/** The selected clip's duration, "9.2s", while it is trimmed too. */
+@Composable
+private fun DurationBadge(text: String, modifier: Modifier) {
+    val colors = ClipraTheme.colors
+    Text(
+        text = text,
+        style = ClipraTheme.typography.clipLabel,
+        color = colors.onAccent,
+        maxLines = 1,
+        modifier = modifier
+            .clip(RoundedCornerShape(5.dp))
+            .background(colors.accent)
+            .padding(horizontal = 5.dp, vertical = 2.dp),
     )
 }
 
