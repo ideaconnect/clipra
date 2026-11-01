@@ -29,6 +29,14 @@ Before each run: charged above 50%, not charging, screen brightness at half, bat
 
 ## 3. Running them
 
+**All at once.** With one phone connected and prepared, one command runs everything below and writes the report for #77 to `build/perf/<model>-<date>.md`: the device row, the commit, each budget with its measurement and whether it holds, the peak memory and the thermal status before and after.
+
+```
+python scripts/perf/budgets.py --clip clip.mp4
+```
+
+`--clip` is a minute of the phone's own 1080p30 video (optional), and `--serial` picks a phone when several are connected. Emulators need `--emulator`, and their numbers don't count. The sections below run the same measurements one by one.
+
 **Startup and the editor.** The `benchmark` module measures the app's `benchmark` build: release code, shrunk and optimized by R8 but with readable names, signed with the debug key and showing Google's test ads, so it needs none of Clipra's keys.
 
 ```
