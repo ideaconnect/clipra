@@ -17,10 +17,10 @@ import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -164,21 +164,44 @@ fun TextInspectorPanel(
         Box(modifier)
         return
     }
-    var draft by remember(clip.id) { mutableStateOf(spec.text) }
-    val typed by rememberUpdatedState(draft)
-    LaunchedEffect(clip.id, draft) {
-        delay(TYPING_PAUSE_MS)
-        viewModel.setWords(clip.id, draft)
-    }
-    // What was typed last lands in its clip when the selection moves on.
-    DisposableEffect(clip.id) { onDispose { viewModel.setWords(clip.id, typed) } }
+    val draft = rememberWords(clip.id, spec.text, viewModel::setWords)
     val actions = TextActions(
         onBack = {},
-        onDraft = { draft = it },
-        onSpec = { viewModel.setSpec(it.copy(text = draft)) },
+        onDraft = { draft.value = it },
+        onSpec = { viewModel.setSpec(it.copy(text = draft.value)) },
         onAnimation = viewModel::setAnimation,
     )
-    TextInspector(project, clip, draft, actions, modifier)
+    TextInspector(project, clip, draft.value, actions, modifier)
+}
+
+/**
+ * The words being typed into clip [clipId], whose words are [words]: committed a moment after
+ * typing stops, and to that clip when the selection moves on. Words changed from outside, by
+ * undo or redo, replace the draft, so the old ones aren't written back over them.
+ */
+@Composable
+internal fun rememberWords(
+    clipId: String,
+    words: String,
+    commit: (clipId: String, words: String) -> Unit,
+): MutableState<String> {
+    val draft = remember(clipId) { mutableStateOf(words) }
+    // The clip's words as the draft last matched them.
+    val known = remember(clipId) { mutableStateOf(words) }
+    LaunchedEffect(clipId, words) {
+        if (words != known.value) {
+            known.value = words
+            draft.value = words
+        }
+    }
+    LaunchedEffect(clipId, draft.value) {
+        delay(TYPING_PAUSE_MS)
+        known.value = draft.value
+        commit(clipId, draft.value)
+    }
+    // What was typed last lands in its clip when the selection moves on.
+    DisposableEffect(clipId) { onDispose { commit(clipId, draft.value) } }
+    return draft
 }
 
 /** The Text inspector for [clip]: its words ([draft] while typed), look, size and animation. */

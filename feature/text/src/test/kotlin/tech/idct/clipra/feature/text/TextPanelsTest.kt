@@ -6,6 +6,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -124,6 +128,33 @@ class TextPanelsTest {
     private val options = RoborazziOptions(
         compareOptions = RoborazziOptions.CompareOptions(changeThreshold = 0.001f),
     )
+
+    @Test
+    fun undoneWordsStayUndone() {
+        val commits = mutableListOf<Pair<String, String>>()
+        var words by mutableStateOf("Clipra")
+        var selected by mutableStateOf(true)
+        lateinit var draft: MutableState<String>
+        compose.setContent {
+            if (selected) draft = rememberWords("title", words) { id, it -> commits += id to it }
+        }
+        fun step(change: () -> Unit) {
+            compose.runOnIdle(change)
+            compose.waitForIdle()
+            compose.mainClock.advanceTimeBy(1_000)
+            compose.waitForIdle()
+        }
+        // Typed, and committed once typing stops.
+        step { draft.value = "Clipra demo" }
+        assertEquals("title" to "Clipra demo", commits.last())
+        step { words = "Clipra demo" }
+
+        // Undo puts the old words back: the draft takes them, and leaving keeps the undo.
+        step { words = "Clipra" }
+        assertEquals("Clipra", draft.value)
+        step { selected = false }
+        assertEquals("title" to "Clipra", commits.last())
+    }
 
     @Test
     fun tabletText() {
