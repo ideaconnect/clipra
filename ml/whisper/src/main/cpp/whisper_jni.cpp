@@ -5,6 +5,7 @@
 #include <android/log.h>
 #include <atomic>
 #include <cstring>
+#include <vector>
 #include "whisper.h"
 
 namespace {
@@ -117,6 +118,29 @@ Java_tech_idct_clipra_ml_whisper_Whisper_transcribe(JNIEnv *env, jclass, jlong h
     env->ReleaseStringUTFChars(language, lang);
     if (s->cancelled.load()) return -100;
     return result;
+}
+
+// How likely each of whisper.cpp's languages is to be the one spoken in the first 30 s of
+// `samples`, by language id (#188); empty when the encoder fails.
+JNIEXPORT jfloatArray JNICALL
+Java_tech_idct_clipra_ml_whisper_Whisper_detectLanguage(JNIEnv *env, jclass, jlong handle,
+                                                        jfloatArray samples, jint threads) {
+    Session *s = session(handle);
+    jsize count = env->GetArrayLength(samples);
+    jfloat *pcm = env->GetFloatArrayElements(samples, nullptr);
+    int mel = whisper_pcm_to_mel(s->ctx, pcm, count, threads);
+    env->ReleaseFloatArrayElements(samples, pcm, JNI_ABORT);
+    const int n = whisper_lang_max_id() + 1;
+    std::vector<float> probs(n, 0.0f);
+    int id = mel == 0 ? whisper_lang_auto_detect(s->ctx, 0, threads, probs.data()) : -1;
+    jfloatArray result = env->NewFloatArray(id >= 0 ? n : 0);
+    if (id >= 0) env->SetFloatArrayRegion(result, 0, n, probs.data());
+    return result;
+}
+
+JNIEXPORT jstring JNICALL
+Java_tech_idct_clipra_ml_whisper_Whisper_languageCode(JNIEnv *env, jclass, jint id) {
+    return env->NewStringUTF(whisper_lang_str(id));
 }
 
 JNIEXPORT jstring JNICALL

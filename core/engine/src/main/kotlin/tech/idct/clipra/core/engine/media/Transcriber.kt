@@ -14,6 +14,7 @@ import tech.idct.clipra.core.models.AiModel
 import tech.idct.clipra.core.models.ModelStore
 import tech.idct.clipra.ml.voice.Resampler
 import tech.idct.clipra.ml.voice.SampleSource
+import tech.idct.clipra.ml.whisper.LanguageChoice
 import tech.idct.clipra.ml.whisper.Whisper
 import tech.idct.clipra.ml.whisper.WordTiming
 import java.io.File
@@ -70,13 +71,28 @@ class Transcriber @Inject constructor(
                 }
             }
             try {
+                // Auto-detect settles every clip's language first, so a guess on faint voices
+                // takes the language heard clearly in the run (#188).
+                val detecting = language == AUTO && sources.size > 1
+                val languages = if (detecting) {
+                    val heard = sources.mapIndexedNotNull { i, (clip, asset) ->
+                        if (stopped()) throw Cancelled()
+                        onProgress(DETECT_SHARE * i / sources.size)
+                        detect(whisper, clip, asset)?.let { clip.id to it }
+                    }.toMap()
+                    Log.i(TAG, "Languages heard: $heard")
+                    LanguageChoice.pick(heard)
+                } else {
+                    emptyMap()
+                }
+                val first = if (detecting) DETECT_SHARE else 0f
                 sources.map { (clip, asset) ->
                     if (stopped()) throw Cancelled()
                     val share = clip.durationUs.toFloat() / total
                     val offset = before.toFloat() / total
                     before += clip.durationUs
-                    transcribe(whisper, clip, asset, language, translate) {
-                        onProgress(offset + share * it)
+                    transcribe(whisper, clip, asset, languages[clip.id] ?: language, translate) {
+                        onProgress(first + (1 - first) * (offset + share * it))
                     }.copy(model = model.id, detected = language == AUTO && !translate)
                 }.also {
                     val seconds = (System.nanoTime() - started) / 1e9
@@ -104,35 +120,13 @@ class Transcriber @Inject constructor(
     ): Transcript {
         val ref = clip.source!!
         val fromUs = ref.inPointUs
-        val toUs = ref.outPointUs
         val wav = File(context.cacheDir, "transcribe/${clip.id}.wav")
         wav.parentFile?.mkdirs()
         try {
-            val voice = clip.audio.voiceCleanup?.let { cache.voiceMix(asset.id, it) }
-            if (voice != null && voice.exists()) {
-                // The cleaned voice covers the whole media from its start.
-                WavReader(voice).use { reader ->
-                    reader.skip(fromUs * reader.sampleRate / 1_000_000)
-                    val frames = (toUs - fromUs) * reader.sampleRate / 1_000_000
-                    WavWriter(wav, Whisper.SAMPLE_RATE).use { out ->
-                        val limited = limit(reader, frames)
-                        MonoAudio.copy(
-                            Resampler(limited, reader.sampleRate, Whisper.SAMPLE_RATE),
-                            out,
-                        )
-                    }
-                }
-            } else if (!MonoAudio.write(
-                    context,
-                    asset.uri,
-                    fromUs,
-                    toUs,
-                    Whisper.SAMPLE_RATE,
-                    wav,
-                ) {
-                    onProgress(DECODE_SHARE * it)
-                }
-            ) {
+            val read = decode(clip, asset, fromUs, ref.outPointUs, wav) {
+                onProgress(DECODE_SHARE * it)
+            }
+            if (!read) {
                 return Transcript(clip.id, language.takeIf { it != AUTO }.orEmpty())
             }
             var detected = language.takeIf { it != AUTO }
@@ -198,6 +192,62 @@ class Transcriber @Inject constructor(
         }
     }
 
+    /**
+     * Writes [clip]'s sound from [fromUs] to [toUs] of its media to [wav] as 16 kHz mono: its
+     * cleaned voice (#39) when it has one. False when the sound can't be read.
+     */
+    private fun decode(
+        clip: Clip,
+        asset: MediaAsset,
+        fromUs: Long,
+        toUs: Long,
+        wav: File,
+        onProgress: (Float) -> Unit = {},
+    ): Boolean {
+        val voice = clip.audio.voiceCleanup?.let { cache.voiceMix(asset.id, it) }
+        if (voice == null || !voice.exists()) {
+            return MonoAudio.write(
+                context,
+                asset.uri,
+                fromUs,
+                toUs,
+                Whisper.SAMPLE_RATE,
+                wav,
+                onProgress,
+            )
+        }
+        // The cleaned voice covers the whole media from its start.
+        WavReader(voice).use { reader ->
+            reader.skip(fromUs * reader.sampleRate / 1_000_000)
+            val frames = (toUs - fromUs) * reader.sampleRate / 1_000_000
+            WavWriter(wav, Whisper.SAMPLE_RATE).use { out ->
+                val limited = limit(reader, frames)
+                MonoAudio.copy(Resampler(limited, reader.sampleRate, Whisper.SAMPLE_RATE), out)
+            }
+        }
+        return true
+    }
+
+    /**
+     * The language spoken in [clip] and how sure Whisper is of it (#188): from 30 s of its sound
+     * after any opening quiet, within its first [DETECT_US].
+     */
+    private fun detect(whisper: Whisper, clip: Clip, asset: MediaAsset): Whisper.Detection? {
+        val ref = clip.source!!
+        val wav = File(context.cacheDir, "transcribe/${clip.id}-language.wav")
+        wav.parentFile?.mkdirs()
+        try {
+            val toUs = minOf(ref.outPointUs, ref.inPointUs + DETECT_US)
+            if (!decode(clip, asset, ref.inPointUs, toUs, wav)) return null
+            val samples = WavReader(wav).use { nextChunk(it, FloatArray(0)) }
+            val lead = WordTiming.speechStart(samples, Whisper.SAMPLE_RATE)
+            if (lead >= samples.size) return null
+            return whisper.detectLanguage(samples.copyOfRange(lead, samples.size), threads())
+        } finally {
+            wav.delete()
+        }
+    }
+
     /** Up to [CHUNK_SAMPLES]: what was left over from the last chunk, then fresh sound. */
     private fun nextChunk(reader: WavReader, carry: FloatArray): FloatArray {
         val chunk = FloatArray(CHUNK_SAMPLES)
@@ -258,6 +308,12 @@ class Transcriber @Inject constructor(
         private const val MAX_THREADS = 4
         private const val CANCEL_POLL_MS = 100L
         private const val DECODE_SHARE = 0.1f
+
+        /** How much of a run's progress settling the languages takes. */
+        private const val DETECT_SHARE = 0.05f
+
+        /** How far into a clip its language is listened for. */
+        private const val DETECT_US = 60_000_000L
 
         // Ten minutes at 16 kHz (38 MB of samples), split within its last 30 s.
         private const val CHUNK_SAMPLES = 10 * 60 * Whisper.SAMPLE_RATE
