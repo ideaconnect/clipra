@@ -119,4 +119,41 @@ class CaptionTranslationTest {
         assertTrue(again.captionsIn("pl").isEmpty())
         assertNull(again.captionsIn("").firstOrNull())
     }
+
+    @Test
+    fun captionsAreTranslatedAsWholeSentences() {
+        // As Whisper split a Polish talk into captions.
+        val texts = listOf(
+            "Witam Was na moim kanale.",
+            "I tutaj pewne wyjaśnienie, bo",
+            "chociaż będziemy rozmawiać o",
+            "rzeczy technicznej,",
+            "technologicznej, to dlaczego ona",
+            "trafia do sekcji tips a nie tech.",
+            "Bo w sekcji tech",
+        )
+        assertEquals(listOf(0..0, 1..5, 6..6), CaptionSentences.group(texts))
+    }
+
+    @Test
+    fun aTranslatedSentenceIsSharedOverItsCaptionsByLength() {
+        val pieces = CaptionSentences.split(
+            "And here is an explanation, because although we will talk about technical things",
+            listOf(29, 28, 19),
+        )
+        assertEquals(
+            listOf(
+                "And here is an explanation,",
+                "because although we will talk",
+                "about technical things",
+            ),
+            pieces,
+        )
+        // Every caption keeps a word while there are words enough.
+        assertEquals(
+            listOf("Yes", "no", "maybe"),
+            CaptionSentences.split("Yes no maybe", listOf(40, 1, 1)),
+        )
+        assertEquals(listOf("Yes", ""), CaptionSentences.split("Yes", listOf(5, 5)))
+    }
 }
