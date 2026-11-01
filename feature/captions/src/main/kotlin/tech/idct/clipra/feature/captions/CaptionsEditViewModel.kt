@@ -28,6 +28,7 @@ import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
 import tech.idct.clipra.core.model.Project
 import tech.idct.clipra.core.model.Transcript
+import tech.idct.clipra.core.model.edit.CaptionSentences
 import tech.idct.clipra.core.model.edit.EditCaptionWord
 import tech.idct.clipra.core.model.edit.EditCommand
 import tech.idct.clipra.core.model.edit.EditRejected
@@ -248,8 +249,17 @@ class CaptionsEditViewModel @Inject constructor(
             if (missing.isNotEmpty() && !download(missing, to)) return@launch fail()
             busy(to, TranslateBusy.Step.Translating)
             val originals = state.value.project?.originalCaptions().orEmpty()
+            val texts = originals.map { it.caption!!.text }
+            // Whole sentences, shared back over their captions.
+            val sentences = CaptionSentences.group(texts)
             val lines = try {
-                translator.translate(originals.map { it.caption!!.text }, from, to)
+                translator.translate(
+                    sentences.map { run -> run.joinToString(" ") { texts[it] } },
+                    from,
+                    to,
+                ).zip(sentences).flatMap { (translated, run) ->
+                    CaptionSentences.split(translated, run.map { texts[it].length })
+                }
             } catch (_: IOException) {
                 return@launch fail()
             }

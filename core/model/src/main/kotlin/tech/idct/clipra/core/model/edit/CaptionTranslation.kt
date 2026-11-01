@@ -100,3 +100,70 @@ data class ShowCaptionLanguage(val language: String) : EditCommand {
         },
     )
 }
+
+/**
+ * Captions go to the translator as whole sentences (#47). A caption often ends mid-sentence, and
+ * a fragment translated alone reads wrong: "chociaż będziemy rozmawiać o" came back as
+ * "Although we will talk about", capital and all. So consecutive captions are joined up to a
+ * sentence's end ([group]), and each translated sentence is shared back over its captions by
+ * their length ([split]).
+ */
+object CaptionSentences {
+    /** At most this many captions go into one piece, so a long run without full stops stays short. */
+    const val MAX_CAPTIONS = 6
+
+    /** Runs of consecutive caption indices, each ending where a sentence ends. */
+    fun group(texts: List<String>): List<IntRange> {
+        val groups = mutableListOf<IntRange>()
+        var start = 0
+        texts.forEachIndexed { i, text ->
+            val ends = text.trimEnd().trimEnd('"', '\'', ')', '”', '»').lastOrNull() in ENDS
+            if (ends || i - start + 1 >= MAX_CAPTIONS || i == texts.lastIndex) {
+                groups += start..i
+                start = i + 1
+            }
+        }
+        return groups
+    }
+
+    /**
+     * [translation] split at word breaks into one piece per caption, each about as long, as a
+     * share of the whole, as the caption it replaces ([lengths], in characters). Every piece
+     * gets a word while there are words enough.
+     */
+    fun split(translation: String, lengths: List<Int>): List<String> {
+        val words = translation.split(' ').filter { it.isNotBlank() }
+        if (lengths.size <= 1) return listOf(words.joinToString(" "))
+        if (words.size <= lengths.size) return lengths.indices.map { words.getOrElse(it) { "" } }
+        val total = lengths.sum().coerceAtLeast(1)
+        val chars = words.sumOf { it.length + 1 }
+        val pieces = mutableListOf<String>()
+        var next = 0
+        var shared = 0
+        for (i in lengths.indices) {
+            val left = lengths.size - i - 1
+            val last = if (left == 0) {
+                words.size
+            } else {
+                shared += lengths[i]
+                val goal = chars.toDouble() * shared / total
+                var end = next
+                var used = words.take(next).sumOf { it.length + 1 }
+                // Take each word whose middle falls within the piece's share, leaving one for
+                // each piece still to come.
+                while (end < words.size - left &&
+                    (end == next || used + (words[end].length + 1) / 2.0 <= goal)
+                ) {
+                    used += words[end].length + 1
+                    end++
+                }
+                end
+            }
+            pieces += words.subList(next, last).joinToString(" ")
+            next = last
+        }
+        return pieces
+    }
+
+    private val ENDS = setOf('.', '?', '!', '…')
+}
