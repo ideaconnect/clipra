@@ -72,7 +72,11 @@ class MediaImporter @Inject constructor(
     }
 }
 
-/** Makes a proxy in the background, once per media id. */
+/**
+ * Makes a proxy in the background. Proxies are made one at a time: a phone has only a few video
+ * codecs, and several 4K clips picked together would take them all, failing the proxies and
+ * leaving none for the preview.
+ */
 @HiltWorker
 class ProxyWorker @AssistedInject constructor(
     @Assisted context: Context,
@@ -80,15 +84,17 @@ class ProxyWorker @AssistedInject constructor(
     private val cache: MediaCache,
 ) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
-        val mediaId = inputData.getString(KEY_MEDIA_ID) ?: return Result.failure()
-        val uri = inputData.getString(KEY_URI)?.let(Uri::parse) ?: return Result.failure()
+        val mediaId = inputData.getString(KEY_MEDIA_ID) ?: return Result.success()
+        val uri = inputData.getString(KEY_URI)?.let(Uri::parse) ?: return Result.success()
         val proxy = cache.proxy(mediaId)
         if (proxy.exists()) return Result.success()
         return try {
             ProxyGenerator.generate(applicationContext, uri, proxy)
             Result.success()
         } catch (_: Exception) {
-            if (runAttemptCount < MAX_ATTEMPTS) Result.retry() else Result.failure()
+            // A failed proxy would fail every proxy queued after it; the editor plays the
+            // original instead.
+            if (runAttemptCount < MAX_ATTEMPTS) Result.retry() else Result.success()
         }
     }
 
@@ -96,13 +102,14 @@ class ProxyWorker @AssistedInject constructor(
         private const val KEY_MEDIA_ID = "mediaId"
         private const val KEY_URI = "uri"
         private const val MAX_ATTEMPTS = 2
+        const val QUEUE = "proxies"
 
         fun enqueue(context: Context, asset: MediaAsset) {
             val request = OneTimeWorkRequestBuilder<ProxyWorker>()
                 .setInputData(workDataOf(KEY_MEDIA_ID to asset.id, KEY_URI to asset.uri))
                 .build()
             WorkManager.getInstance(context)
-                .enqueueUniqueWork("proxy-${asset.id}", ExistingWorkPolicy.KEEP, request)
+                .enqueueUniqueWork(QUEUE, ExistingWorkPolicy.APPEND_OR_REPLACE, request)
         }
     }
 }

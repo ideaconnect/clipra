@@ -3,6 +3,7 @@ package tech.idct.clipra.core.model.edit
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
@@ -120,7 +121,9 @@ class TransitionCommandsTest {
     fun easingShapesProgress() {
         assertEquals(0.5f, Transitions.ease(Easing.Linear, 0.5f))
         assertEquals(0.5f, Transitions.ease(Easing.EaseInOut, 0.5f), 1e-6f)
-        assertEquals(0.032f, Transitions.ease(Easing.EaseInOut, 0.2f), 1e-6f)
+        assertEquals(0.104f, Transitions.ease(Easing.EaseInOut, 0.2f), 1e-6f)
+        // A tenth of the way in already shows (a cubic curve showed 0.4%).
+        assertTrue(Transitions.ease(Easing.EaseInOut, 0.1f) > 0.02f)
         assertEquals(0.75f, Transitions.ease(Easing.EaseOut, 0.5f))
         assertEquals(1f, Transitions.ease(Easing.EaseOut, 2f))
         assertEquals(24, Transitions.all.toSet().size)

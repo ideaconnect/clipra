@@ -64,7 +64,7 @@ class KeyframesTest {
             },
         )
         assertEquals(0.5f, eased.at(2_000_000, Keyframes::opacity), 1e-6f)
-        assertEquals(0.0625f, eased.at(1_500_000, Keyframes::opacity), 1e-6f)
+        assertEquals(0.15625f, eased.at(1_500_000, Keyframes::opacity), 1e-6f)
 
         // Without keyframes, the plain value.
         assertEquals(0.7f, Keyframed(0.7f).at(2_000_000, Keyframes::opacity), 0f)

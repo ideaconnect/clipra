@@ -1,7 +1,5 @@
 package tech.idct.clipra.core.model
 
-import kotlin.math.pow
-
 /**
  * The 24 transitions of spec section 7 (#26), by id: 8 basic, 9 motion and 7 stylized. A
  * transition sits on a cut, centred on it: the outgoing clip plays on past the cut and the
@@ -41,12 +39,16 @@ object Transitions {
 
     fun isTransition(type: String): Boolean = type in all
 
-    /** Progress 0 to 1 through a transition, shaped by [easing]. */
+    /**
+     * Progress 0 to 1 through a transition, shaped by [easing]. Ease in-out is smoothstep, as
+     * gentle as CSS's ease-in-out: a cubic curve barely moves in its first and last thirds, so a
+     * 0.6 s dissolve showed as a hard cut with a few blended frames.
+     */
     fun ease(easing: Easing, linear: Float): Float {
         val p = linear.coerceIn(0f, 1f)
         return when (easing) {
             Easing.Linear -> p
-            Easing.EaseInOut -> if (p < 0.5f) 4 * p * p * p else 1 - (-2 * p + 2).pow(3) / 2
+            Easing.EaseInOut -> p * p * (3 - 2 * p)
             Easing.EaseOut -> 1 - (1 - p) * (1 - p)
         }
     }
