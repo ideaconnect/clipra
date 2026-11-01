@@ -74,6 +74,32 @@ class FaceDetectorTest {
         }
     }
 
+    /**
+     * The full-range detector (#182) finds the close face and, in all of the frame, the face
+     * about 80 px wide that the short-range one finds only in a region.
+     */
+    @Test
+    fun fullRangeFindsFacesFurtherAway() {
+        val portrait = portrait()
+        val frame = Bitmap.createBitmap(1280, 720, Bitmap.Config.ARGB_8888)
+        frame.eraseColor(Color.rgb(90, 100, 110))
+        val at = Rect(800, 300, 800 + 287, 300 + 358)
+        Canvas(frame).drawBitmap(portrait, null, at, Paint(Paint.FILTER_BITMAP_FLAG))
+        val near = FaceDetector(context).use { it.detect(portrait).single().box }
+        FaceDetector(context, FaceDetector.Range.Full).use { detector ->
+            val close = detector.detect(portrait).single().box
+            assertEquals(near.centerX(), close.centerX(), 0.03f)
+            assertEquals(near.centerY(), close.centerY(), 0.03f)
+
+            val found = detector.detect(frame)
+            Log.i(TAG, "full range $found")
+            val box = found.single().box
+            assertEquals((at.left + near.centerX() * at.width()) / 1280, box.centerX(), 0.01f)
+            assertEquals((at.top + near.centerY() * at.height()) / 720, box.centerY(), 0.015f)
+        }
+        FaceDetector(context).use { assertTrue(it.detect(frame).isEmpty()) }
+    }
+
     private fun portrait(): Bitmap {
         val file = File(context.cacheDir, "portrait.jpg")
         if (!file.exists() || sha256(file) != PORTRAIT_SHA256) {

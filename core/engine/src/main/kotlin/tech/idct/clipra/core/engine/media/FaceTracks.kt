@@ -36,7 +36,8 @@ class FaceTracks @Inject constructor(
      * Where the face is along [clip] (clip time), sample by sample; null where none was seen.
      * The face is the one nearest [near] at [atUs] (clip time; where the mask is, so a mask put
      * on a face follows that face), or the surest one there ([FaceTracking.follow]).
-     * [onProgress] gets 0 to 1; [stopped] ends it early (null comes back).
+     * [onProgress] gets 0 to 1; [stopped] ends it early (null comes back). [range] is the face
+     * detector's: Reframe looks for faces further away (#182).
      */
     fun find(
         asset: MediaAsset,
@@ -45,7 +46,8 @@ class FaceTracks @Inject constructor(
         near: FaceBox? = null,
         onProgress: (Float) -> Unit = {},
         stopped: () -> Boolean = { false },
-    ): List<FaceSample>? = FaceDetector(context).use { detector ->
+        range: FaceDetector.Range = FaceDetector.Range.Short,
+    ): List<FaceSample>? = FaceDetector(context, range).use { detector ->
         if (asset.kind == MediaKind.Photo) {
             val photo = Thumbnails.decodePhoto(context, Uri.parse(asset.uri), PHOTO_SIDE)
                 ?: return null

@@ -60,7 +60,14 @@ class Reframer @Inject constructor(
             val asset = clip.source?.let { project.asset(it.mediaId) } ?: return@forEachIndexed
             val share = { done: Float -> onProgress((index + done) / clips.size) }
             val samples = when (follow) {
-                Reframe.Follow.Face -> faces.find(asset, clip, onProgress = share) { !isActive }
+                // The full-range face detector: people a few metres away too (#182).
+                Reframe.Follow.Face -> faces.find(
+                    asset,
+                    clip,
+                    onProgress = share,
+                    stopped = { !isActive },
+                    range = FaceDetector.Range.Full,
+                )
                     ?.map { it.timeUs to it.box?.let { box -> Point(box.x, box.y) } }
 
                 else -> people(asset, clip, share)
@@ -145,7 +152,10 @@ class Reframer @Inject constructor(
             when (follow) {
                 Reframe.Follow.Fixed -> null
 
-                Reframe.Follow.Face -> FaceDetector(context).use { detector ->
+                Reframe.Follow.Face -> FaceDetector(
+                    context,
+                    FaceDetector.Range.Full,
+                ).use { detector ->
                     detector.detect(frame).maxByOrNull { it.box.width() * it.box.height() }
                         ?.box
                         ?.let {

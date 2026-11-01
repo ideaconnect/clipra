@@ -48,20 +48,35 @@ abstract class DownloadModel : DefaultTask() {
 // The MediaPipe models (Apache-2.0) from Google's model storage, pinned to their versions and
 // checked with SHA-256, go into the APK's assets at build time. They aren't kept in the
 // repository, and Clipra never hosts them.
-data class VisionModel(val file: String, val path: String, val sha256: String)
+data class VisionModel(val file: String, val url: String, val sha256: String)
+
+/** A model from MediaPipe's model storage, by its [path] there. */
+fun mediapipeModel(file: String, path: String, sha256: String) = VisionModel(
+    file,
+    "https://storage.googleapis.com/mediapipe-models/$path/$file",
+    sha256,
+)
 
 val models = listOf(
     // Person cutout (#50).
-    VisionModel(
+    mediapipeModel(
         "selfie_segmenter.tflite",
         "image_segmenter/selfie_segmenter/float16/1",
         "191ac9529ae506ee0beefa6b2c945a172dab9d07d1e802a290a4e4038226658b",
     ),
     // Face follow (#52).
-    VisionModel(
+    mediapipeModel(
         "blaze_face_short_range.tflite",
         "face_detector/blaze_face_short_range/float16/1",
         "b4578f35940bf5a1a655214a1cce5cab13eba73c1297cd78e1a04c2380b0152f",
+    ),
+    // Reframe's Face mode (#182): faces further away. The file and generation MediaPipe's own
+    // build pins (third_party/external_files.bzl).
+    VisionModel(
+        "face_detection_full_range_sparse.tflite",
+        "https://storage.googleapis.com/mediapipe-assets/modules/face_detection/" +
+            "face_detection_full_range_sparse.tflite?generation=1782183500697062",
+        "671dd2f9ed11a78436fc21cc42357a803dfc6f73e9fb86541be942d5716c2dce",
     ),
 )
 
@@ -85,9 +100,7 @@ androidComponents {
             val id = model.file.substringBefore('.').split('_')
                 .joinToString("") { part -> part.replaceFirstChar { it.uppercase() } }
             val task = tasks.register<DownloadModel>("download${name}$id") {
-                url.set(
-                    "https://storage.googleapis.com/mediapipe-models/${model.path}/${model.file}",
-                )
+                url.set(model.url)
                 sha256.set(model.sha256)
                 assetPath.set("models/${model.file}")
                 cache.set(layout.buildDirectory.file("models-cache/${model.file}"))
