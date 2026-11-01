@@ -89,6 +89,9 @@ private class LayerCompositorProgram(
     private val callbackThread = HandlerThread("clipra-frames").apply { start() }
     private val callbackHandler = Handler(callbackThread.looper)
     private val videoSources = HashMap<String, VideoFrameSource>()
+
+    /** Each video clip's latest frame, copied out of its decoder's texture ([videoFrame]). */
+    private val frameCopies = HashMap<String, FrameCopy>()
     private val bitmapTextures = HashMap<String, Int>()
     private val drawnSizes = HashMap<String, Pair<Int, Int>>()
 
@@ -204,6 +207,8 @@ private class LayerCompositorProgram(
         super.release()
         videoSources.values.forEach { it.release() }
         videoSources.clear()
+        frameCopies.values.forEach { it.target.delete() }
+        frameCopies.clear()
         bitmapTextures.values.forEach { GlUtil.deleteTexture(it) }
         bitmapTextures.clear()
         (canvas + clipTarget).filterNotNull().forEach { it.delete() }
@@ -921,6 +926,13 @@ private class LayerCompositorProgram(
             is RenderSource.Audio, RenderSource.Adjustment -> null
         }
 
+    /**
+     * The clip's frame at [timeUs], from a copy made as each frame comes out of its decoder, as
+     * Media3 copies its inputs. A decoder's texture is only safe to read until another decoder
+     * shows a frame: a frame held meanwhile (a clip past its media in a transition, a slowed
+     * clip, a lower frame rate than the project's) showed the other decoder's picture on the
+     * emulator, and a dissolve across such a cut came out as a hard cut.
+     */
     private fun videoFrame(clip: RenderClip, source: RenderSource.Video, timeUs: Long): ClipFrame? {
         val video = videoSources.getOrPut(clip.id) {
             VideoFrameSource(context, source.path, callbackHandler)
@@ -931,8 +943,28 @@ private class LayerCompositorProgram(
         val sourceTimeUs = (source.inPointUs + clip.sourceOffsetAt(timeUs))
             .coerceIn(0, maxOf(0, source.durationUs - frameUs))
         if (!video.frameAt(sourceTimeUs, frameToleranceUs)) return null
-        return ClipFrame(video.textureId, video.textureMatrix, video.width, video.height, true)
+        // Full size, up to twice the frame's longest side, so zooming in keeps its detail.
+        val longest = 2f * maxOf(timeline.width, timeline.height)
+        val scale = minOf(1f, longest / maxOf(video.width, video.height))
+        val width = maxOf(2, (video.width * scale).roundToInt())
+        val height = maxOf(2, (video.height * scale).roundToInt())
+        val copy = frameCopies[clip.id]?.takeIf {
+            it.target.width == width && it.target.height == height
+        } ?: FrameCopy(Target.create(width, height)).also {
+            frameCopies.put(clip.id, it)?.target?.delete()
+        }
+        if (copy.frames != video.shownFrames) {
+            GlUtil.focusFramebufferUsingCurrentContext(copy.target.fbo, width, height)
+            GLES20.glDisable(GLES20.GL_BLEND)
+            val frame = ClipFrame(video.textureId, video.textureMatrix, width, height, true)
+            drawSource(externalProgram, frame, 1f, FULL_FRAME, FULL_UNIT)
+            copy.frames = video.shownFrames
+        }
+        return ClipFrame(copy.target.texture, identity, video.width, video.height, false)
     }
+
+    /** A clip's copied frame, and which of its decoder's frames it holds. */
+    private class FrameCopy(val target: Target, var frames: Long = -1)
 
     private fun imageFrame(clip: RenderClip, bitmap: Bitmap): ClipFrame {
         val texture = bitmapTextures.getOrPut(clip.id) { upload(bitmap) }
@@ -961,6 +993,9 @@ private class LayerCompositorProgram(
             maskTextures.remove(it)?.let { texture -> GlUtil.deleteTexture(texture.id) }
         }
         videoSources.keys.filter { it !in active }.forEach { videoSources.remove(it)?.release() }
+        frameCopies.keys.filter { it !in active }.forEach {
+            frameCopies.remove(it)?.target?.delete()
+        }
         bitmapTextures.keys.filter { it !in active }.forEach {
             bitmapTextures.remove(it)?.let { id -> GlUtil.deleteTexture(id) }
             drawnSizes.remove(it)

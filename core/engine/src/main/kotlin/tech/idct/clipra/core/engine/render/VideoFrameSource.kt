@@ -28,6 +28,10 @@ internal class VideoFrameSource(context: Context, path: String, callbackHandler:
     val width: Int
     val height: Int
 
+    /** How many frames [textureId] has shown; it changes with each new frame. */
+    var shownFrames = 0L
+        private set
+
     private val frameAvailable = ConditionVariable()
     private val surfaceTexture = SurfaceTexture(textureId).apply {
         setOnFrameAvailableListener({ frameAvailable.open() }, callbackHandler)
@@ -121,6 +125,7 @@ internal class VideoFrameSource(context: Context, path: String, callbackHandler:
         surfaceTexture.getTransformMatrix(textureMatrix)
         shownTimeUs = timeUs
         hasFrame = true
+        shownFrames++
     }
 
     /** Dequeues the next decoded frame into [pendingIndex]; false at the end of the stream. */
