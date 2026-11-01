@@ -28,6 +28,9 @@ internal class VideoFrameSource(context: Context, path: String, callbackHandler:
     val width: Int
     val height: Int
 
+    /** The media time of the frame [textureId] shows. */
+    val frameTimeUs: Long get() = shownTimeUs
+
     /** How many frames [textureId] has shown; it changes with each new frame. */
     var shownFrames = 0L
         private set

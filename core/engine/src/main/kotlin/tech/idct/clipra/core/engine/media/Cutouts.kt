@@ -129,6 +129,7 @@ class Cutouts @Inject constructor(
             val durationUs = retriever
                 .extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
                 ?.toLongOrNull()?.times(1_000) ?: asset.durationUs
+            val frameTimes = FrameTimes.of(context, if (proxy.exists()) proxy.path else asset.uri)
             val maker = MaskMaker(segmenter)
             val params = MediaMetadataRetriever.BitmapParams().apply {
                 preferredConfig = Bitmap.Config.ARGB_8888
@@ -140,8 +141,7 @@ class Cutouts @Inject constructor(
                 val frames = retriever.getFramesAtIndex(index, batch, params)
                 frames.forEachIndexed { i, frame ->
                     val upright = upright(frame, asset)
-                    // Frames are evenly spaced, as in the proxy.
-                    val timeUs = (index + i).toLong() * durationUs / count
+                    val timeUs = frameTimes.at(index + i, (index + i).toLong() * durationUs / count)
                     writer.add(timeUs, maker.next(upright))
                     if (upright !== frame) upright.recycle()
                     frame.recycle()
