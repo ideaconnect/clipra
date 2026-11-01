@@ -25,6 +25,8 @@ import tech.idct.clipra.core.model.Project
 import tech.idct.clipra.core.model.Srt
 import tech.idct.clipra.core.model.export.CaptionMode
 import tech.idct.clipra.core.model.export.ExportSettings
+import tech.idct.clipra.core.model.export.ExportWork
+import tech.idct.clipra.core.model.export.TimeLeft
 import java.text.Normalizer
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -92,6 +94,7 @@ class ExportManager @Inject constructor(
     private var gate = PauseGate()
     private var runningMs = 0L
     private var resumedAt = 0L
+    private var timeLeft: TimeLeft? = null
 
     val state: StateFlow<ExportState> = mutableState.asStateFlow()
     val events: SharedFlow<ExportEvent> = mutableEvents.asSharedFlow()
@@ -123,6 +126,8 @@ class ExportManager @Inject constructor(
         gate = PauseGate()
         runningMs = 0
         resumedAt = SystemClock.elapsedRealtime()
+        // Time left follows the work, not the time: a 4K stretch is slower than photos (#183).
+        timeLeft = TimeLeft(ExportWork(project, size)::share)
         job = scope.launch {
             try {
                 val rendered = renderer.render(project, settings, gate) { progress ->
@@ -205,13 +210,7 @@ class ExportManager @Inject constructor(
             val running = state as? ExportState.Running ?: return@update state
             if (running.paused) return@update running
             val elapsedMs = runningMs + SystemClock.elapsedRealtime() - resumedAt
-            val left = if (progress >
-                0.02f
-            ) {
-                ((elapsedMs / progress) * (1 - progress) / 1000).roundToInt()
-            } else {
-                null
-            }
+            val left = timeLeft?.update(elapsedMs, progress)
             running.copy(progress = progress, secondsLeft = left)
         }
     }
