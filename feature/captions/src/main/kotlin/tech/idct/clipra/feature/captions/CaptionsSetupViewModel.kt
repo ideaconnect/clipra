@@ -27,6 +27,8 @@ import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
 import tech.idct.clipra.core.model.Project
 import tech.idct.clipra.core.model.edit.ImportCaptions
+import tech.idct.clipra.core.model.edit.linkedPartners
+import tech.idct.clipra.core.model.edit.originalCaptions
 import tech.idct.clipra.core.models.AiModel
 import tech.idct.clipra.core.models.ModelCatalog
 import tech.idct.clipra.core.models.ModelGroup
@@ -55,9 +57,24 @@ data class CaptionsSetupUiState(
     val waitingForModel: Boolean = false,
     /** The .srt picked to import held no captions (#46). */
     val importFailed: Boolean = false,
+    /** The clips with captions are heard again too, whatever [listenTo] says (#181). */
+    val redoCaptioned: Boolean = false,
 ) {
     /** The clips that will be transcribed. */
-    val sources: List<Clip> get() = project?.let { sources(it, listenTo) }.orEmpty()
+    val sources: List<Clip>
+        get() = project?.let { project ->
+            val heard = sources(project, listenTo)
+            if (redoCaptioned) (heard + captioned(project)).distinctBy { it.id } else heard
+        }.orEmpty()
+
+    /** The captions there are from [sources], which generating replaces (#181). */
+    val replacing: Int
+        get() = project?.let { project ->
+            val ids = sources.map { it.id }.toSet()
+            project.originalCaptions().count { caption ->
+                project.linkedPartners(caption.id).any { it in ids }
+            }
+        } ?: 0
 
     val modelStatus: ModelStatus
         get() = models.firstOrNull { it.model == model }?.status ?: ModelStatus.Missing()
@@ -81,6 +98,13 @@ fun sources(project: Project, listenTo: ListenTo): List<Clip> {
 
         ListenTo.AllTracks -> layers.flatMap { it.clips }.filter { video(it) || sound(it) }
     }
+}
+
+/** The clips in [project] that captions were made from. */
+private fun captioned(project: Project): List<Clip> {
+    val ids = project.originalCaptions().flatMap { project.linkedPartners(it.id) }.toSet()
+    return project.layers.flatMap { it.clips }
+        .filter { it.id in ids && (it.type == ClipType.Video || it.type == ClipType.Audio) }
 }
 
 @HiltViewModel
@@ -162,6 +186,9 @@ class CaptionsSetupViewModel @Inject constructor(
     }
 
     fun setListenTo(listenTo: ListenTo) = mutableState.update { it.copy(listenTo = listenTo) }
+
+    /** Generate hears the clips with captions again too: the tablet's Transcribe tab (#181). */
+    fun redoCaptioned() = mutableState.update { it.copy(redoCaptioned = true) }
 
     fun setLanguage(language: String) = mutableState.update { it.copy(language = language) }
 

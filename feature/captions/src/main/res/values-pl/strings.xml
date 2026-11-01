@@ -122,7 +122,19 @@
     <string name="captions_locked">Ta warstwa jest zablokowana</string>
     <string name="captions_import_srt_instead">Zamiast tego importuj .srt</string>
     <string name="captions_transcript">Transkrypcja</string>
-    <string name="captions_look">Wygląd napisów</string>
     <string name="captions_none_yet">Nie ma jeszcze napisów. Automatyczne napisy zapiszą je z mowy, na tym urządzeniu.</string>
     <string name="captions_make_cuts">Wytnij</string>
+    <!-- Making captions again (#181) -->
+    <string name="captions_regenerate">Utwórz napisy ponownie</string>
+    <string name="captions_regenerate_with">Utwórz ponownie modelem %1$s</string>
+    <string name="captions_generate_with">Utwórz modelem %1$s</string>
+    <string name="captions_tab_style">Styl</string>
+    <string name="captions_tab_transcribe">Transkrybuj</string>
+    <string name="captions_model_here">Model Whisper (na tym tablecie)</string>
+    <plurals name="captions_replaces">
+        <item quantity="one">Zastąpi napis zrobiony z tych klipów, razem z poprawkami</item>
+        <item quantity="few">Zastąpi %1$d napisy zrobione z tych klipów, razem z poprawkami</item>
+        <item quantity="many">Zastąpi %1$d napisów zrobionych z tych klipów, razem z poprawkami</item>
+        <item quantity="other">Zastąpi %1$d napisu zrobionego z tych klipów, razem z poprawkami</item>
+    </plurals>
 </resources>

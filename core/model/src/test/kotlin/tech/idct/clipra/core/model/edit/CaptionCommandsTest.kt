@@ -1,6 +1,7 @@
 package tech.idct.clipra.core.model.edit
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import tech.idct.clipra.core.model.CaptionOptions
@@ -13,6 +14,7 @@ import tech.idct.clipra.core.model.Format
 import tech.idct.clipra.core.model.Layer
 import tech.idct.clipra.core.model.MediaRef
 import tech.idct.clipra.core.model.Project
+import tech.idct.clipra.core.model.TextSpec
 import tech.idct.clipra.core.model.Transcript
 import tech.idct.clipra.core.model.Word
 import tech.idct.clipra.core.model.WordKind
@@ -112,6 +114,49 @@ class CaptionCommandsTest {
         assertEquals(0L, parts[1].caption!!.words[0].startUs - 0L)
         // The right part of the source keeps the transcript.
         assertEquals(2, split.transcripts.size)
+    }
+
+    @Test
+    fun runningAgainKeepsTheLookAndLayerAndCaptionsNewClips() {
+        val first = CreateCaptions(listOf("src"), newId = newId).apply(project())
+        val home = first.layers.last().id
+        // A title shares the captions' layer.
+        val title = Clip("title", ClipType.Text, 40_000_000, 2_000_000, text = TextSpec("The end"))
+        val titled = first.updateLayer(home) { it.copy(clips = it.clips + title) }
+        val styled = SetCaptionLook(CaptionStyle.Karaoke, CaptionPosition.Top, 1.5f).apply(titled)
+        val translated = TranslateCaptions(
+            "en",
+            styled.originalCaptions().associate { it.id to "Hello there" },
+            newId,
+        ).apply(styled)
+        // A clip added since, with its own transcript.
+        val added = Clip(
+            id = "new",
+            type = ClipType.Video,
+            startUs = 20_000_000,
+            durationUs = 5_000_000,
+            source = MediaRef("n", 0, 5_000_000),
+        )
+        val heard = Transcript("new", "en", listOf(w("Hi.", 1.0, 1.5)))
+        val withClip = translated.updateLayer("L1") { it.copy(clips = it.clips + added) }
+            .copy(transcripts = translated.transcripts + heard)
+
+        val again = CreateCaptions(listOf("src", "new"), newId = newId).apply(withClip)
+        // The translation goes with the captions it translated; the new ones are shown.
+        assertEquals(listOf("L1", home), again.layers.map { it.id })
+        assertFalse(again.layers.last().hidden)
+        val captions = again.layers.last().clips.filter { it.type == ClipType.Caption }
+        val others = again.layers.last().clips - captions.toSet()
+        assertEquals(listOf("title"), others.map { it.id })
+        assertEquals(3, captions.size)
+        assertTrue(
+            captions.all {
+                it.caption!!.style == CaptionStyle.Karaoke &&
+                    it.caption!!.position == CaptionPosition.Top &&
+                    it.caption!!.scale == 1.5f && it.caption!!.language.isEmpty()
+            },
+        )
+        assertEquals(2, again.links.size)
     }
 
     @Test

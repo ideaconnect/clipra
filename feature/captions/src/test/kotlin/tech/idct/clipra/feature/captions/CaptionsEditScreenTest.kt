@@ -89,6 +89,7 @@ class CaptionsEditScreenTest {
         val styles = mutableListOf<CaptionStyle>()
         val positions = mutableListOf<CaptionPosition>()
         val seeks = mutableListOf<Long>()
+        var autoCaptions = 0
         compose.setContent {
             ClipraTheme {
                 CaptionsEditScreen(
@@ -102,6 +103,7 @@ class CaptionsEditScreenTest {
                         onScaleDone = {},
                         onSeek = { seeks += it },
                         onEditByText = {},
+                        onAutoCaptions = { autoCaptions++ },
                     ),
                     preview = {
                         Box(
@@ -126,6 +128,10 @@ class CaptionsEditScreenTest {
         assertEquals(listOf(CaptionStyle.Karaoke), styles)
         assertEquals(listOf(CaptionPosition.Top), positions)
         assertEquals(listOf(12_100_000L), seeks)
+
+        // The model and language lead to Auto captions, to make the captions again (#181).
+        compose.onNodeWithTag("header-subtitle").performClick()
+        assertEquals(1, autoCaptions)
     }
 
     /** The design state in Polish, to see that every label fits (#76). */

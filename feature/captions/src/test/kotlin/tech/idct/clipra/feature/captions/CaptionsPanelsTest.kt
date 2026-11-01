@@ -28,14 +28,22 @@ import tech.idct.clipra.core.model.CaptionStyle
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
 import tech.idct.clipra.core.model.Layer
+import tech.idct.clipra.core.model.LinkGroup
+import tech.idct.clipra.core.model.MediaAsset
+import tech.idct.clipra.core.model.MediaKind
+import tech.idct.clipra.core.model.MediaRef
 import tech.idct.clipra.core.model.Project
 import tech.idct.clipra.core.model.Word
+import tech.idct.clipra.core.models.ModelCatalog
+import tech.idct.clipra.core.models.ModelState
+import tech.idct.clipra.core.models.ModelStatus
 import java.util.Locale
 
 /**
  * The Captions panels of the tablet editor (#70, design/screens/tablet/TabletCaptions.png): the
  * transcript on the left (300 dp) with the design's five captions, two words to check, the first
- * caption playing; and their look on the right (320 dp), Bold pop at the bottom.
+ * caption playing; and the inspector on the right (320 dp): their look, Bold pop at the bottom,
+ * or Transcribe (#181, design/screens/states/TabletCaptions--transcribe-tab.png).
  */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34], qualifiers = "w1280dp-h800dp-land-mdpi")
@@ -69,10 +77,33 @@ class CaptionsPanelsTest {
         caption("c5", 18.9, 21.0, "if the weather holds", emptySet()),
     )
 
+    private val sunset = Clip(
+        id = "sunset",
+        type = ClipType.Video,
+        startUs = 0,
+        durationUs = 21_000_000,
+        source = MediaRef("sunset", 0, 21_000_000),
+    )
+
+    // The captions were made from sunset.mp4.
     private val project = Project(
         id = "lisbon",
         name = "Lisbon weekend",
-        layers = listOf(Layer("L1"), Layer("L6", clips = captions)),
+        media = listOf(MediaAsset("sunset", "content://1", MediaKind.Video, hasAudio = true)),
+        layers = listOf(Layer("L1", clips = listOf(sunset)), Layer("L6", clips = captions)),
+        links = listOf(LinkGroup("g", listOf("sunset") + captions.map { it.id })),
+    )
+
+    private val setup = CaptionsSetupUiState(
+        project = project,
+        loaded = true,
+        models = listOf(
+            ModelState(ModelCatalog.whisperTiny, ModelStatus.Installed(77_691_713)),
+            ModelState(ModelCatalog.whisperBase, ModelStatus.Installed(147_951_465)),
+            ModelState(ModelCatalog.whisperSmall, ModelStatus.Installed(487_601_967)),
+            ModelState(ModelCatalog.whisperLargeTurbo, ModelStatus.Missing()),
+        ),
+        redoCaptioned = true,
     )
 
     private val picked = mutableListOf<Any>()
@@ -88,7 +119,19 @@ class CaptionsPanelsTest {
         onImportSrt = { picked += "import" },
     )
 
-    private fun show(state: CaptionsEditUiState) {
+    private val setupActions = CaptionsSetupActions(
+        onBack = {},
+        onListenTo = {},
+        onLanguage = { picked += it },
+        onTranslate = { picked += it },
+        onModel = { picked += it.id },
+        onDownload = { picked += "download:${it.id}" },
+        onOptions = {},
+        onGenerate = { picked += "generate" },
+        onCancel = { picked += "cancel" },
+    )
+
+    private fun show(state: CaptionsEditUiState, tab: CaptionsTab = CaptionsTab.Style) {
         compose.setContent {
             ClipraTheme {
                 Row(
@@ -105,10 +148,14 @@ class CaptionsPanelsTest {
                             .fillMaxHeight(),
                     )
                     Spacer(Modifier.weight(1f))
-                    CaptionsLookInspector(
+                    CaptionsInspector(
+                        tab = tab,
+                        onTab = { picked += it },
                         state = state,
                         scale = null,
                         actions = actions,
+                        setup = setup,
+                        setupActions = setupActions,
                         modifier = Modifier
                             .width(320.dp)
                             .fillMaxHeight(),
@@ -153,6 +200,39 @@ class CaptionsPanelsTest {
     fun tabletCaptionsInPolish() {
         Locale.setDefault(Locale.forLanguageTag("pl-PL"))
         show(CaptionsEditUiState(project, loaded = true, playheadUs = 8_300_000))
+        compose.onRoot().captureRoboImage(roborazziOptions = options)
+    }
+
+    /** Transcribe makes the captions again with the model picked (#181). */
+    @Test
+    fun tabletTranscribe() {
+        Locale.setDefault(Locale.US)
+        show(
+            CaptionsEditUiState(project, loaded = true, playheadUs = 8_300_000),
+            CaptionsTab.Transcribe,
+        )
+        compose.onNodeWithText(
+            "Replaces the 5 captions made from these clips, edits included",
+        ).assertExists()
+        compose.onRoot().captureRoboImage(roborazziOptions = options)
+
+        compose.onNodeWithTag("model:${ModelCatalog.whisperSmall.id}").performClick()
+        compose.onNodeWithText("Regenerate with Base").performClick()
+        compose.onNodeWithText("Style").performClick()
+        assertEquals(
+            listOf<Any>(ModelCatalog.whisperSmall.id, "generate", CaptionsTab.Style),
+            picked,
+        )
+    }
+
+    @Test
+    @Config(qualifiers = "pl-w1280dp-h800dp-land-mdpi")
+    fun tabletTranscribeInPolish() {
+        Locale.setDefault(Locale.forLanguageTag("pl-PL"))
+        show(
+            CaptionsEditUiState(project, loaded = true, playheadUs = 8_300_000),
+            CaptionsTab.Transcribe,
+        )
         compose.onRoot().captureRoboImage(roborazziOptions = options)
     }
 }

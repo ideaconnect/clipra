@@ -2,6 +2,7 @@ package tech.idct.clipra.core.designsystem.component
 
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -45,7 +46,8 @@ enum class HeaderNavigation { Back, Close }
 /**
  * A screen header, 52 dp: back or close on the left, the title, and actions on the right. With a
  * [subtitle] (the editor) the title is 15/600 over a Geist Mono line; without one it is the
- * Bricolage screen title.
+ * Bricolage screen title. [onSubtitle] makes the title and subtitle a button, with a chevron
+ * after the subtitle and [onSubtitleLabel] for TalkBack.
  */
 @Composable
 fun ScreenHeader(
@@ -54,6 +56,8 @@ fun ScreenHeader(
     navigation: HeaderNavigation? = HeaderNavigation.Back,
     onNavigate: (() -> Unit)? = null,
     subtitle: String? = null,
+    onSubtitle: (() -> Unit)? = null,
+    onSubtitleLabel: String? = null,
     actions: @Composable RowScope.() -> Unit = {},
 ) {
     val colors = ClipraTheme.colors
@@ -85,7 +89,26 @@ fun ScreenHeader(
         } else {
             Box(Modifier.width(8.dp))
         }
-        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .then(
+                    if (onSubtitle != null) {
+                        Modifier
+                            .heightIn(min = ClipraDimens.TouchTarget)
+                            .clip(ClipraTheme.shapes.button)
+                            .clickable(
+                                onClickLabel = onSubtitleLabel,
+                                role = Role.Button,
+                                onClick = onSubtitle,
+                            )
+                            .testTag("header-subtitle")
+                    } else {
+                        Modifier
+                    },
+                ),
+            verticalArrangement = Arrangement.spacedBy(1.dp, Alignment.CenterVertically),
+        ) {
             Text(
                 text = title,
                 style = if (subtitle != null) type.headerTitle else type.screenTitle,
@@ -94,13 +117,27 @@ fun ScreenHeader(
                 overflow = TextOverflow.Ellipsis,
             )
             if (subtitle != null) {
-                Text(
-                    text = subtitle,
-                    style = type.meta,
-                    color = colors.textSecondary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                ) {
+                    Text(
+                        text = subtitle,
+                        style = type.meta,
+                        color = colors.textSecondary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
+                    if (onSubtitle != null) {
+                        ClipraIcon(
+                            icon = ClipraIcons.ChevronDown,
+                            contentDescription = null,
+                            tint = colors.textSecondary,
+                            size = 14.dp,
+                        )
+                    }
+                }
             }
         }
         actions()

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,7 +28,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.delay
 import tech.idct.clipra.core.designsystem.ClipraTheme
 import tech.idct.clipra.core.designsystem.component.IconAction
+import tech.idct.clipra.core.designsystem.component.PrimaryButton
 import tech.idct.clipra.core.designsystem.component.SecondaryButton
+import tech.idct.clipra.core.designsystem.component.Segment
+import tech.idct.clipra.core.designsystem.component.SegmentedControl
+import tech.idct.clipra.core.designsystem.component.SegmentedStyle
 import tech.idct.clipra.core.designsystem.component.TextAction
 import tech.idct.clipra.core.designsystem.icon.ClipraIcons
 import tech.idct.clipra.core.model.CaptionText
@@ -249,18 +254,26 @@ internal fun CaptionsTranscript(
 }
 
 /**
- * The captions' look in the tablet editor's inspector (#70, TabletCaptions board): the style,
- * position and size every caption shares. The size is committed when its slider is let go.
+ * The captions inspector in the tablet editor (#70, TabletCaptions board). Style holds the look
+ * every caption shares; the size is committed when its slider is let go. Transcribe makes the
+ * captions again (#181, TabletCaptions--transcribe-tab): another model or language, and the
+ * clips added since.
  */
 @Composable
-fun CaptionsLookPanel(
+fun CaptionsInspectorPanel(
     modifier: Modifier = Modifier,
     viewModel: CaptionsEditViewModel = hiltViewModel(key = PANEL_KEY),
+    setup: CaptionsSetupViewModel = hiltViewModel(key = SETUP_KEY),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val setupState by setup.state.collectAsStateWithLifecycle()
+    LaunchedEffect(setup) { setup.redoCaptioned() }
     var liveScale by remember { mutableStateOf<Float?>(null) }
     LaunchedEffect(state.project) { liveScale = null }
-    CaptionsLookInspector(
+    var tab by rememberSaveable { mutableStateOf(CaptionsTab.Style) }
+    CaptionsInspector(
+        tab = tab,
+        onTab = { tab = it },
         state = state,
         scale = liveScale,
         actions = CaptionsEditActions(
@@ -272,38 +285,80 @@ fun CaptionsLookPanel(
             onSeek = {},
             onEditByText = {},
         ),
+        setup = setupState,
+        setupActions = CaptionsSetupActions(
+            onBack = {},
+            onListenTo = setup::setListenTo,
+            onLanguage = setup::setLanguage,
+            onTranslate = setup::setTranslate,
+            onModel = setup::selectModel,
+            onDownload = setup::download,
+            onOptions = setup::setOptions,
+            onGenerate = setup::generate,
+            onCancel = setup::cancel,
+        ),
         modifier = modifier,
     )
 }
 
-/** The look of [state]'s captions, or a word that there are none yet. */
+/** The tabs of the captions inspector. */
+internal enum class CaptionsTab { Style, Transcribe }
+
+/** The captions inspector: the [tab] of Style and Transcribe that is open. */
 @Composable
-internal fun CaptionsLookInspector(
+internal fun CaptionsInspector(
+    tab: CaptionsTab,
+    onTab: (CaptionsTab) -> Unit,
     state: CaptionsEditUiState,
     scale: Float?,
     actions: CaptionsEditActions,
+    setup: CaptionsSetupUiState,
+    setupActions: CaptionsSetupActions,
     modifier: Modifier = Modifier,
 ) {
-    val colors = ClipraTheme.colors
-    val type = ClipraTheme.typography
     Column(
         modifier = modifier
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 12.dp)
-            .testTag("captions-look"),
+            .padding(horizontal = 16.dp, vertical = 10.dp)
+            .testTag("captions-inspector"),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        Text(
-            text = stringResource(R.string.captions_look),
-            style = type.bodyStrong,
-            color = colors.textPrimary,
+        SegmentedControl(
+            segments = listOf(
+                Segment(stringResource(R.string.captions_tab_style)),
+                Segment(stringResource(R.string.captions_tab_transcribe)),
+            ),
+            selectedIndex = tab.ordinal,
+            onSelect = { onTab(CaptionsTab.entries[it]) },
+            style = SegmentedStyle.Tabs,
+            modifier = Modifier.fillMaxWidth(),
         )
+        when (tab) {
+            CaptionsTab.Style -> CaptionsLookInspector(state, scale, actions)
+
+            CaptionsTab.Transcribe ->
+                TranscribeTab(setup, setupActions, again = state.captions.isNotEmpty())
+        }
+    }
+}
+
+/** The look of [state]'s captions, or a word that there are none yet. */
+@Composable
+private fun CaptionsLookInspector(
+    state: CaptionsEditUiState,
+    scale: Float?,
+    actions: CaptionsEditActions,
+) {
+    Column(
+        modifier = Modifier.testTag("captions-look"),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
         val look = state.look
         if (look == null) {
             Text(
                 text = stringResource(R.string.captions_none_yet),
-                style = type.caption,
-                color = colors.textSecondary,
+                style = ClipraTheme.typography.caption,
+                color = ClipraTheme.colors.textSecondary,
             )
         } else {
             CaptionsLook(look, scale, actions, wrap = true)
@@ -311,7 +366,66 @@ internal fun CaptionsLookInspector(
     }
 }
 
+/**
+ * The Transcribe tab (#181): the Whisper models on this device, the spoken language, and
+ * Generate, which [again] replaces the captions there are.
+ */
+@Composable
+private fun TranscribeTab(
+    state: CaptionsSetupUiState,
+    actions: CaptionsSetupActions,
+    again: Boolean,
+) {
+    Column(
+        modifier = Modifier.testTag("captions-transcribe"),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Section(stringResource(R.string.captions_model_here)) {
+            Column(
+                modifier = Modifier.selectableGroup(),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                state.models.forEach { model ->
+                    ModelOption(
+                        model = model,
+                        selected = model.model == state.model,
+                        onSelect = { actions.onModel(model.model) },
+                        onDownload = { actions.onDownload(model.model) },
+                        compact = true,
+                    )
+                }
+            }
+        }
+        // One under the other: side by side, the language's name didn't fit.
+        LanguageField(state.language, actions.onLanguage, Modifier.fillMaxWidth())
+        TranslateToggle(state.translate, actions.onTranslate, Modifier.fillMaxWidth(), wide = true)
+        GenerateNote(state)
+        val idle = if (again) R.string.captions_regenerate_with else R.string.captions_generate_with
+        PrimaryButton(
+            text = generateText(state, stringResource(idle, state.model.name)),
+            onClick = actions.onGenerate,
+            enabled = !state.running && state.sources.isNotEmpty(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag("captions-generate"),
+        )
+        if (state.running) {
+            TextAction(
+                text = stringResource(R.string.captions_cancel),
+                onClick = actions.onCancel,
+                color = ClipraTheme.colors.textSecondary,
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .testTag("captions-cancel"),
+            )
+        }
+    }
+}
+
 /** The transcript and the look share one view model in the editor's screen. */
 private const val PANEL_KEY = "tablet-captions"
+
+/** The Transcribe tab's Auto captions, in the editor's screen. */
+private const val SETUP_KEY = "tablet-captions-setup"
 
 private const val MESSAGE_MS = 4_000L

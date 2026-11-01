@@ -101,6 +101,7 @@ fun NavGraphBuilder.captionsScreens(
             CaptionsEditDestination(
                 onDone = actions.onBack,
                 onEditByText = { actions.onEditByText(projectId) },
+                onAutoCaptions = { actions.onAutoCaptions(projectId) },
             )
         }
     }
@@ -153,6 +154,7 @@ private fun CaptionsSetupDestination(
 private fun CaptionsEditDestination(
     onDone: () -> Unit,
     onEditByText: () -> Unit,
+    onAutoCaptions: () -> Unit,
     viewModel: CaptionsEditViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -216,6 +218,7 @@ private fun CaptionsEditDestination(
                 onPickSource = viewModel::pickSource,
                 onTranslateTo = viewModel::translate,
                 onCloseTranslate = viewModel::closeTranslate,
+                onAutoCaptions = onAutoCaptions,
             ),
             preview = {
                 VideoSurface(
