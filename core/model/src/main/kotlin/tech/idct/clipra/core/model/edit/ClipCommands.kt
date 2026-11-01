@@ -120,12 +120,14 @@ class SplitClip(
 
 /**
  * Deletes a clip and its linked partners. With [ripple] (on by default in the editor), the clips
- * after it on its layer close the gap, and their linked partners move with them.
+ * after it on its layer close the gap, and their linked partners move with them. A caption goes
+ * alone and never ripples: its source and the other captions stay on their words (#179).
  */
 data class DeleteClip(val clipId: String, val ripple: Boolean = true) : EditCommand {
     override fun apply(project: Project): Project {
         val (layer, clip) = project.clipWithLayer(clipId)
         layer.requireUnlocked()
+        if (clip.type == ClipType.Caption) return project.removeClips(setOf(clipId))
         val removed = project.removeClips(project.linkedPartners(clipId) + clipId)
         if (!ripple) return removed
         val later = removed.layer(layer.id).clips.filter {

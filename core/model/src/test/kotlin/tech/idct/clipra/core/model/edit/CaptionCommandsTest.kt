@@ -80,6 +80,25 @@ class CaptionCommandsTest {
     }
 
     @Test
+    fun aDeletedCaptionGoesAloneAndTheSourceTakesItsCaptions() {
+        val edited = CreateCaptions(listOf("src"), newId = newId).apply(project())
+        val (first, second) = edited.layers.last().clips
+        for (ripple in listOf(true, false)) {
+            val history = EditHistory(edited)
+            val deleted = history.apply(DeleteClip(first.id, ripple))
+            // The source and the caption after it stay where they were, with their link.
+            assertEquals(listOf(second), deleted.layers.last().clips)
+            assertEquals(edited.layers.first(), deleted.layers.first())
+            assertEquals(setOf("src", second.id), deleted.links.single().clipIds.toSet())
+            assertEquals(edited, history.undo())
+        }
+
+        val withoutSource = DeleteClip("src").apply(edited)
+        assertTrue(withoutSource.layers.all { it.clips.isEmpty() })
+        assertTrue(withoutSource.links.isEmpty())
+    }
+
+    @Test
     fun captionsMoveAndSplitWithTheirSource() {
         val edited = CreateCaptions(listOf("src"), newId = newId).apply(project())
         val moved = MoveClip("src", 12_000_000).apply(edited)
