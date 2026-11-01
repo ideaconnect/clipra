@@ -59,6 +59,7 @@ class FaceTracks @Inject constructor(
             } else {
                 retriever.setDataSource(context, Uri.parse(asset.uri))
             }
+            val frameTimes = FrameTimes.of(context, if (proxy.exists()) proxy.path else asset.uri)
             val count = retriever
                 .extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_FRAME_COUNT)
                 ?.toIntOrNull()?.takeIf { it > 0 } ?: return null
@@ -69,7 +70,8 @@ class FaceTracks @Inject constructor(
             val times = (0 until clip.durationUs step FaceTracking.SAMPLE_US).toList()
             val wanted = times.map { timeUs ->
                 val mediaUs = clip.mediaTimeAt(timeUs) ?: 0
-                (mediaUs * count / durationUs).toInt().coerceIn(0, count - 1)
+                val even = (mediaUs * count / durationUs).toInt()
+                frameTimes.nearest(mediaUs, even).coerceIn(0, count - 1)
             }
             // Decoded in order, a few at a time, which is far quicker than seeking each.
             val faces = HashMap<Int, List<Face>>()

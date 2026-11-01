@@ -125,6 +125,7 @@ class Stabilizer @Inject constructor(
         val retriever = MediaMetadataRetriever()
         try {
             val proxy = cache.proxy(asset.id)
+            val source = if (proxy.exists()) proxy.path else asset.uri
             if (proxy.exists()) {
                 retriever.setDataSource(proxy.path)
             } else {
@@ -133,6 +134,7 @@ class Stabilizer @Inject constructor(
             val count = retriever
                 .extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_FRAME_COUNT)
                 ?.toIntOrNull()?.takeIf { it > 1 } ?: return null
+            val frameTimes = FrameTimes.of(context, source)
             val durationUs = retriever
                 .extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
                 ?.toLongOrNull()?.times(1_000)?.takeIf { it > 0 } ?: return null
@@ -171,7 +173,10 @@ class Stabilizer @Inject constructor(
                         }
                     }.map { it.get() }
                     motions.forEachIndexed { i, motion ->
-                        val timeUs = (index + i).toLong() * durationUs / count
+                        val timeUs = frameTimes.at(
+                            index + i,
+                            (index + i).toLong() * durationUs / count,
+                        )
                         val width = prepared[i].picture.width
                         steps += if (motion == null) {
                             CameraStep(timeUs, 0f, 0f, 0f, 1f)

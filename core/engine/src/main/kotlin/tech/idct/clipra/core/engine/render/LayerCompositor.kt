@@ -264,6 +264,10 @@ private class LayerCompositorProgram(
         val grading = (liveColor?.grade ?: clip.color)?.takeIf { !it.isNeutral }?.let {
             Grading(it, if (liveColor != null) liveColor.lut else clip.lut, live?.split(clip.id))
         }
+        // What follows the picture (the person's masks, the camera's path) follows the frame
+        // shown: a video's frames rarely fall on the project's own, as with 30.06 fps phone
+        // footage in a 30 fps project, and the steadying drifted off the shake there.
+        val mediaUs = raw.mediaUs ?: mediaTimeAt(clip, timeUs)
         // The person cutout (#50) comes last, over the graded and filtered picture.
         val cutout = clip.cutout?.let { cut ->
             val settings = live?.cutout(clip.id) ?: cut.settings
@@ -271,13 +275,13 @@ private class LayerCompositorProgram(
             if (settings.key == null && cut.masks == null) {
                 null
             } else {
-                Cutting(clip.id, settings, cut.masks, mediaTimeAt(clip, timeUs))
+                Cutting(clip.id, settings, cut.masks, mediaUs)
             }
         }
         // Stabilization (#54) moves the frame onto the steadied path, before everything else.
         val steady = clip.stabilized?.let { stabilized ->
             stabilizationMatrix(
-                stabilized.at(mediaTimeAt(clip, timeUs)),
+                stabilized.at(mediaUs),
                 stabilized.zoom,
                 raw.width.toFloat() / raw.height,
             )
@@ -960,7 +964,14 @@ private class LayerCompositorProgram(
             drawSource(externalProgram, frame, 1f, FULL_FRAME, FULL_UNIT)
             copy.frames = video.shownFrames
         }
-        return ClipFrame(copy.target.texture, identity, video.width, video.height, false)
+        return ClipFrame(
+            copy.target.texture,
+            identity,
+            video.width,
+            video.height,
+            false,
+            video.frameTimeUs,
+        )
     }
 
     /** A clip's copied frame, and which of its decoder's frames it holds. */
@@ -1046,6 +1057,8 @@ private class LayerCompositorProgram(
         val width: Int,
         val height: Int,
         val external: Boolean,
+        /** For a video, the media time of the frame shown; null for pictures. */
+        val mediaUs: Long? = null,
     )
 
     private class Target(val texture: Int, val fbo: Int, val width: Int, val height: Int) {
