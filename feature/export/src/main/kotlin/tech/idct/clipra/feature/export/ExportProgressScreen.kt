@@ -79,6 +79,12 @@ class ExportProgressViewModel @Inject constructor(
     private var seeing = false
 
     init {
+        // Opened from Export with a project, to start it (unless one is running).
+        val starting = savedState.get<String>("projectId")
+            ?.takeIf { exports.state.value !is ExportState.Running }
+        // The last export's result, finished while no one watched, isn't this one's. Taken for
+        // it, this screen opened the saved video before the new export had even started.
+        if (starting != null) exports.dismiss()
         // Opened after the export finished, from the notification: the video, without an ad.
         if (exports.state.value is ExportState.Done) finishAdState.value = false
         viewModelScope.launch {
@@ -98,10 +104,9 @@ class ExportProgressViewModel @Inject constructor(
             }
         }
         // Opened from Export with a project: start it. Opened from the notification: just show.
-        val projectId = savedState.get<String>("projectId")
-        if (projectId != null && exports.state.value !is ExportState.Running) {
+        if (starting != null) {
             viewModelScope.launch {
-                val project = projects.load(projectId) ?: return@launch
+                val project = projects.load(starting) ?: return@launch
                 exportAds.exportStarted()
                 exports.start(
                     project,
