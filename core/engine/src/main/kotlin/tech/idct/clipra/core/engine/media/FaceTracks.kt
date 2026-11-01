@@ -17,7 +17,7 @@ import tech.idct.clipra.ml.vision.Face
 import tech.idct.clipra.ml.vision.FaceDetector
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlin.math.hypot
+import kotlin.math.abs
 
 /**
  * Follow face (#52) on the device: the face detector looks at a clip ten times a second (in its
@@ -32,11 +32,15 @@ class FaceTracks @Inject constructor(
 ) {
     /**
      * Where the face is along [clip] (clip time), sample by sample; null where none was seen.
+     * The face is the one nearest [near] at [atUs] (clip time; where the mask is, so a mask put
+     * on a face follows that face), or the surest one there ([FaceTracking.follow]).
      * [onProgress] gets 0 to 1; [stopped] ends it early (null comes back).
      */
     fun find(
         asset: MediaAsset,
         clip: Clip,
+        atUs: Long = 0,
+        near: FaceBox? = null,
         onProgress: (Float) -> Unit = {},
         stopped: () -> Boolean = { false },
     ): List<FaceSample>? = FaceDetector(context).use { detector ->
@@ -44,7 +48,8 @@ class FaceTracks @Inject constructor(
             val photo = Thumbnails.decodePhoto(context, Uri.parse(asset.uri), PHOTO_SIDE)
                 ?: return null
             onProgress(1f)
-            return listOf(FaceSample(0, pick(detector.detect(photo), null)))
+            val box = FaceTracking.follow(listOf(boxes(detector.detect(photo))), 0, near)[0]
+            return listOf(FaceSample(0, box))
         }
         val retriever = MediaMetadataRetriever()
         try {
@@ -91,13 +96,16 @@ class FaceTracks @Inject constructor(
                 onProgress(needed.headSet(index).size.toFloat() / needed.size)
             }
             onProgress(1f)
-            // Follow the face in clip order.
-            var last: FaceBox? = null
+            val anchor = times.indices.minByOrNull { abs(times[it] - atUs) } ?: 0
+            val picked = FaceTracking.follow(
+                times.indices.map { boxes(faces[wanted[it]].orEmpty()) },
+                anchor,
+                near,
+            )
             val motion = Stabilizer.cached(cache.stabilize(asset.id))
             val steadied = motion?.over(clip)
             times.mapIndexed { i, timeUs ->
-                val box = pick(faces[wanted[i]].orEmpty(), last)
-                if (box != null) last = box
+                val box = picked[i]
                 val shown = if (box != null && steadied != null) {
                     val mediaUs = clip.mediaTimeAt(timeUs) ?: 0
                     Stabilizing.steady(box, steadied.at(mediaUs), steadied.zoom, motion.aspect)
@@ -123,13 +131,9 @@ class FaceTracks @Inject constructor(
         )
     }
 
-    /** The face to follow: nearest the last one, or the surest at the start. */
-    private fun pick(faces: List<Face>, last: FaceBox?): FaceBox? {
-        val boxes = faces.map {
-            FaceBox(it.box.centerX(), it.box.centerY(), it.box.width(), it.box.height())
-        }
-        if (last == null) return boxes.firstOrNull()
-        return boxes.minByOrNull { hypot(it.x - last.x, it.y - last.y) }
+    /** The detector's faces as boxes, the surest first. */
+    private fun boxes(faces: List<Face>): List<FaceBox> = faces.map {
+        FaceBox(it.box.centerX(), it.box.centerY(), it.box.width(), it.box.height())
     }
 
     private companion object {
