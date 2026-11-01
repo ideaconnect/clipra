@@ -272,4 +272,8 @@
     <string name="editor_tablet_sound_of">%1$s audio</string>
     <string name="editor_tablet_sound_recorded">recorded</string>
     <string name="editor_tablet_ai_clean">AI clean</string>
+    <!-- The Linked tool (#184) -->
+    <string name="editor_tool_linked">Linked</string>
+    <string name="editor_message_pick_link">Tap the clip to link it with</string>
+    <string name="editor_message_unlinked">Unlinked: the clip moves on its own now</string>
 </resources>

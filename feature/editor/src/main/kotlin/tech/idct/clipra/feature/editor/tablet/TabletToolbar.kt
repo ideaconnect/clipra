@@ -33,6 +33,7 @@ import tech.idct.clipra.core.designsystem.component.IconAction
 import tech.idct.clipra.core.designsystem.icon.ClipraIcons
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
+import tech.idct.clipra.core.model.edit.linkedPartners
 import tech.idct.clipra.feature.editor.EditorCallbacks
 import tech.idct.clipra.feature.editor.EditorUiState
 import tech.idct.clipra.feature.editor.R
@@ -93,6 +94,16 @@ internal fun TabletToolbar(
                 video,
                 callbacks.onExtract,
             )
+            // Lit while the selected clip is linked (#184, TabletEditor board).
+            val linked = selected != null &&
+                state.project?.linkedPartners(selected.id)?.isNotEmpty() == true
+            ToolButton(
+                R.string.editor_tool_linked,
+                ClipraIcons.Link,
+                clip,
+                callbacks.onLinked,
+                on = linked,
+            )
             ToolButton(R.string.editor_layer_add, ClipraIcons.Layers, true, actions.onAddLayer)
             ToolButton(
                 R.string.editor_add_adjustment,
@@ -126,20 +137,37 @@ internal fun TabletToolbar(
     }
 }
 
+/** A tool; [on] lights it (Linked while the clip is linked) and tells TalkBack so. */
 @Composable
-private fun ToolButton(label: Int, icon: Int, enabled: Boolean, onClick: () -> Unit) {
+private fun ToolButton(
+    label: Int,
+    icon: Int,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    on: Boolean? = null,
+) {
     val colors = ClipraTheme.colors
     val text = stringResource(label)
+    val state = on?.let {
+        stringResource(if (it) R.string.editor_tablet_on else R.string.editor_tablet_off)
+    }
     Surface(
         onClick = onClick,
         enabled = enabled,
         modifier = Modifier
             .height(44.dp)
-            .semantics { role = Role.Button }
+            .semantics {
+                role = Role.Button
+                if (state != null) stateDescription = state
+            }
             .testTag("tool:$text"),
         shape = RoundedCornerShape(10.dp),
         color = Color.Transparent,
-        contentColor = if (enabled) colors.textPrimary else colors.textDisabled,
+        contentColor = when {
+            !enabled -> colors.textDisabled
+            on == true -> colors.accent
+            else -> colors.textPrimary
+        },
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 10.dp),
