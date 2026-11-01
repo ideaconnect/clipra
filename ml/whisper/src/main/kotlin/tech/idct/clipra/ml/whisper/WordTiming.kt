@@ -25,19 +25,9 @@ object WordTiming {
         minimumUs: Long = MIN_PAUSE_US,
         aboveFloorDb: Float = ABOVE_FLOOR_DB,
     ): List<Pause> {
-        val hop = sampleRate / FRAMES_PER_SECOND
-        val frames = samples.size / hop
-        if (frames == 0) return emptyList()
-        val levels = FloatArray(frames) { f ->
-            var sum = 0.0
-            for (i in f * hop until (f + 1) * hop) sum += samples[i] * samples[i]
-            (20 * log10(sqrt(sum / hop) + 1e-9)).toFloat()
-        }
-        // Quiet is relative to the recording: the floor is its quietest tenth.
-        val floor = levels.sorted()[frames / 10]
-        val speech = levels.sorted()[frames * 9 / 10]
-        if (speech - floor < MIN_RANGE_DB) return emptyList()
-        val threshold = floor + minOf(aboveFloorDb, (speech - floor) / 2)
+        val levels = levels(samples, sampleRate)
+        val threshold = threshold(levels, aboveFloorDb) ?: return emptyList()
+        val frames = levels.size
         val minimumFrames = (minimumUs * FRAMES_PER_SECOND / 1_000_000).toInt()
         val pauses = mutableListOf<Pause>()
         var start = -1
@@ -50,6 +40,55 @@ object WordTiming {
             }
         }
         return pauses
+    }
+
+    /**
+     * The sample of [samples] where its speech starts, less [leadUs]; 0 when it opens with speech
+     * or has no pauses to trust. Speech is the first [onsetUs] of sound over the quiet, so a click
+     * in the quiet doesn't count. Whisper times the first words of a recording that opens with
+     * quiet as if they started at once, up to a second early, past the reach of [refine]; given
+     * the sound from here, it keeps them on the voice.
+     */
+    fun speechStart(
+        samples: FloatArray,
+        sampleRate: Int,
+        onsetUs: Long = ONSET_US,
+        leadUs: Long = LEAD_US,
+    ): Int {
+        val levels = levels(samples, sampleRate)
+        val threshold = threshold(levels, ABOVE_FLOOR_DB) ?: return 0
+        val onsetFrames = (onsetUs * FRAMES_PER_SECOND / 1_000_000).toInt()
+        val leadFrames = (leadUs * FRAMES_PER_SECOND / 1_000_000).toInt()
+        var run = 0
+        for (f in levels.indices) {
+            run = if (levels[f] < threshold) 0 else run + 1
+            if (run == onsetFrames) {
+                val start = (f - run + 1 - leadFrames).coerceAtLeast(0)
+                return start * (sampleRate / FRAMES_PER_SECOND)
+            }
+        }
+        return 0
+    }
+
+    /** The level of each 10 ms frame of [samples], in dB. */
+    private fun levels(samples: FloatArray, sampleRate: Int): FloatArray {
+        val hop = sampleRate / FRAMES_PER_SECOND
+        return FloatArray(samples.size / hop) { f ->
+            var sum = 0.0
+            for (i in f * hop until (f + 1) * hop) sum += samples[i] * samples[i]
+            (20 * log10(sqrt(sum / hop) + 1e-9)).toFloat()
+        }
+    }
+
+    /** The level under which a frame is quiet, or null when the speech doesn't stand out. */
+    private fun threshold(levels: FloatArray, aboveFloorDb: Float): Float? {
+        if (levels.isEmpty()) return null
+        // Quiet is relative to the recording: the floor is its quietest tenth.
+        val sorted = levels.sorted()
+        val floor = sorted[levels.size / 10]
+        val speech = sorted[levels.size * 9 / 10]
+        if (speech - floor < MIN_RANGE_DB) return null
+        return floor + minOf(aboveFloorDb, (speech - floor) / 2)
     }
 
     /** [words] with their edges moved to the [pauses] within [reachUs] of them. */
@@ -98,6 +137,12 @@ object WordTiming {
 
     /** How far from Whisper's time a pause edge may be and still be the word's edge. */
     const val REACH_US = 400_000L
+
+    /** How long sound must last over the quiet to be speech starting. */
+    const val ONSET_US = 100_000L
+
+    /** How much quiet Whisper still gets before the speech. */
+    const val LEAD_US = 100_000L
 
     private const val ABOVE_FLOOR_DB = 15f
     private const val MIN_RANGE_DB = 20f

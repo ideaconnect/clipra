@@ -52,6 +52,20 @@ class WordTimingTest {
     }
 
     @Test
+    fun speechStartsAfterTheOpeningQuietAndItsClicks() {
+        // Quiet with two 20 ms clicks, then speech from 0.8 s.
+        val samples = sound(3.0, listOf(0.15 to 0.17, 0.7 to 0.72, 0.8 to 1.5, 1.9 to 2.6), 0.001f)
+        val start = WordTiming.speechStart(samples, rate)
+        assertEquals(0.7, start.toDouble() / rate, 0.011)
+
+        val opening = sound(3.0, listOf(0.0 to 1.2, 1.6 to 2.4), noise = 0.001f)
+        assertEquals(0, WordTiming.speechStart(opening, rate))
+
+        val noisy = sound(3.0, listOf(0.8 to 1.5), noise = 0.2f)
+        assertEquals(0, WordTiming.speechStart(noisy, rate))
+    }
+
+    @Test
     fun farPausesAndNoisySoundLeaveWordsAlone() {
         val samples = sound(3.0, listOf(0.5 to 1.2, 1.6 to 2.4), noise = 0.001f)
         val words = listOf(word("far", 2.9, 2.95))
