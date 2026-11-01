@@ -60,7 +60,7 @@ class Reframer @Inject constructor(
             val asset = clip.source?.let { project.asset(it.mediaId) } ?: return@forEachIndexed
             val share = { done: Float -> onProgress((index + done) / clips.size) }
             val samples = when (follow) {
-                Reframe.Follow.Face -> faces.find(asset, clip, share) { !isActive }
+                Reframe.Follow.Face -> faces.find(asset, clip, onProgress = share) { !isActive }
                     ?.map { it.timeUs to it.box?.let { box -> Point(box.x, box.y) } }
 
                 else -> people(asset, clip, share)

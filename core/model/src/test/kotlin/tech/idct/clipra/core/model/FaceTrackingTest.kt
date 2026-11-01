@@ -110,4 +110,26 @@ class FaceTrackingTest {
             FollowFace("v", emptyList(), atUs = 0).apply(project)
         }
     }
+
+    @Test
+    fun theFaceUnderTheMaskIsFollowed() {
+        // Two people: one sits on the left, one walks in from the right. The detector is surer
+        // of the one sitting.
+        fun box(x: Float) = FaceBox(x, 0.4f, 0.1f, 0.12f)
+        val seen = listOf(0.8f, 0.7f, 0.6f, 0.5f).map { walker -> listOf(box(0.2f), box(walker)) }
+
+        // Without a mask, the surest face from the start.
+        assertEquals(List(4) { 0.2f }, FaceTracking.follow(seen).map { it!!.x })
+        // The mask put on the walker at the third sample follows the walker both ways.
+        assertEquals(
+            listOf(0.8f, 0.7f, 0.6f, 0.5f),
+            FaceTracking.follow(seen, anchor = 2, near = box(0.62f)).map { it!!.x },
+        )
+        // A sample with no face stays empty and the path goes on from the last face.
+        val gap = seen.toMutableList().also { it[1] = emptyList() }
+        assertEquals(
+            listOf(0.8f, null, 0.6f, 0.5f),
+            FaceTracking.follow(gap, anchor = 3, near = box(0.5f)).map { it?.x },
+        )
+    }
 }

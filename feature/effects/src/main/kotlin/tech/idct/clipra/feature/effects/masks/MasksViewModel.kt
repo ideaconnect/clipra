@@ -20,6 +20,7 @@ import tech.idct.clipra.core.data.project.ProjectSession
 import tech.idct.clipra.core.engine.media.FaceTracks
 import tech.idct.clipra.core.engine.media.MediaCache
 import tech.idct.clipra.core.model.Clip
+import tech.idct.clipra.core.model.FaceBox
 import tech.idct.clipra.core.model.FaceTracking
 import tech.idct.clipra.core.model.Filters
 import tech.idct.clipra.core.model.Mask
@@ -144,12 +145,19 @@ class MasksViewModel @Inject constructor(
         if (tracking != null) return
         val asset = clip.source?.let { state.value.project?.asset(it.mediaId) } ?: return
         val effect = state.value.effectType
+        // The face under the mask, as it is at the playhead.
+        val atUs = (playheadUs - clip.startUs).coerceIn(0, clip.durationUs)
+        val near = clip.maskAt(atUs)?.takeIf { it.shape != MaskShape.None }?.let {
+            FaceBox(it.x, it.y, it.width, it.height)
+        }
         mutableState.update { it.copy(tracking = 0f, noFace = false) }
         tracking = viewModelScope.launch {
             val samples = withContext(Dispatchers.Default) {
                 faces.find(
                     asset,
                     clip,
+                    atUs,
+                    near,
                     onProgress = { p -> mutableState.update { it.copy(tracking = p) } },
                     stopped = { !isActive },
                 )

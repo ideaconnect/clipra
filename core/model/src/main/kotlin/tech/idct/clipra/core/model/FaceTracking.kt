@@ -1,6 +1,7 @@
 package tech.idct.clipra.core.model
 
 import kotlin.math.exp
+import kotlin.math.hypot
 
 /** A face's box in a clip's picture: its centre and size, in fractions of the picture. */
 data class FaceBox(val x: Float, val y: Float, val width: Float, val height: Float)
@@ -20,6 +21,38 @@ object FaceTracking {
 
     /** Keyframes go in five times a second. */
     const val KEYFRAME_US = 200_000L
+
+    /**
+     * The face to follow among the faces seen at each sample ([seen], in order; the surest
+     * first): from sample [anchor], the face nearest [near] (where the mask was put, so putting
+     * it on a face picks that face; without it, the surest there), then from sample to sample
+     * the face nearest the one before, forwards to the end and back to the start. Null where
+     * no face was seen.
+     */
+    fun follow(seen: List<List<FaceBox>>, anchor: Int = 0, near: FaceBox? = null): List<FaceBox?> {
+        val picked = arrayOfNulls<FaceBox>(seen.size)
+        if (seen.isEmpty()) return picked.toList()
+        val start = anchor.coerceIn(0, seen.lastIndex)
+        fun along(indices: IntProgression, from: FaceBox?) {
+            var last = from
+            for (i in indices) {
+                val faces = seen[i]
+                val before = last
+                val box = if (before == null) {
+                    faces.firstOrNull()
+                } else {
+                    faces.minByOrNull { hypot(it.x - before.x, it.y - before.y) }
+                }
+                if (box != null) {
+                    picked[i] = box
+                    last = box
+                }
+            }
+        }
+        along(start until seen.size, near)
+        along(start - 1 downTo 0, picked[start] ?: near)
+        return picked.toList()
+    }
 
     /**
      * The face's path: gaps between faces filled in a straight line, the ends held, then
