@@ -16,7 +16,6 @@ import androidx.media3.transformer.Composition
 import androidx.media3.transformer.DefaultEncoderFactory
 import androidx.media3.transformer.ExportException
 import androidx.media3.transformer.ExportResult
-import androidx.media3.transformer.ProgressHolder
 import androidx.media3.transformer.Transformer
 import androidx.media3.transformer.VideoEncoderSettings
 import kotlinx.coroutines.CancellableContinuation
@@ -40,6 +39,7 @@ import tech.idct.clipra.core.model.ClipType
 import tech.idct.clipra.core.model.Project
 import tech.idct.clipra.core.model.export.ExportSettings
 import java.io.File
+import java.util.concurrent.atomic.AtomicLong
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -94,11 +94,16 @@ class ExportRenderer(
         // After the voices: a reversed clip plays its cleaned voice back to front.
         withContext(Dispatchers.IO) { reversedSounds.requestAll(project) }
         val timeline = timeline(project, settings)
+        // How far the video is, from the frames drawn (#183). Transformer's own progress is the
+        // average of every sequence's, and the sound's are done long before the picture, so it
+        // stood at half after seconds and crawled from there.
+        val drawnUs = AtomicLong(0)
         val composition = withContext(Dispatchers.IO) {
             CompositionFactory.create(
                 context,
                 timeline,
                 gate = gate,
+                listener = { timeUs, _ -> drawnUs.set(timeUs) },
             )
         }
         val output = File(context.cacheDir, "exports/${project.id}.mp4").apply {
@@ -107,13 +112,10 @@ class ExportRenderer(
         }
         val main = Handler(Looper.getMainLooper())
         var transformer: Transformer? = null
-        val progress = ProgressHolder()
         val poll = object : Runnable {
             override fun run() {
-                val current = transformer ?: return
-                if (current.getProgress(progress) == Transformer.PROGRESS_STATE_AVAILABLE) {
-                    onProgress(progress.progress / 100f)
-                }
+                if (transformer == null) return
+                onProgress((drawnUs.get().toFloat() / timeline.durationUs).coerceIn(0f, 1f))
                 main.postDelayed(this, PROGRESS_INTERVAL_MS)
             }
         }
