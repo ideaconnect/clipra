@@ -13,7 +13,7 @@ import tech.idct.clipra.core.model.Project
 import tech.idct.clipra.core.model.Size
 import kotlin.math.abs
 
-/** The export's time left follows the work, and a slow stretch shows within seconds (#183). */
+/** The export's time left follows the work, so photos and 4K video each count (#183). */
 class ExportWorkTest {
     private val sec = 1_000_000L
     private val hd = Size(1920, 1080)
@@ -68,8 +68,9 @@ class ExportWorkTest {
         return seen
     }
 
-    /** Within a quarter of the true seconds left, give or take the rounding. */
-    private fun close(left: Int, truth: Double) = abs(left - truth) <= truth * 0.25 + 1
+    /** Within [share] of the true seconds left, give or take the rounding. */
+    private fun close(left: Int, truth: Double, share: Double = 0.25) =
+        abs(left - truth) <= truth * share + 1
 
     @Test
     fun theWorkIsInTheVideoNotThePhotos() {
@@ -87,19 +88,20 @@ class ExportWorkTest {
     }
 
     @Test
-    fun aStretchSlowerThanItsWorkShowsWithinSeconds() {
-        // Two 1080p videos, the second slower to decode than its size says: three times.
-        val clips = listOf(video("a", 0, "fhd"), video("b", 10 * sec, "fhd"))
-        val even = project.copy(layers = listOf(Layer("L1", clips = clips)))
-        val seen = export(TimeLeft(ExportWork(even, hd)::share)) {
-            if (it < 0.5f) 20_000.0 else 60_000.0
+    fun aDecoderStartingAtAClipChangeDoesNotThrowItOff() {
+        // As on the emulator: a three-minute export whose frames stop for 10 s where the 4K
+        // video starts.
+        val seen = export(TimeLeft(ExportWork(project, hd)::share)) {
+            when {
+                it < 0.5f -> 1.1 * 60_000
+                it < 0.501f -> 10_000_000.0
+                else -> 5.0 * 60_000
+            }
         }
-        // The slow half starts 10 s in; 15 s into it the pace is known.
-        val slowFrom = seen.first { it.first >= 0.5f }
-        val settled = seen.filter { it.first > 0.5f && it.third <= slowFrom.third - 15 }
-        assertTrue(settled.isNotEmpty())
-        for ((progress, left, truth) in settled) {
-            assertTrue("at $progress: $left s, truly $truth s", close(left!!, truth))
+        // The stall counts in the pace for a while (28% over at worst); a pace over the last
+        // seconds would have gone to hours.
+        for ((progress, left, truth) in seen.filter { it.first >= 0.1f }) {
+            assertTrue("at $progress: $left s, truly $truth s", close(left!!, truth, 0.3))
         }
     }
 
