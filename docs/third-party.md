@@ -15,7 +15,8 @@ Keep this list in sync with the build. Every entry needs a license that is compa
 | libebur128 (if used) | Loudness measurement | MIT |
 | LiteRT (`com.google.ai.edge.litert:litert` 2.3.0, with `litert-api`, which brings Play's `ai-delivery` and `asset-delivery`, unused) | Runs the MediaPipe vision models (`ml:vision`); no telemetry | Apache-2.0 |
 | MediaPipe selfie segmenter (`image_segmenter/selfie_segmenter/float16/1`, built into the APK, SHA-256 checked at build time) | Person cutout | Apache-2.0 |
-| MediaPipe face detector (`face_detector/blaze_face_short_range/float16/1`, built into the APK, SHA-256 checked at build time) | Face follow (#52), reframe | Apache-2.0 |
+| MediaPipe face detector (`face_detector/blaze_face_short_range/float16/1`, built into the APK, SHA-256 checked at build time) | Face follow (#52) | Apache-2.0 |
+| MediaPipe full-range face detector (`face_detection_full_range_sparse.tflite`, the file and generation MediaPipe's own build pins in `mediapipe-assets`, built into the APK, SHA-256 checked at build time) | Reframe's Face mode (#182): faces up to five metres away | Apache-2.0 |
 | MediaPipe object detector model | Subject follow (planned) | Apache-2.0 |
 | Marian NMT, browsermt fork (`browsermt/marian-dev` at 2781d735, built from source in `ml:translate`, each archive checked with SHA-256), with SentencePiece (Apache-2.0), ruy (Apache-2.0), cpuinfo (BSD-2-Clause), simd_utils (BSD-2-Clause), intgemm (MIT) and the code Marian builds in (CLI11 BSD-3, cnpy, faiss, mio, phf, spdlog, yaml-cpp, zstr MIT, pathie-cpp BSD-2, zlib, half_float BSD, sse_mathfun zlib); notices in `feature/settings/src/main/assets/licenses/Marian.txt` | Offline caption translation (#47) | MIT and the licenses listed |
 | Mozilla Firefox Translations models (downloaded at run time from Mozilla's model registry, unmodified) | Translation models | MPL-2.0 (model data, ADR 0007) |
