@@ -22,6 +22,9 @@ class Whisper private constructor(private var handle: Long) : AutoCloseable {
     /** What [transcribe] heard: the [language] spoken (or detected) and the words. */
     data class Result(val language: String, val words: List<Word>)
 
+    /** A [language] Whisper heard and how sure it is of it, 0 to 1. */
+    data class Detection(val language: String, val probability: Float)
+
     /** Gets whisper.cpp's progress through one call, 0 to 100. */
     fun interface ProgressListener {
         fun onProgress(percent: Int)
@@ -80,6 +83,17 @@ class Whisper private constructor(private var handle: Long) : AutoCloseable {
         return Result(language(handle), words)
     }
 
+    /**
+     * The language spoken in the first 30 s of [samples] (16 kHz mono) and how sure Whisper is
+     * of it, or null when it can't tell.
+     */
+    fun detectLanguage(samples: FloatArray, threads: Int): Detection? {
+        check(handle != 0L) { "Whisper is closed" }
+        val probabilities = detectLanguage(handle, samples, threads)
+        val id = probabilities.indices.maxByOrNull { probabilities[it] } ?: return null
+        return Detection(languageCode(id), probabilities[id])
+    }
+
     /** Stops a [transcribe] that is running (or the next one) as soon as it can. */
     fun cancel() {
         if (handle != 0L) cancel(handle)
@@ -135,6 +149,16 @@ class Whisper private constructor(private var handle: Long) : AutoCloseable {
             threads: Int,
             listener: ProgressListener?,
         ): Int
+
+        @JvmStatic
+        private external fun detectLanguage(
+            handle: Long,
+            samples: FloatArray,
+            threads: Int,
+        ): FloatArray
+
+        @JvmStatic
+        private external fun languageCode(id: Int): String
 
         @JvmStatic
         private external fun language(handle: Long): String
