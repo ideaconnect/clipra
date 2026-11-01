@@ -132,4 +132,47 @@ class FaceTrackingTest {
             FaceTracking.follow(gap, anchor = 3, near = box(0.5f)).map { it?.x },
         )
     }
+
+    @Test
+    fun aLostFaceDoesNotJumpToSomeoneElse() {
+        // A small face (0.04 wide) walking right, lost for two samples while a stranger stands
+        // far off, then seen again.
+        fun face(x: Float) = FaceBox(x, 0.4f, 0.04f, 0.07f)
+        val stranger = face(0.1f)
+        // Something taken for a face nearby, three times as big, isn't it either.
+        val sign = FaceBox(0.55f, 0.45f, 0.12f, 0.2f)
+        val seen = listOf(
+            listOf(face(0.5f), stranger),
+            listOf(stranger, sign),
+            listOf(stranger),
+            listOf(face(0.56f), stranger),
+        )
+        val picked = FaceTracking.follow(seen, anchor = 0, near = face(0.5f))
+        assertEquals(listOf(0.5f, null, null, 0.56f), picked.map { it?.x })
+    }
+
+    @Test
+    fun smallFacesAreLookedForInTilesOfThePicture() {
+        // Follow face's mask over a face a twentieth of a 720p frame wide (#182): 12 tiles of
+        // 410 px, where the face is 20 px of the detector's 128.
+        val mask = FaceBox(0.5f, 0.5f, 0.075f, 0.17f)
+        val tiles = FaceTracking.tiles(1280, 720, mask)
+        assertEquals(12, tiles.size)
+        val side = tiles.first().side
+        assertEquals(410.0, side.toDouble(), 2.0)
+        assertEquals(FaceTracking.Tile(0, 0, side), tiles.first())
+        assertEquals(FaceTracking.Tile(1280 - side, 720 - side, side), tiles.last())
+        // Neighbours overlap by at least a quarter, so a face on an edge is whole in one.
+        val xs = tiles.map { it.x }.distinct()
+        assertTrue(xs.zipWithNext().all { (a, b) -> b - a <= side * 3 / 4 })
+
+        // A face big enough in the whole picture needs none; a tiny one at most 15.
+        assertTrue(FaceTracking.tiles(1280, 720, FaceBox(0.5f, 0.5f, 0.3f, 0.5f)).isEmpty())
+        val tiny = FaceTracking.tiles(1280, 720, FaceBox(0.5f, 0.5f, 0.01f, 0.02f))
+        assertEquals(15, tiny.size)
+        assertEquals(320, tiny.first().side)
+        // In portrait the tiles stay inside the picture.
+        val portrait = FaceTracking.tiles(720, 1280, FaceBox(0.5f, 0.5f, 0.06f, 0.04f))
+        assertTrue(portrait.all { it.x + it.side <= 720 && it.y + it.side <= 1280 })
+    }
 }

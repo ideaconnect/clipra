@@ -1,7 +1,9 @@
 package tech.idct.clipra.core.model
 
+import kotlin.math.ceil
 import kotlin.math.exp
 import kotlin.math.hypot
+import kotlin.math.roundToInt
 
 /** A face's box in a clip's picture: its centre and size, in fractions of the picture. */
 data class FaceBox(val x: Float, val y: Float, val width: Float, val height: Float)
@@ -27,30 +29,45 @@ object FaceTracking {
      * first): from sample [anchor], the face nearest [near] (where the mask was put, so putting
      * it on a face picks that face; without it, the surest there), then from sample to sample
      * the face nearest the one before, forwards to the end and back to the start. Null where
-     * no face was seen.
+     * no face was seen, or only faces too far from it ([reach]) or too unlike it in size
+     * ([SIZE_CHANGE]) to be the same one.
      */
     fun follow(seen: List<List<FaceBox>>, anchor: Int = 0, near: FaceBox? = null): List<FaceBox?> {
         val picked = arrayOfNulls<FaceBox>(seen.size)
         if (seen.isEmpty()) return picked.toList()
         val start = anchor.coerceIn(0, seen.lastIndex)
-        fun along(indices: IntProgression, from: FaceBox?) {
+        fun along(indices: IntProgression, from: FaceBox?, fromFace: Boolean) {
             var last = from
+            // Sizes are compared with a face seen, not with the mask, which can be any size.
+            var sized = fromFace
+            var missed = 0
             for (i in indices) {
                 val faces = seen[i]
                 val before = last
                 val box = if (before == null) {
                     faces.firstOrNull()
                 } else {
-                    faces.minByOrNull { hypot(it.x - before.x, it.y - before.y) }
+                    val reach = reach(before, missed)
+                    faces.map { it to hypot(it.x - before.x, it.y - before.y) }
+                        .filter { (face, distance) ->
+                            distance <= reach &&
+                                (!sized || face.width / before.width in SIZE_RANGE)
+                        }
+                        .minByOrNull { (_, distance) -> distance }?.first
                 }
                 if (box != null) {
                     picked[i] = box
                     last = box
+                    sized = true
+                    missed = 0
+                } else {
+                    missed++
                 }
             }
         }
-        along(start until seen.size, near)
-        along(start - 1 downTo 0, picked[start] ?: near)
+        along(start until seen.size, near, fromFace = false)
+        val first = picked[start]
+        along(start - 1 downTo 0, first ?: near, fromFace = first != null)
         return picked.toList()
     }
 
@@ -114,6 +131,41 @@ object FaceTracking {
         rotation = 0f,
     )
 
+    /**
+     * How far (in fractions of the picture) the face [last] seen can be from there after
+     * [missed] samples without it: [REACH_FACES] of its widths, a little more for each sample
+     * it was missing, up to [MAX_REACH] times that. Further away it is someone else: in a street
+     * the face detector finds other people, and a lost face mustn't jump to them (#182).
+     */
+    private fun reach(last: FaceBox, missed: Int): Float {
+        val base = maxOf(last.width * REACH_FACES, MIN_REACH)
+        return base * minOf(1f + missed * REACH_GROWTH, MAX_REACH)
+    }
+
+    /** A square of a picture, in pixels, to look for a small face in (#182). */
+    data class Tile(val x: Int, val y: Int, val side: Int)
+
+    /**
+     * Squares over a [width] × [height] picture in which the face under [mask] (a fraction of
+     * the picture, as wide as the face or [WIDER] when Follow face put it there) is big enough
+     * for the face detector, which sees all it is given at [DETECTOR_SIDE] px: neighbours overlap
+     * by at least a quarter, so a face on an edge is whole in one. None when the face is big
+     * enough in the whole picture. In street footage the faces are a few dozen pixels of a 720p
+     * frame, too small for the whole picture.
+     */
+    fun tiles(width: Int, height: Int, mask: FaceBox): List<Tile> {
+        val face = mask.width / WIDER * width
+        if (face * DETECTOR_SIDE / maxOf(width, height) >= FACE_PX) return emptyList()
+        val side = (face * DETECTOR_SIDE / FACE_PX).roundToInt()
+            .coerceIn(maxOf(width, height) / MAX_TILES_ACROSS, minOf(width, height))
+        fun starts(length: Int): List<Int> {
+            val count = ceil((length - side) / (side * TILE_STEP)).toInt() + 1
+            if (count == 1) return listOf(0)
+            return (0 until count).map { (it.toLong() * (length - side) / (count - 1)).toInt() }
+        }
+        return starts(height).flatMap { y -> starts(width).map { x -> Tile(x, y, side) } }
+    }
+
     /** The path as mask keyframes every [KEYFRAME_US], straight between them. */
     fun keyframes(path: List<Pair<Long, FaceBox>>, mask: Mask): List<Keyframe<Mask>> {
         var next = Long.MIN_VALUE
@@ -139,4 +191,23 @@ object FaceTracking {
     private const val TALLER = 1.9f
     private const val RAISE = 0.15f
     private const val MIN_SIZE = 0.02f
+
+    private const val REACH_FACES = 2.5f
+    private const val MIN_REACH = 0.05f
+    private const val REACH_GROWTH = 0.1f
+    private const val MAX_REACH = 1.5f
+
+    /** A face seen again is at most this much bigger or smaller (#182). */
+    private const val SIZE_CHANGE = 2f
+    private val SIZE_RANGE = 1f / SIZE_CHANGE..SIZE_CHANGE
+
+    /** The face detector's input side, and how wide a face it finds well (#182). */
+    private const val DETECTOR_SIDE = 128
+    private const val FACE_PX = 20
+
+    /** Tiles are at least a quarter of the long side: 15 at most in 16:9, 25 in a square. */
+    private const val MAX_TILES_ACROSS = 4
+
+    /** A tile starts at most three quarters of its side after the one before. */
+    private const val TILE_STEP = 0.75f
 }

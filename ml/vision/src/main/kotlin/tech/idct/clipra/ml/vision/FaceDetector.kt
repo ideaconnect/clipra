@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.Rect
 import android.graphics.RectF
 import org.tensorflow.lite.Interpreter
 import java.io.FileInputStream
@@ -49,16 +50,21 @@ class FaceDetector(context: Context) : AutoCloseable {
         }
     }
 
-    /** The faces in [picture], most likely first; none scores under [minScore]. */
-    fun detect(picture: Bitmap, minScore: Float = MIN_SCORE): List<Face> {
+    /**
+     * The faces in [picture], most likely first; none scores under [minScore]. With a [region]
+     * (pixels of [picture]) only that part is looked at, so faces too small to find in the whole
+     * picture are big enough (#182); the boxes are still fractions of the whole picture.
+     */
+    fun detect(picture: Bitmap, minScore: Float = MIN_SCORE, region: Rect? = null): List<Face> {
+        val area = region ?: Rect(0, 0, picture.width, picture.height)
         // Fitted into the square, centred, with black around it.
-        val scale = min(SIZE.toFloat() / picture.width, SIZE.toFloat() / picture.height)
-        val w = picture.width * scale
-        val h = picture.height * scale
+        val scale = min(SIZE.toFloat() / area.width(), SIZE.toFloat() / area.height())
+        val w = area.width() * scale
+        val h = area.height() * scale
         val left = (SIZE - w) / 2
         val top = (SIZE - h) / 2
         square.eraseColor(Color.BLACK)
-        Canvas(square).drawBitmap(picture, null, RectF(left, top, left + w, top + h), paint)
+        Canvas(square).drawBitmap(picture, area, RectF(left, top, left + w, top + h), paint)
         square.getPixels(pixels, 0, SIZE, 0, 0, SIZE, SIZE)
         input.rewind()
         for (pixel in pixels) {
@@ -81,12 +87,12 @@ class FaceDetector(context: Context) : AutoCloseable {
             val cy = raw[1] / SIZE + ANCHOR_Y[i]
             val bw = raw[2] / SIZE
             val bh = raw[3] / SIZE
-            // Back from the square to the picture.
+            // Back from the square to the area, in pixels, then to fractions of the picture.
             val box = RectF(
-                ((cx - bw / 2) * SIZE - left) / w,
-                ((cy - bh / 2) * SIZE - top) / h,
-                ((cx + bw / 2) * SIZE - left) / w,
-                ((cy + bh / 2) * SIZE - top) / h,
+                (area.left + ((cx - bw / 2) * SIZE - left) / scale) / picture.width,
+                (area.top + ((cy - bh / 2) * SIZE - top) / scale) / picture.height,
+                (area.left + ((cx + bw / 2) * SIZE - left) / scale) / picture.width,
+                (area.top + ((cy + bh / 2) * SIZE - top) / scale) / picture.height,
             )
             found += Face(box, score)
         }
