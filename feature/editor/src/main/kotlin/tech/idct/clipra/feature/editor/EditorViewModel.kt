@@ -223,6 +223,8 @@ class EditorViewModel @Inject constructor(
                                 null
                         },
                         missingMedia = missing(session.project),
+                        // A shorter project (the last clip moved or deleted) ends earlier.
+                        playheadUs = state.playheadUs.coerceAtMost(session.project.durationUs),
                     )
                 }
             }
