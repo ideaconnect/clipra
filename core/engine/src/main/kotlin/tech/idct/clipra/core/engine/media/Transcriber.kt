@@ -145,15 +145,18 @@ class Transcriber @Inject constructor(
                     val chunk = nextChunk(reader, carry)
                     if (chunk.isEmpty()) break
                     val cut = if (chunk.size < CHUNK_SAMPLES) chunk.size else quietestCut(chunk)
-                    val samples = chunk.copyOf(cut)
                     carry = chunk.copyOfRange(cut, chunk.size)
+                    // Whisper hears the chunk from where its speech starts, so the first words
+                    // after an opening quiet aren't timed early.
+                    val lead = WordTiming.speechStart(chunk.copyOf(cut), Whisper.SAMPLE_RATE)
+                    val samples = chunk.copyOfRange(lead, cut)
                     val result = whisper.transcribe(
                         samples,
                         detected ?: AUTO,
                         threads(),
                         translate,
                     ) { percent ->
-                        val done = (start + cut * percent / 100f) / length
+                        val done = (start + lead + (cut - lead) * percent / 100f) / length
                         onProgress(DECODE_SHARE + (1 - DECODE_SHARE) * done)
                     }
                     if (detected == null) detected = result.language
@@ -161,7 +164,7 @@ class Transcriber @Inject constructor(
                         result.words,
                         WordTiming.pauses(samples, Whisper.SAMPLE_RATE),
                     )
-                    val chunkUs = start * 1_000_000 / Whisper.SAMPLE_RATE
+                    val chunkUs = (start + lead) * 1_000_000 / Whisper.SAMPLE_RATE
                     val spoken = if (translate) ENGLISH else detected.orEmpty()
                     refined.mapTo(words) {
                         Word(
