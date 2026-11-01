@@ -41,21 +41,26 @@ class CaptionGoldenTest {
     }
 
     private val cases = CaptionStyle.entries.associate { style ->
-        style.name.lowercase() to CaptionSpec(words, style)
+        style.name.lowercase() to (CaptionSpec(words, style) to LAST)
     } + mapOf(
-        "boldpop-top-large" to CaptionSpec(
-            words,
-            CaptionStyle.BoldPop,
-            CaptionPosition.Top,
-            scale = 1.6f,
-        ),
+        "boldpop-top-large" to (
+            CaptionSpec(
+                words,
+                CaptionStyle.BoldPop,
+                CaptionPosition.Top,
+                scale = 1.6f,
+            ) to LAST
+            ),
+        // "made" spoken: the words still to come are dimmed, over their full shadow.
+        "karaoke-midline" to (CaptionSpec(words, CaptionStyle.Karaoke) to 2),
     )
 
     @Test
     fun captionStylesMatchTheirGoldens() {
         val scene = GoldenScenes.sunset(WIDTH, HEIGHT)
-        val failures = cases.mapNotNull { (name, caption) ->
-            val rendered = Offscreen.render(context, timeline(scene, caption), 500_000)
+        val failures = cases.mapNotNull { (name, case) ->
+            val (caption, current) = case
+            val rendered = Offscreen.render(context, timeline(scene, caption, current), 500_000)
             if (record) {
                 save(File(context.filesDir, "golden-captions"), name, rendered)
                 return@mapNotNull null
@@ -142,7 +147,7 @@ class CaptionGoldenTest {
         assertEquals(1.0, Offscreen.match(alone, frame(split), 0), 0.0)
     }
 
-    private fun timeline(scene: Bitmap, caption: CaptionSpec) = RenderTimeline(
+    private fun timeline(scene: Bitmap, caption: CaptionSpec, current: Int = LAST) = RenderTimeline(
         width = WIDTH,
         height = HEIGHT,
         frameRate = 30,
@@ -157,7 +162,7 @@ class CaptionGoldenTest {
                         0,
                         1_000_000,
                         RenderSource.Drawn {
-                            CaptionRenderer.render(context, caption, 5, WIDTH, HEIGHT)
+                            CaptionRenderer.render(context, caption, current, WIDTH, HEIGHT)
                         },
                     ),
                 ),
@@ -184,5 +189,8 @@ class CaptionGoldenTest {
         const val TAG = "CaptionGolden"
         const val WIDTH = 270
         const val HEIGHT = 480
+
+        /** "Lisbon", as on the board. */
+        const val LAST = 5
     }
 }

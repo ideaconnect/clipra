@@ -19,8 +19,9 @@ import kotlin.math.roundToLong
 /**
  * Turns the transcripts of [sourceClipIds] into caption clips (#45), one undo step:
  * - words go from the source's media time to the timeline, leaving out what the source clip
- *   doesn't play, and fillers when the project's caption options say so;
- * - they are split into captions of about two lines;
+ *   doesn't play, Whisper's notes on sounds ("[MUZYKA]"), and fillers when the project's
+ *   caption options say so;
+ * - they are split into captions of about two lines, each on screen long enough to be read;
  * - the captions go on a new layer at the top (or the top layer when it already holds only
  *   captions and the options say not to add one), each linked to its source clip so it moves,
  *   cuts and goes with it.
@@ -47,13 +48,18 @@ class CreateCaptions(
         for (sourceId in sourceClipIds) {
             val source = edited.findClip(sourceId)?.second ?: continue
             val transcript = edited.transcripts.firstOrNull { it.clipId == sourceId } ?: continue
-            val words = transcript.words
+            val words = CaptionSegments.withoutSoundTags(transcript.words)
                 .filter { !(options.removeFillers && it.kind == WordKind.Filler) }
                 .mapNotNull { timelineWord(source, it) }
-            val clips = CaptionSegments.split(words, maxChars).map { segment ->
-                captionClip(segment, options.highlightWords)
+            val segments = CaptionSegments.readable(
+                CaptionSegments.split(words, maxChars),
+                maxChars,
+                source.endUs,
+            )
+            val ends = CaptionSegments.shownUntil(segments, source.endUs)
+            captions += sourceId to segments.mapIndexed { i, segment ->
+                captionClip(segment, ends[i], options.highlightWords)
             }
-            captions += sourceId to clips.fitted()
         }
         val all = captions.flatMap { it.second }.sortedBy { it.startUs }
         if (all.isEmpty()) return edited
@@ -87,14 +93,13 @@ class CreateCaptions(
         )
     }
 
-    private fun captionClip(segment: List<Word>, highlight: Boolean): Clip {
+    private fun captionClip(segment: List<Word>, endUs: Long, highlight: Boolean): Clip {
         val start = segment.first().startUs
-        val end = maxOf(segment.last().endUs, start + MIN_CAPTION_US)
         return Clip(
             id = newId(),
             type = ClipType.Caption,
             startUs = start,
-            durationUs = end - start,
+            durationUs = (endUs - start).coerceAtLeast(1),
             caption = CaptionSpec(
                 words = segment.map {
                     it.copy(startUs = it.startUs - start, endUs = it.endUs - start)
@@ -103,22 +108,6 @@ class CreateCaptions(
                 highlight = highlight,
             ),
         )
-    }
-
-    /** Captions of one source end where the next starts, and close short gaps between them. */
-    private fun List<Clip>.fitted(): List<Clip> = mapIndexed { i, clip ->
-        val next = getOrNull(i + 1) ?: return@mapIndexed clip
-        val gap = next.startUs - clip.endUs
-        when {
-            gap < 0 -> clip.copy(durationUs = next.startUs - clip.startUs)
-            gap < BRIDGE_US -> clip.copy(durationUs = next.startUs - clip.startUs)
-            else -> clip
-        }
-    }
-
-    private companion object {
-        const val MIN_CAPTION_US = 300_000L
-        const val BRIDGE_US = 400_000L
     }
 }
 
