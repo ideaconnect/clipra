@@ -21,7 +21,7 @@ import tech.idct.clipra.feature.audio.AudioInspectorPanel
 import tech.idct.clipra.feature.audio.AudioRoute
 import tech.idct.clipra.feature.audio.audioScreens
 import tech.idct.clipra.feature.captions.CaptionsEditRoute
-import tech.idct.clipra.feature.captions.CaptionsLookPanel
+import tech.idct.clipra.feature.captions.CaptionsInspectorPanel
 import tech.idct.clipra.feature.captions.CaptionsNavigationActions
 import tech.idct.clipra.feature.captions.CaptionsSetupRoute
 import tech.idct.clipra.feature.captions.CaptionsTranscriptPanel
@@ -179,10 +179,13 @@ fun ClipraNavHost(
             screen,
             CaptionsNavigationActions(
                 onBack = { navController.popBackStack() },
-                // Back from the captions returns to the editor, not to the setup.
+                // Back from the captions returns to the editor, not to the setup. Made again
+                // from the Captions screen (#181), they go back to it.
                 onTranscribed = { id ->
-                    navController.navigate(CaptionsEditRoute(id)) {
-                        popUpTo<CaptionsSetupRoute> { inclusive = true }
+                    if (!navController.popBackStack<CaptionsEditRoute>(inclusive = false)) {
+                        navController.navigate(CaptionsEditRoute(id)) {
+                            popUpTo<CaptionsSetupRoute> { inclusive = true }
+                        }
                     }
                 },
                 onEditByText = { id -> navController.navigate(TranscriptRoute(id)) },
@@ -284,7 +287,7 @@ private fun NavController.open(from: Board, to: Board) {
  * The feature panels the tablet editor hosts (#70): Text's library on its rail place and its
  * inspector for text clips; the Filters library on Effects, with the effect stack for the clip;
  * on the editor's own Audio place, the Audio inspector for a clip with sound; and on Captions the
- * transcript, with the captions' look beside it.
+ * transcript, with the captions' look and Transcribe beside it.
  */
 private val tabletPanels = TabletPanels(
     library = { tool ->
@@ -299,7 +302,7 @@ private val tabletPanels = TabletPanels(
     wide = { tool -> tool == EditorTool.Transcript },
     inspector = { place, clip ->
         when {
-            place == EditorTool.Captions -> captionsLook
+            place == EditorTool.Captions -> captionsInspector
 
             clip == null -> null
 
@@ -345,7 +348,7 @@ private val captionsLibrary: TabletPanel = { scope, modifier ->
     )
 }
 
-private val captionsLook: TabletPanel = { _, modifier -> CaptionsLookPanel(modifier) }
+private val captionsInspector: TabletPanel = { _, modifier -> CaptionsInspectorPanel(modifier) }
 
 private val editByText: TabletPanel = { scope, modifier ->
     EditByTextPanel(

@@ -20,13 +20,16 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import tech.idct.clipra.core.designsystem.ClipraTheme
+import tech.idct.clipra.core.model.CaptionSpec
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
 import tech.idct.clipra.core.model.Layer
+import tech.idct.clipra.core.model.LinkGroup
 import tech.idct.clipra.core.model.MediaAsset
 import tech.idct.clipra.core.model.MediaKind
 import tech.idct.clipra.core.model.MediaRef
 import tech.idct.clipra.core.model.Project
+import tech.idct.clipra.core.model.Word
 import tech.idct.clipra.core.models.AiModel
 import tech.idct.clipra.core.models.ModelCatalog
 import tech.idct.clipra.core.models.ModelState
@@ -127,6 +130,31 @@ class CaptionsSetupScreenTest {
         )
         compose.onNodeWithText("Transcribing… 40%").assertExists()
         compose.onNodeWithTag("captions-generate").assertIsNotEnabled()
+    }
+
+    /** With captions made before from the clips listened to, Generate says it replaces them. */
+    @Test
+    fun generatingAgainReplacesTheCaptions() {
+        Locale.setDefault(Locale.US)
+        val caption = Clip(
+            id = "cap",
+            type = ClipType.Caption,
+            startUs = 0,
+            durationUs = 2_000_000,
+            caption = CaptionSpec(listOf(Word("Hello", 0, 500_000))),
+        )
+        val captioned = project.copy(
+            layers = project.layers + Layer("L4", clips = listOf(caption)),
+            links = listOf(LinkGroup("g", listOf("a", "cap"))),
+        )
+        compose.setContent {
+            ClipraTheme { CaptionsSetupScreen(state.copy(project = captioned), actions()) }
+        }
+        compose.onNodeWithText("Replaces the caption made from these clips, edits included")
+            .assertExists()
+        assertEquals(1, state.copy(project = captioned).replacing)
+        // Listening to the voiceover leaves that caption be.
+        assertEquals(0, state.copy(project = captioned, listenTo = ListenTo.Voiceover).replacing)
     }
 
     /** The design state in Polish, to see that every label fits (#76). */

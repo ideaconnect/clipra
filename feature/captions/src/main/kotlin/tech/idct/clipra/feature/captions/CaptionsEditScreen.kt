@@ -100,6 +100,8 @@ class CaptionsEditActions(
     val onPickSource: (String) -> Unit = {},
     val onTranslateTo: (String) -> Unit = {},
     val onCloseTranslate: () -> Unit = {},
+    /** Opens Auto captions, to make the captions again (#181). */
+    val onAutoCaptions: () -> Unit = {},
 )
 
 /**
@@ -145,7 +147,11 @@ fun CaptionsEditScreen(
         ) {
             ScreenHeader(
                 title = stringResource(R.string.captions_title_captions_edit),
-                subtitle = subtitle(state),
+                // The model and language they were made with; tap to make them again (#181).
+                subtitle = subtitle(state)
+                    ?: stringResource(R.string.captions_title_captions_setup),
+                onSubtitle = actions.onAutoCaptions,
+                onSubtitleLabel = stringResource(R.string.captions_regenerate),
                 navigation = HeaderNavigation.Back,
                 onNavigate = actions.onDone,
                 actions = {

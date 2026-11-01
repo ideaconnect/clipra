@@ -6,6 +6,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -36,8 +37,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import tech.idct.clipra.core.designsystem.ClipraTheme
@@ -136,25 +139,7 @@ fun CaptionsSetupScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     LanguageField(state.language, actions.onLanguage, Modifier.weight(1f))
-                    Row(
-                        modifier = Modifier
-                            .heightIn(min = 48.dp)
-                            .toggleable(
-                                value = state.translate,
-                                role = Role.Switch,
-                                onValueChange = actions.onTranslate,
-                            )
-                            .testTag("captions-translate"),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        Text(
-                            text = stringResource(R.string.captions_translate),
-                            style = ClipraTheme.typography.chip,
-                            color = colors.textPrimary,
-                        )
-                        ClipraSwitch(checked = state.translate, onCheckedChange = null)
-                    }
+                    TranslateToggle(state.translate, actions.onTranslate)
                 }
             }
             Section(stringResource(R.string.captions_model)) {
@@ -202,8 +187,38 @@ fun CaptionsSetupScreen(
     }
 }
 
+/**
+ * Translate to English (Whisper's translate task), as a switch: its label over two lines beside
+ * the language, or on one line before the switch when [wide].
+ */
 @Composable
-private fun Section(title: String, content: @Composable () -> Unit) {
+internal fun TranslateToggle(
+    checked: Boolean,
+    onChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+    wide: Boolean = false,
+) {
+    val label = stringResource(R.string.captions_translate)
+    Row(
+        modifier = modifier
+            .heightIn(min = 48.dp)
+            .toggleable(value = checked, role = Role.Switch, onValueChange = onChange)
+            .testTag("captions-translate"),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            text = if (wide) label.replace('\n', ' ') else label,
+            style = ClipraTheme.typography.chip,
+            color = ClipraTheme.colors.textPrimary,
+            modifier = if (wide) Modifier.weight(1f) else Modifier,
+        )
+        ClipraSwitch(checked = checked, onCheckedChange = null)
+    }
+}
+
+@Composable
+internal fun Section(title: String, content: @Composable () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(
             text = title,
@@ -216,7 +231,7 @@ private fun Section(title: String, content: @Composable () -> Unit) {
 
 /** The spoken language: Auto-detect or one of Whisper's languages, by their own names. */
 @Composable
-private fun LanguageField(language: String, onPick: (String) -> Unit, modifier: Modifier) {
+internal fun LanguageField(language: String, onPick: (String) -> Unit, modifier: Modifier) {
     val colors = ClipraTheme.colors
     var open by remember { mutableStateOf(false) }
     val shape = ClipraTheme.shapes.button
@@ -275,13 +290,17 @@ private fun languageName(code: String): String = if (code == Transcriber.AUTO) {
     Locale.forLanguageTag(code).getDisplayLanguage(locale).replaceFirstChar { it.titlecase(locale) }
 }
 
-/** A Whisper model: radio, name, real size, what it's good for and its download state. */
+/**
+ * A Whisper model: radio, name, real size, what it's good for and its download state; [compact]
+ * leaves out what it's good for, as the tablet's Transcribe tab does.
+ */
 @Composable
-private fun ModelOption(
+internal fun ModelOption(
     model: ModelState,
     selected: Boolean,
     onSelect: () -> Unit,
     onDownload: () -> Unit,
+    compact: Boolean = false,
 ) {
     val colors = ClipraTheme.colors
     val type = ClipraTheme.typography
@@ -318,8 +337,9 @@ private fun ModelOption(
             }
         }
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
+            // The size goes under the name when both don't fit, as in Polish on a tablet.
+            FlowRow(
+                itemVerticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Text(text = model.model.name, style = type.bodyStrong, color = colors.textPrimary)
@@ -328,7 +348,7 @@ private fun ModelOption(
                     style = type.meta,
                     color = colors.textSecondary,
                 )
-                if (model.model.isDefault) {
+                if (model.model.isDefault && !compact) {
                     Text(
                         text = stringResource(R.string.captions_recommended),
                         style = type.clipLabel,
@@ -340,13 +360,17 @@ private fun ModelOption(
                     )
                 }
             }
-            Text(
-                text = stringResource(MODEL_NOTES[model.model.id] ?: R.string.captions_model_base),
-                style = type.caption,
-                color = colors.textSecondary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+            if (!compact) {
+                Text(
+                    text = stringResource(
+                        MODEL_NOTES[model.model.id] ?: R.string.captions_model_base,
+                    ),
+                    style = type.caption,
+                    color = colors.textSecondary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
         Availability(status, onDownload)
     }
@@ -415,30 +439,7 @@ private fun Availability(status: ModelStatus, onDownload: () -> Unit) {
 @Composable
 private fun GenerateBar(state: CaptionsSetupUiState, actions: CaptionsSetupActions) {
     val colors = ClipraTheme.colors
-    val context = LocalContext.current
-    val transcription = state.transcription
-    val status = state.modelStatus
-    val running = transcription is TranscriptionState.Running || state.waitingForModel
-    val text = when {
-        transcription is TranscriptionState.Running -> stringResource(
-            R.string.captions_transcribing,
-            (transcription.progress * 100).toInt(),
-        )
-
-        state.waitingForModel && status is ModelStatus.Downloading -> stringResource(
-            R.string.captions_downloading_model,
-            (status.bytes * 100 / status.total.coerceAtLeast(1)).toInt(),
-        )
-
-        state.waitingForModel -> stringResource(R.string.captions_waiting_model)
-
-        status !is ModelStatus.Installed -> stringResource(
-            R.string.captions_download_generate,
-            Formatter.formatShortFileSize(context, state.model.downloadBytes),
-        )
-
-        else -> stringResource(R.string.captions_generate)
-    }
+    val running = state.running
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -447,22 +448,9 @@ private fun GenerateBar(state: CaptionsSetupUiState, actions: CaptionsSetupActio
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        val note = when {
-            state.importFailed -> R.string.captions_unreadable_srt
-            state.sources.isEmpty() && state.loaded -> R.string.captions_no_sources
-            transcription is TranscriptionState.Failed && !running -> R.string.captions_failed
-            else -> null
-        }
-        if (note != null) {
-            val failed = transcription is TranscriptionState.Failed || state.importFailed
-            Text(
-                text = stringResource(note),
-                style = ClipraTheme.typography.caption,
-                color = if (failed) colors.danger else colors.textSecondary,
-            )
-        }
+        GenerateNote(state)
         PrimaryButton(
-            text = text,
+            text = generateText(state, stringResource(R.string.captions_generate)),
             onClick = actions.onGenerate,
             leadingIcon = ClipraIcons.Captions,
             enabled = !running && state.sources.isNotEmpty(),
@@ -486,6 +474,65 @@ private fun GenerateBar(state: CaptionsSetupUiState, actions: CaptionsSetupActio
             )
         }
     }
+}
+
+/** Whether Whisper or its download is under way. */
+internal val CaptionsSetupUiState.running: Boolean
+    get() = transcription is TranscriptionState.Running || waitingForModel
+
+/** What Generate says: what it is doing, or [idle] when nothing is under way. */
+@Composable
+internal fun generateText(state: CaptionsSetupUiState, idle: String): String {
+    val transcription = state.transcription
+    val status = state.modelStatus
+    return when {
+        transcription is TranscriptionState.Running -> stringResource(
+            R.string.captions_transcribing,
+            (transcription.progress * 100).toInt(),
+        )
+
+        state.waitingForModel && status is ModelStatus.Downloading -> stringResource(
+            R.string.captions_downloading_model,
+            (status.bytes * 100 / status.total.coerceAtLeast(1)).toInt(),
+        )
+
+        state.waitingForModel -> stringResource(R.string.captions_waiting_model)
+
+        status !is ModelStatus.Installed -> stringResource(
+            R.string.captions_download_generate,
+            Formatter.formatShortFileSize(LocalContext.current, state.model.downloadBytes),
+        )
+
+        else -> idle
+    }
+}
+
+/**
+ * A line over Generate: what went wrong, that there is nothing to listen to, or how many
+ * captions generating replaces (#181).
+ */
+@Composable
+internal fun GenerateNote(state: CaptionsSetupUiState) {
+    val colors = ClipraTheme.colors
+    val failed = state.transcription is TranscriptionState.Failed && !state.running
+    val text = when {
+        state.importFailed -> stringResource(R.string.captions_unreadable_srt)
+
+        state.sources.isEmpty() && state.loaded -> stringResource(R.string.captions_no_sources)
+
+        failed -> stringResource(R.string.captions_failed)
+
+        state.replacing > 0 && !state.running ->
+            pluralStringResource(R.plurals.captions_replaces, state.replacing, state.replacing)
+
+        else -> null
+    } ?: return
+    Text(
+        text = text,
+        style = ClipraTheme.typography.caption,
+        color = if (failed || state.importFailed) colors.danger else colors.textSecondary,
+        textAlign = TextAlign.Center,
+    )
 }
 
 private val LISTEN_TO = listOf(

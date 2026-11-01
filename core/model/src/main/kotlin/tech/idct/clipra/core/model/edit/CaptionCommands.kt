@@ -26,7 +26,9 @@ import kotlin.math.roundToLong
  *   captions and the options say not to add one), each linked to its source clip so it moves,
  *   cuts and goes with it.
  *
- * Captions made earlier from the same sources are replaced.
+ * Captions made earlier from the same sources are replaced, with their translations (#181):
+ * the new ones take the captions' look and the layer the old ones were on, layers the old ones
+ * leave empty go, and the captions as heard are shown.
  */
 class CreateCaptions(
     private val sourceClipIds: List<String>,
@@ -43,6 +45,13 @@ class CreateCaptions(
                     ClipType.Caption
             }
         }.toSet()
+        // Every caption shares one look (SetCaptionLook), so new ones take it.
+        val look = project.originalCaptions().firstOrNull()?.caption
+        val oldLayers = project.layers.filter { layer -> layer.clips.any { it.id in old } }
+            .map { it.id }.toSet()
+        val homeId = project.layers.firstOrNull { layer ->
+            layer.clips.any { it.id in old && it.caption?.language.isNullOrEmpty() }
+        }?.id
         var edited = if (old.isEmpty()) project else project.removeClips(old)
         val captions = mutableListOf<Pair<String, List<Clip>>>()
         for (sourceId in sourceClipIds) {
@@ -58,25 +67,35 @@ class CreateCaptions(
             )
             val ends = CaptionSegments.shownUntil(segments, source.endUs)
             captions += sourceId to segments.mapIndexed { i, segment ->
-                captionClip(segment, ends[i], options.highlightWords)
+                captionClip(segment, ends[i], options.highlightWords, look)
             }
         }
         val all = captions.flatMap { it.second }.sortedBy { it.startUs }
-        if (all.isEmpty()) return edited
-        val top = edited.layers.last()
-        val reuse = !options.newLayer && top.clips.all { it.type == ClipType.Caption } &&
-            !top.locked && all.none { c -> top.clips.any { it.overlaps(c) } }
-        edited = if (reuse) {
-            edited.updateLayer(top.id) { layer ->
-                layer.copy(clips = (layer.clips + all).sortedBy { it.startUs })
+        if (all.isNotEmpty()) {
+            fun free(layer: Layer) = !layer.locked &&
+                all.none { c -> layer.clips.any { it.overlaps(c) } }
+            // The old captions' layer takes the new ones, whatever else is on it.
+            val home = edited.layers.find { it.id == homeId }?.takeIf(::free)
+            val top = edited.layers.last().takeIf { layer ->
+                !options.newLayer && free(layer) && layer.clips.all { it.type == ClipType.Caption }
             }
-        } else {
-            edited.copy(layers = edited.layers + Layer(newId(), clips = all))
+            val target = home ?: top
+            edited = if (target != null) {
+                edited.updateLayer(target.id) { layer ->
+                    layer.copy(clips = (layer.clips + all).sortedBy { it.startUs })
+                }
+            } else {
+                edited.copy(layers = edited.layers + Layer(newId(), clips = all))
+            }
         }
         val links = captions.filter { it.second.isNotEmpty() }.map { (sourceId, clips) ->
             LinkGroup(newId(), listOf(sourceId) + clips.map { it.id })
         }
-        return edited.copy(links = edited.links + links)
+        edited = edited.copy(
+            layers = edited.layers.filterNot { it.id in oldLayers && it.clips.isEmpty() },
+            links = edited.links + links,
+        )
+        return if (old.isEmpty()) edited else ShowCaptionLanguage("").apply(edited)
     }
 
     /** [word] on the timeline, or null when [source] doesn't play it. */
@@ -93,19 +112,24 @@ class CreateCaptions(
         )
     }
 
-    private fun captionClip(segment: List<Word>, endUs: Long, highlight: Boolean): Clip {
+    private fun captionClip(
+        segment: List<Word>,
+        endUs: Long,
+        highlight: Boolean,
+        look: CaptionSpec?,
+    ): Clip {
         val start = segment.first().startUs
         return Clip(
             id = newId(),
             type = ClipType.Caption,
             startUs = start,
             durationUs = (endUs - start).coerceAtLeast(1),
-            caption = CaptionSpec(
+            caption = (look ?: CaptionSpec(emptyList(), style = style)).copy(
                 words = segment.map {
                     it.copy(startUs = it.startUs - start, endUs = it.endUs - start)
                 },
-                style = style,
                 highlight = highlight,
+                language = "",
             ),
         )
     }
