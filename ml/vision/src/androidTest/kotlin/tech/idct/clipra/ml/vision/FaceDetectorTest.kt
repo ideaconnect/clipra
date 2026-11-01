@@ -2,7 +2,10 @@ package tech.idct.clipra.ml.vision
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Rect
 import android.util.Log
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -44,6 +47,30 @@ class FaceDetectorTest {
             val wall = Bitmap.createBitmap(300, 400, Bitmap.Config.ARGB_8888)
             wall.eraseColor(Color.rgb(120, 60, 50))
             assertTrue(detector.detect(wall).isEmpty())
+        }
+    }
+
+    /**
+     * A face about 70 px wide in a 1280 × 720 frame (#182): too small in all of it, found in a
+     * region around it, and boxed in fractions of the whole frame.
+     */
+    @Test
+    fun findsASmallFaceInARegion() {
+        FaceDetector(context).use { detector ->
+            val portrait = portrait()
+            val face = detector.detect(portrait).single().box
+            val frame = Bitmap.createBitmap(1280, 720, Bitmap.Config.ARGB_8888)
+            frame.eraseColor(Color.rgb(90, 100, 110))
+            val at = Rect(800, 300, 800 + 287, 300 + 358)
+            Canvas(frame).drawBitmap(portrait, null, at, Paint(Paint.FILTER_BITMAP_FLAG))
+            assertTrue(detector.detect(frame).isEmpty())
+
+            val found = detector.detect(frame, region = Rect(760, 200, 1120, 560))
+            Log.i(TAG, "small $found")
+            val box = found.single().box
+            assertEquals((at.left + face.centerX() * at.width()) / 1280, box.centerX(), 0.01f)
+            assertEquals((at.top + face.centerY() * at.height()) / 720, box.centerY(), 0.015f)
+            assertEquals(face.width() * at.width() / 1280, box.width(), 0.01f)
         }
     }
 

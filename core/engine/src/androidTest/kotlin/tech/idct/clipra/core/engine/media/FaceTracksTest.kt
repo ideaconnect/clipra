@@ -15,6 +15,7 @@ import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipGeometry
 import tech.idct.clipra.core.model.ClipType
 import tech.idct.clipra.core.model.Easing
+import tech.idct.clipra.core.model.FaceBox
 import tech.idct.clipra.core.model.FaceTracking
 import tech.idct.clipra.core.model.Keyframe
 import tech.idct.clipra.core.model.Keyframed
@@ -102,6 +103,56 @@ class FaceTracksTest {
         // The keyframes follow the path five times a second, over the head.
         val keyframes = FaceTracking.keyframes(path, tech.idct.clipra.core.model.Mask())
         assertTrue("keyframes ${keyframes.size}", keyframes.size in 14..17)
+    }
+
+    /**
+     * A face about 70 px of the 1080 px wide frame, too small to find in all of it, is followed
+     * from the mask put on it (#182): the mask's tiles find it.
+     */
+    @Test
+    fun aSmallFaceIsFollowedFromTheMaskOnIt() = runBlocking {
+        val walking = Keyframed(
+            Transform(x = -0.2f, y = -0.25f, scale = 0.3f),
+            listOf(
+                Keyframe(0, Transform(x = -0.2f, y = -0.25f, scale = 0.3f), Easing.Linear),
+                Keyframe(3_000_000, Transform(x = 0.15f, y = -0.2f, scale = 0.3f), Easing.Linear),
+            ),
+        )
+        val photoClip = Clip(
+            "p",
+            ClipType.Photo,
+            0,
+            3_000_000,
+            MediaRef("portrait", 0, 0),
+            transform = walking,
+        )
+        val asset = MediaInspector.inspect(context, Uri.fromFile(clip(photoClip)))
+        val clip = Clip(
+            "v",
+            ClipType.Video,
+            0,
+            asset.durationUs,
+            MediaRef(asset.id, 0, asset.durationUs),
+        )
+        val frame = Size(1080, 1920)
+        val source = Size(820, 1024)
+        fun face(timeUs: Long) =
+            ClipGeometry.toFrame(photoClip.transformAt(timeUs), frame, source, faceU, faceV)
+        val start = face(0)
+        val mask = FaceBox(start.x / frame.width, start.y / frame.height, 0.1f, 0.07f)
+        val tracks = FaceTracks(context, MediaCache(File(root, "cache-small")))
+        val started = System.nanoTime()
+        val samples = tracks.find(asset, clip, 0, mask)!!
+        Log.i(TAG, "small: ${samples.size} samples in ${(System.nanoTime() - started) / 1e6} ms")
+        val seen = samples.count { it.box != null }
+        assertTrue("face seen in $seen of ${samples.size}", seen >= samples.size * 0.8)
+        for ((timeUs, box) in FaceTracking.track(samples)!!) {
+            if (timeUs >= 3_000_000) continue
+            val expected = face(timeUs)
+            val dx = abs(box.x - expected.x / frame.width)
+            val dy = abs(box.y - expected.y / frame.height)
+            assertTrue("at $timeUs: off by $dx, $dy", dx < 0.02f && dy < 0.02f)
+        }
     }
 
     /** [photo] of the portrait exported at 1080 × 1920. */

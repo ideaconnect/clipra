@@ -2,6 +2,7 @@ package tech.idct.clipra.core.engine.media
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.Rect
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -21,9 +22,10 @@ import kotlin.math.abs
 
 /**
  * Follow face (#52) on the device: the face detector looks at a clip ten times a second (in its
- * media, from the proxy when there is one) and follows the face nearest the one before.
- * `FaceTracking` then fills the gaps and smooths the path. On a steadied clip (#54) the faces are
- * moved where the steadied picture shows them. Nothing leaves the device.
+ * media, from the proxy when there is one) and follows the face nearest the one before; a small
+ * face is looked for in tiles of the frame too (#182). `FaceTracking` then fills the gaps and
+ * smooths the path. On a steadied clip (#54) the faces are moved where the steadied picture
+ * shows them. Nothing leaves the device.
  */
 @Singleton
 class FaceTracks @Inject constructor(
@@ -48,7 +50,8 @@ class FaceTracks @Inject constructor(
             val photo = Thumbnails.decodePhoto(context, Uri.parse(asset.uri), PHOTO_SIDE)
                 ?: return null
             onProgress(1f)
-            val box = FaceTracking.follow(listOf(boxes(detector.detect(photo))), 0, near)[0]
+            val seen = boxes(detect(detector, photo, photo, near))
+            val box = FaceTracking.follow(listOf(seen), 0, near)[0]
             return listOf(FaceSample(0, box))
         }
         val retriever = MediaMetadataRetriever()
@@ -88,7 +91,7 @@ class FaceTracks @Inject constructor(
                     if (index + i in needed) {
                         val picture = upright(frame, asset)
                         val small = shrink(picture)
-                        faces[index + i] = detector.detect(small)
+                        faces[index + i] = detect(detector, picture, small, near)
                         if (small !== picture) small.recycle()
                         if (picture !== frame) picture.recycle()
                     }
@@ -119,6 +122,28 @@ class FaceTracks @Inject constructor(
         } finally {
             retriever.release()
         }
+    }
+
+    /**
+     * The faces in [picture]: in all of it, through [small] (the same picture, smaller); and
+     * when the face under the mask ([near]) is too small to find that way, in tiles of [picture]
+     * at its full size too (#182). The tiles find other faces and things like faces as well, but
+     * Follow face takes the one nearest the mask.
+     */
+    private fun detect(
+        detector: FaceDetector,
+        picture: Bitmap,
+        small: Bitmap,
+        near: FaceBox?,
+    ): List<Face> {
+        val whole = detector.detect(small)
+        val tiles = near?.let { FaceTracking.tiles(picture.width, picture.height, it) }.orEmpty()
+        if (tiles.isEmpty()) return whole
+        val tiled = tiles.flatMap { tile ->
+            val region = Rect(tile.x, tile.y, tile.x + tile.side, tile.y + tile.side)
+            detector.detect(picture, region = region)
+        }
+        return FaceDetector.merge(whole + tiled)
     }
 
     /** [picture] no larger than [FRAME_SIDE]; the detector looks at 128 × 128 anyway. */
