@@ -407,6 +407,7 @@ private fun EditorRoute(
             }
         },
         onExtract = viewModel::extractAudio,
+        onLinked = viewModel::toggleLinked,
         onTool = { tool ->
             when (tool) {
                 EditorTool.Layer -> openBoard(LayerTab.Blend, false)

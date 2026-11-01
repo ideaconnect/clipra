@@ -76,6 +76,7 @@ import tech.idct.clipra.core.model.edit.ExtractAudio
 import tech.idct.clipra.core.model.edit.FreezeFrame
 import tech.idct.clipra.core.model.edit.KeyframeTarget
 import tech.idct.clipra.core.model.edit.LayerTarget
+import tech.idct.clipra.core.model.edit.LinkClips
 import tech.idct.clipra.core.model.edit.MoveClip
 import tech.idct.clipra.core.model.edit.MoveKeyframe
 import tech.idct.clipra.core.model.edit.MoveLayer
@@ -96,6 +97,8 @@ import tech.idct.clipra.core.model.edit.SetTransform
 import tech.idct.clipra.core.model.edit.SplitClip
 import tech.idct.clipra.core.model.edit.ToggleKeyframe
 import tech.idct.clipra.core.model.edit.TrimClip
+import tech.idct.clipra.core.model.edit.UnlinkClip
+import tech.idct.clipra.core.model.edit.linkedPartners
 import tech.idct.clipra.core.model.edit.randomId
 import tech.idct.clipra.core.model.mediaTimeAt
 import tech.idct.clipra.core.model.timelineAt
@@ -122,6 +125,8 @@ data class EditorUiState(
     /** The tablet toolbar's Snap and Ripple (#69): moves snap to cuts; deleting closes the gap. */
     val snap: Boolean = true,
     val ripple: Boolean = true,
+    /** Linked (#184) was tapped on this clip, which has no links: the next clip tapped joins it. */
+    val linkingFrom: String? = null,
 )
 
 /**
@@ -147,6 +152,12 @@ enum class EditorMessage {
     NeedsSound,
     NeedsMicrophone,
     MicrophoneUnavailable,
+
+    /** Linked (#184) on a clip with no links: the clip tapped next is linked with it. */
+    PickClipToLink,
+
+    /** Linked on a linked clip: it moves and gets cut on its own now. */
+    Unlinked,
 
     /** Edits couldn't be saved, as when the phone's storage is full; they are tried again. */
     NotSaved,
@@ -231,7 +242,38 @@ class EditorViewModel @Inject constructor(
         }
     }
 
-    fun select(clipId: String?) = mutableState.update { it.copy(selectedClipId = clipId) }
+    fun select(clipId: String?) {
+        val from = state.value.linkingFrom
+        if (from != null) {
+            // Linked (#184): the clip tapped after it is linked with it; anything else lets go.
+            mutableState.update { it.copy(linkingFrom = null) }
+            if (clipId != null && clipId != from) {
+                edit(LinkClips(from, clipId))
+                mutableState.update { it.copy(selectedClipId = from) }
+                return
+            }
+        }
+        mutableState.update { it.copy(selectedClipId = clipId) }
+    }
+
+    /**
+     * Linked (#184): the selected clip, when linked, goes its own way; when not, the clip tapped
+     * next is linked with it.
+     */
+    fun toggleLinked() {
+        val clipId = state.value.selectedClipId ?: return
+        val project = state.value.project ?: return
+        if (project.linkedPartners(clipId).isNotEmpty()) {
+            edit(UnlinkClip(clipId))
+            if (state.value.message == null) {
+                mutableState.update { it.copy(message = EditorMessage.Unlinked) }
+            }
+        } else {
+            mutableState.update {
+                it.copy(linkingFrom = clipId, message = EditorMessage.PickClipToLink)
+            }
+        }
+    }
 
     fun seek(timeUs: Long) {
         val end = state.value.project?.durationUs ?: 0

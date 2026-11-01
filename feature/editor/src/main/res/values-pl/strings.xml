@@ -276,4 +276,8 @@
     <string name="editor_tablet_sound_of">Dźwięk %1$s</string>
     <string name="editor_tablet_sound_recorded">nagrane</string>
     <string name="editor_tablet_ai_clean">AI czysty</string>
+    <!-- The Linked tool (#184) -->
+    <string name="editor_tool_linked">Połączone</string>
+    <string name="editor_message_pick_link">Stuknij klip, z którym go połączyć</string>
+    <string name="editor_message_unlinked">Rozłączono: klip przesuwa się teraz osobno</string>
 </resources>

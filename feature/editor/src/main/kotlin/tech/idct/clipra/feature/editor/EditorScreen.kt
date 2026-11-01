@@ -102,6 +102,8 @@ class EditorCallbacks(
     /** Plays the selected clip backwards, or forwards again (#22). */
     val onReverse: () -> Unit = {},
     val onExtract: () -> Unit,
+    /** Linked (#184): unlinks the selected clip, or links it with the clip tapped next. */
+    val onLinked: () -> Unit = {},
     val onLayers: () -> Unit,
     val onCrop: () -> Unit,
     val onDismissMessage: () -> Unit,
@@ -402,10 +404,7 @@ private fun mainTools(callbacks: EditorCallbacks, onAdd: () -> Unit): List<Tool>
     )
 }
 
-/**
- * With a clip selected. Linked joins when its issue lands (M7), so every tool shown does
- * something.
- */
+/** With a clip selected, in the Editor board's order. */
 @Composable
 private fun clipTools(callbacks: EditorCallbacks): List<Tool> {
     val open = callbacks.onTool
@@ -422,6 +421,7 @@ private fun clipTools(callbacks: EditorCallbacks): List<Tool> {
         tool(R.string.editor_tool_color, ClipraIcons.Color) { open(EditorTool.Color) },
         tool(R.string.editor_tool_cutout, ClipraIcons.Cutout) { open(EditorTool.Cutout) },
         tool(R.string.editor_tool_stabilize, ClipraIcons.Stabilize) { open(EditorTool.Stabilize) },
+        tool(R.string.editor_tool_linked, ClipraIcons.Link, callbacks.onLinked),
         tool(R.string.editor_tool_duplicate, ClipraIcons.Duplicate, callbacks.onDuplicate),
         tool(R.string.editor_tool_delete, ClipraIcons.Delete, callbacks.onDelete),
         tool(R.string.editor_tool_crop, ClipraIcons.Crop, callbacks.onCrop),
@@ -442,6 +442,8 @@ internal fun EditorMessage.textRes(): Int = when (this) {
     EditorMessage.NeedsCut -> R.string.editor_message_needs_cut
     EditorMessage.NeedsSound -> R.string.editor_message_needs_sound
     EditorMessage.NeedsMicrophone -> R.string.editor_message_needs_microphone
+    EditorMessage.PickClipToLink -> R.string.editor_message_pick_link
+    EditorMessage.Unlinked -> R.string.editor_message_unlinked
     EditorMessage.MicrophoneUnavailable -> R.string.editor_message_mic_unavailable
     EditorMessage.NotSaved -> R.string.editor_message_not_saved
 }
