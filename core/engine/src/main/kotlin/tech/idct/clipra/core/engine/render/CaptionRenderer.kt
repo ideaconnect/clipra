@@ -155,7 +155,9 @@ object CaptionRenderer {
         paint.color = color.toInt()
         paint.alpha = (alpha * 255).toInt()
         if (shadow) {
-            val shadowColor = ((look.shadowAlpha * alpha * 255).toInt() shl 24)
+            // At full strength under dimmed words too: half-white text over a busy picture
+            // keeps its dark edge and stays readable.
+            val shadowColor = ((look.shadowAlpha * 255).toInt() shl 24)
             paint.setShadowLayer(look.shadowBlur * size, 0f, look.shadowY * size, shadowColor)
         } else {
             paint.clearShadowLayer()

@@ -112,11 +112,120 @@ object CaptionStyles {
 /**
  * Splits timed words into captions (#45): a new caption after a sentence ends, after a pause of
  * [PAUSE_US] or more, when the text would pass [maxChars] (about two lines), or after
- * [MAX_DURATION_US].
+ * [MAX_DURATION_US]. Then makes every caption readable ([readable], [shownUntil]).
  */
 object CaptionSegments {
     const val PAUSE_US = 600_000L
     const val MAX_DURATION_US = 5_000_000L
+
+    /** How long a caption stays after its last word, so its end can be read. */
+    const val HOLD_US = 500_000L
+
+    /** The least a caption stays on screen; broadcast specs ask for about a second. */
+    const val MIN_SHOWN_US = 1_000_000L
+
+    /** A gap shorter than this between two captions only flickers, so it is closed. */
+    const val MIN_GAP_US = 800_000L
+
+    /** Below this a caption flashes past, so it may grow longer to be joined. */
+    const val FLASH_US = 800_000L
+
+    /**
+     * The fastest a caption is expected to be read, in characters a second. Faster than
+     * subtitles, since the viewer hears the same words and the highlight keeps their place.
+     */
+    const val READING_CPS = 25
+
+    /**
+     * Whisper's notes on sounds that aren't speech, such as "[MUZYKA]", "(laughs)" or "♪":
+     * they are not words anyone says, so captions leave them out.
+     */
+    fun withoutSoundTags(words: List<Word>): List<Word> {
+        val kept = ArrayList<Word>(words.size)
+        var inside: Char? = null
+        for (word in words) {
+            val text = word.text.trim()
+            val close = inside
+            if (close != null) {
+                if (text.endsWith(close)) inside = null
+                continue
+            }
+            if (text.isNotEmpty() && text.all { it in MUSIC || it.isWhitespace() }) continue
+            val open = text.firstOrNull()?.let { TAGS[it] }
+            if (open != null) {
+                if (!text.endsWith(open)) inside = open
+                continue
+            }
+            kept += word
+        }
+        return kept
+    }
+
+    /**
+     * Joins captions too short to read into a neighbour, as Selfroller does. A caption can only
+     * stay from its first word until the next one starts; when that is less than it needs
+     * ([MIN_SHOWN_US], or its text at [READING_CPS]), it shares a neighbour's time instead. The
+     * worst first; between two neighbours, the one on this side of a pause, then the one before,
+     * since a caption that short is usually the end of a sentence. Joined captions stay within
+     * one and a half times [maxChars] (twice, to save one that would flash past), so they still
+     * fit about two lines. Every word keeps its time, so the highlight stays in sync.
+     */
+    fun readable(segments: List<List<Word>>, maxChars: Int, endUs: Long): List<List<Word>> {
+        val lines = segments.filter { it.isNotEmpty() }.toMutableList()
+        while (true) {
+            val ends = shownUntil(lines, endUs)
+            val starved = lines.indices
+                .map { i -> i to needed(lines[i]) - (ends[i] - lines[i].first().startUs) }
+                .filter { it.second > 0 }
+                .sortedByDescending { it.second }
+            val join = starved.firstNotNullOfOrNull { (i, _) ->
+                val cap = if (ends[i] - lines[i].first().startUs < FLASH_US) {
+                    maxChars * 2
+                } else {
+                    maxChars * 3 / 2
+                }
+                partner(lines, i, cap)
+            } ?: return lines
+            lines[join] = lines[join] + lines.removeAt(join + 1)
+        }
+    }
+
+    /**
+     * When each caption leaves the screen: [HOLD_US] after its last word and at least
+     * [MIN_SHOWN_US] after it starts, but never once the next one has started, and never after
+     * [endUs] (the end of the clip that speaks it). A gap shorter than [MIN_GAP_US] to the next
+     * one is closed.
+     */
+    fun shownUntil(segments: List<List<Word>>, endUs: Long): List<Long> =
+        segments.mapIndexed { i, words ->
+            val start = words.first().startUs
+            var end = maxOf(words.last().endUs + HOLD_US, start + MIN_SHOWN_US)
+            val next = segments.getOrNull(i + 1)?.first()?.startUs
+            if (next != null) {
+                if (next - end < MIN_GAP_US) end = next
+                end = minOf(end, next)
+            }
+            minOf(end, maxOf(endUs, words.last().endUs))
+        }
+
+    /** The first index of the pair [i] joins, or null when no neighbour has room. */
+    private fun partner(lines: List<List<Word>>, i: Int, cap: Int): Int? {
+        fun fits(a: Int) = chars(lines[a]) + 1 + chars(lines[a + 1]) <= cap
+        fun paused(a: Int) = lines[a + 1].first().startUs - lines[a].last().endUs >= MIN_GAP_US
+        val options = listOfNotNull(
+            (i - 1).takeIf { i > 0 },
+            i.takeIf { i + 1 < lines.size },
+        ).filter(::fits)
+        return options.firstOrNull { !paused(it) } ?: options.firstOrNull()
+    }
+
+    private fun needed(words: List<Word>): Long =
+        maxOf(MIN_SHOWN_US, chars(words) * 1_000_000L / READING_CPS)
+
+    private fun chars(words: List<Word>): Int = words.sumOf { it.text.length } + words.size - 1
+
+    private val TAGS = mapOf('[' to ']', '(' to ')', '*' to '*')
+    private const val MUSIC = "♪♫♬♩"
 
     /**
      * About two lines of characters for a frame of [width] × [height]: Bold pop fits about 18

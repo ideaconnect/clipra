@@ -114,6 +114,57 @@ class CaptionCommandsTest {
     }
 
     @Test
+    fun soundsWhisperNotesAreNotCaptioned() {
+        val heard = listOf(
+            w("[MUZYKA]", 0.0, 5.5), w("Witam", 6.0, 6.3), w("(śmiech)", 6.3, 6.8),
+            w("Was", 6.8, 7.0), w("[Muzyka", 7.0, 7.2), w("gra]", 7.2, 7.6), w("♪", 7.6, 7.8),
+            w("na", 7.8, 7.9), w("*music*", 7.9, 8.0), w("kanale.", 8.0, 8.5),
+        )
+        assertEquals(
+            listOf("Witam", "Was", "na", "kanale."),
+            CaptionSegments.withoutSoundTags(heard).map { it.text },
+        )
+    }
+
+    @Test
+    fun aSentencesLastWordJoinsItsCaptionInsteadOfFlashingPast() {
+        // As Whisper heard a Polish talk: "tech." didn't fit its line and was left alone for
+        // 0.7 s, too short to read.
+        val heard = listOf(
+            w("trafia", 0.0, 0.3), w("na", 0.3, 0.4), w("do", 0.4, 0.5), w("sekcji", 0.5, 0.9),
+            w("tips", 0.9, 1.2), w("a", 1.2, 1.3), w("nie", 1.3, 1.5), w("tech.", 1.5, 2.0),
+            w("Bo", 2.2, 2.3), w("w", 2.3, 2.4), w("sekcji", 2.4, 2.8), w("tech", 2.8, 3.1),
+            w("będziemy", 4.0, 4.5),
+        )
+        val split = CaptionSegments.split(heard, maxChars = 34)
+        assertEquals(listOf("tech."), split[1].map { it.text })
+        val lines = CaptionSegments.readable(split, maxChars = 34, endUs = 10_000_000)
+        assertEquals(
+            listOf("trafia na do sekcji tips a nie tech.", "Bo w sekcji tech", "będziemy"),
+            lines.map { line -> line.joinToString(" ") { it.text } },
+        )
+        val ends = CaptionSegments.shownUntil(lines, endUs = 10_000_000)
+        // Each caption gives way to the next; a gap too short to read as a pause is closed.
+        assertEquals(listOf(2_200_000L, 4_000_000L), ends.take(2))
+        // The last one holds half a second after its word, a second in all.
+        assertEquals(5_000_000L, ends[2])
+        // But never past the end of the clip that speaks it.
+        assertEquals(4_700_000L, CaptionSegments.shownUntil(lines, endUs = 4_700_000)[2])
+    }
+
+    @Test
+    fun captionsStayLongEnoughToRead() {
+        val edited = CreateCaptions(listOf("src"), newId = newId).apply(project())
+        val captions = edited.layers.last().clips
+        // "Lisbon." ends at 12 s on the timeline; held half a second, the caption would leave
+        // a gap of half a second before the next one, which only flickers, so it stays on.
+        assertEquals(captions[1].startUs, captions[0].endUs)
+        // "unreal" ends at 14.5 s; the last caption holds half a second more.
+        assertEquals(15_000_000L, captions[1].endUs)
+        assertTrue(captions.all { it.durationUs >= CaptionSegments.MIN_SHOWN_US })
+    }
+
+    @Test
     fun segmentsBreakAtSentencesPausesAndLength() {
         val long = (0 until 12).map { w("word$it", it * 0.3, it * 0.3 + 0.25) }
         val segments = CaptionSegments.split(long, maxChars = 30)
