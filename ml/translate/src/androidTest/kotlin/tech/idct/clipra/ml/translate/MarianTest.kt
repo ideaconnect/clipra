@@ -11,10 +11,16 @@ import java.io.File
 import java.net.URL
 import java.security.MessageDigest
 import java.util.zip.GZIPInputStream
+import kotlin.math.roundToInt
 
 /**
  * Marian on the phone (#47, ADR 0007): English to Polish with Mozilla's model, downloaded from
  * its registry and checked with SHA-256 the first time. Timings go to logcat under Marian.
+ *
+ * Each line is compared as a whole with what the model gives on x86_64, by chrF ([Chrf]). The
+ * int8 products are computed differently on arm64, so a phone may pick another word now and then
+ * ("jedzimy" for "jedziemy", #202). That costs a few points, while a broken path, an untranslated
+ * line or another line's translation falls far below [Chrf.SAME_TRANSLATION].
  */
 @RunWith(AndroidJUnit4::class)
 class MarianTest {
@@ -24,29 +30,34 @@ class MarianTest {
     @Test
     fun translatesCaptionsFromEnglishToPolish() {
         val (model, vocab, shortlist) = FILES.map(::fetch)
+        val lines = LINES.map { it.first }
 
         val loadStart = System.nanoTime()
         Marian.open(model, vocab, shortlist).use { marian ->
             Log.i(TAG, "loaded in ${(System.nanoTime() - loadStart) / 1_000_000} ms")
-            val lines = listOf(
-                "We finally made it to Lisbon",
-                "The light here is unreal",
-                "Tomorrow we're taking the tram up to Alfama 🚋",
-            )
             val start = System.nanoTime()
             val polish = marian.translate(lines)
             Log.i(TAG, "${lines.size} lines in ${(System.nanoTime() - start) / 1_000_000} ms")
-            polish.forEach { Log.i(TAG, it) }
 
             assertEquals(lines.size, polish.size)
-            assertTrue(polish[0], "Lizbon" in polish[0])
-            assertTrue(polish[1], "świat" in polish[1].lowercase())
-            assertTrue(polish[2], "Alfam" in polish[2])
+            polish.zip(LINES).forEach { (actual, line) ->
+                assertSameTranslation(line.second, actual)
+            }
         }
         // A second model in the same process, as a pair through English loads two.
         Marian.open(model, vocab, shortlist).use { marian ->
-            assertTrue("Lizbon" in marian.translate(listOf("We finally made it to Lisbon"))[0])
+            assertSameTranslation(LINES[0].second, marian.translate(listOf(lines[0]))[0])
         }
+    }
+
+    private fun assertSameTranslation(expected: String, actual: String) {
+        val score = Chrf.score(actual, expected)
+        val shown = (score * 10).roundToInt() / 10.0
+        Log.i(TAG, "chrF $shown: $actual")
+        assertTrue(
+            "\"$actual\" scores chrF $shown against \"$expected\"",
+            score >= Chrf.SAME_TRANSLATION,
+        )
     }
 
     /** The file of [url], unpacked, once its download matches [sha256]. */
@@ -67,6 +78,18 @@ class MarianTest {
 
     private companion object {
         const val TAG = "Marian"
+
+        /**
+         * Captions and what the model makes of them on x86_64 (the Pixel_3_API_29 emulator). These
+         * are the model's own translations, mistakes included ("docieliśmy do Lizbonie"): the test
+         * checks that Marian runs the model right, not how well the model translates.
+         */
+        val LINES = listOf(
+            "We finally made it to Lisbon" to "W końcu docieliśmy do Lizbonie",
+            "The light here is unreal" to "Światło tutaj jest nierealne",
+            "Tomorrow we're taking the tram up to Alfama 🚋" to
+                "Jutro jedziemy tramwajem do Alfamy 🚋",
+        )
         const val BASE = "https://storage.googleapis.com/" +
             "moz-fx-translations-data--303e-prod-translations-data/" +
             "models/en-pl/retrain_hr_fix_names_YmTlfuUsSKCbUp75UXaUuw/exported/"
