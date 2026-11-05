@@ -43,17 +43,18 @@ object WordTiming {
     }
 
     /**
-     * The sample of [samples] where its speech starts, less [leadUs]; 0 when it opens with speech
-     * or has no pauses to trust. Speech is the first [onsetUs] of sound over the quiet, so a click
-     * in the quiet doesn't count. Whisper times the first words of a recording that opens with
-     * quiet as if they started at once, up to a second early, past the reach of [refine]; given
-     * the sound from here, it keeps them on the voice.
+     * The sample of [samples] where its speech starts, less [leadUs]; 0 when it opens with speech,
+     * with less than [minimumQuietUs] of quiet, or has no pauses to trust. Speech is the first
+     * [onsetUs] of sound over the quiet, so a click in the quiet doesn't count. Whisper times the
+     * first words of a recording that opens with quiet as if they started at once, up to a second
+     * early, past the reach of [refine]; given the sound from here, it keeps them on the voice.
      */
     fun speechStart(
         samples: FloatArray,
         sampleRate: Int,
         onsetUs: Long = ONSET_US,
         leadUs: Long = LEAD_US,
+        minimumQuietUs: Long = 0,
     ): Int {
         val levels = levels(samples, sampleRate)
         val threshold = threshold(levels, ABOVE_FLOOR_DB) ?: return 0
@@ -63,7 +64,9 @@ object WordTiming {
         for (f in levels.indices) {
             run = if (levels[f] < threshold) 0 else run + 1
             if (run == onsetFrames) {
-                val start = (f - run + 1 - leadFrames).coerceAtLeast(0)
+                val speech = f - run + 1
+                if (frameUs(speech) < minimumQuietUs) return 0
+                val start = (speech - leadFrames).coerceAtLeast(0)
                 return start * (sampleRate / FRAMES_PER_SECOND)
             }
         }

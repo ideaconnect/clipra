@@ -22,6 +22,7 @@ import tech.idct.clipra.core.model.VoiceEngine
 import tech.idct.clipra.core.models.ModelCatalog
 import tech.idct.clipra.core.models.ModelDownloader
 import tech.idct.clipra.core.models.ModelStore
+import tech.idct.clipra.ml.whisper.Whisper
 import java.io.File
 import java.util.Locale
 import kotlin.math.abs
@@ -50,10 +51,10 @@ class TranscriberTest {
         )
     }
 
-    private fun project(inPointUs: Long, durationUs: Long) = Project(
+    private fun project(inPointUs: Long, durationUs: Long, media: MediaAsset = asset) = Project(
         id = "p",
         name = "p",
-        media = listOf(asset),
+        media = listOf(media),
         layers = listOf(
             Layer(
                 "L1",
@@ -63,7 +64,7 @@ class TranscriberTest {
                         type = ClipType.Audio,
                         startUs = 5_000_000,
                         durationUs = durationUs,
-                        source = MediaRef("reading", inPointUs, inPointUs + durationUs),
+                        source = MediaRef(media.id, inPointUs, inPointUs + durationUs),
                     ),
                 ),
             ),
@@ -110,6 +111,37 @@ class TranscriberTest {
         errors.forEachIndexed { i, error ->
             assertTrue("onset at ${onsets[i] / 1000} ms is $error us off", error <= 100_000)
         }
+    }
+
+    @Test
+    fun theFirstWordAfterAnOpeningQuietStartsOnTheVoice() {
+        // #177: a clip that opens with 0.8 s of quiet, here the reading after 0.8 s of its own
+        // room tone. Heard from the start, Whisper puts the first word at 0.
+        val samples = decode(file)
+        val tone = quietest(samples, Whisper.SAMPLE_RATE / 2)
+        val padding = (OPENING_QUIET_US * Whisper.SAMPLE_RATE / 1_000_000).toInt()
+        val quiet = File(context.cacheDir, "quiet-start.wav")
+        WavWriter(quiet, Whisper.SAMPLE_RATE).use { out ->
+            val opening = FloatArray(padding) { tone[it % tone.size] }
+            out.write(opening, opening.size)
+            out.write(samples, samples.size)
+        }
+        val media = asset.copy(
+            id = "quiet",
+            uri = quiet.path,
+            durationUs = OPENING_QUIET_US + asset.durationUs,
+        )
+        val words = transcriber.transcribe(
+            project(0, media.durationUs, media),
+            listOf("clip"),
+            ModelCatalog.whisperBase,
+            Transcriber.AUTO,
+            translate = false,
+        ).single().words
+        val voiceUs = OPENING_QUIET_US + VOICE_US
+        val first = words.first()
+        Log.i(TAG, "After the opening quiet: ${first.text} at ${first.startUs / 1000} ms")
+        assertTrue("${first.text} at ${first.startUs} us", abs(first.startUs - voiceUs) <= 100_000)
     }
 
     @Test
@@ -192,6 +224,21 @@ class TranscriberTest {
         return result
     }
 
+    /** The quietest [length] samples of [samples], in 10 ms steps: the recording's room tone. */
+    private fun quietest(samples: FloatArray, length: Int): FloatArray {
+        var best = 0
+        var quietest = Double.MAX_VALUE
+        for (from in 0..samples.size - length step 160) {
+            var energy = 0.0
+            for (i in from until from + length) energy += samples[i] * samples[i]
+            if (energy < quietest) {
+                quietest = energy
+                best = from
+            }
+        }
+        return samples.copyOfRange(best, best + length)
+    }
+
     private fun decode(file: File): FloatArray {
         val samples = ArrayList<Float>()
         AudioDecoder.decode(context, file.path, 0, Long.MAX_VALUE) { s, count, format, _ ->
@@ -210,6 +257,13 @@ class TranscriberTest {
 
     companion object {
         private const val TAG = "Transcriber"
+
+        /** The quiet before the reading in [theFirstWordAfterAnOpeningQuietStartsOnTheVoice]. */
+        private const val OPENING_QUIET_US = 800_000L
+
+        /** Where the reading's voice starts, after 40 ms of digital silence and a click. */
+        private const val VOICE_US = 170_000L
+
         private lateinit var store: ModelStore
 
         @BeforeClass

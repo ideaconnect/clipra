@@ -66,6 +66,18 @@ class WordTimingTest {
     }
 
     @Test
+    fun aShortOpeningQuietIsLeftForRefineToReach() {
+        // Speech from 0.17 s, as in the test reading, and from 0.8 s.
+        val short = sound(3.0, listOf(0.17 to 1.2, 1.6 to 2.4), noise = 0.001f)
+        assertEquals(0.07, WordTiming.speechStart(short, rate) / rate.toDouble(), 0.011)
+        assertEquals(0, WordTiming.speechStart(short, rate, minimumQuietUs = WordTiming.REACH_US))
+
+        val long = sound(3.0, listOf(0.8 to 1.5, 1.9 to 2.6), noise = 0.001f)
+        val start = WordTiming.speechStart(long, rate, minimumQuietUs = WordTiming.REACH_US)
+        assertEquals(0.7, start.toDouble() / rate, 0.011)
+    }
+
+    @Test
     fun farPausesAndNoisySoundLeaveWordsAlone() {
         val samples = sound(3.0, listOf(0.5 to 1.2, 1.6 to 2.4), noise = 0.001f)
         val words = listOf(word("far", 2.9, 2.95))
