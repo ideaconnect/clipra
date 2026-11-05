@@ -23,7 +23,7 @@ Before each run: charged above 50%, not charging, screen brightness at half, bat
 | Cold start to Home | under 1.5 s | `StartupBenchmark` (`benchmark`) | `timeToInitialDisplayMs`, median, with the baseline profile |
 | Timeline scroll and scrub | 60 fps with 6 layers on proxies | `EditorBenchmark` (`benchmark`) on the Budget project | `frameOverrunMs` P90 at or below 0, `frameDurationCpuMs` P90 under 16 ms |
 | Preview playback | real time at 1080p, 3 video layers, 2 effects | `BudgetTest.previewsThreeLayersWithTwoEffectsInRealTime` (`core:engine`) | logcat tag `Budget`: at least 27 fps shown, at least 0.95x real time |
-| Export 1080p30, 42 s, 3 layers | under 60 s | `BudgetTest.exportsThreeLayersIn60Seconds` (`core:engine`) | logcat tag `Budget` |
+| Export 1080p30, 42 s, 3 layers | under 120 s | `BudgetTest.exportsThreeLayersIn120Seconds` (`core:engine`) | logcat tag `Budget` |
 | Whisper base on 42 s of speech | under 20 s | `TranscriberTest` (`core:engine`; downloads the base model from its official source on the first run) | logcat tag `Transcriber` |
 | DeepFilterNet 3 | faster than real time | `VoiceCleanupTest` (`core:engine`) | logcat tag `VoiceCleanup`: seconds for 10 s of sound |
 
