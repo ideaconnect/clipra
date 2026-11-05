@@ -7,6 +7,7 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.PixelFormat
 import android.media.ImageReader
+import android.media.MediaFormat
 import android.media.MediaMetadataRetriever
 import android.os.Handler
 import android.os.HandlerThread
@@ -40,13 +41,21 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.math.abs
+import kotlin.math.roundToInt
 import tech.idct.clipra.core.model.Size as ModelSize
 
 /**
  * The engine spike (#6): five layers with gaps, Screen and Multiply blend modes, a dissolve, a
  * photo and a text card, exported at 1080 × 1920, 30 fps with Transformer and previewed with
- * CompositionPlayer. Each check reads the centre pixel at a time where the expected colour is
- * known from the layer stack. Numbers go to logcat under the tag EngineSpike.
+ * CompositionPlayer. Each check reads the centre pixel at a time where the layer stack gives a
+ * known mix of the clips. Numbers go to logcat under the tag EngineSpike.
+ *
+ * Phones turn the same clip into slightly different colours (#201), so the checks don't ask
+ * for exact colours. Each clip is drawn alone first and only has to be near its nominal colour;
+ * the expected colour at each check is then the layer stack of those clips, as this device
+ * decodes them. The export is read back in the colours its own tags give ([TaggedFrames]), so
+ * an export that doesn't hold what its tags say fails, whatever the device's own readers make
+ * of it.
  */
 @OptIn(UnstableApi::class, ExperimentalApi::class)
 @RunWith(AndroidJUnit4::class)
@@ -67,7 +76,27 @@ class EngineSpikeTest {
     }
 
     @Test
+    fun clipsCarryTheColourTagsTheyAreEncodedWith() {
+        // Untagged, the clips were read as BT.709 on the Galaxy S9 and as BT.601 on the
+        // emulator. Read with their tags, the decoded pictures are the same on every device.
+        for ((name, nominal) in NOMINAL) {
+            val frame = TaggedFrames.read(File(media, "$name.mp4").path, listOf(500_000L))
+                .getValue(500_000L)
+            Log.i(TAG, "$name.mp4 tagged ${frame.tags}")
+            assertEquals(
+                "$name.mp4 matrix",
+                MediaFormat.COLOR_STANDARD_BT601_NTSC,
+                frame.tags.standard,
+            )
+            assertEquals("$name.mp4 range", MediaFormat.COLOR_RANGE_LIMITED, frame.tags.range)
+            val centre = frame.bitmap.getPixel(frame.bitmap.width / 2, frame.bitmap.height / 2)
+            assertColor("$name.mp4 centre", nominal, centre, TAGGED_TOLERANCE)
+        }
+    }
+
+    @Test
     fun exportsTheLayerStack() {
+        val colours = clipColours()
         val timeline = timeline(width = 1080, height = 1920)
         val drawNs = AtomicLong()
         val frames = AtomicInteger()
@@ -111,19 +140,33 @@ class EngineSpikeTest {
                 "yes",
                 retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_HAS_AUDIO),
             )
-            for ((timeUs, expected) in CENTRE_CHECKS) {
-                val frame = retriever.getFrameAtTime(
-                    timeUs,
-                    MediaMetadataRetriever.OPTION_CLOSEST,
-                )!!
-                assertColor("centre at $timeUs us", expected, frame.getPixel(540, 960))
-                assertColor("text card at $timeUs us", Color.WHITE, frame.getPixel(130, 1640))
-            }
+        }
+        // Not the retriever's frames: the Galaxy S9's retriever reads a BT.709 file as BT.601.
+        val exported = TaggedFrames.read(output.path, CENTRE_CHECKS.map { it.first })
+        val checks = CENTRE_CHECKS.map { (timeUs, nominal) ->
+            val frame = exported.getValue(timeUs)
+            val expected = expectedCentre(timeline, colours, frame.timeUs, nominal)
+            val centre = frame.bitmap.getPixel(540, 960)
+            val card = frame.bitmap.getPixel(130, 1640)
+            Log.i(
+                TAG,
+                "export at ${frame.timeUs} us (${frame.tags}): centre ${hex(centre)}, " +
+                    "stack ${hex(expected)}, ${distance(expected, centre)} levels off; " +
+                    "text card ${hex(card)}",
+            )
+            listOf(
+                Triple("centre at ${frame.timeUs} us", expected, centre),
+                Triple("text card at ${frame.timeUs} us", Color.WHITE, card),
+            )
+        }
+        for ((what, expected, actual) in checks.flatten()) {
+            assertColor(what, expected, actual, TAGGED_TOLERANCE)
         }
     }
 
     @Test
     fun previewsAndSeeks() {
+        val colours = clipColours()
         // Preview renders at half size, as the editor does on proxies.
         val timeline = timeline(width = 540, height = 960)
         val frames = AtomicInteger()
@@ -177,7 +220,8 @@ class EngineSpikeTest {
         )
 
         // Seek forward into the gap on L2, then back to the Screen blend; wait for the frame.
-        for ((timeUs, expected) in listOf(6_500_000L to GRAY, 1_500_000L to YELLOW)) {
+        for ((timeUs, nominal) in listOf(6_500_000L to GRAY, 1_500_000L to YELLOW)) {
+            val expected = expectedCentre(timeline, colours, timeUs, nominal)
             instrumentation.runOnMainSync {
                 player.pause()
                 player.seekTo(timeUs / 1_000)
@@ -186,11 +230,15 @@ class EngineSpikeTest {
             var centre = 0
             while (SystemClock.elapsedRealtime() - seekStarted < SEEK_TIMEOUT_MS) {
                 centre = latest.get()?.getPixel(270, 480) ?: 0
-                if (isClose(expected, centre)) break
+                if (isClose(expected, centre, TOLERANCE)) break
                 SystemClock.sleep(50)
             }
-            Log.i(TAG, "seek to $timeUs us: ${SystemClock.elapsedRealtime() - seekStarted} ms")
-            assertColor("preview centre after seeking to $timeUs us", expected, centre)
+            Log.i(
+                TAG,
+                "seek to $timeUs us: ${SystemClock.elapsedRealtime() - seekStarted} ms, " +
+                    "centre ${hex(centre)}, stack ${hex(expected)}",
+            )
+            assertColor("preview centre after seeking to $timeUs us", expected, centre, TOLERANCE)
         }
         instrumentation.runOnMainSync { player.release() }
         reader.close()
@@ -203,7 +251,6 @@ class EngineSpikeTest {
      * L4 cyan with Multiply (2 to 3.5 s). L5 a text card near the bottom.
      */
     private fun timeline(width: Int, height: Int): RenderTimeline {
-        fun video(name: String) = RenderSource.Video(File(media, "$name.mp4").path)
         val photo = android.graphics.BitmapFactory.decodeFile(File(media, "photo.png").path)
         return RenderTimeline(
             width = width,
@@ -333,27 +380,123 @@ class EngineSpikeTest {
         error.get()?.let { throw it }
     }
 
-    private fun isClose(expected: Int, actual: Int): Boolean =
-        abs(Color.red(expected) - Color.red(actual)) <= TOLERANCE &&
-            abs(Color.green(expected) - Color.green(actual)) <= TOLERANCE &&
-            abs(Color.blue(expected) - Color.blue(actual)) <= TOLERANCE
+    private fun video(name: String) = RenderSource.Video(File(media, "$name.mp4").path)
 
-    private fun assertColor(what: String, expected: Int, actual: Int) {
-        val close = isClose(expected, actual)
+    /**
+     * The centre colour of each clip drawn alone by the compositor, as this device decodes it.
+     * Devices may convert a clip with another matrix or range, so it only has to be near the
+     * clip's nominal colour.
+     */
+    private fun clipColours(): Map<String, Int> = NOMINAL.mapValues { (name, nominal) ->
+        val alone = RenderTimeline(
+            width = 108,
+            height = 192,
+            frameRate = 30,
+            durationUs = 1_000_000,
+            background = Color.BLACK,
+            layers = listOf(RenderLayer(listOf(RenderClip(name, 0, 1_000_000, video(name))))),
+        )
+        val colour = Offscreen.render(context, alone, 500_000).getPixel(54, 96)
+        Log.i(TAG, "$name clip drawn alone: ${hex(colour)}")
+        assertColor("$name clip drawn alone", nominal, colour, NOMINAL_TOLERANCE)
+        colour
+    }
+
+    /**
+     * The centre colour of [timeline] at [timeUs], worked out from the clips' own [colours]:
+     * from L1 up, each active clip that covers the centre blends over what is below it at its
+     * opacity. The photo and the text card don't reach the centre. The result has to be near
+     * [nominal], the colour the stack gives with exact clip colours.
+     */
+    private fun expectedCentre(
+        timeline: RenderTimeline,
+        colours: Map<String, Int>,
+        timeUs: Long,
+        nominal: Int,
+    ): Int {
+        var canvas = channels(timeline.background)
+        for (clip in timeline.layers.flatMap { it.clips }) {
+            val colour = colours[clip.id] ?: continue
+            if (!clip.isActiveAt(timeUs)) continue
+            val top = channels(colour)
+            val blended = FloatArray(3) { i ->
+                when (clip.blend) {
+                    BlendMode.Normal -> top[i]
+                    BlendMode.Screen -> 1 - (1 - canvas[i]) * (1 - top[i])
+                    BlendMode.Multiply -> canvas[i] * top[i]
+                    else -> error("${clip.blend} isn't part of the spike")
+                }
+            }
+            val opacity = clip.opacityAt(timeUs)
+            canvas = FloatArray(3) { i -> canvas[i] + (blended[i] - canvas[i]) * opacity }
+        }
+        val stack = Color.rgb(level(canvas[0]), level(canvas[1]), level(canvas[2]))
+        assertColor("layer stack at $timeUs us", nominal, stack, NOMINAL_TOLERANCE)
+        return stack
+    }
+
+    private fun channels(colour: Int) = floatArrayOf(
+        Color.red(colour) / 255f,
+        Color.green(colour) / 255f,
+        Color.blue(colour) / 255f,
+    )
+
+    private fun level(value: Float) = (value * 255).roundToInt().coerceIn(0, 255)
+
+    /** The largest difference of the three channels, in levels. */
+    private fun distance(expected: Int, actual: Int): Int = maxOf(
+        abs(Color.red(expected) - Color.red(actual)),
+        abs(Color.green(expected) - Color.green(actual)),
+        abs(Color.blue(expected) - Color.blue(actual)),
+    )
+
+    private fun isClose(expected: Int, actual: Int, tolerance: Int): Boolean =
+        distance(expected, actual) <= tolerance
+
+    private fun assertColor(what: String, expected: Int, actual: Int, tolerance: Int) {
         assertTrue(
-            "$what: expected #%06X, got #%06X".format(expected and 0xFFFFFF, actual and 0xFFFFFF),
-            close,
+            "$what: expected ${hex(expected)}, got ${hex(actual)} (within $tolerance levels)",
+            isClose(expected, actual, tolerance),
         )
     }
 
+    private fun hex(colour: Int) = "#%06X".format(colour and 0xFFFFFF)
+
     private companion object {
         const val TAG = "EngineSpike"
+
+        /** Preview against the layer stack of the clips as this device decodes them. */
         const val TOLERANCE = 28
+
+        /**
+         * Frames read with their colour tags against what they should hold. A BT.601 picture
+         * read as BT.709, or the other way round, is 10 to 39 levels off on these colours.
+         */
+        const val TAGGED_TOLERANCE = 8
+
+        /**
+         * A clip drawn by this device against its nominal colour: wide enough for any matrix or
+         * range a device may pick for it, narrow enough to tell the clips apart.
+         */
+        const val NOMINAL_TOLERANCE = 64
         const val SEEK_TIMEOUT_MS = 8_000L
         val GRAY = Color.rgb(128, 128, 128)
         val YELLOW = Color.rgb(255, 255, 0)
+        val CYAN = Color.rgb(0, 255, 255)
 
-        /** Time and the centre colour the layer stack gives at that time. */
+        /** Each video clip of the spike and its colour. */
+        val NOMINAL = mapOf(
+            "gray" to GRAY,
+            "red" to Color.RED,
+            "green" to Color.GREEN,
+            "cyan" to CYAN,
+            "blue" to Color.BLUE,
+        )
+
+        /**
+         * Time and the centre colour the layer stack gives at that time with exact clip
+         * colours; the checks compare with the stack of the clips as this device decodes them.
+         */
         val CENTRE_CHECKS = listOf(
             // L2 red covers L1.
             500_000L to Color.RED,
