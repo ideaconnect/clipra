@@ -200,7 +200,7 @@ Downloads run in WorkManager with a Wi-Fi-only constraint by default, resume aft
 ## 10. Testing
 
 - Unit tests for the model, commands, undo/redo, size estimate, ad rules, entitlement.
-- Golden-image tests for GL effects (render a frame, compare with tolerance).
+- Golden-image tests for GL effects (render a frame, compare with tolerance). Effects with random parts (the Film, Grain and Glitch filters; the Shake, Glitch, Film burn and Ink transitions) draw another pattern on every GPU, because the shaders' random numbers come from `sin()`, and in Whip pan rounding draws or leaves out a few thin streaks. These frames are compared by colour, not pixel by pixel: the whole frame and each cell of a 3 × 4 grid must hold about the same colours in the same amounts as the golden (`Offscreen.likeness`, limits in `Randomness`, #200).
 - Instrumented tests for export on at least three device tiers; performance budgets tracked in CI where possible.
 - Screenshot tests for key Compose screens against the design PNGs.
 - Each main screen also has a Polish screenshot (`…InPolish`, `pl` qualifier and locale) of its design state, to check that every label fits; where Polish did not fit, the Polish string is shorter (#76). Seconds and decibels follow the user's number format; timecodes keep the point.

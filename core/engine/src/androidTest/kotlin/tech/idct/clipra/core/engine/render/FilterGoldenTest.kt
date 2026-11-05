@@ -17,9 +17,11 @@ import java.io.FileNotFoundException
 /**
  * Golden images for the 24 filters (#25). Each filter, at full strength, draws the design's
  * sunset scene (design/canvas/Filters.dc.html); the frame must match the reviewed golden in
- * assets/golden/filters. Record new goldens with the instrumentation argument
- * `recordGoldens true`: they are written to the test app's files/golden-filters, to pull with
- * `run-as` and review against the design's thumbnails.
+ * assets/golden/filters. Filters with random parts draw another pattern on every GPU, so they
+ * must only look like their golden: the same colours in each part of the frame (#200).
+ * Record new goldens with the instrumentation argument `recordGoldens true`: they are written to
+ * the test app's files/golden-filters, to pull with `run-as` and review against the design's
+ * thumbnails.
  */
 @RunWith(AndroidJUnit4::class)
 class FilterGoldenTest {
@@ -37,14 +39,18 @@ class FilterGoldenTest {
                 return@mapNotNull null
             }
             val golden = golden(type) ?: return@mapNotNull "$type (no golden)"
-            val matched = Offscreen.match(golden, rendered, TOLERANCE)
-            Log.i(TAG, "$type: ${"%.4f".format(matched)} of pixels match")
-            if (matched >= SHARE) {
-                null
+            val randomness = RANDOM[type]
+            val failure = if (randomness != null) {
+                val likeness = Offscreen.likeness(golden, rendered)
+                Log.i(TAG, "$type: colours $likeness levels off")
+                if (likeness.within(randomness.limit)) null else "$type ($likeness)"
             } else {
-                save(context.cacheDir, "$type-actual", rendered)
-                "$type (${"%.4f".format(matched)})"
+                val matched = Offscreen.match(golden, rendered, TOLERANCE)
+                Log.i(TAG, "$type: ${"%.4f".format(matched)} of pixels match")
+                if (matched >= SHARE) null else "$type (${"%.4f".format(matched)})"
             }
+            if (failure != null) save(context.cacheDir, "$type-actual", rendered)
+            failure
         }
         assertTrue("filters off their goldens: $failures", failures.isEmpty())
     }
@@ -116,8 +122,16 @@ class FilterGoldenTest {
         const val HEIGHT = 480
         const val TIME_US = 500_000L
 
-        // GPUs differ a little in rounding and in the noise of Grain and Glitch.
+        // GPUs differ a little in rounding.
         const val TOLERANCE = 8
         const val SHARE = 0.98
+
+        // Film and Grain add grain noise and Glitch moves random bands, in a pattern that
+        // depends on the GPU.
+        val RANDOM = mapOf(
+            "film" to Randomness.Fine,
+            "grain" to Randomness.Fine,
+            "glitch" to Randomness.Coarse,
+        )
     }
 }

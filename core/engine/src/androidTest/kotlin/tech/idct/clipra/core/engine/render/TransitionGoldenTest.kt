@@ -16,8 +16,10 @@ import java.io.FileNotFoundException
 
 /**
  * Golden images for the 24 transitions (#26) at 25, 50 and 75%, from the design's sunset to its
- * tram picture. Each frame must match the reviewed golden in assets/golden/transitions. Record
- * new goldens with the instrumentation argument `recordGoldens true` (written to the test app's
+ * tram picture. Each frame must match the reviewed golden in assets/golden/transitions.
+ * Transitions with random parts draw another pattern on every GPU, so they must only look like
+ * their golden: the same colours in each part of the frame (#200). Record new goldens with the
+ * instrumentation argument `recordGoldens true` (written to the test app's
  * files/golden-transitions, to pull with `run-as`).
  */
 @RunWith(AndroidJUnit4::class)
@@ -46,11 +48,19 @@ class TransitionGoldenTest {
                     failures += "$name (no golden)"
                     continue
                 }
-                val matched = Offscreen.match(golden, rendered, TOLERANCE)
-                Log.i(TAG, "$name: ${"%.4f".format(matched)} of pixels match")
-                if (matched < SHARE) {
+                val randomness = RANDOM[type]
+                val failure = if (randomness != null) {
+                    val likeness = Offscreen.likeness(golden, rendered)
+                    Log.i(TAG, "$name: colours $likeness levels off")
+                    if (likeness.within(randomness.limit)) null else "$name ($likeness)"
+                } else {
+                    val matched = Offscreen.match(golden, rendered, TOLERANCE)
+                    Log.i(TAG, "$name: ${"%.4f".format(matched)} of pixels match")
+                    if (matched >= SHARE) null else "$name (${"%.4f".format(matched)})"
+                }
+                if (failure != null) {
                     save(context.cacheDir, "$name-actual", rendered)
-                    failures += "$name (${"%.4f".format(matched)})"
+                    failures += failure
                 }
             }
         }
@@ -113,8 +123,19 @@ class TransitionGoldenTest {
         const val WIDTH = 108
         const val HEIGHT = 192
 
-        // GPUs differ a little in rounding and in the noise of Shake, Glitch and Film burn.
+        // GPUs differ a little in rounding.
         const val TOLERANCE = 8
         const val SHARE = 0.98
+
+        // Shake, Glitch, Film burn and Ink take random offsets and edges, in a pattern that
+        // depends on the GPU. Whip pan is not random, but at this width the edges of 4 of its
+        // light streaks fall exactly on pixel centres, so rounding draws them or leaves them out.
+        val RANDOM = mapOf(
+            "whip-pan" to Randomness.Fine,
+            "shake" to Randomness.Coarse,
+            "glitch" to Randomness.Coarse,
+            "film-burn" to Randomness.Coarse,
+            "ink" to Randomness.Coarse,
+        )
     }
 }
