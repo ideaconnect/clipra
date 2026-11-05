@@ -71,6 +71,19 @@ The test clips mix sources:
 - **Sizes:** 1080×1920, 1920×1080, 1280×720 and 1080×1080.
 - **Frame rates:** 24, 30 and 60 fps.
 - **Audio:** every clip has AAC audio.
+- **Colour:** BT.601 (SMPTE 170M) in limited range, and tagged as such (#201).
+
+**How the clips were made.** Each clip is one colour with a small white square, encoded by ffmpeg with libx264 (High profile, a key frame every second) in BT.601, with a sine tone in 48 kHz stereo AAC: gray 220 Hz, red 330 Hz, blue 440 Hz, green 550 Hz, cyan 660 Hz. They carried no colour tags at first, so every device guessed the matrix: the Galaxy S9 read the HD clips as BT.709 and the emulator as BT.601, and Screen of red and green came out `#FFDC00` on the phone (#201). The tags were added later without re-encoding, so the pictures and the sound stayed bit for bit the same. This writes them into the H.264 stream (VUI) and the MP4 `colr` box:
+
+```sh
+ffmpeg -i in.mp4 -map 0 -c copy \
+  -bsf:v h264_metadata=video_full_range_flag=0:colour_primaries=6:transfer_characteristics=6:matrix_coefficients=6 \
+  -color_primaries smpte170m -color_trc smpte170m -colorspace smpte170m -color_range tv out.mp4
+```
+
+A clip added to `assets/spike/` needs tags too; `EngineSpikeTest.clipsCarryTheColourTagsTheyAreEncodedWith` checks them.
+
+**How the test checks colours (#201).** Devices may still turn the same clip into slightly different colours, so the test asks for no exact colour. Each clip drawn alone has to be within 64 levels of its colour, and each check expects the layer stack of the clips as this device draws them: the preview within 28 levels, the export within 8. The export is read with `TaggedFrames`, which converts the decoder's YUV with the matrix and range of the file's tags. `MediaMetadataRetriever` picks its own matrix (the S9's reads a BT.709 file as BT.601), so a check through it passed on wrong colours. A BT.601/BT.709 mix-up moves these colours by 10 to 39 levels.
 
 ## Results
 
@@ -119,5 +132,7 @@ These are written into `docs/architecture.md`, section 4.
 - **Real-time preview on phones.** Decoding happens on the GL thread, one clip after another. Preview should decode 720p proxies (M1-media) and decode ahead on the decoders' own threads into a small `ImageReader`/`HardwareBuffer` queue per clip. Keep decoders alive across short gaps and reuse one decoder per file. Measure on a mid-range and a low-end phone (M11-perf). Hardware decoders have a per-device instance limit: count the clips active at once, and fall back to proxies or software decoding beyond it.
 - **Seek latency.** A backward seek recreates decoders and decodes from the previous key frame. Keep decoders for recently active clips, and make proxies with short key frame intervals (1 s).
 - **Alpha.** Android bitmaps are premultiplied while the clip shaders assume straight alpha, so the edges of transparent text are slightly dark. Use premultiplied alpha throughout when text rendering lands (M4).
-- **Colour and HDR.** The spike is SDR BT.709 only. HDR sources are tone-mapped or rejected, and that is decided in M8.
+- **Colour and HDR.** The spike is SDR BT.709 only. HDR sources are tone-mapped or rejected, and that is decided in M8. Findings from #201:
+  - The Galaxy S9's camera tags its 1080p H.264 recordings as BT.709 in limited range, in the stream and in the MP4 `colr` box, so a decoder has nothing to guess there.
+  - On the Android 10 emulator, exports are tagged BT.709 but hold BT.601 pixels. Its software encoder (`OMX.google.h264.encoder`) can't write colour aspects and converts from RGB with BT.601. Media3 still writes a BT.709 `colr` box, so players that follow the tags show red as `#FF1800`. The Android 17 emulator (`c2.android.avc.encoder`) and the S9's hardware encoder are right.
 - **Rotation.** `VideoFrameSource` reports rotated sizes. Applying the rotation in the quad comes with transform support (M2).
