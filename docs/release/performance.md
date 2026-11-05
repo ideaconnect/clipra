@@ -37,13 +37,13 @@ python scripts/perf/budgets.py --clip clip.mp4
 
 `--clip` is a minute of the phone's own 1080p30 video (optional), and `--serial` picks a phone when several are connected. Emulators need `--emulator`, and their numbers don't count. The sections below run the same measurements one by one.
 
-**Startup and the editor.** The `benchmark` module measures the app's `benchmark` build: release code, shrunk and optimized by R8 but with readable names, signed with the debug key and showing Google's test ads, so it needs none of Clipra's keys.
+**Startup and the editor.** The `benchmark` module measures the app's `benchmark` build: release code, shrunk and optimized by R8 but with readable names, signed with the debug key and showing Google's test ads, so it needs none of Clipra's keys. It is profileable (`app/src/benchmark/AndroidManifest.xml`), which Macrobenchmark requires on Android 10 and 11.
 
 ```
 ./gradlew :benchmark:connectedBenchmarkAndroidTest
 ```
 
-Results are in `benchmark/build/outputs/connected_android_test_additional_output/` (JSON and Perfetto traces) and in the console. One class at a time: add `-Pandroid.testInstrumentationRunnerArguments.class=tech.idct.clipra.benchmark.StartupBenchmark`. On an emulator, add `-Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.suppressErrors=EMULATOR`; those numbers don't count.
+Results are in `benchmark/build/outputs/connected_android_test_additional_output/` (JSON and Perfetto traces) and in the console. One class at a time: add `-Pandroid.testInstrumentationRunnerArguments.class=tech.idct.clipra.benchmark.StartupBenchmark`. The journeys find the app's buttons by their English or Polish labels, so the phone can be set to either language. On an emulator, add `-Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.suppressErrors=EMULATOR`; those numbers don't count.
 
 **The Budget project.** `EditorBenchmark` measures the project named "Budget" when Home shows one, and a new text card project otherwise. Make it once per phone: record a minute of 1080p30 video with the phone's camera, put it on six layers of one project, L1 to L6, each over the whole minute, wait for the proxies, and rename the project to Budget (Home, the project's menu, Rename). Keep the welcome passed and the project on the phone between runs.
 

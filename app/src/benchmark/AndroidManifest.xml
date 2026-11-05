@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <application>
+        <!--
+        The benchmark build (#77) only: Macrobenchmark needs a profileable app to measure it on
+        Android 10 and 11 (#197). This source set is not merged into the release build.
+        -->
+        <profileable
+            android:shell="true"
+            tools:targetApi="29" />
+    </application>
+</manifest>

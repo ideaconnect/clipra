@@ -68,6 +68,7 @@ android {
         }
         // Release as it ships, but signed with the debug key and with Google's test ads, so
         // the benchmarks (#77) measure what users run, on any phone, without Clipra's keys.
+        // Profileable too (src/benchmark/AndroidManifest.xml), as Android 10 and 11 require.
         create("benchmark") {
             initWith(getByName("release"))
             signingConfig = signingConfigs.getByName("debug")

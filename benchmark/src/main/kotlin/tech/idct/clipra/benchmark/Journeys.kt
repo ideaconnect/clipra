@@ -17,9 +17,24 @@ private const val WAIT_MS = 10_000L
 /** The ad consent form loads over the network after the first start. */
 private const val CONSENT_WAIT_MS = 15_000L
 private const val PLAY_MS = 2_000L
-private const val SKIP = "Skip downloads for now"
-private const val NEW_PROJECT = "New project"
-private val FIRST_SCREEN = Pattern.compile("$SKIP|$NEW_PROJECT")
+
+// The app's labels in English and Polish, the languages it ships, so the journeys work on phones
+// set to either (#197). Each one is the string resource named next to it.
+private val SKIP = label("Skip downloads for now", "Pomiń pobieranie") // models_onboarding_skip
+private val NEW_PROJECT = label("New project", "Nowy projekt") // home_title_new_project
+private val TEXT_CARD = label("Text card", "Karta tekstowa") // home_quick_text
+private val CREATE_PROJECT = label("Create project", "Utwórz projekt") // home_new_create
+private val DONE = label("Done", "Gotowe") // text_done
+private val EXPORT = label("Export", "Eksportuj") // editor_export
+private val PLAY = label("Play", "Odtwórz") // editor_play
+private val PAUSE = label("Pause", "Wstrzymaj") // editor_pause
+private val FIRST_SCREEN = Pattern.compile("${SKIP.pattern()}|${NEW_PROJECT.pattern()}")
+
+/** Google's consent form for the test ads is in English on Polish phones too. */
+private const val DO_NOT_CONSENT = "Do not consent"
+
+private fun label(english: String, polish: String): Pattern =
+    Pattern.compile("${Pattern.quote(english)}|${Pattern.quote(polish)}")
 
 /**
  * Past the first start's welcome (#73), if it shows: the downloads are skipped, so nothing goes
@@ -31,7 +46,7 @@ fun MacrobenchmarkScope.passWelcome() {
     val skip = device.findObject(By.text(SKIP)) ?: return
     skip.click()
     device.wait(Until.hasObject(By.text(NEW_PROJECT)), WAIT_MS)
-    device.wait(Until.findObject(By.desc("Do not consent")), CONSENT_WAIT_MS)?.click()
+    device.wait(Until.findObject(By.desc(DO_NOT_CONSENT)), CONSENT_WAIT_MS)?.click()
     device.wait(Until.hasObject(By.text(NEW_PROJECT)), WAIT_MS)
 }
 
@@ -48,17 +63,17 @@ fun MacrobenchmarkScope.openBudgetProject() {
         return
     }
     budget.click()
-    device.wait(Until.hasObject(By.text("Export")), WAIT_MS)
+    device.wait(Until.hasObject(By.text(EXPORT)), WAIT_MS)
     device.waitForIdle()
 }
 
 /** From the projects, a new text card project, open in the editor. */
 fun MacrobenchmarkScope.openTextCardProject() {
-    device.wait(Until.findObject(By.text("Text card")), WAIT_MS)?.click()
+    device.wait(Until.findObject(By.text(TEXT_CARD)), WAIT_MS)?.click()
     // The format comes first, then the card's text; Done leads to the editor.
-    device.wait(Until.findObject(By.text("Create project")), WAIT_MS)?.click()
-    device.wait(Until.findObject(By.text("Done")), WAIT_MS)?.click()
-    device.wait(Until.hasObject(By.text("Export")), WAIT_MS)
+    device.wait(Until.findObject(By.text(CREATE_PROJECT)), WAIT_MS)?.click()
+    device.wait(Until.findObject(By.text(DONE)), WAIT_MS)?.click()
+    device.wait(Until.hasObject(By.text(EXPORT)), WAIT_MS)
     device.waitForIdle()
 }
 
@@ -77,10 +92,10 @@ fun MacrobenchmarkScope.scrubTimeline() {
 
 /** Plays the project for a moment and stops it. */
 fun MacrobenchmarkScope.playBriefly() {
-    val play = device.findObject(By.desc("Play")) ?: return
+    val play = device.findObject(By.desc(PLAY)) ?: return
     play.click()
     Thread.sleep(PLAY_MS)
-    device.findObject(By.desc("Pause"))?.click()
+    device.findObject(By.desc(PAUSE))?.click()
 }
 
 /** Scrolls whatever scrolls on screen down and up again. */
