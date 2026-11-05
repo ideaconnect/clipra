@@ -141,8 +141,13 @@ class Transcriber @Inject constructor(
                     val cut = if (chunk.size < CHUNK_SAMPLES) chunk.size else quietestCut(chunk)
                     carry = chunk.copyOfRange(cut, chunk.size)
                     // Whisper hears the chunk from where its speech starts, so the first words
-                    // after an opening quiet aren't timed early.
-                    val lead = WordTiming.speechStart(chunk.copyOf(cut), Whisper.SAMPLE_RATE)
+                    // after an opening quiet aren't timed early. Only after more quiet than refine
+                    // reaches: any other start re-times the words, often worse (#195).
+                    val lead = WordTiming.speechStart(
+                        chunk.copyOf(cut),
+                        Whisper.SAMPLE_RATE,
+                        minimumQuietUs = WordTiming.REACH_US,
+                    )
                     val samples = chunk.copyOfRange(lead, cut)
                     val result = whisper.transcribe(
                         samples,
