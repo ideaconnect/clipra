@@ -70,6 +70,7 @@ Follow them. A change to one of them comes with a new ADR that supersedes it. Th
 
 - Needs JDK 17 (`JAVA_HOME`) and the Android SDK with platform 37 (`ANDROID_HOME`).
 - `./gradlew assembleDebug` builds the app. `./gradlew testDebugUnitTest :core:model:test` runs the unit tests and `./gradlew lintDebug` runs Android lint. With an emulator running, `./gradlew connectedDebugAndroidTest` runs the instrumented tests.
+- Library modules without `src/androidTest` build no test APK (`clipra.android.library`). A module that gets instrumented tests adds `androidx-test-runner` and `androidx-test-ext-junit` to `androidTestImplementation`, as `core:engine` does.
 - `./gradlew spotlessCheck` checks the Kotlin style with ktlint; `./gradlew spotlessApply` fixes most findings.
 - Screenshot tests (Roborazzi on Robolectric, `clipra.android.screenshots`) keep their reference images in `<module>/src/test/screenshots`. `./gradlew recordRoborazziDebug` records them after an intended UI change; CI compares with `-Proborazzi.test.verify=true`. Robolectric tests use `@Config(sdk = [34])`, since newer SDKs need a Java 21 test JVM.
 - CI runs the style check, the debug build, the unit tests and lint on every pull request and on `main`, compiles the instrumented tests without running them, and attaches the debug APK to the run. A pull request is ready only when CI is green.
