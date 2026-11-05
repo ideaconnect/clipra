@@ -43,7 +43,7 @@ python scripts/perf/budgets.py --clip clip.mp4
 ./gradlew :benchmark:connectedBenchmarkAndroidTest
 ```
 
-Results are in `benchmark/build/outputs/connected_android_test_additional_output/` (JSON and Perfetto traces) and in the console. One class at a time: add `-Pandroid.testInstrumentationRunnerArguments.class=tech.idct.clipra.benchmark.StartupBenchmark`. On an emulator, add `-Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.suppressErrors=EMULATOR`; those numbers don't count.
+Results are in `benchmark/build/outputs/connected_android_test_additional_output/` (JSON and Perfetto traces) and in the console. One class at a time: add `-Pandroid.testInstrumentationRunnerArguments.class=tech.idct.clipra.benchmark.StartupBenchmark`. The journeys find the app's buttons by their English or Polish labels, so the phone can be set to either language. On an emulator, add `-Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.suppressErrors=EMULATOR`; those numbers don't count.
 
 **The Budget project.** `EditorBenchmark` measures the project named "Budget" when Home shows one, and a new text card project otherwise. Make it once per phone: record a minute of 1080p30 video with the phone's camera, put it on six layers of one project, L1 to L6, each over the whole minute, wait for the proxies, and rename the project to Budget (Home, the project's menu, Rename). Keep the welcome passed and the project on the phone between runs.
 
