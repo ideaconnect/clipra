@@ -147,6 +147,31 @@ def verdict(value, ok):
     return 'holds' if ok(value) else 'MISSED'
 
 
+# The engine tests log their numbers with a decimal point (Locale.ROOT, #198). Builds before
+# that used the phone's locale, so a decimal comma ("67,2 s") is read as well.
+NUMBER = r'(\d+(?:[.,]\d+)?)'
+
+
+def number(text):
+    return float(text.replace(',', '.'))
+
+
+def engine_numbers(logs):
+    """Preview (fps, pace), export (seconds, pace), Whisper seconds and the slowest DeepFilterNet
+    seconds from the engine tests' log lines; None for each one not found."""
+    preview = re.search(rf'preview .*?: {NUMBER} fps shown, {NUMBER}x real time', logs)
+    export = re.search(rf'export .*?: {NUMBER} s, {NUMBER}x real time', logs)
+    whisper = re.search(rf'Base: \d+ words in {NUMBER} s', logs)
+    cleanup = [number(s) for s in
+               re.findall(rf'DeepFilterNet \S+: .*?, {NUMBER} s for 10 s', logs)]
+    return {
+        'preview': (number(preview.group(1)), number(preview.group(2))) if preview else None,
+        'export': (number(export.group(1)), number(export.group(2))) if export else None,
+        'whisper': number(whisper.group(1)) if whisper else None,
+        'cleanup': max(cleanup) if cleanup else None,
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument('--serial', help='the device, when more than one is connected')
@@ -197,11 +222,9 @@ def main():
     editor = benches.get('EditorBenchmark.scrubAndPlay')
     overrun = editor.get('frameOverrunMs', {}).get('P90') if editor else None
     cpu = editor.get('frameDurationCpuMs', {}).get('P90') if editor else None
-    preview = re.search(r'preview .*?: ([\d.]+) fps shown, ([\d.]+)x real time', logs)
-    export = re.search(r'export .*?: ([\d.]+) s, ([\d.]+)x real time', logs)
-    whisper = re.search(r'Base: \d+ words in ([\d.]+) s', logs)
-    cleanup = [float(s) for s in re.findall(r'DeepFilterNet \S+: .*?, ([\d.]+) s for 10 s', logs)]
-    cleanup_s = max(cleanup) if cleanup else None
+    engine = engine_numbers(logs)
+    preview, export = engine['preview'], engine['export']
+    whisper, cleanup_s = engine['whisper'], engine['cleanup']
 
     rows = [
         ('Cold start to Home', 'under 1.5 s',
@@ -213,15 +236,14 @@ def main():
          verdict(None if overrun is None or cpu is None else (overrun, cpu),
                  lambda v: v[0] <= 0 and v[1] < 16)),
         ('Preview, 1080p, 3 layers, 2 effects', 'at least 27 fps, 0.95x real time',
-         f'{preview.group(1)} fps, {preview.group(2)}x' if preview else None,
-         verdict(None if not preview else (float(preview.group(1)), float(preview.group(2))),
-                 lambda v: v[0] >= 27 and v[1] >= 0.95)),
+         f'{preview[0]:.1f} fps, {preview[1]:.2f}x' if preview else None,
+         verdict(preview, lambda v: v[0] >= 27 and v[1] >= 0.95)),
         ('Export 1080p30, 42 s, 3 layers', 'under 120 s',
-         f'{export.group(1)} s ({export.group(2)}x real time)' if export else None,
-         verdict(float(export.group(1)) if export else None, lambda v: v < 120)),
+         f'{export[0]:.1f} s ({export[1]:.2f}x real time)' if export else None,
+         verdict(export, lambda v: v[0] < 120)),
         ('Whisper base, 42 s of speech', 'under 20 s',
-         f'{whisper.group(1)} s' if whisper else None,
-         verdict(float(whisper.group(1)) if whisper else None, lambda v: v < 20)),
+         f'{whisper:.1f} s' if whisper is not None else None,
+         verdict(whisper, lambda v: v < 20)),
         ('DeepFilterNet 3, 10 s of sound', 'faster than real time (under 10 s)',
          f'{cleanup_s:.1f} s, slowest noise' if cleanup_s is not None else None,
          verdict(cleanup_s, lambda v: v < 10)),

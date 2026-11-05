@@ -23,6 +23,7 @@ import tech.idct.clipra.core.models.ModelCatalog
 import tech.idct.clipra.core.models.ModelDownloader
 import tech.idct.clipra.core.models.ModelStore
 import java.io.File
+import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.log10
 import kotlin.math.sqrt
@@ -85,10 +86,11 @@ class TranscriberTest {
         ).single()
         val seconds = (System.nanoTime() - started) / 1e9
         val words = transcript.words
+        // scripts/perf/budgets.py reads this line: a decimal point in every locale (#198).
         Log.i(
             TAG,
             "Base: ${words.size} words in %.1f s, language ${transcript.language}"
-                .format(seconds),
+                .format(Locale.ROOT, seconds),
         )
         assertEquals("en", transcript.language)
         assertTrue("${words.size} words", words.size in 85..100)

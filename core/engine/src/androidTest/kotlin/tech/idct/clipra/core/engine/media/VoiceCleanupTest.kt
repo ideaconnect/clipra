@@ -22,6 +22,7 @@ import tech.idct.clipra.ml.voice.RnNoise
 import tech.idct.clipra.ml.voice.SampleSource
 import tech.idct.clipra.ml.voice.VoiceDenoiser
 import java.io.File
+import java.util.Locale
 import kotlin.math.log10
 
 /**
@@ -44,10 +45,11 @@ class VoiceCleanupTest {
             val (out, seconds) = run(DeepFilterNet(OnnxDeepFilterModel(folder)), noisy)
             val before = siSdr(noisy, clean)
             val after = siSdr(out, clean)
+            // scripts/perf/budgets.py reads this line: a decimal point in every locale (#198).
             Log.i(
                 TAG,
                 "DeepFilterNet $noise: %.1f -> %.1f dB SI-SDR, %.1f s for 10 s"
-                    .format(before, after, seconds),
+                    .format(Locale.ROOT, before, after, seconds),
             )
             assertTrue("$noise improved by ${after - before} dB", after - before > 6)
         }
@@ -64,7 +66,7 @@ class VoiceCleanupTest {
             Log.i(
                 TAG,
                 "RNNoise $noise: %.1f -> %.1f dB SI-SDR, %.1f s for 10 s"
-                    .format(before, after, seconds),
+                    .format(Locale.ROOT, before, after, seconds),
             )
             // A misaligned output would score far below the input.
             assertTrue("$noise improved by ${after - before} dB", after - before > 1)

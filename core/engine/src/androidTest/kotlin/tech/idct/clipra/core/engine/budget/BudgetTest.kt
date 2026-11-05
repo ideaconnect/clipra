@@ -32,14 +32,16 @@ import tech.idct.clipra.core.model.Project
 import tech.idct.clipra.core.model.Transform
 import tech.idct.clipra.core.model.export.ExportSettings
 import java.io.File
+import java.util.Locale
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * The export and preview budgets of docs/architecture.md, section 11 (#77): a 42 s project of
  * three video layers at 1080p30 exported from the originals, and previewed from proxies with two
- * effects. Numbers go to logcat under the tag Budget. The limits are checked only with the
- * instrumentation argument `budgets=check`, on real phones; the emulator shows that the
- * measurement works, not how fast a phone is.
+ * effects. Numbers go to logcat under the tag Budget, with a decimal point in every locale for
+ * scripts/perf/budgets.py (#198). The limits are checked only with the instrumentation argument
+ * `budgets=check`, on real phones; the emulator shows that the measurement works, not how fast a
+ * phone is.
  *
  * The layers loop the bundled 1080p clips. For a phone's own footage, push a 1080p30 video to
  * [FOOTAGE] first (docs/release/performance.md); the test reads it through the shell.
@@ -68,7 +70,7 @@ class BudgetTest {
             TAG,
             "export ${rendered.width}x${rendered.height} 30 fps, 42 s, 3 layers " +
                 "(${project.media.first().displayName}): %.1f s, %.2fx real time"
-                    .format(seconds, DURATION_US / 1e6 / seconds),
+                    .format(Locale.ROOT, seconds, DURATION_US / 1e6 / seconds),
         )
         rendered.file.delete()
         if (check) assertTrue("export took $seconds s", seconds < EXPORT_LIMIT_S)
@@ -117,7 +119,7 @@ class BudgetTest {
         Log.i(
             TAG,
             "preview ${size.width}x${size.height}, 3 layers, 2 effects: " +
-                "%.1f fps shown, %.2fx real time".format(fps, pace),
+                "%.1f fps shown, %.2fx real time".format(Locale.ROOT, fps, pace),
         )
         if (check) {
             assertTrue("preview at ${pace}x real time", pace >= MIN_PACE)
