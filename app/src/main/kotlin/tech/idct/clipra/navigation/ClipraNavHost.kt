@@ -34,6 +34,7 @@ import tech.idct.clipra.feature.editor.EditorTool
 import tech.idct.clipra.feature.editor.LayersRoute
 import tech.idct.clipra.feature.editor.ToolTarget
 import tech.idct.clipra.feature.editor.editorScreens
+import tech.idct.clipra.feature.editor.findMissingMediaInEditor
 import tech.idct.clipra.feature.editor.tablet.TabletPanel
 import tech.idct.clipra.feature.editor.tablet.TabletPanels
 import tech.idct.clipra.feature.effects.ColorRoute
@@ -220,6 +221,10 @@ fun ClipraNavHost(
                     }
                 },
                 onPro = { navController.navigate(ProRoute) },
+                // Find files for the clips an export would leave out (#212), in the editor.
+                onFindMissing = {
+                    if (!navController.findMissingMediaInEditor()) navController.popBackStack()
+                },
             ),
         )
         modelsScreens(

@@ -24,10 +24,13 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.Serializable
 import tech.idct.clipra.core.designsystem.adaptive.LocalWindowLayout
 import tech.idct.clipra.core.designsystem.adaptive.WindowLayout
@@ -113,16 +116,42 @@ fun NavGraphBuilder.editorScreens(screen: @Composable (Board) -> Unit, actions: 
         if (route.projectId == null) {
             screen(EditorBoards.editor)
         } else {
-            EditorRoute(actions, pickMedia = route.pickMedia)
+            val saved = entry.savedStateHandle
+            val findMissing by saved.getStateFlow(FIND_MISSING, false)
+                .collectAsStateWithLifecycle()
+            EditorRoute(
+                actions,
+                pickMedia = route.pickMedia,
+                findMissing = findMissing,
+                onFindMissingShown = { saved[FIND_MISSING] = false },
+            )
         }
     }
     composable<LayersRoute> { screen(EditorBoards.layers) }
 }
 
+/**
+ * Goes back to the editor below and opens its Missing media sheet there (#212, #216): Export's
+ * Find files, for the clips an export would leave out. False when there is no editor below.
+ */
+fun NavController.findMissingMediaInEditor(): Boolean {
+    val editor = runCatching { getBackStackEntry<EditorRoute>() }.getOrNull() ?: return false
+    editor.savedStateHandle[FIND_MISSING] = true
+    return popBackStack<EditorRoute>(inclusive = false)
+}
+
+/** The editor's saved state key for [findMissingMediaInEditor]. */
+private const val FIND_MISSING = "findMissingMedia"
+
+/** How long the sheet waits for the editor to look at the files again once it is back. */
+private const val FIND_MISSING_WAIT_MS = 3_000L
+
 @Composable
 private fun EditorRoute(
     actions: EditorActions,
     pickMedia: Boolean = false,
+    findMissing: Boolean = false,
+    onFindMissingShown: () -> Unit = {},
     viewModel: EditorViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -217,6 +246,16 @@ private fun EditorRoute(
     // picker (often a sheet that only pauses the editor) can give access back: the editor looks
     // at the media again each time it resumes (#213).
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.recheckMedia() }
+    // Back from Export's Find files (#212): the sheet opens once the editor knows what is
+    // missing. It looks again on resume, so a file that came back meanwhile opens nothing.
+    LaunchedEffect(findMissing) {
+        if (!findMissing) return@LaunchedEffect
+        val missing = withTimeoutOrNull(FIND_MISSING_WAIT_MS) {
+            viewModel.state.first { it.missingMedia.isNotEmpty() }
+        }
+        if (missing != null) missingSheet = true
+        onFindMissingShown()
+    }
 
     // The preview player (#14): the composition follows every edit; while playing, the player
     // drives the playhead, and while paused, the playhead (scrubbing) seeks the player.

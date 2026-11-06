@@ -65,6 +65,8 @@ sealed interface ExportState {
         val extras: List<SavedExtra> = emptyList(),
         /** Whether the video has captions drawn into it. */
         val captionsBurnedIn: Boolean = false,
+        /** Clips the video was made without, because their media couldn't be read (#212). */
+        val leftOutClips: Int = 0,
     ) : ExportState
 
     data class Failed(val projectId: String, val failure: ExportFailure) : ExportState
@@ -162,6 +164,7 @@ class ExportManager @Inject constructor(
                     extras = saved,
                     captionsBurnedIn = settings.captions == CaptionMode.BurnIn &&
                         Srt.cues(project).isNotEmpty(),
+                    leftOutClips = rendered.leftOutClips,
                 )
                 mutableEvents.tryEmit(ExportEvent.Finished)
             } catch (cancelled: CancellationException) {

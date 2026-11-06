@@ -80,4 +80,19 @@
     <string name="export_saved_captions_burned">napisy wtopione</string>
     <string name="export_tablet_note">Renderuje z oryginałów, nie z proxy. Działa dalej w tle.</string>
     <string name="export_cover_strip">Klatki projektu: stuknij jedną, aby była okładką</string>
+    <string name="export_left_out_title">Brakuje plików</string>
+    <string name="export_left_out_body">Clipra nie może już otworzyć plików tych klipów. Film powstanie bez nich.</string>
+    <string name="export_left_out_clip">%1$s · L%2$d · %3$s-%4$s</string>
+    <string name="export_left_out_video">Film</string>
+    <string name="export_left_out_photo">Zdjęcie</string>
+    <string name="export_left_out_sound">Dźwięk</string>
+    <string name="export_left_out_export">Eksportuj mimo to</string>
+    <string name="export_left_out_find">Znajdź pliki</string>
+    <string name="export_left_out_cancel">Anuluj</string>
+    <plurals name="export_saved_left_out">
+        <item quantity="one">Pominięto %d klip: brak jego pliku</item>
+        <item quantity="few">Pominięto %d klipy: brak ich plików</item>
+        <item quantity="many">Pominięto %d klipów: brak ich plików</item>
+        <item quantity="other">Pominięto %d klipu: brak ich plików</item>
+    </plurals>
 </resources>

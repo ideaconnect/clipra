@@ -78,8 +78,11 @@ class ExportRenderer(
 ) {
     private val reversedSounds = ReversedSounds(context, cache)
 
-    /** The rendered file, before it is published. */
-    data class Rendered(val file: File, val width: Int, val height: Int)
+    /**
+     * The rendered file, before it is published. [leftOutClips] are the clips it was made
+     * without, because their media couldn't be read (#212).
+     */
+    data class Rendered(val file: File, val width: Int, val height: Int, val leftOutClips: Int = 0)
 
     /**
      * Renders [project] to a cache file. [onProgress] gets 0 to 1 on the main thread; closing
@@ -98,6 +101,11 @@ class ExportRenderer(
         withContext(Dispatchers.IO) { reversedSounds.requestAll(project) }
         // After the voices too: a normalized clip is measured on the sound it plays.
         val timeline = timeline(withContext(Dispatchers.IO) { measured(project) }, settings)
+        // The clips the timeline was built without, for the Saved screen (#212). The user may
+        // have chosen to export without them, or their files went after the check.
+        val leftOut = withContext(Dispatchers.IO) {
+            MissingOriginals.leftOut(context, cache, settings.drawn(project)).size
+        }
         // How far the video is, from the frames drawn (#183). Transformer's own progress is the
         // average of every sequence's, and the sound's are done long before the picture, so it
         // stood at half after seconds and crawled from there.
@@ -139,7 +147,7 @@ class ExportRenderer(
         } finally {
             main.removeCallbacks(poll)
         }
-        return Rendered(output, size.width, size.height)
+        return Rendered(output, size.width, size.height, leftOut)
     }
 
     /**

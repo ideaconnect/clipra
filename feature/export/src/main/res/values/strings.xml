@@ -78,4 +78,17 @@
     <string name="export_saved_captions_burned">captions burned in</string>
     <string name="export_tablet_note">Renders from original media, not proxies. Keeps going in the background.</string>
     <string name="export_cover_strip">The project\'s frames: tap one to make it the cover</string>
+    <string name="export_left_out_title">Some media is missing</string>
+    <string name="export_left_out_body">Clipra can\'t open the files of these clips any more. The video would be made without them.</string>
+    <string name="export_left_out_clip">%1$s · L%2$d · %3$s-%4$s</string>
+    <string name="export_left_out_video">Video</string>
+    <string name="export_left_out_photo">Photo</string>
+    <string name="export_left_out_sound">Sound</string>
+    <string name="export_left_out_export">Export anyway</string>
+    <string name="export_left_out_find">Find files</string>
+    <string name="export_left_out_cancel">Cancel</string>
+    <plurals name="export_saved_left_out">
+        <item quantity="one">%d clip was left out: its file is missing</item>
+        <item quantity="other">%d clips were left out: their files are missing</item>
+    </plurals>
 </resources>
