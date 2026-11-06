@@ -45,6 +45,26 @@ data class Project(
 
     fun asset(id: String): MediaAsset? = media.firstOrNull { it.id == id }
 
+    /**
+     * The project with [picked], just imported, among its media. Media it has already (the
+     * same content, so the same id) keeps its id and what describes it, and takes the picked
+     * file's link and name (#214): that file was opened a moment ago, so its link works, while
+     * the project's own may be gone, as for a file deleted and put back. Every clip of it then
+     * plays again, as it was edited.
+     */
+    fun withAsset(picked: MediaAsset): Project {
+        val known = asset(picked.id) ?: return copy(media = media + picked)
+        val linked = known.copy(
+            uri = picked.uri,
+            displayName = picked.displayName.ifEmpty { known.displayName },
+            // The same content has the same size; a project from before #216 learns it now.
+            sizeBytes = known.sizeBytes.takeIf { it > 0 } ?: picked.sizeBytes,
+            takenAtMillis = known.takenAtMillis.takeIf { it > 0 } ?: picked.takenAtMillis,
+        )
+        if (linked == known) return this
+        return copy(media = media.map { if (it.id == known.id) linked else it })
+    }
+
     fun findClip(clipId: String): Pair<Layer, Clip>? {
         for (layer in layers) {
             val clip = layer.clips.firstOrNull { it.id == clipId }

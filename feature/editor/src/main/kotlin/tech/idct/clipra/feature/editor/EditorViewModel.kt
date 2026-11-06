@@ -889,9 +889,6 @@ class EditorViewModel @Inject constructor(
         return AddToMosaic(clip, randomId()).apply(withAsset)
     }
 
-    private fun Project.withAsset(asset: MediaAsset): Project =
-        if (media.any { it.id == asset.id }) this else copy(media = media + asset)
-
     private fun EditRejected.toMessage(): EditorMessage = when (reason) {
         EditRejected.Reason.LayerLocked -> EditorMessage.LayerLocked
         EditRejected.Reason.Overlap -> EditorMessage.NoRoom
