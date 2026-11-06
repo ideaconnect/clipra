@@ -55,7 +55,8 @@ import java.io.File
 /**
  * Media whose original is gone (#213): the editor flags it whatever the cache holds, since the
  * export reads only originals, and tells which of it the preview still plays from a proxy. Its
- * file can be found again (#216), which brings its clips back.
+ * file can be found again (#216), or picked again through Replace or Add media (#214), which
+ * brings its clips back.
  */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34])
@@ -287,6 +288,69 @@ class EditorMissingMediaTest {
         assertEquals(MediaRef(newId, 4_500_000, 8_000_000), second.source)
         assertEquals(Speed(ramp = "hero"), second.speed)
         assertTrue(state.missingMedia.isEmpty())
+    }
+
+    /** The issue's sound deleted and put back somewhere else: a new link, the same bytes. */
+    private fun restoreSound(): File {
+        val file = File(folder.newFolder("restored"), "habitat (1).mp3")
+            .apply { writeBytes(sound(1)) }
+        // The same 10 s as the lost file.
+        ShadowMediaMetadataRetriever.addMetadata(
+            DataSource.toDataSource(context, Uri.fromFile(file)),
+            MediaMetadataRetriever.METADATA_KEY_DURATION,
+            "10000",
+        )
+        return file
+    }
+
+    @Test
+    fun replacingAMissingClipWithTheSameFileMakesItAvailableAgain() {
+        val id = soundProject()
+        val second = project.findClip("b")!!.second
+        File(originals, "habitat.mp3").delete()
+        val editor = editor()
+        editor.awaitState { id in it.missingMedia }
+        val restored = restoreSound()
+
+        editor.select("a")
+        editor.replace(Uri.fromFile(restored))
+
+        // The media takes the new link (#214), so every clip of it plays again.
+        val state = editor.awaitState { id !in it.missingMedia }
+        val relinked = state.project!!
+        assertEquals(listOf(id), relinked.media.map { it.id })
+        assertEquals(Uri.fromFile(restored).toString(), relinked.asset(id)!!.uri)
+        assertEquals("habitat (1).mp3", relinked.asset(id)!!.displayName)
+        // What the project knows about the file stays.
+        assertEquals(10_000_000L, relinked.asset(id)!!.durationUs)
+        assertEquals(MediaRef(id, 0, 6_500_000), relinked.findClip("a")!!.second.source)
+        // The other clip of it comes back as it was: its part, its speed.
+        assertEquals(second, relinked.findClip("b")!!.second)
+    }
+
+    @Test
+    fun addingTheSameFileAgainMakesNoMissingClip() {
+        val id = soundProject()
+        val clips = project.layers.flatMap { it.clips }
+        File(originals, "habitat.mp3").delete()
+        val editor = editor()
+        editor.awaitState { id in it.missingMedia }
+        val restored = restoreSound()
+
+        editor.import(listOf(Uri.fromFile(restored)))
+
+        val state = editor.awaitState { s ->
+            !s.importing && s.project!!.layers.sumOf { it.clips.size } == clips.size + 1
+        }
+        val added = state.project!!
+        // One media for the file, at the link just picked: neither the new clip nor the old
+        // ones are missing.
+        assertEquals(listOf(id), added.media.map { it.id })
+        assertEquals(Uri.fromFile(restored).toString(), added.asset(id)!!.uri)
+        val new = added.layers.flatMap { it.clips }.single { it.id !in setOf("a", "b") }
+        assertEquals(id, new.source!!.mediaId)
+        assertTrue(clips.all { it in added.layers.flatMap { layer -> layer.clips } })
+        editor.awaitState { id !in it.missingMedia }
     }
 
     private fun editor(): EditorViewModel {
