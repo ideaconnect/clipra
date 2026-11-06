@@ -167,6 +167,10 @@ class EditorCacheClearedTest {
     fun theHeaderSaysProxiesOnceTheyAreMade() {
         val editor = editor()
         editor.awaitState { it.makingProxies }
+        // Both videos' proxies queued, one after the other.
+        settle()
+        assertEquals(1, work.pending("tram"))
+        assertEquals(1, work.pending("alfama"))
 
         work.finish()
 
