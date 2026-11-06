@@ -25,6 +25,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import tech.idct.clipra.core.engine.media.Cutouts
+import tech.idct.clipra.core.engine.media.Loudness
 import tech.idct.clipra.core.engine.media.MediaCache
 import tech.idct.clipra.core.engine.media.ProjectMediaResolver
 import tech.idct.clipra.core.engine.media.ReversedSounds
@@ -35,6 +36,7 @@ import tech.idct.clipra.core.engine.render.PauseGate
 import tech.idct.clipra.core.engine.render.ProjectRender
 import tech.idct.clipra.core.engine.render.RenderTimeline
 import tech.idct.clipra.core.engine.render.StillRenderer
+import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
 import tech.idct.clipra.core.model.Project
 import tech.idct.clipra.core.model.export.ExportSettings
@@ -64,7 +66,8 @@ class ExportFailedException(val failure: ExportFailure, cause: Throwable? = null
  * the export size, frame rate, codec and bitrate of [ExportSettings], with Transformer. The video
  * is written to a cache file, then published to MediaStore in Movies/Clipra. Cleaned voices
  * (#39) and reversed clips' sound (#22) that are not ready yet are made first, so the export
- * never has the noisy sound or a silent reversed clip.
+ * never has the noisy sound or a silent reversed clip, and normalized clips (#37) are measured on
+ * the sound they play, so they land on their target.
  */
 @OptIn(UnstableApi::class)
 class ExportRenderer(
@@ -93,7 +96,8 @@ class ExportRenderer(
         cutouts?.let { prepareCutouts(it, project) }
         // After the voices: a reversed clip plays its cleaned voice back to front.
         withContext(Dispatchers.IO) { reversedSounds.requestAll(project) }
-        val timeline = timeline(project, settings)
+        // After the voices too: a normalized clip is measured on the sound it plays.
+        val timeline = timeline(withContext(Dispatchers.IO) { measured(project) }, settings)
         // How far the video is, from the frames drawn (#183). Transformer's own progress is the
         // average of every sequence's, and the sound's are done long before the picture, so it
         // stood at half after seconds and crawled from there.
@@ -285,6 +289,45 @@ class ExportRenderer(
             ensureActive()
             analyzer.requestSpeech(project)
         }
+
+    /**
+     * [project] with every normalized clip (#37) measured on what the export plays: its cleaned
+     * or noise-reduced voice (#38, #39), else its original media, over the clip's own stretch.
+     * A clip keeps the loudness of its last measurement, which may be of the noisy recording
+     * (the cleanup finished after it) or of a stretch it was trimmed from since; normalizing from
+     * that misses the target by what the cleanup took away, up to 23 LU on noisy phone footage
+     * (#35). A clip that can't be measured keeps what it has.
+     */
+    private fun measured(project: Project): Project {
+        val clips = project.layers.flatMap { it.clips }
+        if (clips.none { it.audio.loudnessTarget != null }) return project
+        val media = ProjectMediaResolver(context, cache, forExport = true, maxImageSide = 0)
+        return project.copy(
+            layers = project.layers.map { layer ->
+                layer.copy(clips = layer.clips.map { measured(project, it, media) })
+            },
+        )
+    }
+
+    private fun measured(project: Project, clip: Clip, media: ProjectMediaResolver): Clip {
+        val audio = clip.audio
+        val source = clip.source
+        if (audio.loudnessTarget == null || source == null) return clip
+        val asset = project.asset(source.mediaId) ?: return clip
+        if (clip.type == ClipType.Video && !asset.hasAudio) return clip
+        val voice = if (audio.voiceCleanup != null || audio.noiseReduction != null) {
+            media.voice(asset, audio.voiceCleanup, audio.noiseReduction)
+        } else {
+            null
+        }
+        val path = voice ?: media.source(asset) ?: return clip
+        val measured = runCatching {
+            Loudness.measure(context, path, source.inPointUs, source.outPointUs)
+        }.getOrNull() ?: return clip
+        return clip.copy(
+            audio = audio.copy(measuredLufs = measured.lufs, truePeakDb = measured.truePeakDb),
+        )
+    }
 
     /** The person masks (#50) of every cut-out clip, made now where the background work hasn't. */
     private suspend fun prepareCutouts(cutouts: Cutouts, project: Project) =
