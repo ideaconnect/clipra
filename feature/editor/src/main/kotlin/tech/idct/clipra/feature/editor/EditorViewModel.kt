@@ -33,6 +33,7 @@ import tech.idct.clipra.core.engine.media.Loudness
 import tech.idct.clipra.core.engine.media.MediaCache
 import tech.idct.clipra.core.engine.media.MediaImporter
 import tech.idct.clipra.core.engine.media.ProjectMediaResolver
+import tech.idct.clipra.core.engine.media.Proxies
 import tech.idct.clipra.core.engine.media.Recording
 import tech.idct.clipra.core.engine.media.ReversedSounds
 import tech.idct.clipra.core.engine.media.SoundAnalyzer
@@ -121,6 +122,8 @@ data class EditorUiState(
     val missingMedia: Set<String> = emptySet(),
     /** Of [missingMedia], those the preview still plays from their cached proxy. */
     val previewOnlyMedia: Set<String> = emptySet(),
+    /** Proxies of the project's media are queued or being made (#217), as after a cache clear. */
+    val makingProxies: Boolean = false,
     val importing: Boolean = false,
     val message: EditorMessage? = null,
     /** Beat markers (#40): each clip's beats on the timeline, for clips that show them. */
@@ -199,6 +202,7 @@ class EditorViewModel @Inject constructor(
     private val projects: OpenProjects,
     private val importer: MediaImporter,
     val mediaCache: MediaCache,
+    private val proxies: Proxies,
     private val voices: VoiceCleaner,
     private val analyzer: SoundAnalyzer,
     private val recorder: VoiceRecorder,
@@ -250,7 +254,20 @@ class EditorViewModel @Inject constructor(
                         mutableState.update {
                             it.copy(missingMedia = found.ids, previewOnlyMedia = found.previewOnly)
                         }
+                        // Thumbnails and proxies the cache lost (#217), of the media that can
+                        // be read: made again, a proxy not queued twice.
+                        val readable = media.filterNot { it.id in found.ids }
+                        appScope.launch(Dispatchers.IO) { importer.restore(readable) }
                     }
+            }
+            // The header says so while proxies of the project's media are made (#217).
+            launch {
+                combine(
+                    opened.state.map { it.project.media }.distinctUntilChanged(),
+                    proxies.making,
+                ) { media, making -> media.any { it.id in making } }
+                    .distinctUntilChanged()
+                    .collect { making -> mutableState.update { it.copy(makingProxies = making) } }
             }
             // Beat markers (#40) follow the project and each finished analysis.
             launch {

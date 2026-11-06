@@ -208,6 +208,15 @@ class TabletEditorScreenTest {
         )
     }
 
+    /** After a cache clear (#217), the header says the proxies are being made until they are. */
+    @Test
+    fun theHeaderSaysWhileProxiesAreMade() {
+        state = state.copy(makingProxies = true)
+        show()
+        compose.onNodeWithText("fps · making proxies · auto-saved", substring = true)
+            .assertExists()
+    }
+
     @Test
     fun theColorTab() {
         state = state.copy(

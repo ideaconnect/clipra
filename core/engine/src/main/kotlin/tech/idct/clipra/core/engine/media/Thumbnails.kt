@@ -173,9 +173,14 @@ object Thumbnails {
 
     private fun save(bitmap: Bitmap, file: File): File {
         file.parentFile?.mkdirs()
-        val partial = File(file.path + ".part")
-        partial.outputStream().use { bitmap.compress(Bitmap.CompressFormat.JPEG, 85, it) }
-        partial.renameTo(file)
+        // A file of its own for each writer: Home and the editor can make the same still at once.
+        val partial = File.createTempFile(file.name, ".part", file.parentFile)
+        try {
+            partial.outputStream().use { bitmap.compress(Bitmap.CompressFormat.JPEG, 85, it) }
+            partial.renameTo(file)
+        } finally {
+            partial.delete()
+        }
         return file
     }
 }

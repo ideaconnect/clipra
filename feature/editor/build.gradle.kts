@@ -15,6 +15,8 @@ dependencies {
     implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
 
-    // The editor's tests build its view model from the real engine classes (#213).
+    // The editor's tests build its view model from the real engine classes (#213), on
+    // WorkManager's test setup for the proxies it queues (#217).
     testImplementation(project(":core:models"))
+    testImplementation(libs.androidx.work.testing)
 }

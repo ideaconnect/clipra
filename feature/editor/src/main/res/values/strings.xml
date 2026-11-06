@@ -3,7 +3,10 @@
     <string name="editor_title_editor">Editor</string>
     <string name="editor_title_layers">Layers</string>
     <string name="editor_export">Export</string>
-    <string name="editor_format_line">%1$s · %2$s · %3$d fps · proxies</string>
+    <string name="editor_format_line">%1$s · %2$s · %3$d fps · %4$s</string>
+    <!-- The header's proxy state (#217): ready, or still being made, as after a cache clear -->
+    <string name="editor_proxies">proxies</string>
+    <string name="editor_proxies_making">making proxies</string>
     <string name="editor_play">Play</string>
     <string name="editor_pause">Pause</string>
     <string name="editor_undo">Undo</string>
@@ -200,7 +203,7 @@
 
     <!-- Tablet editor (#69) -->
     <string name="editor_tablet_close">Close the project</string>
-    <string name="editor_tablet_format_line">%1$s · %2$d×%3$d · %4$d fps · proxies · auto-saved</string>
+    <string name="editor_tablet_format_line">%1$s · %2$d×%3$d · %4$d fps · %5$s · auto-saved</string>
     <string name="editor_tablet_format_chip">%1$s · %2$s</string>
     <string name="editor_tablet_media">Media</string>
     <string name="editor_tablet_import">Import</string>
