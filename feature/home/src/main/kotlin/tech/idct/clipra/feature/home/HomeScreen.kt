@@ -472,7 +472,7 @@ private fun Thumbnail(project: ProjectSummary) {
         contentAlignment = Alignment.Center,
     ) {
         val (width, height) = frameSize(project.ratio)
-        LayoutFrame(project.layout, width, height, project.pictures)
+        LayoutFrame(project.id, project.layout, width, height, project.pictures)
         Badge(
             text = formatBadge(project.ratio, project.layout, project.resolution.label),
             modifier = Modifier
@@ -495,7 +495,13 @@ private fun frameSize(ratio: AspectRatio): Pair<Dp, Dp> {
 }
 
 @Composable
-private fun LayoutFrame(layout: Layout, width: Dp, height: Dp, pictures: List<String?>) {
+private fun LayoutFrame(
+    projectId: String,
+    layout: Layout,
+    width: Dp,
+    height: Dp,
+    pictures: List<String?>,
+) {
     val colors = ClipraTheme.colors
     LayoutCells(
         layout = layout,
@@ -507,16 +513,19 @@ private fun LayoutFrame(layout: Layout, width: Dp, height: Dp, pictures: List<St
             .clip(RoundedCornerShape(4.dp))
             .background(colors.background),
     ) { index ->
-        pictures.getOrNull(index)?.let { CellPicture(it) }
+        pictures.getOrNull(index)?.let { CellPicture(projectId, it) }
     }
 }
 
-/** A cell's photo or video, cropped to the cell; nothing until its thumbnail has loaded. */
+/**
+ * A cell's photo or video, cropped to the cell; nothing until its thumbnail has loaded, or been
+ * made again after a cache clear (#217).
+ */
 @Composable
-private fun CellPicture(mediaId: String) {
+private fun CellPicture(projectId: String, mediaId: String) {
     val pictures = LocalProjectPictures.current
-    val picture by produceState<ImageBitmap?>(null, pictures, mediaId) {
-        value = pictures.picture(mediaId)
+    val picture by produceState<ImageBitmap?>(null, pictures, projectId, mediaId) {
+        value = pictures.picture(projectId, mediaId)
     }
     picture?.let {
         Image(

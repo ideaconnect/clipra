@@ -35,6 +35,7 @@ import tech.idct.clipra.core.engine.media.Cutouts
 import tech.idct.clipra.core.engine.media.MediaCache
 import tech.idct.clipra.core.engine.media.MediaImporter
 import tech.idct.clipra.core.engine.media.MediaInspector
+import tech.idct.clipra.core.engine.media.Proxies
 import tech.idct.clipra.core.engine.media.ReversedSounds
 import tech.idct.clipra.core.engine.media.SoundAnalyzer
 import tech.idct.clipra.core.engine.media.Stabilizer
@@ -66,12 +67,18 @@ class EditorMissingMediaTest {
 
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    /** The editor's work that outlives it, apart from the autosaver, so a test can wait for it. */
+    private val background = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private lateinit var cache: MediaCache
     private lateinit var originals: File
     private lateinit var project: Project
+    private lateinit var work: TestProxyWork
 
     @Before
     fun setUp() {
+        // The 4K videos with their originals in place get their proxies queued (#217).
+        work = TestProxyWork(context)
         cache = MediaCache(folder.newFolder("cache"))
         originals = folder.newFolder("originals")
         // Two 4K videos on L1 and a photo on L2, with their originals in place.
@@ -97,7 +104,11 @@ class EditorMissingMediaTest {
     }
 
     @After
-    fun tearDown() = scope.cancel()
+    fun tearDown() {
+        work.close(background)
+        scope.cancel()
+        background.cancel()
+    }
 
     /** A 4K video, as the issue's, or a photo, with its original in [originals]. */
     private fun asset(id: String, kind: MediaKind) = MediaAsset(
@@ -358,18 +369,20 @@ class EditorMissingMediaTest {
         files.write(project)
         val repository = ProjectRepository(files, NoIndex, clock = { 0L }, io = Dispatchers.IO)
         val voices = VoiceCleaner(context, cache, ModelStore(folder.newFolder("models")))
+        val proxies = Proxies(context, cache)
         return EditorViewModel(
             context = context,
             projects = OpenProjects(repository, scope),
-            importer = MediaImporter(context, cache),
+            importer = MediaImporter(context, cache, proxies),
             mediaCache = cache,
+            proxies = proxies,
             voices = voices,
             analyzer = SoundAnalyzer(cache, voices),
             recorder = VoiceRecorder(context),
             cutouts = Cutouts(context, cache),
             stabilizer = Stabilizer(context, cache),
             reversedSounds = ReversedSounds(context, cache),
-            appScope = scope,
+            appScope = background,
             savedState = SavedStateHandle(mapOf("projectId" to project.id)),
         )
     }

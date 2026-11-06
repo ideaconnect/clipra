@@ -86,7 +86,7 @@ Transcript(clipId, words: List<Word(text, start, end, confidence, kind: Word|Fil
 - **Blend modes (16)** are per clip, in the compositor. Normal uses fixed alpha blending; the other modes draw the clip alone and blend it onto the canvas in a shader that reads both (ping-pong). The shader uses the W3C Compositing and Blending formulas (Hue, Color and Luminosity with its luminosity and saturation), and `BlendGoldenTest` checks every mode against a separate CPU implementation.
 - **Transitions.** Clips overlap on their layer across the cut, and the incoming clip carries the transition. A dissolve is an opacity ramp; other transitions are shaders that read both clips over the overlap.
 - **Audio.** Each layer becomes one audio-only `EditedMediaItemSequence`, with `addGap()` where the layer is silent; Media3 mixes the sequences. Clips that overlap for a transition hand over the sound at the cut.
-- **Preview** renders the same compositor at preview size from proxies (720p H.264, generated on import in the background). Export always uses originals at full size.
+- **Preview** renders the same compositor at preview size from proxies (720p H.264, generated on import in the background, one at a time, and again when a project opens and the cache has lost them, #217). Export always uses originals at full size.
 - **Performance work, measured on phones.** Decode ahead on decoder threads into a small `HardwareBuffer` queue per clip. Keep decoders alive across short gaps and recently active clips. Respect the device's hardware decoder instance limit. Preview audio may come from one pre-mixed track if `CompositionPlayer` with several audio sequences stalls (seen on the emulator).
 - **Thumbnails and filmstrips:** frame extraction from proxies, cached on disk.
 

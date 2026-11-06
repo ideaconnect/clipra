@@ -3,7 +3,9 @@
     <string name="editor_title_editor">Edytor</string>
     <string name="editor_title_layers">Warstwy</string>
     <string name="editor_export">Eksportuj</string>
-    <string name="editor_format_line">%1$s · %2$s · %3$d fps · proxy</string>
+    <string name="editor_format_line">%1$s · %2$s · %3$d fps · %4$s</string>
+    <string name="editor_proxies">proxy</string>
+    <string name="editor_proxies_making">tworzenie proxy</string>
     <string name="editor_play">Odtwórz</string>
     <string name="editor_pause">Wstrzymaj</string>
     <string name="editor_undo">Cofnij</string>
@@ -202,7 +204,7 @@
 
     <!-- Tablet editor (#69) -->
     <string name="editor_tablet_close">Zamknij projekt</string>
-    <string name="editor_tablet_format_line">%1$s · %2$d×%3$d · %4$d kl./s · proxy · zapis automatyczny</string>
+    <string name="editor_tablet_format_line">%1$s · %2$d×%3$d · %4$d kl./s · %5$s · zapis automatyczny</string>
     <string name="editor_tablet_format_chip">%1$s · %2$s</string>
     <string name="editor_tablet_media">Multimedia</string>
     <string name="editor_tablet_import">Importuj</string>

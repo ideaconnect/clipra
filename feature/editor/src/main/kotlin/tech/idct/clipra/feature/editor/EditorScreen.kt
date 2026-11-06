@@ -157,7 +157,7 @@ fun EditorScreen(
         Column(modifier = Modifier.fillMaxSize()) {
             ScreenHeader(
                 title = project.name,
-                subtitle = formatLine(project.format),
+                subtitle = formatLine(project.format, state.makingProxies),
                 navigation = HeaderNavigation.Close,
                 onNavigate = callbacks.onClose,
                 actions = {
@@ -202,13 +202,20 @@ fun EditorScreen(
     }
 }
 
+/** "9:16 · FHD · 30 fps · proxies", or "making proxies" while they are made (#217). */
 @Composable
-private fun formatLine(format: Format): String = stringResource(
+private fun formatLine(format: Format, makingProxies: Boolean): String = stringResource(
     R.string.editor_format_line,
     format.ratio.label,
     format.resolution.label,
     format.frameRate.fps,
+    proxyState(makingProxies),
 )
+
+/** The header's word on the proxies (#217): ready, or still being made. */
+@Composable
+internal fun proxyState(making: Boolean): String =
+    stringResource(if (making) R.string.editor_proxies_making else R.string.editor_proxies)
 
 /**
  * The preview, letterboxed in black at the project's ratio. [overlay] covers the whole area,

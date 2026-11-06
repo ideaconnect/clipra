@@ -60,6 +60,7 @@ import tech.idct.clipra.feature.editor.EditorCallbacks
 import tech.idct.clipra.feature.editor.EditorTool
 import tech.idct.clipra.feature.editor.EditorUiState
 import tech.idct.clipra.feature.editor.R
+import tech.idct.clipra.feature.editor.proxyState
 import tech.idct.clipra.feature.editor.textRes
 import tech.idct.clipra.feature.editor.timeline.LayerHeaderActions
 import tech.idct.clipra.feature.editor.timeline.Timeline
@@ -341,7 +342,7 @@ private fun Header(project: Project, state: EditorUiState, callbacks: EditorCall
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                text = formatLine(project.format),
+                text = formatLine(project.format, state.makingProxies),
                 style = type.meta,
                 color = colors.textSecondary,
                 maxLines = 1,
@@ -374,9 +375,12 @@ private fun Header(project: Project, state: EditorUiState, callbacks: EditorCall
     }
 }
 
-/** "16:9 · 3840×2160 · 30 fps · proxies · auto-saved". */
+/**
+ * "16:9 · 3840×2160 · 30 fps · proxies · auto-saved", with "making proxies" while they are made
+ * (#217).
+ */
 @Composable
-private fun formatLine(format: Format): String {
+private fun formatLine(format: Format, makingProxies: Boolean): String {
     val size = format.outputSize
     return stringResource(
         R.string.editor_tablet_format_line,
@@ -384,6 +388,7 @@ private fun formatLine(format: Format): String {
         size.width,
         size.height,
         format.frameRate.fps,
+        proxyState(makingProxies),
     )
 }
 
