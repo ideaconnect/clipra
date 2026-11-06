@@ -186,6 +186,7 @@ fun EditorScreen(
                 filmstrip = filmstrip,
                 waveforms = waveforms,
                 beats = state.beats,
+                previewOnlyMedia = state.previewOnlyMedia,
             )
             val voiceover = state.voiceover
             if (voiceover != null) {
@@ -446,4 +447,5 @@ internal fun EditorMessage.textRes(): Int = when (this) {
     EditorMessage.Unlinked -> R.string.editor_message_unlinked
     EditorMessage.MicrophoneUnavailable -> R.string.editor_message_mic_unavailable
     EditorMessage.NotSaved -> R.string.editor_message_not_saved
+    EditorMessage.OriginalMissing -> R.string.editor_message_original_missing
 }

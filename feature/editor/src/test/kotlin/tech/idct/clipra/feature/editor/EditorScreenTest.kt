@@ -1,10 +1,15 @@
 package tech.idct.clipra.feature.editor
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -17,6 +22,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.RoborazziOptions
 import com.github.takahirom.roborazzi.captureRoboImage
@@ -243,6 +249,63 @@ class EditorScreenTest {
         val badge = compose.onNodeWithText("10.0s", useUnmergedTree = true)
             .fetchSemanticsNode().boundsInRoot
         assertTrue(badge.left >= name.right)
+        compose.onRoot().captureRoboImage(roborazziOptions = options)
+    }
+
+    /**
+     * Gone originals (#213): tram.mp4 still plays from its proxy, so it keeps its filmstrip and
+     * says its original is missing; alfama.mp4 and stamp.png have nothing left to play.
+     */
+    private fun showMissingOriginals() {
+        compose.setContent {
+            ClipraTheme {
+                EditorScreen(
+                    state = EditorUiState(
+                        project = project,
+                        loaded = true,
+                        selectedClipId = "tram",
+                        playheadUs = 7_120_000,
+                        missingMedia = setOf("tram", "alfama", "stamp"),
+                        previewOnlyMedia = setOf("tram"),
+                    ),
+                    playing = false,
+                    callbacks = noop,
+                    preview = {},
+                    filmstrip = { clip, width, height ->
+                        Box(
+                            Modifier
+                                .size(width.dp, height.dp)
+                                .background(ClipraTheme.colors.borderStrong)
+                                .testTag("filmstrip:${clip.id}"),
+                        )
+                    },
+                )
+            }
+        }
+    }
+
+    @Test
+    fun editorWithAMissingOriginal() {
+        Locale.setDefault(Locale.US)
+        showMissingOriginals()
+        compose.onNodeWithText("Original missing", useUnmergedTree = true).assertExists()
+        compose.onNodeWithContentDescription(
+            "Video tram.mp4, 4.0s, layer L3, Original missing: the export leaves it out",
+        ).assertIsSelected()
+        compose.onNodeWithContentDescription("Video alfama.mp4, 3.5s, layer L4, Missing media")
+            .assertExists()
+        compose.onNodeWithTag("filmstrip:tram", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("filmstrip:sunset", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("filmstrip:alfama", useUnmergedTree = true).assertDoesNotExist()
+        compose.onRoot().captureRoboImage(roborazziOptions = options)
+    }
+
+    @Test
+    @Config(qualifiers = "pl-w390dp-h844dp-xhdpi")
+    fun editorWithAMissingOriginalInPolish() {
+        Locale.setDefault(Locale.forLanguageTag("pl-PL"))
+        showMissingOriginals()
+        compose.onNodeWithText("Brak oryginału", useUnmergedTree = true).assertExists()
         compose.onRoot().captureRoboImage(roborazziOptions = options)
     }
 

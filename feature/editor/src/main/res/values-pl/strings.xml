@@ -15,6 +15,8 @@
     <string name="editor_trim_start">Przytnij początek</string>
     <string name="editor_trim_end">Przytnij koniec</string>
     <string name="editor_missing_media">Brak pliku</string>
+    <string name="editor_original_missing">Brak oryginału</string>
+    <string name="editor_original_missing_description">Brak oryginału: eksport go pominie</string>
     <string name="editor_clip_video">Film</string>
     <string name="editor_clip_photo">Zdjęcie</string>
     <string name="editor_clip_text">Tekst</string>
@@ -196,6 +198,7 @@
     <string name="editor_message_needs_microphone">Zezwól na dostęp do mikrofonu, aby nagrać lektora</string>
     <string name="editor_message_mic_unavailable">Nie udało się włączyć mikrofonu</string>
     <string name="editor_message_not_saved">Nie udało się zapisać zmian. Zwolnij miejsce w telefonie, a zostaną zapisane.</string>
+    <string name="editor_message_original_missing">Brak oryginału: eksport pominie ten klip. Przywróć plik albo podmień klip.</string>
 
     <!-- Tablet editor (#69) -->
     <string name="editor_tablet_close">Zamknij projekt</string>

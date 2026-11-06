@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
@@ -115,7 +116,10 @@ data class EditorUiState(
     val selectedClipId: String? = null,
     val playheadUs: Long = 0,
     val dpPerSecond: Float = TimelineGeometry.DEFAULT_DP_PER_SECOND,
+    /** Media whose original can't be read (#213): the export leaves their clips out. */
     val missingMedia: Set<String> = emptySet(),
+    /** Of [missingMedia], those the preview still plays from their cached proxy. */
+    val previewOnlyMedia: Set<String> = emptySet(),
     val importing: Boolean = false,
     val message: EditorMessage? = null,
     /** Beat markers (#40): each clip's beats on the timeline, for clips that show them. */
@@ -161,6 +165,9 @@ enum class EditorMessage {
 
     /** Edits couldn't be saved, as when the phone's storage is full; they are tried again. */
     NotSaved,
+
+    /** The selected clip's original is gone (#213): it plays from its proxy, not in the export. */
+    OriginalMissing,
 }
 
 @HiltViewModel
@@ -187,6 +194,9 @@ class EditorViewModel @Inject constructor(
     private var recordingStartUs = 0L
     private var meter: Job? = null
 
+    /** Counts the requests to look at the media files again (#213), see [recheckMedia]. */
+    private val mediaChecks = MutableStateFlow(0)
+
     val state: StateFlow<EditorUiState> = mutableState.asStateFlow()
 
     init {
@@ -202,6 +212,22 @@ class EditorViewModel @Inject constructor(
                 opened.saveFailing.collect { failing ->
                     if (failing) mutableState.update { it.copy(message = EditorMessage.NotSaved) }
                 }
+            }
+            // Media that can't be read (#213), when the project's media change and when asked
+            // to look again. Every check opens each original, so it stays off the main thread.
+            launch {
+                combine(
+                    opened.state.map { it.project.media }.distinctUntilChanged(),
+                    mediaChecks,
+                ) { media, _ -> media }
+                    .collectLatest { media ->
+                        val found = withContext(Dispatchers.IO) {
+                            MissingMedia.check(context, mediaCache, media)
+                        }
+                        mutableState.update {
+                            it.copy(missingMedia = found.ids, previewOnlyMedia = found.previewOnly)
+                        }
+                    }
             }
             // Beat markers (#40) follow the project and each finished analysis.
             launch {
@@ -233,7 +259,6 @@ class EditorViewModel @Inject constructor(
                             session.project.findClip(it) !=
                                 null
                         },
-                        missingMedia = missing(session.project),
                         // A shorter project (the last clip moved or deleted) ends earlier.
                         playheadUs = state.playheadUs.coerceAtMost(session.project.durationUs),
                     )
@@ -253,8 +278,24 @@ class EditorViewModel @Inject constructor(
                 return
             }
         }
-        mutableState.update { it.copy(selectedClipId = clipId) }
+        mutableState.update { state ->
+            // A clip whose original is gone says what that means once it is picked (#213).
+            val media = clipId?.let { state.project?.findClip(it)?.second?.source?.mediaId }
+            val newlyPicked = clipId != state.selectedClipId
+            val gone = newlyPicked && media != null && media in state.previewOnlyMedia
+            state.copy(
+                selectedClipId = clipId,
+                message = if (gone) EditorMessage.OriginalMissing else state.message,
+            )
+        }
     }
+
+    /**
+     * Looks at the media files again (#213), as when the editor comes back to the foreground:
+     * originals and proxies can go while Clipra is in the background, and access can come back
+     * through a picker.
+     */
+    fun recheckMedia() = mediaChecks.update { it + 1 }
 
     /**
      * Linked (#184): the selected clip, when linked, goes its own way; when not, the clip tapped
@@ -781,14 +822,6 @@ class EditorViewModel @Inject constructor(
 
     private fun Project.withAsset(asset: MediaAsset): Project =
         if (media.any { it.id == asset.id }) this else copy(media = media + asset)
-
-    private fun missing(project: Project): Set<String> = project.media
-        .filterNot {
-            ProjectMediaResolver.isAvailable(context, it.uri) ||
-                mediaCache.proxy(it.id).exists()
-        }
-        .map { it.id }
-        .toSet()
 
     private fun EditRejected.toMessage(): EditorMessage = when (reason) {
         EditRejected.Reason.LayerLocked -> EditorMessage.LayerLocked

@@ -181,6 +181,10 @@ private fun EditorRoute(
         viewModel.stopRecording()
         viewModel.flush()
     }
+    // Files can go while Clipra is in the background, the system can clear the proxies, and a
+    // picker (often a sheet that only pauses the editor) can give access back: the editor looks
+    // at the media again each time it resumes (#213).
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.recheckMedia() }
 
     // The preview player (#14): the composition follows every edit; while playing, the player
     // drives the playhead, and while paused, the playhead (scrubbing) seeks the player.
