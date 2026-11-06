@@ -196,7 +196,7 @@
     <string name="editor_message_needs_microphone">Allow the microphone to record a voiceover</string>
     <string name="editor_message_mic_unavailable">Couldn\'t open the microphone</string>
     <string name="editor_message_not_saved">Couldn\'t save your edits. Free up space on the phone and they\'ll be saved.</string>
-    <string name="editor_message_original_missing">Original missing: the export leaves this clip out. Restore the file or replace the clip.</string>
+    <string name="editor_message_original_missing">Original missing: the export leaves this clip out. Tap its label to find the file.</string>
 
     <!-- Tablet editor (#69) -->
     <string name="editor_tablet_close">Close the project</string>
@@ -279,4 +279,20 @@
     <string name="editor_tool_linked">Linked</string>
     <string name="editor_message_pick_link">Tap the clip to link it with</string>
     <string name="editor_message_unlinked">Unlinked: the clip moves on its own now</string>
+
+    <!-- Missing media (#216) -->
+    <string name="editor_missing_title">Missing media</string>
+    <string name="editor_missing_hint">Clipra can\'t open these files. Find each one again and all its clips come back with their cuts, speed and effects.</string>
+    <string name="editor_missing_find">Find file</string>
+    <string name="editor_missing_taken">Taken %1$s</string>
+    <string name="editor_missing_unused">Not on the timeline</string>
+    <string name="editor_relink_title">Not the same file</string>
+    <string name="editor_relink_body">%1$s isn\'t the file the project used. Use it anyway?</string>
+    <string name="editor_relink_file">This file</string>
+    <string name="editor_relink_refit_one">Its clip doesn\'t fit in it and will play another part of it.</string>
+    <string name="editor_relink_refit">Clips that don\'t fit in it will play another part of it: %1$d of %2$d.</string>
+    <string name="editor_relink_use">Use it</string>
+    <string name="editor_relink_cancel">Cancel</string>
+    <string name="editor_message_relinked">Found: its clips play again</string>
+    <string name="editor_message_relink_wrong_kind">That\'s another kind of file. Pick one like the missing one.</string>
 </resources>

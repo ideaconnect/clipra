@@ -47,6 +47,8 @@ class MediaImportTest {
         assertEquals(64, asset.id.length)
         // The same file always gets the same id.
         assertEquals(asset.id, MediaInspector.fingerprint(context, source))
+        // Kept to describe the file once it is missing (#216).
+        assertEquals(File(source.path!!).length(), asset.sizeBytes)
 
         assertTrue(ProxyGenerator.needsProxy(asset))
         val preview = ProjectMediaResolver(context, cache, forExport = false, maxImageSide = 1080)

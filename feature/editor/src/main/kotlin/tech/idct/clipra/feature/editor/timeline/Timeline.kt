@@ -96,6 +96,8 @@ class TimelineActions(
     val onTransition: (fromClipId: String) -> Unit = {},
     /** Moves the selected clip's keyframes at [fromUs] to [toUs], both in clip time (#21). */
     val onMoveKeyframe: (clipId: String, fromUs: Long, toUs: Long) -> Unit = { _, _, _ -> },
+    /** The label of a clip whose media [mediaId] is missing was tapped (#216). */
+    val onMissing: (mediaId: String) -> Unit = {},
 )
 
 /**
@@ -720,6 +722,10 @@ private fun ClipBlock(
                 project,
                 missing,
                 previewOnly,
+                // Tapping "Missing media" opens the list of missing files to find them (#216).
+                onMissing = clip.source?.mediaId?.takeIf { missing }?.let { mediaId ->
+                    { actions.onMissing(mediaId) }
+                },
                 modifier = Modifier.weight(1f, fill = false),
             )
             if (selected && !badgeBelow) DurationBadge(duration, Modifier)
@@ -959,6 +965,7 @@ private fun ClipLabel(
     project: Project,
     missing: Boolean,
     previewOnly: Boolean,
+    onMissing: (() -> Unit)?,
     modifier: Modifier,
 ) {
     val colors = ClipraTheme.colors
@@ -1013,6 +1020,15 @@ private fun ClipLabel(
         modifier = modifier
             .clip(RoundedCornerShape(5.dp))
             .background(colors.background.copy(alpha = 0.8f))
+            .then(
+                if (onMissing != null) {
+                    Modifier
+                        .clickable(role = Role.Button, onClick = onMissing)
+                        .testTag("missing-label:${clip.id}")
+                } else {
+                    Modifier
+                },
+            )
             .padding(horizontal = 5.dp, vertical = 1.dp),
     )
 }

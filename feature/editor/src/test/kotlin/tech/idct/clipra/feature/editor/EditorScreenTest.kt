@@ -256,7 +256,7 @@ class EditorScreenTest {
      * Gone originals (#213): tram.mp4 still plays from its proxy, so it keeps its filmstrip and
      * says its original is missing; alfama.mp4 and stamp.png have nothing left to play.
      */
-    private fun showMissingOriginals() {
+    private fun showMissingOriginals(callbacks: EditorCallbacks = noop) {
         compose.setContent {
             ClipraTheme {
                 EditorScreen(
@@ -269,7 +269,7 @@ class EditorScreenTest {
                         previewOnlyMedia = setOf("tram"),
                     ),
                     playing = false,
-                    callbacks = noop,
+                    callbacks = callbacks,
                     preview = {},
                     filmstrip = { clip, width, height ->
                         Box(
@@ -307,6 +307,36 @@ class EditorScreenTest {
         showMissingOriginals()
         compose.onNodeWithText("Brak oryginału", useUnmergedTree = true).assertExists()
         compose.onRoot().captureRoboImage(roborazziOptions = options)
+    }
+
+    /** The label of a clip whose media is missing opens the Missing media sheet (#216). */
+    @Test
+    fun tappingAMissingClipsLabelAsksToFindItsFile() {
+        Locale.setDefault(Locale.US)
+        val tapped = mutableListOf<String>()
+        showMissingOriginals(
+            EditorCallbacks(
+                onClose = {}, onExport = {}, onTool = {}, onPlayPause = {}, onUndo = {},
+                onRedo = {}, onPickVisual = {}, onPickAudio = {}, onPickReplacement = {},
+                onSplit = {}, onDuplicate = {}, onDelete = {}, onFreeze = {}, onExtract = {},
+                onLayers = {}, onCrop = {}, onDismissMessage = {},
+                timeline = TimelineActions(
+                    {},
+                    {},
+                    {},
+                    { _, _, _ -> },
+                    { _, _, _ -> },
+                    {},
+                    onMissing = { tapped += it },
+                ),
+            ),
+        )
+
+        compose.onNodeWithTag("missing-label:alfama", useUnmergedTree = true).performClick()
+        compose.onNodeWithTag("missing-label:tram", useUnmergedTree = true).performClick()
+        assertEquals(listOf("alfama", "tram"), tapped)
+        // Clips whose media is in place have no such label.
+        compose.onNodeWithTag("missing-label:sunset", useUnmergedTree = true).assertDoesNotExist()
     }
 
     @Test
