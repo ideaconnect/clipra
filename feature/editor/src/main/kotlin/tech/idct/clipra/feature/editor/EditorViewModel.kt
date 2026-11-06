@@ -778,7 +778,7 @@ class EditorViewModel @Inject constructor(
         viewModelScope.launch {
             for (uri in uris) {
                 val asset = try {
-                    importer.import(uri)
+                    importMedia(uri)
                 } catch (_: Exception) {
                     mutableState.update { it.copy(message = EditorMessage.ImportFailed) }
                     continue
@@ -794,7 +794,7 @@ class EditorViewModel @Inject constructor(
         val clipId = state.value.selectedClipId ?: return
         viewModelScope.launch {
             val asset = try {
-                importer.import(uri)
+                importMedia(uri)
             } catch (_: Exception) {
                 mutableState.update { it.copy(message = EditorMessage.ImportFailed) }
                 return@launch
@@ -811,7 +811,7 @@ class EditorViewModel @Inject constructor(
     fun relink(mediaId: String, uri: Uri) {
         viewModelScope.launch {
             val asset = try {
-                importer.import(uri)
+                importMedia(uri)
             } catch (_: Exception) {
                 mutableState.update { it.copy(message = EditorMessage.ImportFailed) }
                 return@launch
@@ -868,6 +868,15 @@ class EditorViewModel @Inject constructor(
     private fun edit(command: EditCommand) {
         val refused = session?.edit(command) ?: return
         mutableState.update { it.copy(message = refused.toMessage()) }
+    }
+
+    /**
+     * Imports [uri]. Media the photo picker hands over under a number is named by its kind and
+     * date taken (#215), unless the project has it already under a name of its own.
+     */
+    private suspend fun importMedia(uri: Uri): MediaAsset {
+        val asset = importer.import(uri)
+        return PickerNames.named(context, asset, known = state.value.project?.asset(asset.id))
     }
 
     private fun placeImported(project: Project, asset: MediaAsset): Project {

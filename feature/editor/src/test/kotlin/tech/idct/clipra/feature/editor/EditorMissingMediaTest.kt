@@ -22,6 +22,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
+import org.robolectric.Robolectric
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowMediaMetadataRetriever
@@ -51,12 +52,14 @@ import tech.idct.clipra.core.model.Speed
 import tech.idct.clipra.core.model.SpeedCurve
 import tech.idct.clipra.core.models.ModelStore
 import java.io.File
+import java.util.TimeZone
 
 /**
  * Media whose original is gone (#213): the editor flags it whatever the cache holds, since the
  * export reads only originals, and tells which of it the preview still plays from a proxy. Its
  * file can be found again (#216), or picked again through Replace or Add media (#214), which
- * brings its clips back.
+ * brings its clips back. Media the photo picker hands over under a number gets a name that
+ * still says which file it was once it is gone (#215).
  */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34])
@@ -351,6 +354,89 @@ class EditorMissingMediaTest {
         assertEquals(id, new.source!!.mediaId)
         assertTrue(clips.all { it in added.layers.flatMap { layer -> layer.clips } })
         editor.awaitState { id !in it.missingMedia }
+    }
+
+    /** 14:30 UTC on 5 November 2026: 15:30 in Warsaw. */
+    private val takenAt = 1_793_889_000_000L
+
+    /**
+     * Imports a video through [PhotoPickerProvider] as it names it ("30.mp4"), in Warsaw, and
+     * returns the editor with it on the timeline, and the video's file.
+     */
+    private fun pickVideo(answersDateTaken: Boolean): Pair<EditorViewModel, File> {
+        val picker = Robolectric.setupContentProvider(PhotoPickerProvider::class.java, "media")
+        picker.answersDateTaken = answersDateTaken
+        val file = File(folder.newFolder("camera"), "PXL_20261105_143000.mp4")
+            .apply { writeBytes(sound(5)) }
+        picker.items["30"] = PhotoPickerProvider.Item(file, "video/mp4", takenAt)
+        val uri = PhotoPickerProvider.uri("30")
+        val source = DataSource.toDataSource(context, uri)
+        ShadowMediaMetadataRetriever.addMetadata(
+            source,
+            MediaMetadataRetriever.METADATA_KEY_HAS_VIDEO,
+            "yes",
+        )
+        ShadowMediaMetadataRetriever.addMetadata(
+            source,
+            MediaMetadataRetriever.METADATA_KEY_DURATION,
+            "4000",
+        )
+        // The date the camera wrote into the file, in UTC.
+        ShadowMediaMetadataRetriever.addMetadata(
+            source,
+            MediaMetadataRetriever.METADATA_KEY_DATE,
+            "20261105T143000.000Z",
+        )
+        val editor = editor()
+        editor.awaitState { true }
+        editor.import(listOf(uri))
+        editor.awaitState { state ->
+            !state.importing && state.project!!.media.any { it.uri == uri.toString() }
+        }
+        return editor to file
+    }
+
+    private fun EditorViewModel.picked(): MediaAsset =
+        state.value.project!!.media.single { it.uri == PhotoPickerProvider.uri("30").toString() }
+
+    @Test
+    @Config(qualifiers = "en-rGB")
+    fun aVideoFromThePhotoPickerIsNamedByWhenItWasTakenAndKeepsItWhenGone() = inWarsaw {
+        val (editor, file) = pickVideo(answersDateTaken = true)
+
+        // Not "30.mp4", the number the picker gives it (#215).
+        val video = editor.picked()
+        assertEquals("Video · 5 Nov 2026, 15:30", video.displayName)
+        assertEquals(MediaKind.Video, video.kind)
+        assertEquals(takenAt, video.takenAtMillis)
+
+        // The project keeps the name: with the file gone, it still says which one to find.
+        file.delete()
+        editor.recheckMedia()
+        val state = editor.awaitState { video.id in it.missingMedia }
+        val missing = missingFiles(state.project!!, state.missingMedia).single()
+        assertEquals("Video · 5 Nov 2026, 15:30", missing.asset.displayName)
+    }
+
+    @Test
+    @Config(qualifiers = "pl")
+    fun withoutThePickersDateTheVideoIsNamedByTheDateItRecorded() = inWarsaw {
+        // A picker that doesn't know the date taken: the date in the file names it.
+        val (editor, _) = pickVideo(answersDateTaken = false)
+
+        val video = editor.picked()
+        assertEquals("Film · 5 lis 2026, 15:30", video.displayName)
+        assertEquals(takenAt, video.takenAtMillis)
+    }
+
+    private fun inWarsaw(test: () -> Unit) {
+        val zone = TimeZone.getDefault()
+        TimeZone.setDefault(TimeZone.getTimeZone("Europe/Warsaw"))
+        try {
+            test()
+        } finally {
+            TimeZone.setDefault(zone)
+        }
     }
 
     private fun editor(): EditorViewModel {

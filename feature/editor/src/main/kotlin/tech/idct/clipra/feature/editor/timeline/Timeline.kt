@@ -1098,11 +1098,13 @@ private fun clipDescription(
         },
     )
     val name = clipName(project, clip)
+    // A name that starts with the type, as media the picker named by number gets
+    // ("Video · 5 Nov 2026, 15:30", #215), doesn't say the type twice.
     val parts = mutableListOf(
-        if (name.isEmpty()) {
+        if (name.isEmpty() || name == type || name.startsWith("$type ")) {
             stringResource(
                 R.string.editor_clip_description_unnamed,
-                type,
+                name.ifEmpty { type },
                 formatClipDuration(clip.durationUs),
                 layerNumber,
             )
