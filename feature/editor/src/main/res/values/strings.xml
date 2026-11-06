@@ -15,6 +15,8 @@
     <string name="editor_trim_start">Trim start</string>
     <string name="editor_trim_end">Trim end</string>
     <string name="editor_missing_media">Missing media</string>
+    <string name="editor_original_missing">Original missing</string>
+    <string name="editor_original_missing_description">Original missing: the export leaves it out</string>
     <string name="editor_clip_video">Video</string>
     <string name="editor_clip_photo">Photo</string>
     <string name="editor_clip_text">Text</string>
@@ -194,6 +196,7 @@
     <string name="editor_message_needs_microphone">Allow the microphone to record a voiceover</string>
     <string name="editor_message_mic_unavailable">Couldn\'t open the microphone</string>
     <string name="editor_message_not_saved">Couldn\'t save your edits. Free up space on the phone and they\'ll be saved.</string>
+    <string name="editor_message_original_missing">Original missing: the export leaves this clip out. Restore the file or replace the clip.</string>
 
     <!-- Tablet editor (#69) -->
     <string name="editor_tablet_close">Close the project</string>

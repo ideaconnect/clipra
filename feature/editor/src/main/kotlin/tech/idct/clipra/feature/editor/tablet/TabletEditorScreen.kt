@@ -293,6 +293,7 @@ fun TabletEditorScreen(
                         headers = actions.layers,
                         snap = state.snap,
                         marked = marks,
+                        previewOnlyMedia = state.previewOnlyMedia,
                     )
                 }
             }

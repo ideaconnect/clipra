@@ -135,6 +135,11 @@ fun Timeline(
     snap: Boolean = true,
     /** Times that Edit by text will cut (#70, TabletTranscript), hatched across every layer. */
     marked: List<LongRange> = emptyList(),
+    /**
+     * Of [missingMedia], those the preview still plays from their proxy (#213): their clips keep
+     * the filmstrip and say that the original is missing.
+     */
+    previewOnlyMedia: Set<String> = emptySet(),
 ) {
     val colors = ClipraTheme.colors
     val density = LocalDensity.current
@@ -231,6 +236,7 @@ fun Timeline(
                                     selected = clip.id == selectedClipId,
                                     linked = clip.id in partners,
                                     missing = clip.source?.mediaId in missingMedia,
+                                    previewOnly = clip.source?.mediaId in previewOnlyMedia,
                                     locked = layer.locked,
                                     actions = actions,
                                     filmstrip = filmstrip,
@@ -540,6 +546,7 @@ private fun ClipBlock(
     selected: Boolean,
     linked: Boolean,
     missing: Boolean,
+    previewOnly: Boolean,
     locked: Boolean,
     actions: TimelineActions,
     filmstrip: @Composable (Clip, Float, Float) -> Unit,
@@ -562,7 +569,8 @@ private fun ClipBlock(
     val width = (geometry.width(clip.durationUs) - trimStart + trimEnd).coerceAtLeast(8f)
     val fill = clipColor(clip.type, project.isVoiceover(clip))
     val shape = RoundedCornerShape(7.dp)
-    val description = clipDescription(project, clip, layerNumber, selected, linked, missing)
+    val description =
+        clipDescription(project, clip, layerNumber, selected, linked, missing, previewOnly)
     // Snap off (tablet toolbar) leaves moves and trims where they are let go.
     val thresholdUs = if (snap) geometry.duration(8f) else 0L
 
@@ -662,7 +670,8 @@ private fun ClipBlock(
         // Videos without sound have no audio strip.
         val sound = clip.type == ClipType.Video &&
             clip.source?.let { project.asset(it.mediaId) }?.hasAudio != false
-        if (clip.type == ClipType.Video && !missing) {
+        // A clip whose original is gone keeps its filmstrip while the proxy plays it (#213).
+        if (clip.type == ClipType.Video && (!missing || previewOnly)) {
             val strip = if (sound) TimelineGeometry.AUDIO_STRIP else 0f
             filmstrip(clip, width, laneHeight - strip)
         }
@@ -706,7 +715,13 @@ private fun ClipBlock(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            ClipLabel(clip, project, missing, modifier = Modifier.weight(1f, fill = false))
+            ClipLabel(
+                clip,
+                project,
+                missing,
+                previewOnly,
+                modifier = Modifier.weight(1f, fill = false),
+            )
             if (selected && !badgeBelow) DurationBadge(duration, Modifier)
         }
         // Beat markers (#40): a tick at each beat along the top.
@@ -939,9 +954,18 @@ private fun TransitionMarker(
 }
 
 @Composable
-private fun ClipLabel(clip: Clip, project: Project, missing: Boolean, modifier: Modifier) {
+private fun ClipLabel(
+    clip: Clip,
+    project: Project,
+    missing: Boolean,
+    previewOnly: Boolean,
+    modifier: Modifier,
+) {
     val colors = ClipraTheme.colors
     val name = when {
+        // Still in the preview, from the proxy, but not in the export (#213).
+        previewOnly -> stringResource(R.string.editor_original_missing)
+
         missing -> stringResource(R.string.editor_missing_media)
 
         // "fx Adjustment": an adjustment clip (#23) has no media to name it.
@@ -1036,6 +1060,7 @@ private fun clipDescription(
     selected: Boolean,
     linked: Boolean,
     missing: Boolean,
+    previewOnly: Boolean,
 ): String {
     val type = stringResource(
         when (clip.type) {
@@ -1077,7 +1102,11 @@ private fun clipDescription(
     )
     // Selected is announced from the clip's state, so it isn't said twice.
     if (linked) parts += stringResource(R.string.editor_clip_linked)
-    if (missing) parts += stringResource(R.string.editor_missing_media)
+    if (previewOnly) {
+        parts += stringResource(R.string.editor_original_missing_description)
+    } else if (missing) {
+        parts += stringResource(R.string.editor_missing_media)
+    }
     return parts.joinToString(", ")
 }
 
