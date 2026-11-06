@@ -73,6 +73,11 @@ class ExportActions(
     val onKeepEditing: () -> Unit,
     val onDone: () -> Unit,
     val onPro: () -> Unit,
+    /**
+     * Back to the editor with its Missing media sheet open, to find the files an export would
+     * leave out (#212, #216); null where there is no editor to go back to.
+     */
+    val onFindMissing: (() -> Unit)? = null,
 )
 
 /** Registers this module's destinations. [screen] draws a board until its real screen is built. */
@@ -109,6 +114,20 @@ private fun ExportRoute(actions: ExportActions, viewModel: ExportViewModel = hil
             onCover = viewModel::setCover,
         ),
     )
+    // Media missing (#212): nothing starts until the user says what to do.
+    if (state.leftOut.isNotEmpty()) {
+        LeftOutDialog(
+            clips = state.leftOut,
+            onExportAnyway = { viewModel.exportAnyway(actions.onStarted) },
+            onCancel = viewModel::keepLeftOut,
+            onFind = actions.onFindMissing?.let { find ->
+                {
+                    viewModel.keepLeftOut()
+                    find()
+                }
+            },
+        )
+    }
 }
 
 @Composable

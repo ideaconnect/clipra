@@ -21,6 +21,7 @@ import kotlinx.coroutines.withContext
 import tech.idct.clipra.core.data.project.ProjectRepository
 import tech.idct.clipra.core.data.settings.SettingsRepository
 import tech.idct.clipra.core.engine.encoder.VideoEncoders
+import tech.idct.clipra.core.engine.export.MissingOriginals
 import tech.idct.clipra.core.engine.media.MediaCache
 import tech.idct.clipra.core.engine.media.ProjectMediaResolver
 import tech.idct.clipra.core.engine.render.ProjectRender
@@ -28,6 +29,7 @@ import tech.idct.clipra.core.engine.render.StillRenderer
 import tech.idct.clipra.core.model.Project
 import tech.idct.clipra.core.model.Resolution
 import tech.idct.clipra.core.model.export.ExportSettings
+import tech.idct.clipra.core.model.export.LeftOutClip
 import tech.idct.clipra.core.model.export.VideoCodec
 import tech.idct.clipra.monetization.ads.ExportAds
 import tech.idct.clipra.monetization.billing.ProStore
@@ -48,6 +50,12 @@ data class ExportUiState(
      */
     val cover: Bitmap? = null,
     val strip: List<Bitmap> = emptyList(),
+    /**
+     * The clips the export would leave out because their media can't be read (#212), found
+     * when Export to Gallery is tapped. While there are some, the export waits for the user:
+     * export anyway, find the files, or cancel.
+     */
+    val leftOut: List<LeftOutClip> = emptyList(),
 )
 
 @HiltViewModel
@@ -66,6 +74,7 @@ class ExportViewModel @Inject constructor(
     private val stills by lazy { StillRenderer(context) }
     private var previewJob: Job? = null
     private var coverJob: Job? = null
+    private var startJob: Job? = null
 
     val state: StateFlow<ExportUiState> = mutableState.asStateFlow()
 
@@ -154,14 +163,45 @@ class ExportViewModel @Inject constructor(
 
     override fun onCleared() = stills.release()
 
-    /** Remembers the settings in the project and hands over to the export (#58). */
+    /**
+     * Export to Gallery: checks that every clip's original can be read (#212), then remembers
+     * the settings in the project and hands over to the export (#58). With originals missing,
+     * it hands over nothing and lists their clips in [ExportUiState.leftOut] instead.
+     */
     fun start(onStarted: (projectId: String) -> Unit) {
         val project = state.value.project ?: return
-        viewModelScope.launch {
-            // A phone too full to save the settings is too full to export; the export says so.
-            runCatching { projects.save(project.copy(exportSettings = state.value.settings)) }
-            onStarted(project.id)
+        // A second tap while the files are checked starts nothing more.
+        if (startJob?.isActive == true) return
+        startJob = viewModelScope.launch {
+            val settings = state.value.settings
+            val leftOut = withContext(Dispatchers.IO) {
+                MissingOriginals.leftOut(context, cache, settings.drawn(project))
+            }
+            if (leftOut.isEmpty()) {
+                handOver(project, onStarted)
+            } else {
+                mutableState.update { it.copy(leftOut = leftOut) }
+            }
         }
+    }
+
+    /** Exports without the clips whose media is missing, as the user chose (#212). */
+    fun exportAnyway(onStarted: (projectId: String) -> Unit) {
+        val project = state.value.project ?: return
+        if (state.value.leftOut.isEmpty() || startJob?.isActive == true) return
+        mutableState.update { it.copy(leftOut = emptyList()) }
+        startJob = viewModelScope.launch { handOver(project, onStarted) }
+    }
+
+    /** Leaves the export unstarted, so the missing media can be found or replaced (#212). */
+    fun keepLeftOut() {
+        mutableState.update { it.copy(leftOut = emptyList()) }
+    }
+
+    private suspend fun handOver(project: Project, onStarted: (projectId: String) -> Unit) {
+        // A phone too full to save the settings is too full to export; the export says so.
+        runCatching { projects.save(project.copy(exportSettings = state.value.settings)) }
+        onStarted(project.id)
     }
 
     private fun fit(

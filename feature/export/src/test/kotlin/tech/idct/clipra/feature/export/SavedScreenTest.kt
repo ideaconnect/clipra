@@ -3,6 +3,7 @@ package tech.idct.clipra.feature.export
 import android.app.Application
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -106,6 +107,58 @@ class SavedScreenTest {
                 compareOptions = RoborazziOptions.CompareOptions(changeThreshold = 0.001f),
             ),
         )
+    }
+
+    /** Exported anyway, or a file went after the check (#212): Saved says what is missing. */
+    @Test
+    fun savedWithClipsLeftOut() {
+        Locale.setDefault(Locale.US)
+        showSaved(saved.copy(leftOutClips = 2))
+
+        compose.onNodeWithText("2 clips were left out: their files are missing").assertIsDisplayed()
+        compose.onRoot().captureRoboImage(
+            roborazziOptions = RoborazziOptions(
+                compareOptions = RoborazziOptions.CompareOptions(changeThreshold = 0.001f),
+            ),
+        )
+    }
+
+    @Test
+    @Config(qualifiers = "pl-w390dp-h844dp-xhdpi")
+    fun savedWithClipsLeftOutInPolish() {
+        Locale.setDefault(Locale.forLanguageTag("pl-PL"))
+        showSaved(saved.copy(leftOutClips = 2))
+
+        compose.onNodeWithText("Pominięto 2 klipy: brak ich plików").assertIsDisplayed()
+        compose.onRoot().captureRoboImage(
+            roborazziOptions = RoborazziOptions(
+                compareOptions = RoborazziOptions.CompareOptions(changeThreshold = 0.001f),
+            ),
+        )
+    }
+
+    @Test
+    fun withNothingLeftOutSavedSaysNothingAboutIt() {
+        showSaved(saved)
+
+        compose.onNodeWithTag("saved-left-out").assertDoesNotExist()
+    }
+
+    private fun showSaved(done: ExportState.Done) {
+        compose.setContent {
+            ClipraTheme {
+                SavedScreen(
+                    done,
+                    showPro = true,
+                    proPrice = "10,00 zł",
+                    onShare = {},
+                    onOpenGallery = {},
+                    onPro = {},
+                    onBackToEditing = {},
+                    preview = {},
+                )
+            }
+        }
     }
 
     @Test
