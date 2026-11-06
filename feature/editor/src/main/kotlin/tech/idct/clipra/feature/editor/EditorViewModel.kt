@@ -82,6 +82,7 @@ import tech.idct.clipra.core.model.edit.MoveClip
 import tech.idct.clipra.core.model.edit.MoveKeyframe
 import tech.idct.clipra.core.model.edit.MoveLayer
 import tech.idct.clipra.core.model.edit.PasteColor
+import tech.idct.clipra.core.model.edit.RelinkMedia
 import tech.idct.clipra.core.model.edit.ReplaceMedia
 import tech.idct.clipra.core.model.edit.SetAnimation
 import tech.idct.clipra.core.model.edit.SetAudio
@@ -131,6 +132,22 @@ data class EditorUiState(
     val ripple: Boolean = true,
     /** Linked (#184) was tapped on this clip, which has no links: the next clip tapped joins it. */
     val linkingFrom: String? = null,
+    /**
+     * A file picked for missing media (#216) that isn't the same file: the editor asks before
+     * it takes the missing media's place.
+     */
+    val relinkCandidate: RelinkCandidate? = null,
+)
+
+/**
+ * A file picked for the missing media [mediaId] (#216) whose content differs: [refitted] of its
+ * [clips] clips would play another part of it, since it is shorter.
+ */
+data class RelinkCandidate(
+    val mediaId: String,
+    val asset: MediaAsset,
+    val refitted: Int,
+    val clips: Int,
 )
 
 /**
@@ -168,6 +185,12 @@ enum class EditorMessage {
 
     /** The selected clip's original is gone (#213): it plays from its proxy, not in the export. */
     OriginalMissing,
+
+    /** Missing media (#216) got its file back: its clips play again. */
+    Relinked,
+
+    /** The file picked for missing media is another kind of media (a photo for a video). */
+    RelinkWrongKind,
 }
 
 @HiltViewModel
@@ -780,6 +803,52 @@ class EditorViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Finds the file of the missing media [mediaId] again (#216): [uri] was picked for it. The
+     * same file (the same fingerprint) is relinked at once, which brings every clip of it back
+     * as it was. Another file waits in [EditorUiState.relinkCandidate] until [confirmRelink].
+     */
+    fun relink(mediaId: String, uri: Uri) {
+        viewModelScope.launch {
+            val asset = try {
+                importer.import(uri)
+            } catch (_: Exception) {
+                mutableState.update { it.copy(message = EditorMessage.ImportFailed) }
+                return@launch
+            }
+            val project = state.value.project ?: return@launch
+            val missing = project.asset(mediaId) ?: return@launch
+            when {
+                asset.kind != missing.kind -> say(EditorMessage.RelinkWrongKind)
+
+                asset.id == mediaId -> applyRelink(mediaId, asset)
+
+                else -> {
+                    val (refitted, clips) = RelinkMedia.refitted(project, mediaId, asset)
+                    mutableState.update {
+                        it.copy(relinkCandidate = RelinkCandidate(mediaId, asset, refitted, clips))
+                    }
+                }
+            }
+        }
+    }
+
+    /** Uses the other file picked for missing media after all (#216). */
+    fun confirmRelink() {
+        val candidate = state.value.relinkCandidate ?: return
+        mutableState.update { it.copy(relinkCandidate = null) }
+        applyRelink(candidate.mediaId, candidate.asset)
+    }
+
+    /** Keeps the media missing rather than use the other file picked for it. */
+    fun cancelRelink() = mutableState.update { it.copy(relinkCandidate = null) }
+
+    private fun applyRelink(mediaId: String, asset: MediaAsset) {
+        val opened = session ?: return
+        val refused = opened.edit(RelinkMedia(mediaId, asset))
+        mutableState.update { it.copy(message = refused?.toMessage() ?: EditorMessage.Relinked) }
+    }
+
     /** Saves at once, for example when the app goes to the background. */
     fun flush() {
         viewModelScope.launch { session?.flush() }
@@ -827,6 +896,7 @@ class EditorViewModel @Inject constructor(
         EditRejected.Reason.LayerLocked -> EditorMessage.LayerLocked
         EditRejected.Reason.Overlap -> EditorMessage.NoRoom
         EditRejected.Reason.OutOfRange -> EditorMessage.CantSplitHere
+        EditRejected.Reason.WrongKind -> EditorMessage.RelinkWrongKind
         else -> EditorMessage.NotAvailable
     }
 

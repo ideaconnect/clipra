@@ -32,6 +32,9 @@ class EditRejected(val reason: Reason, message: String = reason.name) : Exceptio
 
         /** A time or index outside what the clip or project allows. */
         OutOfRange,
+
+        /** Media of another kind than the edit needs, such as a photo for a missing video. */
+        WrongKind,
     }
 }
 

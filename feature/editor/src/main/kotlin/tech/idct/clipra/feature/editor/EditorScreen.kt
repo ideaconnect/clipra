@@ -448,4 +448,6 @@ internal fun EditorMessage.textRes(): Int = when (this) {
     EditorMessage.MicrophoneUnavailable -> R.string.editor_message_mic_unavailable
     EditorMessage.NotSaved -> R.string.editor_message_not_saved
     EditorMessage.OriginalMissing -> R.string.editor_message_original_missing
+    EditorMessage.Relinked -> R.string.editor_message_relinked
+    EditorMessage.RelinkWrongKind -> R.string.editor_message_relink_wrong_kind
 }

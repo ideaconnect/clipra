@@ -2,6 +2,7 @@ package tech.idct.clipra.feature.editor
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -36,6 +37,8 @@ import tech.idct.clipra.core.model.Cells
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
 import tech.idct.clipra.core.model.Cut
+import tech.idct.clipra.core.model.MediaAsset
+import tech.idct.clipra.core.model.MediaKind
 import tech.idct.clipra.core.model.Transform
 import tech.idct.clipra.core.model.cutAfter
 import tech.idct.clipra.core.model.cuts
@@ -161,6 +164,35 @@ private fun EditorRoute(
         rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) {
             it?.let(viewModel::replace)
         }
+    // Missing media (#216): the sheet that lists it, and the media a picker was opened for, kept
+    // while the picker is in front (the editor can be recreated meanwhile).
+    var missingSheet by rememberSaveable { mutableStateOf(false) }
+    var relinking by rememberSaveable { mutableStateOf<String?>(null) }
+    val relinkPicked = { uri: Uri? ->
+        val mediaId = relinking
+        relinking = null
+        if (uri != null && mediaId != null) viewModel.relink(mediaId, uri)
+    }
+    val pickRelinkVisual =
+        rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia(), relinkPicked)
+    val pickRelinkSound =
+        rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument(), relinkPicked)
+    // The picker that fits the media: photos or videos from the photo picker, sounds from the
+    // system file picker, as Add media does.
+    val findFile = { asset: MediaAsset ->
+        relinking = asset.id
+        when (asset.kind) {
+            MediaKind.Video -> pickRelinkVisual.launch(
+                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly),
+            )
+
+            MediaKind.Photo -> pickRelinkVisual.launch(
+                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
+            )
+
+            MediaKind.Audio -> pickRelinkSound.launch(arrayOf("audio/*"))
+        }
+    }
     // The microphone is asked for only when a voiceover starts recording (#41).
     val askMicrophone =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -588,6 +620,7 @@ private fun EditorRoute(
                     ),
                 )
             },
+            onMissing = { missingSheet = true },
         ),
     )
     val previewOverlay: @Composable () -> Unit = {
@@ -673,6 +706,23 @@ private fun EditorRoute(
             playheadUs = state.playheadUs,
             actions = layerActions(viewModel),
             onDismiss = { layers = false },
+        )
+    }
+    val missing = missingFiles(project, state.missingMedia)
+    // Once every file is found again, the sheet has nothing left to show.
+    if (missingSheet && missing.isEmpty()) missingSheet = false
+    if (missingSheet) {
+        MissingMediaSheet(
+            files = missing,
+            onFind = findFile,
+            onDismiss = { missingSheet = false },
+        )
+    }
+    state.relinkCandidate?.let { candidate ->
+        RelinkDialog(
+            candidate = candidate,
+            onUse = viewModel::confirmRelink,
+            onCancel = viewModel::cancelRelink,
         )
     }
 }

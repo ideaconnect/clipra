@@ -1,6 +1,7 @@
 package tech.idct.clipra.feature.editor
 
 import android.content.Context
+import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Looper
 import androidx.lifecycle.SavedStateHandle
@@ -15,6 +16,7 @@ import kotlinx.coroutines.flow.flowOf
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -22,6 +24,8 @@ import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import org.robolectric.shadows.ShadowMediaMetadataRetriever
+import org.robolectric.shadows.util.DataSource
 import tech.idct.clipra.core.data.db.ProjectIndexDao
 import tech.idct.clipra.core.data.db.ProjectIndexEntry
 import tech.idct.clipra.core.data.project.OpenProjects
@@ -30,6 +34,7 @@ import tech.idct.clipra.core.data.project.ProjectRepository
 import tech.idct.clipra.core.engine.media.Cutouts
 import tech.idct.clipra.core.engine.media.MediaCache
 import tech.idct.clipra.core.engine.media.MediaImporter
+import tech.idct.clipra.core.engine.media.MediaInspector
 import tech.idct.clipra.core.engine.media.ReversedSounds
 import tech.idct.clipra.core.engine.media.SoundAnalyzer
 import tech.idct.clipra.core.engine.media.Stabilizer
@@ -42,12 +47,15 @@ import tech.idct.clipra.core.model.MediaAsset
 import tech.idct.clipra.core.model.MediaKind
 import tech.idct.clipra.core.model.MediaRef
 import tech.idct.clipra.core.model.Project
+import tech.idct.clipra.core.model.Speed
+import tech.idct.clipra.core.model.SpeedCurve
 import tech.idct.clipra.core.models.ModelStore
 import java.io.File
 
 /**
  * Media whose original is gone (#213): the editor flags it whatever the cache holds, since the
- * export reads only originals, and tells which of it the preview still plays from a proxy.
+ * export reads only originals, and tells which of it the preview still plays from a proxy. Its
+ * file can be found again (#216), which brings its clips back.
  */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34])
@@ -164,6 +172,121 @@ class EditorMissingMediaTest {
         assertNull(editor.state.value.message)
         editor.select("tram-clip")
         assertNull(editor.state.value.message)
+    }
+
+    /**
+     * The issue's sound (#216): habitat.mp3 in two clips, the second from 6.5 s at the Hero
+     * ramp, with its original in place; returns its id, the fingerprint of its bytes.
+     */
+    private fun soundProject(): String {
+        val file = File(originals, "habitat.mp3").apply { writeBytes(sound(1)) }
+        val id = MediaInspector.fingerprint(context, Uri.fromFile(file))
+        val hero = Speed(ramp = "hero")
+        project = Project(
+            id = "lisbon",
+            name = "Lisbon weekend",
+            media = listOf(
+                MediaAsset(
+                    id,
+                    Uri.fromFile(file).toString(),
+                    MediaKind.Audio,
+                    "habitat.mp3",
+                    durationUs = 10_000_000,
+                    sizeBytes = file.length(),
+                ),
+            ),
+            layers = listOf(
+                Layer("L1"),
+                Layer(
+                    "L2",
+                    clips = listOf(
+                        Clip("a", ClipType.Audio, 0, 6_500_000, MediaRef(id, 0, 6_500_000)),
+                        Clip(
+                            "b",
+                            ClipType.Audio,
+                            6_500_000,
+                            SpeedCurve.timelineDuration(hero, 3_500_000),
+                            MediaRef(id, 6_500_000, 10_000_000),
+                            speed = hero,
+                        ),
+                    ),
+                ),
+            ),
+        )
+        return id
+    }
+
+    /** Bytes standing in for a sound file; a different [seed] makes a different file. */
+    private fun sound(seed: Int) = ByteArray(4_096) { (it * seed).toByte() }
+
+    @Test
+    fun theSameFileFoundAgainBringsEveryClipBack() {
+        val id = soundProject()
+        val clips = project.layers.flatMap { it.clips }
+        File(originals, "habitat.mp3").delete()
+        val editor = editor()
+        editor.awaitState { id in it.missingMedia }
+
+        // The same bytes, copied back somewhere else: a new link, the same fingerprint.
+        val restored = File(folder.newFolder("restored"), "habitat (1).mp3")
+            .apply { writeBytes(sound(1)) }
+        editor.relink(id, Uri.fromFile(restored))
+
+        val state = editor.awaitState { id !in it.missingMedia }
+        val relinked = state.project!!
+        assertEquals(Uri.fromFile(restored).toString(), relinked.asset(id)!!.uri)
+        // Every clip as it was: in and out points, speed.
+        assertEquals(clips, relinked.layers.flatMap { it.clips })
+        assertEquals(EditorMessage.Relinked, state.message)
+        assertNull(state.relinkCandidate)
+    }
+
+    @Test
+    fun anotherFileIsUsedOnlyOnceTheUserSaysSo() {
+        val id = soundProject()
+        File(originals, "habitat.mp3").delete()
+        val editor = editor()
+        editor.awaitState { id in it.missingMedia }
+        // An 8 s file with other bytes: the 6.5-10 s part doesn't fit in it.
+        val other = File(folder.newFolder("other"), "habitat-short.mp3")
+            .apply { writeBytes(sound(3)) }
+        val uri = Uri.fromFile(other)
+        ShadowMediaMetadataRetriever.addMetadata(
+            DataSource.toDataSource(context, uri),
+            MediaMetadataRetriever.METADATA_KEY_DURATION,
+            "8000",
+        )
+
+        editor.relink(id, uri)
+        val asked = editor.awaitState { it.relinkCandidate != null }.relinkCandidate!!
+        assertEquals(id, asked.mediaId)
+        assertEquals(1, asked.refitted)
+        assertEquals(2, asked.clips)
+        // The import keeps what describes the file if it goes missing too.
+        assertEquals(other.length(), asked.asset.sizeBytes)
+        assertEquals(8_000_000L, asked.asset.durationUs)
+        // Nothing changes until the user answers; Cancel keeps the media missing.
+        assertEquals(project.media, editor.state.value.project!!.media)
+        editor.cancelRelink()
+        assertNull(editor.state.value.relinkCandidate)
+        assertEquals(project, editor.state.value.project)
+
+        editor.relink(id, uri)
+        editor.awaitState { it.relinkCandidate != null }
+        editor.confirmRelink()
+
+        val newId = asked.asset.id
+        val state = editor.awaitState {
+            it.project!!.asset(id) == null && newId !in it.missingMedia
+        }
+        val relinked = state.project!!
+        assertEquals(listOf(newId), relinked.media.map { it.id })
+        assertEquals(MediaRef(newId, 0, 6_500_000), relinked.findClip("a")!!.second.source)
+        // Moved back just enough to end with the shorter file, at the same speed.
+        val second = relinked.findClip("b")!!.second
+        assertEquals(MediaRef(newId, 4_500_000, 8_000_000), second.source)
+        assertEquals(Speed(ramp = "hero"), second.speed)
+        assertTrue(state.missingMedia.isEmpty())
     }
 
     private fun editor(): EditorViewModel {

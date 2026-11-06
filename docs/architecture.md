@@ -67,6 +67,7 @@ Transcript(clipId, words: List<Word(text, start, end, confidence, kind: Word|Fil
 - Edits are commands (`SplitClip`, `MoveClip`, `CutRanges`, ...) applied to an immutable `Project`; the undo stack keeps commands and inverses.
 - Autosave writes the JSON document after each committed command (debounced).
 - The project file never stores absolute paths to app-internal caches; proxies are looked up by media hash.
+- Media is identified by a fingerprint of its content (`MediaInspector`), and each `MediaAsset` keeps its size and date taken from import. When an original can't be opened any more (#213), the editor's Missing media sheet lists it with that description, and Find file opens the picker for its kind (#216). `RelinkMedia` works on the media, not on a clip: a file with the same fingerprint only changes the link, so every clip comes back with its in and out points, speed and effects; another file is used only after the user agrees, and each clip keeps its in point where the new file is long enough.
 
 ## 4. Media engine
 

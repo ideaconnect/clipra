@@ -198,7 +198,7 @@
     <string name="editor_message_needs_microphone">Zezwól na dostęp do mikrofonu, aby nagrać lektora</string>
     <string name="editor_message_mic_unavailable">Nie udało się włączyć mikrofonu</string>
     <string name="editor_message_not_saved">Nie udało się zapisać zmian. Zwolnij miejsce w telefonie, a zostaną zapisane.</string>
-    <string name="editor_message_original_missing">Brak oryginału: eksport pominie ten klip. Przywróć plik albo podmień klip.</string>
+    <string name="editor_message_original_missing">Brak oryginału: eksport pominie ten klip. Stuknij jego etykietę, aby wskazać plik.</string>
 
     <!-- Tablet editor (#69) -->
     <string name="editor_tablet_close">Zamknij projekt</string>
@@ -283,4 +283,20 @@
     <string name="editor_tool_linked">Połączone</string>
     <string name="editor_message_pick_link">Stuknij klip, z którym go połączyć</string>
     <string name="editor_message_unlinked">Rozłączono: klip przesuwa się teraz osobno</string>
+
+    <!-- Brakujące pliki (#216) -->
+    <string name="editor_missing_title">Brakujące pliki</string>
+    <string name="editor_missing_hint">Clipra nie może otworzyć tych plików. Wskaż każdy z nich ponownie, a wszystkie jego klipy wrócą z cięciami, prędkością i efektami.</string>
+    <string name="editor_missing_find">Znajdź plik</string>
+    <string name="editor_missing_taken">Z dnia %1$s</string>
+    <string name="editor_missing_unused">Nie ma go na osi czasu</string>
+    <string name="editor_relink_title">To nie ten sam plik</string>
+    <string name="editor_relink_body">%1$s to nie plik, którego używał projekt. Użyć go mimo to?</string>
+    <string name="editor_relink_file">Ten plik</string>
+    <string name="editor_relink_refit_one">Jego klip się w nim nie mieści i zagra inną jego część.</string>
+    <string name="editor_relink_refit">Klipy, które się w nim nie mieszczą, zagrają inną jego część: %1$d z %2$d.</string>
+    <string name="editor_relink_use">Użyj</string>
+    <string name="editor_relink_cancel">Anuluj</string>
+    <string name="editor_message_relinked">Znaleziono: jego klipy znów grają</string>
+    <string name="editor_message_relink_wrong_kind">To inny rodzaj pliku. Wybierz taki jak brakujący.</string>
 </resources>
