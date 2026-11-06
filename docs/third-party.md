@@ -47,7 +47,7 @@ Used to build and test the app; none of them ship in it.
 |---|---|---|
 | Gradle, Android Gradle Plugin, Kotlin Gradle plugins, KSP | Build | Apache-2.0 |
 | JUnit 4 | Unit tests | EPL-1.0 (tests only, not distributed) |
-| AndroidX Test, Compose UI test, kotlinx-coroutines-test | Tests | Apache-2.0 |
+| AndroidX Test, Compose UI test, WorkManager testing (`work-testing`), kotlinx-coroutines-test | Tests | Apache-2.0 |
 | AndroidX Benchmark (Macrobenchmark, baseline profiles), UiAutomator | Startup and editor benchmarks and the baseline profile (`benchmark`, #77) | Apache-2.0 |
 | Spotless Gradle plugin | Runs ktlint over the Kotlin sources | Apache-2.0 |
 | ktlint | Kotlin style check | MIT |

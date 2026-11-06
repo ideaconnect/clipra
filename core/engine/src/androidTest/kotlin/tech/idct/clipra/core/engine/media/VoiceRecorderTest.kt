@@ -50,7 +50,8 @@ class VoiceRecorderTest {
         val cache = MediaCache(
             File(context.cacheDir, "recorder-test/cache").apply { deleteRecursively() },
         )
-        val asset = MediaImporter(context, cache).importRecording(file, "voiceover.m4a")
+        val asset = MediaImporter(context, cache, Proxies(context, cache))
+            .importRecording(file, "voiceover.m4a")
         assertEquals(MediaKind.Audio, asset.kind)
         assertTrue(asset.recorded)
         assertEquals("voiceover.m4a", asset.displayName)

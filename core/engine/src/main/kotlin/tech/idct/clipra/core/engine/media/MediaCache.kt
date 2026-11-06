@@ -84,8 +84,8 @@ class MediaCache(private val root: File) {
     private val voiceChanges = MutableStateFlow(0)
 
     /**
-     * Changes each time a cleaned voice, an analysis, person masks (#50) or a camera motion
-     * (#54) are ready, so the preview can pick them up.
+     * Changes each time a cleaned voice, an analysis, person masks (#50), a camera motion (#54)
+     * or a proxy (#217) are ready, so the preview can pick them up.
      */
     val voiceVersion: StateFlow<Int> = voiceChanges.asStateFlow()
 

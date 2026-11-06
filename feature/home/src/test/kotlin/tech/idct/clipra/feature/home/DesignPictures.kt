@@ -30,7 +30,7 @@ internal object DesignPictures : ProjectPictures {
     /** The 2×2 mosaic's four cells. */
     val tiles = listOf("brown", "blue", "coral", "green")
 
-    override suspend fun picture(mediaId: String): ImageBitmap? {
+    override suspend fun picture(projectId: String, mediaId: String): ImageBitmap? {
         val (top, bottom) = gradients[mediaId] ?: return null
         val bitmap = ImageBitmap(SIDE, SIDE)
         val size = Size(SIDE.toFloat(), SIDE.toFloat())

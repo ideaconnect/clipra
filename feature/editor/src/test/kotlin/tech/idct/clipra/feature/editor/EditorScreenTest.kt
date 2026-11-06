@@ -309,6 +309,44 @@ class EditorScreenTest {
         compose.onRoot().captureRoboImage(roborazziOptions = options)
     }
 
+    /** After a cache clear (#217), the header says the proxies are being made until they are. */
+    private fun showHeader(making: () -> Boolean) {
+        compose.setContent {
+            ClipraTheme {
+                EditorScreen(
+                    state = EditorUiState(
+                        project = project,
+                        loaded = true,
+                        makingProxies = making(),
+                    ),
+                    playing = false,
+                    callbacks = noop,
+                    preview = {},
+                )
+            }
+        }
+    }
+
+    @Test
+    fun theHeaderSaysWhileProxiesAreMade() {
+        Locale.setDefault(Locale.US)
+        var making by mutableStateOf(true)
+        showHeader { making }
+        compose.onNodeWithText("fps · making proxies", substring = true).assertExists()
+
+        making = false
+        compose.onNodeWithText("fps · proxies", substring = true).assertExists()
+        compose.onNodeWithText("making proxies", substring = true).assertDoesNotExist()
+    }
+
+    @Test
+    @Config(qualifiers = "pl-w390dp-h844dp-xhdpi")
+    fun theHeaderSaysWhileProxiesAreMadeInPolish() {
+        Locale.setDefault(Locale.forLanguageTag("pl-PL"))
+        showHeader { true }
+        compose.onNodeWithText("fps · tworzenie proxy", substring = true).assertExists()
+    }
+
     /**
      * Media the photo picker handed over under a number (#215), named by its kind and date taken,
      * or by its kind alone without a date. TalkBack says the type once.

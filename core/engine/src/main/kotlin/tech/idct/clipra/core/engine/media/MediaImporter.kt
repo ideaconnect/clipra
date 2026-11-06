@@ -8,6 +8,7 @@ import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.Operation
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
@@ -35,6 +36,7 @@ import javax.inject.Singleton
 class MediaImporter @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val cache: MediaCache,
+    private val proxies: Proxies,
 ) {
     private val background = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -59,9 +61,28 @@ class MediaImporter @Inject constructor(
             prepare(asset.copy(kind = MediaKind.Audio, displayName = displayName, recorded = true))
         }
 
+    /**
+     * Makes again what the import made and the cache lost (#217), as after the system or
+     * Settings cleared it: the thumbnail and the proxy of each of [media], whose originals can
+     * be read. Filmstrips and waveforms come back on their own once they are shown. Reads the
+     * originals, so this runs off the main thread.
+     */
+    fun restore(media: List<MediaAsset>) {
+        // The thumbnails first, a frame each, so the proxies then have the decoders to themselves.
+        for (asset in media) {
+            try {
+                Thumbnails.thumbnail(context, asset, cache)
+            } catch (_: Exception) {
+                // As when storage is full: Home and the media bin show no picture for it until
+                // it can be made, the next time the project opens.
+            }
+        }
+        media.forEach(proxies::request)
+    }
+
     private fun prepare(asset: MediaAsset): MediaAsset {
         Thumbnails.thumbnail(context, asset, cache)
-        if (ProxyGenerator.needsProxy(asset)) ProxyWorker.enqueue(context, asset)
+        proxies.request(asset)
         if (asset.hasAudio || asset.kind == MediaKind.Audio) {
             background.launch {
                 val originals = ProjectMediaResolver(context, cache, forExport = true, 0)
@@ -90,6 +111,8 @@ class ProxyWorker @AssistedInject constructor(
         if (proxy.exists()) return Result.success()
         return try {
             ProxyGenerator.generate(applicationContext, uri, proxy)
+            // The preview plays the proxy from its next rebuild.
+            cache.voiceReady()
             Result.success()
         } catch (_: Exception) {
             // A failed proxy would fail every proxy queued after it; the editor plays the
@@ -102,13 +125,23 @@ class ProxyWorker @AssistedInject constructor(
         private const val KEY_MEDIA_ID = "mediaId"
         private const val KEY_URI = "uri"
         private const val MAX_ATTEMPTS = 2
+        private const val TAG_PREFIX = "proxy-"
         const val QUEUE = "proxies"
 
-        fun enqueue(context: Context, asset: MediaAsset) {
+        /** The tag of the work that makes the proxy of [mediaId] (#217). */
+        fun tag(mediaId: String): String = TAG_PREFIX + mediaId
+
+        /** The media id in a proxy work's [tag]; null for its other tags. */
+        fun mediaId(tag: String): String? = tag.takeIf { it.startsWith(TAG_PREFIX) }
+            ?.removePrefix(TAG_PREFIX)
+
+        /** Queues the proxy of [asset] after the ones queued before; use [Proxies.request]. */
+        internal fun enqueue(context: Context, asset: MediaAsset): Operation {
             val request = OneTimeWorkRequestBuilder<ProxyWorker>()
                 .setInputData(workDataOf(KEY_MEDIA_ID to asset.id, KEY_URI to asset.uri))
+                .addTag(tag(asset.id))
                 .build()
-            WorkManager.getInstance(context)
+            return WorkManager.getInstance(context)
                 .enqueueUniqueWork(QUEUE, ExistingWorkPolicy.APPEND_OR_REPLACE, request)
         }
     }
