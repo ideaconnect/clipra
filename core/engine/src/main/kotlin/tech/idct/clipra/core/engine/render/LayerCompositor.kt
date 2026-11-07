@@ -601,10 +601,20 @@ private class LayerCompositorProgram(
         if (cutout != null) {
             val blurred = (current + 2) % 3
             if (cutout.settings.behind == Behind.Blur) {
-                // A strong blur of the clip itself goes behind the person.
+                // A strong blur of what is behind the person (#238): the picture weighted by
+                // how much of each pixel is background, blurred; the cutout pass divides by
+                // the blurred weight, so only the background is averaged next to the outline.
                 val across = (current + 1) % 3
+                focus(targets[blurred])
+                cutoutPass(
+                    targets[current],
+                    targets[current],
+                    cutout,
+                    steady ?: identity,
+                    background = true,
+                )
                 val deviation = BEHIND_BLUR * minOf(width, height)
-                blur(targets[current], targets[across], deviation / 4 / width, 0f)
+                blur(targets[blurred], targets[across], deviation / 4 / width, 0f)
                 blur(targets[across], targets[blurred], 0f, deviation / 4 / height)
             }
             val next = (current + 1) % 3
@@ -616,12 +626,16 @@ private class LayerCompositorProgram(
         return ClipFrame(result.texture, identity, width, height, external = false)
     }
 
-    /** The cutout pass (#50) into the focused target, as `CutoutMath.alpha` keeps a pixel. */
+    /**
+     * The cutout pass (#50) into the focused target, as `CutoutMath.alpha` keeps a pixel; with
+     * [background], the weighted background the blur behind (#238) blurs instead.
+     */
     private fun cutoutPass(
         input: Target,
         blurred: Target,
         cutout: Cutting,
         maskMatrix: FloatArray,
+        background: Boolean = false,
     ) {
         val settings = cutout.settings
         val program = cutoutProgram
@@ -632,10 +646,14 @@ private class LayerCompositorProgram(
         val mask = if (key == null) maskTexture(cutout) else input.texture
         program.setSamplerTexIdUniform("uMask", mask, 1)
         program.setSamplerTexIdUniform("uBlurred", blurred.texture, 2)
-        val behind = when (settings.behind) {
-            Behind.LayerBelow, Behind.Clear -> 0
-            Behind.Blur -> 1
-            Behind.Color -> 2
+        val behind = if (background) {
+            3
+        } else {
+            when (settings.behind) {
+                Behind.LayerBelow, Behind.Clear -> 0
+                Behind.Blur -> 1
+                Behind.Color -> 2
+            }
         }
         program.setIntUniform("uBehind", behind)
         val color = settings.color.toInt()

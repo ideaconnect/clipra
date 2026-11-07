@@ -687,7 +687,13 @@ internal object Shaders {
      * 256 × 256 confidences, top row first) says is a person, as `CutoutMath.alpha` works it out
      * line by line; or, with uKeyed, what is far enough from the key's chroma (uKey), as
      * `CutoutMath.keyAlpha` and `despill` do. Behind (uBehind): 0 lets the layers under the clip
-     * show (straight alpha), 1 puts the blurred copy in uBlurred there, 2 the colour uColor.
+     * show (straight alpha), 1 puts the blurred background in uBlurred there, 2 the colour
+     * uColor.
+     *
+     * The blur behind (#238) is a blur of the background alone, so the person's own colours
+     * don't spread round their outline: 3 draws the picture weighted by how much of each pixel
+     * is not the person (premultiplied: `rgb × w, w` with w = 1 - alpha), the compositor blurs
+     * that, and 1 divides the blurred colour by the blurred weight.
      */
     const val CUTOUT = PRECISION + """
         uniform sampler2D uTex;
@@ -730,10 +736,19 @@ internal object Shaders {
                 float soft = smoothstep(0.08, 0.6, m);
                 a = max(firm, soft * uHair);
             }
-            if (uBehind == 0) {
+            if (uBehind == 3) {
+                float w = 1.0 - a;
+                gl_FragColor = vec4(picture.rgb * w, w);
+            } else if (uBehind == 0) {
                 gl_FragColor = vec4(rgb, picture.a * a);
             } else if (uBehind == 1) {
-                gl_FragColor = vec4(mix(texture2D(uBlurred, vTex).rgb, rgb, a), picture.a);
+                // Where hardly any background is near (a hole in the mask well inside the
+                // person), the blurred weight is a few 8-bit levels and dividing by it would
+                // show their rounding; the picture itself stands in there.
+                vec4 blurred = texture2D(uBlurred, vTex);
+                vec3 behind = min(blurred.rgb / max(blurred.a, 0.02), vec3(1.0));
+                behind = mix(rgb, behind, smoothstep(0.02, 0.08, blurred.a));
+                gl_FragColor = vec4(mix(behind, rgb, a), picture.a);
             } else {
                 gl_FragColor = vec4(mix(uColor, rgb, a), picture.a);
             }

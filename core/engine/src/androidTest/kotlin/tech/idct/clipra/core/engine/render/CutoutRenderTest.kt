@@ -15,6 +15,7 @@ import tech.idct.clipra.core.model.Behind
 import tech.idct.clipra.core.model.Cutout
 import java.io.File
 import kotlin.math.abs
+import kotlin.math.ceil
 
 /**
  * The person cutout (#50) in the compositor, as preview and export draw it: with a mask that
@@ -52,7 +53,21 @@ class CutoutRenderTest {
     private fun solid(side: Int, color: Int): Bitmap =
         Bitmap.createBitmap(side, side, Bitmap.Config.ARGB_8888).apply { eraseColor(color) }
 
-    private fun timeline(side: Int, cutout: Cutout) = RenderTimeline(
+    /** A bright person in the top half, over a dark background with stripes running down. */
+    private fun personOverStripes(side: Int): Bitmap =
+        Bitmap.createBitmap(side, side, Bitmap.Config.ARGB_8888).apply {
+            eraseColor(DARK)
+            val canvas = Canvas(this)
+            val stripe = side / 16f
+            val paint = Paint().apply { color = STRIPE }
+            for (i in 0 until 8) {
+                val left = 2 * i * stripe
+                canvas.drawRect(left, side / 2f, left + stripe, side.toFloat(), paint)
+            }
+            canvas.drawRect(0f, 0f, side.toFloat(), side / 2f, Paint().apply { color = SKIN })
+        }
+
+    private fun timeline(side: Int, cutout: Cutout, clip: Bitmap = picture(side)) = RenderTimeline(
         width = side,
         height = side,
         frameRate = 30,
@@ -68,7 +83,7 @@ class CutoutRenderTest {
                         "person",
                         0,
                         1_000_000,
-                        RenderSource.Image(picture(side)),
+                        RenderSource.Image(clip),
                         cutout = RenderCutout(cutout, masks),
                     ),
                 ),
@@ -117,6 +132,48 @@ class CutoutRenderTest {
         assertColor(Color.WHITE, blurred.getPixel(4, SIDE - 8), "behind, far left")
     }
 
+    /**
+     * The blur behind is a blur of the background alone (#238): a bright person over a dark
+     * background leaves no glow of their colours round the outline. The background's stripes
+     * run down the picture, so its plain blur is the same on every row: up to three deviations
+     * below the outline it matches a row far below. At preview and export sizes.
+     */
+    @Test
+    fun theBlurBehindHoldsNoGlowOfThePerson() {
+        for (side in listOf(SIDE * 2, SIDE * 8)) {
+            val scene = timeline(side, Cutout(Behind.Blur), personOverStripes(side))
+            val frame = Offscreen.render(context, scene, 500_000)
+            val outline = side / 2
+            assertColor(SKIN, frame.getPixel(side / 4, outline - 1), "$side: the person")
+            // The rows the mask's own edge blends into keep some of the sharp picture.
+            val first = outline + side / CutoutMasks.SIZE
+            // The deviation is 3% of the short side, as LayerCompositor's BEHIND_BLUR.
+            val last = outline + ceil(3 * 0.03 * side).toInt()
+            val plain = IntArray(side)
+            frame.getPixels(plain, 0, side, 0, side * 7 / 8, side, 1)
+            val row = IntArray(side)
+            var worst = 0
+            var where = ""
+            for (y in first..last) {
+                frame.getPixels(row, 0, side, 0, y, side, 1)
+                for (x in 0 until side) {
+                    val gap = maxOf(
+                        abs(Color.red(row[x]) - Color.red(plain[x])),
+                        abs(Color.green(row[x]) - Color.green(plain[x])),
+                        abs(Color.blue(row[x]) - Color.blue(plain[x])),
+                    )
+                    if (gap > worst) {
+                        worst = gap
+                        val below = y - outline + 1
+                        where = "$below px below the outline at x $x: " +
+                            "#%06X, plain blur #%06X".format(row[x] and RGB, plain[x] and RGB)
+                    }
+                }
+            }
+            assertTrue("$side: $worst levels, $where", worst <= 4)
+        }
+    }
+
     /** Export draws at its own size from the same masks: the same picture, only larger. */
     @Test
     fun exportMatchesPreview() {
@@ -131,5 +188,11 @@ class CutoutRenderTest {
     private companion object {
         const val SIDE = 64
         val RED = Color.rgb(229, 72, 46)
+
+        // The colours #238 measured: skin, and a dark room behind.
+        val SKIN = Color.rgb(236, 188, 160)
+        val DARK = Color.rgb(32, 12, 1)
+        val STRIPE = Color.rgb(70, 30, 90)
+        const val RGB = 0xFFFFFF
     }
 }
