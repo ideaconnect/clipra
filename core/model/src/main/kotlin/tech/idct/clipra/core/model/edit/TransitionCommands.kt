@@ -8,7 +8,8 @@ import tech.idct.clipra.core.model.Transitions
 import tech.idct.clipra.core.model.cuts
 
 // Transition commands (#26). A transition belongs to a cut: the layer and the time where one
-// clip ends and the next begins. Moving either clip away from the cut leaves it unused.
+// clip ends and the next begins. After every edit the undo history keeps it there: it follows
+// the two clips when their cut moves and goes when they no longer meet (#218).
 
 /**
  * Puts transition [type] on the cut at [cutTimeUs] of [layerId], replacing the one there, or

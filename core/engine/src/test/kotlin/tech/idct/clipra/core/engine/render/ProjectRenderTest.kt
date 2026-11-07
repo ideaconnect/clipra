@@ -162,6 +162,26 @@ class ProjectRenderTest {
     }
 
     @Test
+    fun aTransitionLongerThanItsClipsPlaysOnlyWhatFits() {
+        // b is 0.3 s long, so at most 0.6 s fits; one saved by an older version may be longer.
+        val withCut = project.copy(
+            layers = listOf(
+                Layer(
+                    "L1",
+                    clips = listOf(
+                        videoClip("a", 0),
+                        videoClip("b", 2_000_000).copy(durationUs = 300_000),
+                    ),
+                ),
+            ),
+            transitions = listOf(Transition("t", "L1", 2_000_000, "glitch", 2_000_000)),
+        )
+        val transition = ProjectRender.timeline(withCut, resolver).layers[0].transitions.single()
+        assertEquals(600_000L, transition.durationUs)
+        assertEquals(1_700_000L, transition.startUs)
+    }
+
+    @Test
     fun aCaptionBecomesOneRenderClipPerSpokenWord() {
         val words = listOf(
             Word("We", 200_000, 400_000),

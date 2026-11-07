@@ -1,6 +1,7 @@
 package tech.idct.clipra.core.model.edit
 
 import tech.idct.clipra.core.model.Project
+import tech.idct.clipra.core.model.keepTransitionsOnTheirCuts
 
 /**
  * Undo and redo with unlimited steps per session. Projects are immutable, so each step keeps the
@@ -17,9 +18,12 @@ class EditHistory(initial: Project) {
     val canUndo: Boolean get() = undoStack.isNotEmpty()
     val canRedo: Boolean get() = redoStack.isNotEmpty()
 
-    /** Applies [command]; throws [EditRejected] and leaves everything as it was when refused. */
+    /**
+     * Applies [command]; throws [EditRejected] and leaves everything as it was when refused. The
+     * transitions then stay on their cuts: they follow their clips or go (#218).
+     */
     fun apply(command: EditCommand): Project {
-        val next = command.apply(project)
+        val next = command.apply(project).keepTransitionsOnTheirCuts(before = project)
         if (next != project) {
             undoStack.addLast(project)
             redoStack.clear()

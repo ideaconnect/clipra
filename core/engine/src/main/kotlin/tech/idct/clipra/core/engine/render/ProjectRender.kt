@@ -173,18 +173,22 @@ object ProjectRender {
             }
     }
 
-    /** The layer's transitions whose cut is still there, between clips that render. */
+    /**
+     * The layer's transitions whose cut is still there, between clips that render, each no
+     * longer than its clips allow (one saved by an older version may be, #218).
+     */
     private fun transitions(project: Project, layerId: String, rendered: Set<String>) =
         project.transitions.filter { it.layerId == layerId }.mapNotNull { transition ->
             val cut = project.cuts().firstOrNull {
                 it.layerId == layerId && it.timeUs == transition.cutTimeUs
             } ?: return@mapNotNull null
             if (cut.from.id !in rendered || cut.to.id !in rendered) return@mapNotNull null
+            val durationUs = transition.durationUs.coerceAtMost(cut.maxTransitionUs)
             RenderTransition(
                 fromClipId = cut.from.id,
                 toClipId = cut.to.id,
-                startUs = cut.timeUs - transition.durationUs / 2,
-                durationUs = transition.durationUs,
+                startUs = cut.timeUs - durationUs / 2,
+                durationUs = durationUs,
                 type = transition.type,
                 easing = transition.easing,
             )
