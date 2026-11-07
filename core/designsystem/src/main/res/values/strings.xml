@@ -5,4 +5,5 @@
     <string name="designsystem_close_tools">Close clip tools</string>
     <string name="designsystem_gallery_title">Design system</string>
     <string name="designsystem_placeholder_note">This screen is a placeholder. It is built later in the plan.</string>
+    <string name="designsystem_preview_fps">%1$d fps</string>
 </resources>

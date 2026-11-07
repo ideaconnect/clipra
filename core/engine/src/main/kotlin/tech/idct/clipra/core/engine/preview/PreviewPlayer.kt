@@ -2,6 +2,8 @@ package tech.idct.clipra.core.engine.preview
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.os.Handler
+import android.os.Looper
 import android.view.Surface
 import androidx.annotation.OptIn
 import androidx.media3.common.Player
@@ -13,6 +15,7 @@ import tech.idct.clipra.core.engine.media.CameraMotion
 import tech.idct.clipra.core.engine.media.CutoutMasks
 import tech.idct.clipra.core.engine.media.MediaCache
 import tech.idct.clipra.core.engine.media.ProjectMediaResolver
+import tech.idct.clipra.core.engine.render.CanvasClips
 import tech.idct.clipra.core.engine.render.CompositionFactory
 import tech.idct.clipra.core.engine.render.LiveEdits
 import tech.idct.clipra.core.engine.render.MediaResolver
@@ -55,6 +58,10 @@ class PreviewPlayer(private val context: Context, cache: MediaCache) {
     /** The Color board's before and after (#28), kept across rebuilds. */
     private val splits = HashMap<String, Float>()
 
+    /** The project of the last [setProject], to rebuild with once its canvas clip is made. */
+    private var project: Project? = null
+    private val main = Handler(Looper.getMainLooper())
+
     /** Called when playback reaches the end. */
     var onEnded: (() -> Unit)? = null
 
@@ -72,15 +79,36 @@ class PreviewPlayer(private val context: Context, cache: MediaCache) {
 
     /** Rebuilds the composition after an edit and returns to [positionUs]. */
     fun setProject(project: Project, positionUs: Long) {
+        this.project = project
         val size = previewSize(project.format)
         val timeline = ProjectRender.timeline(project, media, size.width, size.height)
         live = LiveEdits()
         splits.forEach { (clipId, split) -> live.setSplit(clipId, split) }
-        player.setComposition(CompositionFactory.create(context, timeline, live = live))
+        val canvas = canvasClip(timeline.frameRate)
+        player.setComposition(
+            CompositionFactory.create(context, timeline, live = live, canvas = canvas),
+        )
         hasComposition = true
         player.seekTo(positionUs / 1_000)
         player.prepare()
     }
+
+    /**
+     * The canvas clip at [frameRate] (#227). The first time a rate is used it is made in the
+     * background, under a second; until then the preview plays on the image canvas, at 30
+     * frames a second, and it is rebuilt where it is once the clip is there.
+     */
+    private fun canvasClip(frameRate: Int): CanvasClips.Clip? =
+        CanvasClips.clip(context, frameRate) {
+            main.post {
+                val project = project
+                if (released || project == null) return@post
+                if (project.format.frameRate.fps != frameRate) return@post
+                val playing = player.playWhenReady
+                setProject(project, positionUs)
+                if (playing) play()
+            }
+        }
 
     /**
      * Shows the preview on [surface] and draws the paused frame on it at once from the kept

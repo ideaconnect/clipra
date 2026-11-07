@@ -5,4 +5,5 @@
     <string name="designsystem_close_tools">Zamknij narzędzia klipu</string>
     <string name="designsystem_gallery_title">System projektu</string>
     <string name="designsystem_placeholder_note">To ekran zastępczy. Powstanie w dalszej części planu.</string>
+    <string name="designsystem_preview_fps">%1$d kl./s</string>
 </resources>
