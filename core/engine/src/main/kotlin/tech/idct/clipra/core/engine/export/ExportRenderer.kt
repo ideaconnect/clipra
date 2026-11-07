@@ -16,6 +16,7 @@ import androidx.media3.transformer.Composition
 import androidx.media3.transformer.DefaultEncoderFactory
 import androidx.media3.transformer.ExportException
 import androidx.media3.transformer.ExportResult
+import androidx.media3.transformer.InAppMp4Muxer
 import androidx.media3.transformer.Transformer
 import androidx.media3.transformer.VideoEncoderSettings
 import kotlinx.coroutines.CancellableContinuation
@@ -152,7 +153,10 @@ class ExportRenderer(
 
     /**
      * Copies [file] into the gallery (Movies/Clipra) as [displayName]; returns its content URI.
-     * The file stays, for the extras made from it (#59); the caller deletes it.
+     * The file stays, for the extras made from it (#59); the caller deletes it. It is dated now
+     * (#219). MediaProvider reads the date from the MP4 again when it scans the file (on API 29
+     * and 37 as soon as it is no longer pending), so the file carries the same date
+     * ([ExportMetadata]).
      */
     suspend fun publish(file: File, displayName: String): Uri = withContext(Dispatchers.IO) {
         val resolver = context.contentResolver
@@ -160,6 +164,7 @@ class ExportRenderer(
             put(MediaStore.Video.Media.DISPLAY_NAME, displayName)
             put(MediaStore.Video.Media.MIME_TYPE, MimeTypes.VIDEO_MP4)
             put(MediaStore.Video.Media.RELATIVE_PATH, "${Environment.DIRECTORY_MOVIES}/Clipra")
+            put(MediaStore.Video.Media.DATE_TAKEN, System.currentTimeMillis())
             put(MediaStore.Video.Media.IS_PENDING, 1)
         }
         val collection = MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
@@ -232,6 +237,8 @@ class ExportRenderer(
         )
         // A paused export sends no samples for a while; that is not an error.
         .setMaxDelayBetweenMuxerSamplesMs(C.TIME_UNSET)
+        // The default muxer, with the export's own creation time and none of its clips' tags.
+        .setMuxerFactory(InAppMp4Muxer.Factory(ExportMetadata()))
         .addListener(object : Transformer.Listener {
             override fun onCompleted(composition: Composition, exportResult: ExportResult) {
                 if (continuation.isActive) continuation.resume(Unit)
