@@ -20,6 +20,7 @@ import tech.idct.clipra.core.engine.media.MediaCache
 import tech.idct.clipra.core.engine.media.MediaInspector
 import tech.idct.clipra.core.engine.media.ProxyGenerator
 import tech.idct.clipra.core.engine.preview.PreviewPlayer
+import tech.idct.clipra.core.engine.render.CanvasClips
 import tech.idct.clipra.core.engine.render.PauseGate
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
@@ -84,6 +85,8 @@ class BudgetTest {
             if (!proxy.exists()) ProxyGenerator.generate(context, Uri.parse(asset.uri), proxy)
         }
         val size = PreviewPlayer.previewSize(project.format)
+        // The preview plays on its canvas clip once that is made (#227); made here, it starts so.
+        CanvasClips.make(context, project.format.frameRate.fps)
         val readerThread = HandlerThread("budget-reader").apply { start() }
         val reader = ImageReader.newInstance(size.width, size.height, PixelFormat.RGBA_8888, 3)
         val shown = AtomicInteger()

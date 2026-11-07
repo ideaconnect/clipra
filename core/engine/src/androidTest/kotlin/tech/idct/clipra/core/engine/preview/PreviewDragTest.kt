@@ -14,6 +14,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import tech.idct.clipra.core.engine.media.MediaCache
 import tech.idct.clipra.core.engine.media.MediaInspector
+import tech.idct.clipra.core.engine.render.CanvasClips
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
 import tech.idct.clipra.core.model.Layer
@@ -55,6 +56,8 @@ class PreviewDragTest {
             ),
         )
         val size = PreviewPlayer.previewSize(project.format)
+        // The preview plays on its canvas clip once that is made (#227); made here, it starts so.
+        CanvasClips.make(context, project.format.frameRate.fps)
         val thread = HandlerThread("drag-reader").apply { start() }
         val reader = ImageReader.newInstance(size.width, size.height, PixelFormat.RGBA_8888, 3)
         val shown = AtomicInteger()
