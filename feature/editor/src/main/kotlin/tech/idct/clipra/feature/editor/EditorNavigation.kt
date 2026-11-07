@@ -171,8 +171,9 @@ private fun EditorRoute(
     val waveforms = remember { WaveformLoader(context.applicationContext, viewModel.mediaCache) }
     val currentState by rememberUpdatedState(state)
 
-    // Photos and videos come from the photo picker, or from the system file picker on phones
-    // without the system photo picker, whose links would not last (#226).
+    // Photos and videos come from the system photo picker, or from the system file picker on
+    // phones without it: the picker Google Play services offers there gives links that don't
+    // last (#226).
     val pickVisual = rememberLauncherForActivityResult(PickMultipleMedia()) {
         viewModel.import(it)
     }
