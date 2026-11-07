@@ -4,6 +4,7 @@ import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.util.Log
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingWorkPolicy
@@ -47,8 +48,10 @@ class MediaImporter @Inject constructor(
                     uri,
                     Intent.FLAG_GRANT_READ_URI_PERMISSION,
                 )
-            } catch (_: SecurityException) {
-                // Not every provider offers lasting access; the media lasts as long as the grant.
+            } catch (e: SecurityException) {
+                // Not every provider offers lasting access: the media then lasts only as long as
+                // the grant and is missing once it ends (#226), so the log says so.
+                Log.w(TAG, "No lasting access to $uri: it is missing once its grant ends", e)
             }
         }
         prepare(MediaInspector.inspect(context, uri))
@@ -90,6 +93,10 @@ class MediaImporter @Inject constructor(
             }
         }
         return asset
+    }
+
+    private companion object {
+        const val TAG = "MediaImporter"
     }
 }
 
