@@ -79,3 +79,61 @@ fun Project.cutAfter(clipId: String): Cut? = cuts().firstOrNull { it.from.id == 
 /** The transition on [cut], if it has one. */
 fun Project.transitionOn(cut: Cut): Transition? =
     transitions.firstOrNull { it.layerId == cut.layerId && it.cutTimeUs == cut.timeUs }
+
+/**
+ * This project, edited from [before], with every transition kept on its cut (#218). A
+ * transition follows its two clips when the edit moves their cut (a ripple, a speed change),
+ * and stays on the part of the outgoing clip that still ends there when that clip is split. It
+ * goes when the two clips no longer meet, so it never comes back on other clips that meet at
+ * its old time later. A transition the edit put on a cut stays there. Each one is fitted to
+ * its clips, as `SetTransition` fits it.
+ */
+internal fun Project.keepTransitionsOnTheirCuts(before: Project): Project {
+    if (transitions.isEmpty()) return this
+    val cutsBefore = before.cuts()
+    val cutsNow = cuts()
+    val clipsBefore = before.layers.flatMap { layer -> layer.clips.map { it.id } }.toSet()
+    val kept = transitions.mapNotNull { transition ->
+        val old = before.transitions.firstOrNull { it.id == transition.id }
+        val placedByEdit = old == null ||
+            old.layerId != transition.layerId ||
+            old.cutTimeUs != transition.cutTimeUs
+        val cut = if (placedByEdit) {
+            cutsNow.at(transition.layerId, transition.cutTimeUs)
+        } else {
+            // One already off its cut before the edit (saved by an older version) goes too.
+            cutsBefore.at(transition.layerId, transition.cutTimeUs)?.let { was ->
+                cutsNow.firstOrNull { it.from.id == was.from.id && it.to.id == was.to.id }
+                    ?: cutsNow.firstOrNull {
+                        it.to.id == was.to.id &&
+                            it.from.id !in clipsBefore &&
+                            it.from.isPartOf(was.from)
+                    }
+            }
+        }
+        cut?.let {
+            val fitted = transition.copy(
+                layerId = it.layerId,
+                cutTimeUs = it.timeUs,
+                durationUs = transition.durationUs.coerceAtMost(it.maxTransitionUs),
+            )
+            fitted to placedByEdit
+        }
+    }
+    // One cut takes one transition, the edit's own first.
+    val taken = kept.filter { it.second }.map { it.first.layerId to it.first.cutTimeUs }.toSet()
+    val onCuts = kept
+        .filter { (transition, placedByEdit) ->
+            placedByEdit || (transition.layerId to transition.cutTimeUs) !in taken
+        }
+        .map { it.first }
+        .distinctBy { it.layerId to it.cutTimeUs }
+    return if (onCuts == transitions) this else copy(transitions = onCuts)
+}
+
+private fun List<Cut>.at(layerId: String, timeUs: Long): Cut? =
+    firstOrNull { it.layerId == layerId && it.timeUs == timeUs }
+
+/** Whether this clip, new after an edit, is a part of [clip], as a split's right part is. */
+private fun Clip.isPartOf(clip: Clip): Boolean =
+    type == clip.type && source?.mediaId == clip.source?.mediaId
