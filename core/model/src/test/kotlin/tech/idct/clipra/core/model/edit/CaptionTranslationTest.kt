@@ -13,6 +13,7 @@ import tech.idct.clipra.core.model.Layer
 import tech.idct.clipra.core.model.LinkGroup
 import tech.idct.clipra.core.model.MediaRef
 import tech.idct.clipra.core.model.Project
+import tech.idct.clipra.core.model.Srt
 import tech.idct.clipra.core.model.Transcript
 import tech.idct.clipra.core.model.Word
 
@@ -118,6 +119,22 @@ class CaptionTranslationTest {
 
         assertTrue(again.captionsIn("pl").isEmpty())
         assertNull(again.captionsIn("").firstOrNull())
+    }
+
+    @Test
+    fun saveSrtNamesTheLanguageItWrites() {
+        // The captions as heard are in the transcript's language.
+        assertEquals("en", Srt.language(project))
+        val translated = TranslateCaptions("pl", polish, newId).apply(project)
+        assertEquals("pl", Srt.language(translated))
+        assertEquals("Cześć", Srt.cues(translated).last().text)
+        assertEquals("en", Srt.language(ShowCaptionLanguage("").apply(translated)))
+        // No caption layer shows: Save .srt writes the captions as heard.
+        val allHidden = translated.copy(layers = translated.layers.map { it.copy(hidden = true) })
+        assertEquals("en", Srt.language(allHidden))
+        // Captions imported from an .srt file have no transcript that says.
+        assertNull(Srt.language(project.copy(transcripts = emptyList())))
+        assertEquals("pl", Srt.language(translated.copy(transcripts = emptyList())))
     }
 
     @Test
