@@ -77,14 +77,30 @@ data class CaptionsEditUiState(
     /** The look the captions share (the first one's). */
     val look: CaptionSpec? get() = captions.firstOrNull()?.caption
 
-    /** The transcript the captions came from, for the model and the language. */
+    /**
+     * The transcript the captions came from, for the model and the language. Captions from an
+     * .srt file come from none (#233), even when the project's clips were transcribed.
+     */
     val transcript: Transcript?
         get() {
             val project = project ?: return null
-            val first = captions.firstOrNull() ?: return project.transcripts.firstOrNull()
-            val sources = project.linkedPartners(first.id)
-            return project.transcripts.firstOrNull { it.clipId in sources }
-                ?: project.transcripts.firstOrNull()
+            if (captions.isEmpty()) return project.transcripts.firstOrNull()
+            return captions.firstNotNullOfOrNull { caption ->
+                val sources = project.linkedPartners(caption.id)
+                project.transcripts.firstOrNull { it.clipId in sources }
+            }
+        }
+
+    /**
+     * How many captions an .srt import replaces (#233): the captions as heard (or a
+     * translation's, when there are none); the translations go with them.
+     */
+    val importReplaces: Int
+        get() {
+            val project = project ?: return 0
+            return project.originalCaptions().size.takeIf { it > 0 }
+                ?: translations.maxOfOrNull { project.captionsIn(it).size }
+                ?: 0
         }
 
     /** Words Whisper was unsure of, to check (CaptionsEdit board). */
@@ -205,7 +221,10 @@ class CaptionsEditViewModel @Inject constructor(
         }
     }
 
-    /** Puts the captions of the .srt file at [uri] in place of the project's. */
+    /**
+     * Puts the captions of the .srt file at [uri] in place of the project's, with their
+     * translations; the screens ask first when there are some (#233).
+     */
     fun importSrt(uri: Uri) {
         viewModelScope.launch {
             val cues = SrtFiles.read(context, uri)
