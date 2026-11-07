@@ -69,6 +69,7 @@ Transcript(clipId, words: List<Word(text, start, end, confidence, kind: Word|Fil
 - Autosave writes the JSON document after each committed command (debounced).
 - The project file never stores absolute paths to app-internal caches; proxies are looked up by media hash.
 - Media is identified by a fingerprint of its content (`MediaInspector`), and each `MediaAsset` keeps its size and date taken from import. When an original can't be opened any more (#213), the editor's Missing media sheet lists it with that description, and Find file opens the picker for its kind (#216). `RelinkMedia` works on the media, not on a clip: a file with the same fingerprint only changes the link, so every clip comes back with its in and out points, speed and effects; another file is used only after the user agrees, and each clip keeps its in point where the new file is long enough. Adding or replacing with a file whose fingerprint the project already has (`Project.withAsset`, #214) also takes the new link and name and keeps the rest of the media's description, so a file deleted and put back can be picked again through Add media or Replace. The photo picker hands media over under a number (`<id>.<extension>`, not the file's name), so the editor names such media by its kind and date taken at import, in the app's language ("Video · 5 Nov 2026, 15:30", `PickerNames`, #215); media from the Files app keeps its own name. The name is stored in the project like any other.
+- A project keeps links to its media, so Clipra's read access has to outlast the app: `MediaImporter` takes a persistable grant for every picked file and logs a warning when the provider refuses one. Photos and videos are picked with the system photo picker where the phone has it (Android 13 and later, Android 11 and 12 with the picker update), and with the system file picker elsewhere (`MediaPickers`, #226), as sounds always are. On Android 10 the photo picker contract opens Google Play services' picker instead, whose links can't be persisted and end when the activity finishes (Back, Recents, a reboot), so every clip would be missing the next time the project opens.
 
 ## 4. Media engine
 
@@ -198,7 +199,7 @@ Downloads run in WorkManager with a Wi-Fi-only constraint by default, resume aft
 ## 9. Privacy and permissions
 
 - No analytics SDK by default. If crash reporting is added it must be opt-in and must not send media or transcripts.
-- Photo Picker for media import (no broad storage permission). Microphone only when recording a voiceover. Notifications for export and model download progress. `INTERNET` is declared by `core:models` for the downloads (and later by the ad and billing SDKs).
+- Photo Picker for media import, or the system file picker on phones without the system photo picker (#226); no broad storage permission. Microphone only when recording a voiceover. Notifications for export and model download progress. `INTERNET` is declared by `core:models` for the downloads (and later by the ad and billing SDKs).
 - Network: model downloads straight from the official sources (Hugging Face, GitHub, Google, and Mozilla's model storage on Google Cloud), ads (free users), billing. Those hosts see an ordinary download request (IP address, user agent) and nothing about the user's media; the privacy policy names them.
 
 ## 10. Testing
