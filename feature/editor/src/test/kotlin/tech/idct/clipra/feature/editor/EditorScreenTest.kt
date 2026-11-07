@@ -347,6 +347,64 @@ class EditorScreenTest {
         compose.onNodeWithText("fps · tworzenie proxy", substring = true).assertExists()
     }
 
+    /**
+     * Media the photo picker handed over under a number (#215), named by its kind and date taken,
+     * or by its kind alone without a date. TalkBack says the type once.
+     */
+    private fun showPickerNames(sunset: String, tram: String, stamp: String) {
+        val picked = project.copy(
+            media = project.media.map {
+                when (it.id) {
+                    "sunset" -> it.copy(displayName = sunset)
+                    "tram" -> it.copy(displayName = tram)
+                    "stamp" -> it.copy(displayName = stamp)
+                    else -> it
+                }
+            },
+        )
+        compose.setContent {
+            ClipraTheme {
+                EditorScreen(
+                    state = EditorUiState(
+                        project = picked,
+                        loaded = true,
+                        selectedClipId = "sunset",
+                        playheadUs = 7_120_000,
+                    ),
+                    playing = false,
+                    callbacks = noop,
+                    preview = {},
+                )
+            }
+        }
+    }
+
+    @Test
+    fun clipsNamedByWhenTheyWereTaken() {
+        Locale.setDefault(Locale.US)
+        showPickerNames("Video · 5 Nov 2026, 15:30", "Video", "Photo · 5 Nov 2026, 15:32")
+        compose.onNodeWithContentDescription("Video · 5 Nov 2026, 15:30, 9.2s, layer L3")
+            .assertIsSelected()
+        compose.onNodeWithContentDescription("Video, 4.0s, layer L3").assertExists()
+        compose.onNodeWithContentDescription("Photo · 5 Nov 2026, 15:32, 3.5s, layer L4")
+            .assertExists()
+        // A file's own name still follows the type.
+        compose.onNodeWithContentDescription("Video alfama.mp4, 3.5s, layer L4").assertExists()
+        compose.onRoot().captureRoboImage(roborazziOptions = options)
+    }
+
+    @Test
+    @Config(qualifiers = "pl-w390dp-h844dp-xhdpi")
+    fun clipsNamedByWhenTheyWereTakenInPolish() {
+        Locale.setDefault(Locale.forLanguageTag("pl-PL"))
+        showPickerNames("Film · 5 lis 2026, 15:30", "Film", "Zdjęcie · 5 lis 2026, 15:32")
+        compose.onNodeWithContentDescription("Film · 5 lis 2026, 15:30, 9,2s, warstwa L3")
+            .assertIsSelected()
+        compose.onNodeWithContentDescription("Film, 4,0s, warstwa L3").assertExists()
+        compose.onNodeWithContentDescription("Zdjęcie · 5 lis 2026, 15:32, 3,5s, warstwa L4")
+            .assertExists()
+    }
+
     /** The label of a clip whose media is missing opens the Missing media sheet (#216). */
     @Test
     fun tappingAMissingClipsLabelAsksToFindItsFile() {
