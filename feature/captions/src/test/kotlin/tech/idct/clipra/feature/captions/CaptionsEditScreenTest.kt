@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -289,27 +290,98 @@ class CaptionsEditScreenTest {
         show(calls, message = CaptionsMessage.Imported(5))
         compose.onNodeWithText("Imported 5 captions").assertExists()
         compose.onNodeWithTag("captions-save-srt").performClick()
-        compose.onNodeWithTag("captions-import-srt").performClick()
         assertEquals(1, calls.saved)
+
+        // Import asks first, since it replaces the five captions (#233).
+        compose.onNodeWithTag("captions-import-srt").performClick()
+        compose.onNodeWithText("Replace the captions?").assertExists()
+        compose.onNodeWithTag("import-srt-replaces")
+            .assertTextEquals("Replaces the 5 captions, edits included.")
+        compose.onNodeWithTag("import-srt-cancel").performClick()
+        compose.onNodeWithTag("import-srt-replaces").assertDoesNotExist()
+        assertEquals(0, calls.imported)
+
+        compose.onNodeWithTag("captions-import-srt").performClick()
+        compose.onNodeWithTag("import-srt-confirm").performClick()
+        compose.onNodeWithTag("import-srt-replaces").assertDoesNotExist()
         assertEquals(1, calls.imported)
     }
+
+    /** #233: with a translation, the question says it goes too. */
+    @Test
+    fun importAsksBeforeReplacingCaptionsAndTranslations() {
+        show(project = translated())
+        compose.onNodeWithTag("captions-import-srt").performClick()
+        compose.onNodeWithTag("import-srt-replaces")
+            .assertTextEquals("Replaces the 5 captions and their translations, edits included.")
+        compose.onRoot().captureRoboImage(roborazziOptions = options)
+    }
+
+    @Test
+    @Config(qualifiers = "pl-w390dp-h844dp-xhdpi")
+    fun importAsksBeforeReplacingCaptionsAndTranslationsInPolish() {
+        show(project = translated(), locale = Locale.forLanguageTag("pl-PL"))
+        compose.onNodeWithTag("captions-import-srt").performClick()
+        compose.onNodeWithTag("import-srt-replaces")
+            .assertTextEquals("Zastąpi 5 napisów i ich tłumaczenia, razem z poprawkami.")
+        compose.onRoot().captureRoboImage(roborazziOptions = options)
+    }
+
+    /** With no captions there is nothing to replace, so the file picker opens at once. */
+    @Test
+    fun importWithoutCaptionsAsksNothing() {
+        val calls = Calls()
+        show(calls, project = project.copy(layers = listOf(Layer("L1")), links = emptyList()))
+        compose.onNodeWithTag("captions-import-srt").performClick()
+        compose.onNodeWithTag("import-srt-replaces").assertDoesNotExist()
+        assertEquals(1, calls.imported)
+    }
+
+    /**
+     * #233: captions from an .srt file came from no transcript, so the header no longer names
+     * the Whisper model and language the project's clips were transcribed with.
+     */
+    @Test
+    fun importedCaptionsDontNameWhisper() {
+        show(project = project.copy(links = emptyList()))
+        compose.onNodeWithText("Whisper Base · English (detected)").assertDoesNotExist()
+        compose.onNodeWithTag("header-subtitle").assertTextContains("Auto captions")
+    }
+
+    @Test
+    fun importReplacesTheCaptionsAsHeard() {
+        val translated = translated()
+        assertEquals(5, CaptionsEditUiState(project).importReplaces)
+        // A translation is a copy of each caption, not more captions.
+        assertEquals(5, CaptionsEditUiState(translated).importReplaces)
+        // A translation left without its captions as heard still goes with an import.
+        val alone = translated.copy(
+            layers = translated.layers.map { layer ->
+                layer.copy(clips = layer.clips.filter { it.caption?.language == "pl" })
+            },
+        )
+        assertEquals(5, CaptionsEditUiState(alone).importReplaces)
+        assertEquals(0, CaptionsEditUiState(Project(id = "empty", name = "Empty")).importReplaces)
+    }
+
+    private fun translated(): Project = TranslateCaptions(
+        "pl",
+        captions.map { it.id }.zip(polish).toMap(),
+    ).apply(project)
+
+    private val polish = listOf(
+        "W końcu dotarliśmy do Lizbony",
+        "Światło tutaj jest nierealne",
+        "Jutro jedziemy tramwajem do Alfamy",
+        "a potem pociągiem do Sintry",
+        "jeśli pogoda się utrzyma",
+    )
 
     /** #47: the captions in Polish, with the chips to switch back. */
     @Test
     fun aTranslationIsShownWithItsLanguages() {
         val calls = Calls()
-        val polish = listOf(
-            "W końcu dotarliśmy do Lizbony",
-            "Światło tutaj jest nierealne",
-            "Jutro jedziemy tramwajem do Alfamy",
-            "a potem pociągiem do Sintry",
-            "jeśli pogoda się utrzyma",
-        )
-        val translated = TranslateCaptions(
-            "pl",
-            captions.map { it.id }.zip(polish).toMap(),
-        ).apply(project)
-        show(calls, project = translated)
+        show(calls, project = translated())
         compose.onNodeWithText("dotarliśmy").assertExists()
         compose.onNodeWithText("EN · original").assertExists()
         compose.onRoot().captureRoboImage(roborazziOptions = options)

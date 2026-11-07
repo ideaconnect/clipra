@@ -137,4 +137,18 @@
         <item quantity="many">Zastąpi %1$d napisów zrobionych z tych klipów, razem z poprawkami</item>
         <item quantity="other">Zastąpi %1$d napisu zrobionego z tych klipów, razem z poprawkami</item>
     </plurals>
+    <!-- Asking before an .srt import replaces the captions (#233) -->
+    <string name="captions_import_title">Zastąpić napisy?</string>
+    <plurals name="captions_import_replaces">
+        <item quantity="one">Zastąpi napis, razem z poprawkami.</item>
+        <item quantity="few">Zastąpi %1$d napisy, razem z poprawkami.</item>
+        <item quantity="many">Zastąpi %1$d napisów, razem z poprawkami.</item>
+        <item quantity="other">Zastąpi %1$d napisu, razem z poprawkami.</item>
+    </plurals>
+    <plurals name="captions_import_replaces_translated">
+        <item quantity="one">Zastąpi napis i jego tłumaczenia, razem z poprawkami.</item>
+        <item quantity="few">Zastąpi %1$d napisy i ich tłumaczenia, razem z poprawkami.</item>
+        <item quantity="many">Zastąpi %1$d napisów i ich tłumaczenia, razem z poprawkami.</item>
+        <item quantity="other">Zastąpi %1$d napisu i ich tłumaczenia, razem z poprawkami.</item>
+    </plurals>
 </resources>
