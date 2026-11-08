@@ -17,6 +17,10 @@ captures/
 .DS_Store
 Thumbs.db
 
+# Python (scripts/ and their tests)
+__pycache__/
+.pytest_cache/
+
 # Plan publishing logs
 scripts/plan/.publish-log.json
 scripts/plan/.bodies/
