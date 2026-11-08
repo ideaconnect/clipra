@@ -104,6 +104,12 @@ data class RenderClip(
      * source's or the cleaned voice's, starting at the clip's last moment.
      */
     val reversedSoundPath: String? = null,
+    /**
+     * A reversed clip's picture (#229) laid out back to front: the [sourceSpanUs] it plays, at
+     * preview size, its first frame the source's at the out point. The preview plays it
+     * forwards; until it is made, and in the export, the source is read back to front.
+     */
+    val reversedVideoPath: String? = null,
     /** The mosaic cell (#17) the clip is laid out in and cut to; null for the whole frame. */
     val cell: CellRect? = null,
     /** The colour grade (#28), before the filters, and its LUT read from its file. */

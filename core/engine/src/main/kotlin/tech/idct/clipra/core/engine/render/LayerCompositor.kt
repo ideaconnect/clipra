@@ -90,6 +90,9 @@ private class LayerCompositorProgram(
     private val callbackHandler = Handler(callbackThread.looper)
     private val videoSources = HashMap<String, VideoFrameSource>()
 
+    /** Reversed clips (#22) read back to front from their media, without a copy (#229). */
+    private val reversedSources = HashMap<String, ReversedFrameSource>()
+
     /** Each video clip's latest frame, copied out of its decoder's texture ([videoFrame]). */
     private val frameCopies = HashMap<String, FrameCopy>()
     private val bitmapTextures = HashMap<String, Int>()
@@ -207,6 +210,8 @@ private class LayerCompositorProgram(
         super.release()
         videoSources.values.forEach { it.release() }
         videoSources.clear()
+        reversedSources.values.forEach { it.release() }
+        reversedSources.clear()
         frameCopies.values.forEach { it.target.delete() }
         frameCopies.clear()
         bitmapTextures.values.forEach { GlUtil.deleteTexture(it) }
@@ -956,14 +961,24 @@ private class LayerCompositorProgram(
      * emulator, and a dissolve across such a cut came out as a hard cut.
      */
     private fun videoFrame(clip: RenderClip, source: RenderSource.Video, timeUs: Long): ClipFrame? {
-        val video = videoSources.getOrPut(clip.id) {
-            VideoFrameSource(context, source.path, callbackHandler)
-        }
         // In a transition the clip runs on past its end or starts early; outside the file the
         // nearest frame holds.
         val frameUs = 1_000_000L / timeline.frameRate
         val sourceTimeUs = (source.inPointUs + clip.sourceOffsetAt(timeUs))
             .coerceIn(0, maxOf(0, source.durationUs - frameUs))
+        // A reversed clip (#22) plays its copy laid out back to front forwards once it is made
+        // (the preview, #229), and its media back to front until then and in the export.
+        val backwards = clip.speed.reverse && (clip.speed.rate > 0 || clip.speed.ramp != null)
+        val reversedCopy = clip.reversedVideoPath.takeIf { backwards }
+        if (backwards && reversedCopy == null) return reversedFrame(clip, source, sourceTimeUs)
+        val video = videoSources.getOrPut(clip.id) {
+            if (reversedCopy != null) {
+                val mirrorUs = source.inPointUs + clip.sourceSpanUs
+                VideoFrameSource(context, reversedCopy, callbackHandler, mirrorUs)
+            } else {
+                VideoFrameSource(context, source.path, callbackHandler)
+            }
+        }
         if (!video.frameAt(sourceTimeUs, frameToleranceUs)) return null
         // Full size, up to twice the frame's longest side, so zooming in keeps its detail.
         val longest = 2f * maxOf(timeline.width, timeline.height)
@@ -984,6 +999,31 @@ private class LayerCompositorProgram(
         }
         return ClipFrame(
             copy.target.texture,
+            identity,
+            video.width,
+            video.height,
+            false,
+            video.frameTimeUs,
+        )
+    }
+
+    /**
+     * A reversed clip's frame at [sourceTimeUs], read back to front from its media. The kept
+     * frames are copies already, each the compositor's own until the clip's next frame.
+     */
+    private fun reversedFrame(
+        clip: RenderClip,
+        source: RenderSource.Video,
+        sourceTimeUs: Long,
+    ): ClipFrame? {
+        val longest = maxOf(timeline.width, timeline.height)
+        val video = reversedSources.getOrPut(clip.id) {
+            // As large as the copies of clips playing forwards, memory allowing.
+            ReversedFrameSource(context, source.path, callbackHandler, 2 * longest, longest)
+        }
+        if (!video.frameAt(sourceTimeUs, frameToleranceUs)) return null
+        return ClipFrame(
+            video.textureId,
             identity,
             video.width,
             video.height,
@@ -1022,6 +1062,9 @@ private class LayerCompositorProgram(
             maskTextures.remove(it)?.let { texture -> GlUtil.deleteTexture(texture.id) }
         }
         videoSources.keys.filter { it !in active }.forEach { videoSources.remove(it)?.release() }
+        reversedSources.keys.filter { it !in active }.forEach {
+            reversedSources.remove(it)?.release()
+        }
         frameCopies.keys.filter { it !in active }.forEach {
             frameCopies.remove(it)?.target?.delete()
         }

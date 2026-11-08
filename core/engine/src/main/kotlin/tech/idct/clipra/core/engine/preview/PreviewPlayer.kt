@@ -246,6 +246,9 @@ class PreviewPlayer(private val context: Context, cache: MediaCache) {
         override fun reversedSound(asset: MediaAsset, voice: String?, fromUs: Long, toUs: Long) =
             inner.reversedSound(asset, voice, fromUs, toUs)
 
+        override fun reversedVideo(asset: MediaAsset, fromUs: Long, toUs: Long) =
+            inner.reversedVideo(asset, fromUs, toUs)
+
         override fun caption(caption: CaptionSpec, current: Int, width: Int, height: Int) =
             inner.caption(caption, current, width, height)
 

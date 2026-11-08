@@ -36,6 +36,7 @@ import tech.idct.clipra.core.engine.media.ProjectMediaResolver
 import tech.idct.clipra.core.engine.media.Proxies
 import tech.idct.clipra.core.engine.media.Recording
 import tech.idct.clipra.core.engine.media.ReversedSounds
+import tech.idct.clipra.core.engine.media.ReversedVideos
 import tech.idct.clipra.core.engine.media.SoundAnalyzer
 import tech.idct.clipra.core.engine.media.Stabilizer
 import tech.idct.clipra.core.engine.media.Thumbnails
@@ -209,6 +210,7 @@ class EditorViewModel @Inject constructor(
     private val cutouts: Cutouts,
     private val stabilizer: Stabilizer,
     private val reversedSounds: ReversedSounds,
+    private val reversedVideos: ReversedVideos,
     @param:ApplicationScope private val appScope: CoroutineScope,
     savedState: SavedStateHandle,
 ) : ViewModel() {
@@ -274,10 +276,17 @@ class EditorViewModel @Inject constructor(
                 combine(opened.state.map { it.project }, mediaCache.voiceVersion) { p, _ -> p }
                     .collectLatest { loadBeats(it) }
             }
-            // Reversed clips' sound (#22), made again once a cleaned voice they play is ready.
+            // Reversed clips' sound (#22), made again once a cleaned voice they play is ready,
+            // and their picture laid out back to front for the preview (#229), queued once the
+            // proxy it is made from is ready.
             launch {
                 combine(opened.state.map { it.project }, mediaCache.voiceVersion) { p, _ -> p }
-                    .collectLatest { withContext(Dispatchers.IO) { reversedSounds.requestAll(it) } }
+                    .collectLatest {
+                        withContext(Dispatchers.IO) {
+                            reversedVideos.requestAll(it)
+                            reversedSounds.requestAll(it)
+                        }
+                    }
             }
             opened.state.collect { session ->
                 // Cleaned voices (#39) the cache lost, or that were asked for elsewhere.

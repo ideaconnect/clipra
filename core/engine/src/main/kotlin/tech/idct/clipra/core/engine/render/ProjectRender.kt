@@ -42,6 +42,12 @@ interface MediaResolver {
      */
     fun reversedSound(asset: MediaAsset, voice: String?, fromUs: Long, toUs: Long): String? = null
 
+    /**
+     * The picture of [asset] from [fromUs] to [toUs] laid out back to front (#229), once it is
+     * made; null until then, and for the export, which reads the original.
+     */
+    fun reversedVideo(asset: MediaAsset, fromUs: Long, toUs: Long): String? = null
+
     /** A caption (#45) at [width] × [height] with word [current] spoken (-1: none). */
     fun caption(caption: CaptionSpec, current: Int, width: Int, height: Int): Bitmap? = null
 
@@ -353,9 +359,15 @@ object ProjectRender {
         } else {
             null
         }
-        // A reversed clip (#22) plays its sound back to front once that is made.
+        // A reversed clip (#22) plays its sound back to front once that is made, and in the
+        // preview its picture from a copy laid out back to front once that is (#229).
         val reversed = if (clip.speed.reverse) {
             media.reversedSound(asset, voice, ref.inPointUs, ref.outPointUs)
+        } else {
+            null
+        }
+        val reversedVideo = if (clip.speed.reverse && clip.type == ClipType.Video) {
+            media.reversedVideo(asset, ref.inPointUs, ref.outPointUs)
         } else {
             null
         }
@@ -370,8 +382,11 @@ object ProjectRender {
         }
         // Steadied (#54) once the media is analysed, over the part the clip plays.
         val stabilized = clip.stabilize?.let { media.cameraMotion(asset)?.over(clip) }
-        return renderClipOf(clip, source, voice, cutout)
-            .copy(stabilized = stabilized, reversedSoundPath = reversed)
+        return renderClipOf(clip, source, voice, cutout).copy(
+            stabilized = stabilized,
+            reversedSoundPath = reversed,
+            reversedVideoPath = reversedVideo,
+        )
     }
 
     private fun renderClipOf(
