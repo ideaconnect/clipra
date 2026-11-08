@@ -6,16 +6,21 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.BasicTextField
@@ -28,9 +33,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,6 +50,7 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -162,77 +171,111 @@ fun LayersScreen(
             onNavigate = actions.onDone,
             actions = { DoneButton(actions.onDone) },
         )
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(PREVIEW_HEIGHT)
-                .clipToBounds()
-                .background(colors.ad.background),
-            contentAlignment = Alignment.Center,
-        ) {
-            val format = project.format
-            Box(
-                modifier = Modifier
-                    .aspectRatio(
-                        format.ratio.width.toFloat() / format.ratio.height,
-                        matchHeightConstraintsFirst = true,
-                    )
-                    .testTag("preview"),
-            ) {
-                preview()
-            }
-            // Over the whole area: a moved clip's handles can sit beyond the frame.
-            if (visual && clip.contains(state.playheadUs)) {
-                TransformOverlay(
-                    transform = state.transform,
-                    frame = format.outputSize,
-                    source = sourceSize(project, clip),
-                    onChange = actions.onTransformLive,
-                    onCommit = actions.onTransform,
-                    mode = if (state.cropping) OverlayMode.Crop else OverlayMode.Transform,
-                    chip = stringResource(
-                        R.string.editor_layers_chip,
-                        blendLabel(clip.blend),
-                        (state.opacity * 100).roundToInt(),
+        // Each tab keeps its own scroll position (#230): a Blend tab scrolled down to the
+        // opacity must not open Transform below its position fields.
+        val scrolls = LayerTab.entries.map { key(it) { rememberScrollState() } }
+        BoxWithConstraints(modifier = Modifier.weight(1f)) {
+            // The preview gives up height when the board is short, as while the keyboard is
+            // open (safeDrawingPadding takes it out), so the tabs and the fields keep
+            // TAB_SPACE (#230).
+            val previewHeight =
+                (maxHeight - TAB_SPACE).coerceIn(MIN_PREVIEW_HEIGHT, PREVIEW_HEIGHT)
+            Column(modifier = Modifier.fillMaxSize()) {
+                LayersPreview(state, actions, previewHeight, preview)
+                val tabs = listOf(
+                    Segment(stringResource(R.string.editor_layers_tab_blend), enabled = visual),
+                    Segment(
+                        stringResource(R.string.editor_layers_tab_transform),
+                        enabled = visual,
                     ),
-                    cell = Cells.rect(format, clip.cell),
+                    Segment(stringResource(R.string.editor_layers_tab_layers)),
                 )
+                val tab = if (visual) state.tab else LayerTab.Layers
+                SegmentedControl(
+                    segments = tabs,
+                    selectedIndex = tab.ordinal,
+                    onSelect = { actions.onTab(LayerTab.entries[it]) },
+                    style = SegmentedStyle.Tabs,
+                    modifier = Modifier
+                        .padding(start = 16.dp, end = 16.dp, top = 12.dp)
+                        .fillMaxWidth()
+                        .testTag("layer-tabs"),
+                )
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .verticalScroll(scrolls[tab.ordinal])
+                        .padding(horizontal = 16.dp)
+                        .padding(top = 14.dp, bottom = 16.dp)
+                        .testTag("layer-tab-content"),
+                ) {
+                    when (tab) {
+                        LayerTab.Blend -> BlendTab(clip.blend, state.opacity, actions)
+
+                        LayerTab.Transform -> {
+                            // In a mosaic cell (#17), positions are in the cell's pixels.
+                            val cell = Cells.rect(project.format, clip.cell)
+                            TransformTab(
+                                state,
+                                Cells.size(project.format.outputSize, cell),
+                                actions,
+                            )
+                        }
+
+                        LayerTab.Layers -> LayersTab(state, layer.id, actions)
+                    }
+                }
             }
         }
-        val tabs = listOf(
-            Segment(stringResource(R.string.editor_layers_tab_blend), enabled = visual),
-            Segment(stringResource(R.string.editor_layers_tab_transform), enabled = visual),
-            Segment(stringResource(R.string.editor_layers_tab_layers)),
-        )
-        val tab = if (visual) state.tab else LayerTab.Layers
-        SegmentedControl(
-            segments = tabs,
-            selectedIndex = tab.ordinal,
-            onSelect = { actions.onTab(LayerTab.entries[it]) },
-            style = SegmentedStyle.Tabs,
+    }
+}
+
+/** The selected clip on the preview, with its handles over the whole area. */
+@Composable
+private fun LayersPreview(
+    state: LayersUiState,
+    actions: LayersActions,
+    height: Dp,
+    preview: @Composable () -> Unit,
+) {
+    val project = state.project
+    val clip = state.clip
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(height)
+            .clipToBounds()
+            .background(ClipraTheme.colors.ad.background)
+            .testTag("layers-preview"),
+        contentAlignment = Alignment.Center,
+    ) {
+        val format = project.format
+        Box(
             modifier = Modifier
-                .padding(start = 16.dp, end = 16.dp, top = 12.dp)
-                .fillMaxWidth()
-                .testTag("layer-tabs"),
-        )
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp)
-                .padding(top = 14.dp, bottom = 16.dp),
+                .aspectRatio(
+                    format.ratio.width.toFloat() / format.ratio.height,
+                    matchHeightConstraintsFirst = true,
+                )
+                .testTag("preview"),
         ) {
-            when (tab) {
-                LayerTab.Blend -> BlendTab(clip.blend, state.opacity, actions)
-
-                LayerTab.Transform -> {
-                    // In a mosaic cell (#17), positions are in the cell's pixels.
-                    val cell = Cells.rect(project.format, clip.cell)
-                    TransformTab(state, Cells.size(project.format.outputSize, cell), actions)
-                }
-
-                LayerTab.Layers -> LayersTab(state, layer.id, actions)
-            }
+            preview()
+        }
+        // Over the whole area: a moved clip's handles can sit beyond the frame.
+        if (clip.isVisual() && clip.contains(state.playheadUs)) {
+            TransformOverlay(
+                transform = state.transform,
+                frame = format.outputSize,
+                source = sourceSize(project, clip),
+                onChange = actions.onTransformLive,
+                onCommit = actions.onTransform,
+                mode = if (state.cropping) OverlayMode.Crop else OverlayMode.Transform,
+                chip = stringResource(
+                    R.string.editor_layers_chip,
+                    blendLabel(clip.blend),
+                    (state.opacity * 100).roundToInt(),
+                ),
+                cell = Cells.rect(format, clip.cell),
+            )
         }
     }
 }
@@ -550,6 +593,18 @@ internal fun NumberField(
     var text by remember { mutableStateOf(shown) }
     var focused by remember { mutableStateOf(false) }
     LaunchedEffect(shown, focused) { if (!focused) text = shown }
+    // While it is typed in, the whole field stays in view (#230): again each time the keyboard
+    // makes the screen shorter, once the new layout is in.
+    val bring = remember { BringIntoViewRequester() }
+    val keyboard = WindowInsets.ime
+    val density = LocalDensity.current
+    LaunchedEffect(focused) {
+        if (!focused) return@LaunchedEffect
+        snapshotFlow { keyboard.getBottom(density) }.collect {
+            withFrameNanos { }
+            bring.bringIntoView()
+        }
+    }
     val valueStyle = type.meta.copy(
         fontSize = type.body.fontSize,
         color = colors.textPrimary,
@@ -557,6 +612,7 @@ internal fun NumberField(
     )
     Row(
         modifier = modifier
+            .bringIntoViewRequester(bring)
             .height(52.dp)
             .clip(ClipraTheme.shapes.button)
             .background(colors.surface)
@@ -648,6 +704,15 @@ internal fun normalizeDegrees(degrees: Float): Float {
 }
 
 internal val PREVIEW_HEIGHT = 340.dp
+
+/** The smallest preview, when the keyboard leaves little room (#230). */
+private val MIN_PREVIEW_HEIGHT = 112.dp
+
+/**
+ * What the board keeps below the preview while it is short (#230): the tabs (64 dp) and 186 dp
+ * of their content, the Transform tab's two rows of number fields and its row of buttons.
+ */
+private val TAB_SPACE = 250.dp
 private const val MIN_SCALE_PERCENT = 1f
 private const val MAX_SCALE_PERCENT = 2000f
 

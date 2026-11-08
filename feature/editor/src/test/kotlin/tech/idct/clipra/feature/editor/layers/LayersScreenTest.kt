@@ -1,17 +1,30 @@
 package tech.idct.clipra.feature.editor.layers
 
+import android.view.View
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performImeAction
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
+import androidx.core.graphics.Insets
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.RoborazziOptions
 import com.github.takahirom.roborazzi.captureRoboImage
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -23,9 +36,11 @@ import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
 import tech.idct.clipra.core.model.Easing
 import tech.idct.clipra.core.model.Fit
+import tech.idct.clipra.core.model.Format
 import tech.idct.clipra.core.model.Keyframe
 import tech.idct.clipra.core.model.Keyframed
 import tech.idct.clipra.core.model.Layer
+import tech.idct.clipra.core.model.Layout
 import tech.idct.clipra.core.model.MediaAsset
 import tech.idct.clipra.core.model.MediaKind
 import tech.idct.clipra.core.model.MediaRef
@@ -34,6 +49,8 @@ import tech.idct.clipra.core.model.TextSpec
 import tech.idct.clipra.core.model.Transform
 import tech.idct.clipra.feature.editor.LayerActions
 import java.util.Locale
+import kotlin.math.abs
+import kotlin.math.roundToInt
 
 /** The Layers board with the design's stack: alfama.mp4 on L4 (design/screens/phone/Layers.png). */
 @RunWith(AndroidJUnit4::class)
@@ -113,22 +130,30 @@ class LayersScreenTest {
 
     private val committed = mutableListOf<Transform>()
     private val blends = mutableListOf<BlendMode>()
+    private lateinit var view: View
 
-    private fun show(tab: LayerTab, cropping: Boolean = false, locale: Locale = Locale.US) {
+    private fun show(
+        tab: LayerTab,
+        cropping: Boolean = false,
+        locale: Locale = Locale.US,
+        project: Project = this.project,
+    ) {
         Locale.setDefault(locale)
         compose.setContent {
+            view = LocalView.current
+            var shown by remember { mutableStateOf(tab) }
             ClipraTheme {
                 LayersScreen(
                     state = LayersUiState(
                         project = project,
                         clip = alfama,
                         playheadUs = 7_120_000,
-                        tab = tab,
+                        tab = shown,
                         cropping = cropping,
                     ),
                     actions = LayersActions(
                         onDone = {},
-                        onTab = {},
+                        onTab = { shown = it },
                         onCrop = {},
                         onTransformLive = {},
                         onTransform = { committed += it },
@@ -207,6 +232,110 @@ class LayersScreenTest {
         show(LayerTab.Transform, cropping = true)
         compose.onNodeWithText("Drag the corners to crop").assertExists()
         compose.onNodeWithTag("transform-crop").assertIsSelected()
+    }
+
+    /**
+     * The Galaxy S9 of #230 (360 × 740 dp): with the number keyboard open, the preview gives up
+     * height and the position fields stay in view while they are typed in.
+     */
+    @Test
+    @Config(qualifiers = "pl-w360dp-h740dp-xxhdpi")
+    fun theKeyboardLeavesTheFieldsInView() {
+        show(LayerTab.Transform, locale = Locale.forLanguageTag("pl-PL"))
+        systemBars(keyboard = false)
+        val previewHeight = compose.onNodeWithTag("layers-preview").fetchSemanticsNode()
+            .size.height
+        compose.onNodeWithContentDescription("Pozycja X").performClick()
+        systemBars(keyboard = true)
+        compose.onNodeWithContentDescription("Pozycja X").assertIsFocused()
+        assertFullyShown("transform-x")
+        assertFullyShown("transform-y")
+        assertFullyShown("transform-scale")
+        assertFullyShown("layer-tabs")
+        val smaller = compose.onNodeWithTag("layers-preview").fetchSemanticsNode().size.height
+        assertTrue("preview $smaller px, was $previewHeight px", smaller < previewHeight)
+        compose.onRoot().captureRoboImage(roborazziOptions = options)
+    }
+
+    /**
+     * #230: in a mosaic the cell picker pushes the fields down, so the keyboard covers the row
+     * being typed in; the whole field scrolls back into view, label and unit too.
+     */
+    @Test
+    @Config(qualifiers = "pl-w360dp-h740dp-xxhdpi")
+    fun theFieldBeingTypedInScrollsIntoView() {
+        val mosaic = project.copy(format = Format(layout = Layout.Grid2x2))
+        show(LayerTab.Transform, locale = Locale.forLanguageTag("pl-PL"), project = mosaic)
+        systemBars(keyboard = false)
+        compose.onNodeWithTag("transform-cells").assertExists()
+        assertFullyShown("transform-rotation")
+        compose.onNodeWithContentDescription("Obrót").performClick()
+        systemBars(keyboard = true)
+        compose.onNodeWithContentDescription("Obrót").assertIsFocused()
+        assertFullyShown("transform-rotation")
+    }
+
+    /** #230: a Blend tab scrolled down to the opacity opens Transform at its top. */
+    @Test
+    @Config(qualifiers = "pl-w360dp-h740dp-xxhdpi")
+    fun eachTabKeepsItsOwnScrollPosition() {
+        show(LayerTab.Blend, locale = Locale.forLanguageTag("pl-PL"))
+        systemBars(keyboard = false)
+        compose.onNodeWithTag("opacity").performScrollTo()
+        assertFullyShown("opacity")
+        // The tab really scrolled: its first row of modes went up out of view.
+        assertFalse(isFullyShown("blend:Normal"))
+
+        compose.onNodeWithText("Transformacja").performClick()
+        assertFullyShown("transform-x")
+        assertFullyShown("transform-y")
+
+        // And Blend is still where it was left.
+        compose.onNodeWithText("Mieszanie").performClick()
+        assertFullyShown("opacity")
+        assertFalse(isFullyShown("blend:Normal"))
+    }
+
+    /**
+     * The S9's status and navigation bars (24 and 48 dp), and with [keyboard] its number
+     * keyboard, about 250 dp above the navigation bar.
+     */
+    private fun systemBars(keyboard: Boolean) {
+        compose.runOnIdle {
+            val density = view.resources.displayMetrics.density
+            fun px(dp: Int) = (dp * density).roundToInt()
+            val ime = WindowInsetsCompat.Type.ime()
+            val bottom = if (keyboard) px(48 + 250) else px(48)
+            val insets = WindowInsetsCompat.Builder()
+                .setInsets(WindowInsetsCompat.Type.statusBars(), Insets.of(0, px(24), 0, 0))
+                .setInsets(WindowInsetsCompat.Type.navigationBars(), Insets.of(0, 0, 0, px(48)))
+                .setInsets(ime, Insets.of(0, 0, 0, if (keyboard) bottom else 0))
+                .setVisible(ime, keyboard)
+                .build()
+            ViewCompat.dispatchApplyWindowInsets(view, insets)
+            keyboardTop = (view.height - bottom).toFloat()
+        }
+        compose.waitForIdle()
+    }
+
+    /** Where the keyboard, or without it the navigation bar, starts. */
+    private var keyboardTop = Float.MAX_VALUE
+
+    /** All of [tag] is on screen, none of it cut off by its scrolling tab or the keyboard. */
+    private fun isFullyShown(tag: String): Boolean {
+        val node = compose.onNodeWithTag(tag).fetchSemanticsNode()
+        return node.size.height > 0 &&
+            abs(node.boundsInRoot.height - node.size.height) < 1f &&
+            node.boundsInRoot.bottom <= keyboardTop
+    }
+
+    private fun assertFullyShown(tag: String) {
+        val node = compose.onNodeWithTag(tag).fetchSemanticsNode()
+        assertTrue(
+            "$tag: ${node.size.height} px tall, shown at ${node.boundsInRoot}, " +
+                "keyboard from $keyboardTop px",
+            isFullyShown(tag),
+        )
     }
 
     @Test
