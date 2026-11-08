@@ -129,4 +129,14 @@
         <item quantity="one">Replaces the caption made from these clips, edits included</item>
         <item quantity="other">Replaces the %1$d captions made from these clips, edits included</item>
     </plurals>
+    <!-- Asking before an .srt import replaces the captions (#233) -->
+    <string name="captions_import_title">Replace the captions?</string>
+    <plurals name="captions_import_replaces">
+        <item quantity="one">Replaces the caption, edits included.</item>
+        <item quantity="other">Replaces the %1$d captions, edits included.</item>
+    </plurals>
+    <plurals name="captions_import_replaces_translated">
+        <item quantity="one">Replaces the caption and its translations, edits included.</item>
+        <item quantity="other">Replaces the %1$d captions and their translations, edits included.</item>
+    </plurals>
 </resources>

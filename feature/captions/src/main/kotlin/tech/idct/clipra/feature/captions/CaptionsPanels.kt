@@ -107,6 +107,9 @@ internal fun CaptionsTranscript(
     var pick by remember { mutableStateOf(initialPick) }
     var find by rememberSaveable { mutableStateOf<String?>(null) }
     val query = find.orEmpty()
+    // Import .srt asks first when it would replace captions (#233).
+    var askImport by rememberSaveable { mutableStateOf(false) }
+    val importSrt = { if (state.importReplaces > 0) askImport = true else actions.onImportSrt() }
     val message = state.message?.let { messageText(it) }
     LaunchedEffect(message) {
         if (message != null) {
@@ -155,7 +158,7 @@ internal fun CaptionsTranscript(
             )
             SecondaryButton(
                 text = stringResource(R.string.captions_import_srt),
-                onClick = actions.onImportSrt,
+                onClick = importSrt,
                 outlined = true,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -242,7 +245,7 @@ internal fun CaptionsTranscript(
                 )
                 SecondaryButton(
                     text = stringResource(R.string.captions_import_srt),
-                    onClick = actions.onImportSrt,
+                    onClick = importSrt,
                     modifier = Modifier
                         .weight(1f)
                         .testTag("captions-import-srt"),
@@ -251,6 +254,17 @@ internal fun CaptionsTranscript(
         }
     }
     state.translate?.let { TranslateDialog(it, actions) }
+    if (askImport) {
+        ImportSrtDialog(
+            replaces = state.importReplaces,
+            translated = state.translations.isNotEmpty(),
+            onImport = {
+                askImport = false
+                actions.onImportSrt()
+            },
+            onCancel = { askImport = false },
+        )
+    }
 }
 
 /**

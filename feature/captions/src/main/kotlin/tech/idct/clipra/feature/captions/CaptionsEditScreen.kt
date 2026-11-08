@@ -108,8 +108,9 @@ class CaptionsEditActions(
  * The CaptionsEdit board (#45): the preview, the five styles, position and size for every
  * caption, and the captions in time order with the words Whisper was unsure of underlined. Tap
  * a caption to see it. Tap a word to retype it, split the caption there or merge it with the
- * next; search and replace in every caption; save and import .srt (#46); translate offline
- * and switch between the languages (#47).
+ * next; search and replace in every caption; save and import .srt (#46), asking first when an
+ * import would replace captions (#233); translate offline and switch between the languages
+ * (#47).
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -130,6 +131,9 @@ fun CaptionsEditScreen(
     var find by rememberSaveable { mutableStateOf(initialFind) }
     val query = find.orEmpty()
     val snackbar = remember { SnackbarHostState() }
+    // Import .srt asks first when it would replace captions (#233).
+    var askImport by rememberSaveable { mutableStateOf(false) }
+    val importSrt = { if (state.importReplaces > 0) askImport = true else actions.onImportSrt() }
     val message = state.message?.let { messageText(it) }
     LaunchedEffect(message) {
         if (message != null) {
@@ -158,7 +162,7 @@ fun CaptionsEditScreen(
                     IconAction(
                         icon = ClipraIcons.Captions,
                         contentDescription = stringResource(R.string.captions_import_srt),
-                        onClick = actions.onImportSrt,
+                        onClick = importSrt,
                         modifier = Modifier.testTag("captions-import-srt"),
                     )
                     IconAction(
@@ -324,6 +328,17 @@ fun CaptionsEditScreen(
             }
         }
         state.translate?.let { TranslateDialog(it, actions) }
+        if (askImport) {
+            ImportSrtDialog(
+                replaces = state.importReplaces,
+                translated = state.translations.isNotEmpty(),
+                onImport = {
+                    askImport = false
+                    actions.onImportSrt()
+                },
+                onCancel = { askImport = false },
+            )
+        }
         SnackbarHost(
             snackbar,
             modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 80.dp),
