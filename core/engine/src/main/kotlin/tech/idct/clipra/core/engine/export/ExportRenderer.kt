@@ -12,6 +12,7 @@ import androidx.annotation.OptIn
 import androidx.media3.common.C
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.transformer.Codec
 import androidx.media3.transformer.Composition
 import androidx.media3.transformer.DefaultEncoderFactory
 import androidx.media3.transformer.ExportException
@@ -228,13 +229,7 @@ class ExportRenderer(
     ): Transformer = Transformer.Builder(context)
         .setVideoMimeType(settings.codec.mimeType)
         .setAudioMimeType(MimeTypes.AUDIO_AAC)
-        .setEncoderFactory(
-            DefaultEncoderFactory.Builder(context)
-                .setRequestedVideoEncoderSettings(
-                    VideoEncoderSettings.Builder().setBitrate(settings.videoBitrate).build(),
-                )
-                .build(),
-        )
+        .setEncoderFactory(encoderFactory(settings))
         // A paused export sends no samples for a while; that is not an error.
         .setMaxDelayBetweenMuxerSamplesMs(C.TIME_UNSET)
         // The default muxer, with the export's own creation time and none of its clips' tags.
@@ -260,6 +255,20 @@ class ExportRenderer(
             }
         })
         .build()
+
+    /**
+     * Media3's encoders at the export's bitrate, told its frame rate too: the canvas image has
+     * none, and Media3 would tell the encoder 30 fps (#228).
+     */
+    private fun encoderFactory(settings: ExportSettings): Codec.EncoderFactory =
+        FrameRateEncoderFactory(
+            DefaultEncoderFactory.Builder(context)
+                .setRequestedVideoEncoderSettings(
+                    VideoEncoderSettings.Builder().setBitrate(settings.videoBitrate).build(),
+                )
+                .build(),
+            settings.frameRate.fps.toFloat(),
+        )
 
     private fun failureOf(e: ExportException): ExportFailure = when (e.errorCode) {
         ExportException.ERROR_CODE_ENCODER_INIT_FAILED,
