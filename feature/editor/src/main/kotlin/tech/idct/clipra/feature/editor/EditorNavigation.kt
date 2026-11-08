@@ -636,6 +636,8 @@ private fun EditorRoute(
                     viewModel.seek(it)
                 }
             },
+            // A voiceover being recorded plays the project along (#41); the timeline stays.
+            onScrubbing = { player.setScrubbing(it && !recording) },
             onZoom = viewModel::zoom,
             onSelect = { whenNotRecording { viewModel.select(it) } },
             onMove = { id, start, target ->
