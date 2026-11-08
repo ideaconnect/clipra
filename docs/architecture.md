@@ -167,6 +167,7 @@ Downloads run in WorkManager with a Wi-Fi-only constraint by default, resume aft
 ## 7. Export
 
 - Transformer renders the composition from original media with the chosen resolution, frame rate, codec and bitrate (formula in `docs/product/spec.md`).
+- The encoder is told the export's frame rate (#228): `FrameRateEncoderFactory` puts it on the video format before Media3's `DefaultEncoderFactory` configures the encoder. The canvas image's format has no frame rate, so Media3 told the encoder 30 fps at every rate, and an encoder whose rate control spends the bitrate per frame by that rate (the Galaxy S9's) wrote about 80% of the bitrate at 24 fps and twice it at 60 fps.
 - Missing media (#212): the render leaves out a clip whose media can't be read, so Export to Gallery first checks every clip that adds a picture or a sound (`LeftOut` in `core:model`, `MissingOriginals` with the export's own resolver). When some can't be read, nothing starts: a dialog lists those clips (kind, layer, time, file) and offers Export anyway, Find files (back to the editor's Missing media sheet) and Cancel. The render counts the clips it was made without, and the Saved screen says how many.
 - Encoder capability check with `MediaCodecList` before showing options: HEVC and AV1 availability, 2160p support.
 - Runs in a foreground service with a progress notification (media-processing foreground service type on Android 15 and later, data sync before that), supports pause, resume and cancel.
