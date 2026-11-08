@@ -177,6 +177,7 @@ Downloads run in WorkManager with a Wi-Fi-only constraint by default, resume aft
   - the audio-only `.m4a`: the video's AAC track copied without re-encoding, in Music/Clipra;
   - the `.srt` and the `.otio`, in Download/Clipra. The `.otio` is OpenTimelineIO JSON written by our own serializer (`Otio`). It has a video track per layer and an audio track for a layer's sound, with L1 at the bottom, gaps, dissolves and other transitions, and speed as `LinearTimeWarp`. Media are referenced by their URIs; text, captions and adjustment clips have no file and keep their words in metadata.
 - Notifies `monetization` of start, finish, failure and whether the progress screen is visible, so the ad rules in `docs/product/monetization.md` can be applied.
+- A failed export (#236) shows one of four reasons (`ExportFailure`). `ExportManager` logs it with Media3's error code name and the exception with its causes (`Log.w`, tag `ExportManager`), and keeps the code name in `ExportState.Failed`, so a failure on someone's phone can be traced from its logcat.
 
 ## 8. Monetization
 
