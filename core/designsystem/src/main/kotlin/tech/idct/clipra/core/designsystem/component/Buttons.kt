@@ -20,16 +20,26 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.Measurable
+import androidx.compose.ui.layout.MeasurePolicy
+import androidx.compose.ui.layout.MeasureResult
+import androidx.compose.ui.layout.MeasureScope
+import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.constrainHeight
+import androidx.compose.ui.unit.constrainWidth
 import androidx.compose.ui.unit.dp
 import tech.idct.clipra.core.designsystem.ClipraTheme
 import tech.idct.clipra.core.designsystem.icon.ClipraIcons
 import tech.idct.clipra.core.designsystem.theme.ClipraDimens
+import kotlin.math.roundToInt
 
 /** An icon from [ClipraIcons], tinted with the content colour unless [tint] says otherwise. */
 @Composable
@@ -187,6 +197,11 @@ fun IconAction(
 
 private val CompactButtonHeight = 40.dp
 
+/**
+ * A button's label between its icons. The label matters more than the icons: when it doesn't fit
+ * on one line beside them, as "Udostępnij" in half of a 360 dp phone (#237), they are left out
+ * rather than the word broken in two.
+ */
 @Composable
 private fun ButtonContent(
     text: String,
@@ -196,21 +211,75 @@ private fun ButtonContent(
     primary: Boolean,
 ) {
     val type = ClipraTheme.typography
-    Row(
+    Layout(
+        content = {
+            if (leadingIcon != null) {
+                Row(
+                    modifier = Modifier.layoutId(ButtonPart.Leading),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    ClipraIcon(icon = leadingIcon, contentDescription = null, size = 20.dp)
+                    Spacer(Modifier.width(10.dp))
+                }
+            }
+            Text(
+                text = text,
+                style = if (primary) type.primaryButton else type.button,
+                modifier = Modifier.layoutId(ButtonPart.Label),
+            )
+            if (trailingIcon != null) {
+                Row(
+                    modifier = Modifier.layoutId(ButtonPart.Trailing),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Spacer(Modifier.width(10.dp))
+                    ClipraIcon(icon = trailingIcon, contentDescription = null, size = 20.dp)
+                }
+            }
+        },
         modifier = Modifier
             .heightIn(min = minHeight)
             .padding(horizontal = if (primary) 20.dp else 16.dp),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        if (leadingIcon != null) {
-            ClipraIcon(icon = leadingIcon, contentDescription = null, size = 20.dp)
-            Spacer(Modifier.width(10.dp))
+        measurePolicy = ButtonContentMeasurePolicy,
+    )
+}
+
+private enum class ButtonPart { Leading, Label, Trailing }
+
+/** Centres the icons and the label, leaving the icons out when the label needs their room. */
+private object ButtonContentMeasurePolicy : MeasurePolicy {
+    override fun MeasureScope.measure(
+        measurables: List<Measurable>,
+        constraints: Constraints,
+    ): MeasureResult {
+        val label = measurables.first { it.layoutId == ButtonPart.Label }
+        val icons = measurables.filter { it.layoutId != ButtonPart.Label }
+        val iconsWidth = icons.sumOf { it.maxIntrinsicWidth(constraints.maxHeight) }
+        val withIcons = !constraints.hasBoundedWidth ||
+            label.maxIntrinsicWidth(constraints.maxHeight) + iconsWidth <= constraints.maxWidth
+        val loose = constraints.copy(minWidth = 0, minHeight = 0)
+        val leading = icons.firstOrNull { it.layoutId == ButtonPart.Leading }
+            ?.takeIf { withIcons }?.measure(loose)
+        val trailing = icons.firstOrNull { it.layoutId == ButtonPart.Trailing }
+            ?.takeIf { withIcons }?.measure(loose)
+        val iconsShown = (leading?.width ?: 0) + (trailing?.width ?: 0)
+        val labelMax = if (constraints.hasBoundedWidth) {
+            (constraints.maxWidth - iconsShown).coerceAtLeast(0)
+        } else {
+            Constraints.Infinity
         }
-        Text(text = text, style = if (primary) type.primaryButton else type.button)
-        if (trailingIcon != null) {
-            Spacer(Modifier.width(10.dp))
-            ClipraIcon(icon = trailingIcon, contentDescription = null, size = 20.dp)
+        val text = label.measure(loose.copy(maxWidth = labelMax))
+        val parts = listOfNotNull(leading, text, trailing)
+        val contentWidth = parts.sumOf { it.width }
+        val width = constraints.constrainWidth(contentWidth)
+        val height = constraints.constrainHeight(parts.maxOf { it.height })
+        return layout(width, height) {
+            // Rounded as Arrangement.Center and Alignment.CenterVertically do, pixel for pixel.
+            var x = ((width - contentWidth) / 2f).roundToInt()
+            parts.forEach {
+                it.placeRelative(x, ((height - it.height) / 2f).roundToInt())
+                x += it.width
+            }
         }
     }
 }

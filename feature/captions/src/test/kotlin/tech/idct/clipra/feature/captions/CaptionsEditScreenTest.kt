@@ -125,7 +125,7 @@ class CaptionsEditScreenTest {
 
         compose.onNodeWithTag("style:Karaoke").performClick()
         compose.onNodeWithText("Top").performClick()
-        compose.onNodeWithTag("caption:c3").performClick()
+        compose.onNodeWithTag("caption:c3").performScrollTo().performClick()
         assertEquals(listOf(CaptionStyle.Karaoke), styles)
         assertEquals(listOf(CaptionPosition.Top), positions)
         assertEquals(listOf(12_100_000L), seeks)
@@ -168,6 +168,49 @@ class CaptionsEditScreenTest {
             }
         }
         compose.onRoot().captureRoboImage(roborazziOptions = options)
+    }
+
+    /**
+     * A Galaxy S9 in Polish (#237): 360 dp at its default display size. The model and language
+     * get their own line under the header instead of "Whisper B…", and still make the captions
+     * again.
+     */
+    @Test
+    @Config(qualifiers = "pl-w360dp-h740dp-xhdpi")
+    fun captionsFitA360DpPhoneInPolish() {
+        Locale.setDefault(Locale.forLanguageTag("pl-PL"))
+        var autoCaptions = 0
+        compose.setContent {
+            ClipraTheme {
+                CaptionsEditScreen(
+                    state = CaptionsEditUiState(project, loaded = true, playheadUs = 8_300_000),
+                    scale = null,
+                    actions = CaptionsEditActions(
+                        onDone = {},
+                        onStyle = {},
+                        onPosition = {},
+                        onScale = {},
+                        onScaleDone = {},
+                        onSeek = {},
+                        onEditByText = {},
+                        onAutoCaptions = { autoCaptions++ },
+                    ),
+                    preview = {
+                        Box(
+                            Modifier
+                                .fillMaxSize()
+                                .background(ClipraTheme.colors.surfaceRaised),
+                        )
+                    },
+                )
+            }
+        }
+        compose.onNodeWithText("Whisper Base · Angielski (wykryty)").assertExists()
+        compose.onRoot().captureRoboImage(roborazziOptions = options)
+        compose.assertNoTextCut()
+
+        compose.onNodeWithTag("header-subtitle").performClick()
+        assertEquals(1, autoCaptions)
     }
 
     private class Calls {

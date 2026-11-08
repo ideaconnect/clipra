@@ -51,6 +51,8 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import tech.idct.clipra.core.designsystem.ClipraTheme
+import tech.idct.clipra.core.designsystem.adaptive.LocalWindowLayout
+import tech.idct.clipra.core.designsystem.adaptive.WindowLayout
 import tech.idct.clipra.core.designsystem.component.ChipStyle
 import tech.idct.clipra.core.designsystem.component.ClipraChip
 import tech.idct.clipra.core.designsystem.component.HeaderNavigation
@@ -156,6 +158,8 @@ fun CaptionsEditScreen(
                     ?: stringResource(R.string.captions_title_captions_setup),
                 onSubtitle = actions.onAutoCaptions,
                 onSubtitleLabel = stringResource(R.string.captions_regenerate),
+                // Beside three actions a phone cuts it to "Whisper B…" (#237); a tablet has room.
+                subtitleOwnLine = LocalWindowLayout.current == WindowLayout.Phone,
                 navigation = HeaderNavigation.Back,
                 onNavigate = actions.onDone,
                 actions = {
