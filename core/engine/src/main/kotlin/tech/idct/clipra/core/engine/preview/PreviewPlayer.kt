@@ -85,33 +85,12 @@ class PreviewPlayer(private val context: Context, cache: MediaCache) {
         live = LiveEdits()
         splits.forEach { (clipId, split) -> live.setSplit(clipId, split) }
         val canvas = canvasClip(timeline.frameRate)
-        // Media3 puts only the players it has into scrubbing mode, and a new composition
-        // makes new ones: a scrub going on carries over to them.
-        val scrubbing = player.isScrubbingModeEnabled
-        if (scrubbing) setScrubbing(false)
         player.setComposition(
             CompositionFactory.create(context, timeline, live = live, canvas = canvas),
         )
         hasComposition = true
         player.seekTo(positionUs / 1_000)
         player.prepare()
-        if (scrubbing) setScrubbing(true)
-    }
-
-    /**
-     * Whether the timeline is being scrubbed (#244). While it is, the preview is in Media3's
-     * scrubbing mode: one seek at a time, the newest position waiting for it and the ones in
-     * between dropped, and no sound, so a scrub no longer restarts every layer's sound and
-     * picture for each position it passes. When the scrub ends, the preview goes to the last
-     * position at once.
-     */
-    fun setScrubbing(scrubbing: Boolean) {
-        if (released || scrubbing == player.isScrubbingModeEnabled) return
-        val playWhenReady = player.playWhenReady
-        player.setScrubbingModeEnabled(scrubbing)
-        // Leaving the mode, Media3 plays again if it played when the scrub began. The editor
-        // pauses to scrub, so what it asked for since then stands.
-        if (!scrubbing) player.playWhenReady = playWhenReady
     }
 
     /**

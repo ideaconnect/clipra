@@ -33,14 +33,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -100,11 +98,6 @@ class TimelineActions(
     val onMoveKeyframe: (clipId: String, fromUs: Long, toUs: Long) -> Unit = { _, _, _ -> },
     /** The label of a clip whose media [mediaId] is missing was tapped (#216). */
     val onMissing: (mediaId: String) -> Unit = {},
-    /**
-     * A scrub of the timeline started (true) or ended (false), the fling after a swipe
-     * included: the preview can follow it more cheaply meanwhile (#244).
-     */
-    val onScrubbing: (Boolean) -> Unit = {},
 )
 
 /**
@@ -158,22 +151,6 @@ fun Timeline(
         val deltaDp = with(density) { deltaPx.toDp().value }
         actions.onSeek(currentPlayhead - (deltaDp / currentDps * 1_000_000).toLong())
         deltaPx
-    }
-    // A scrub lasts from the finger going down to the end of its fling (#244); one cut short
-    // by the timeline going away ends too.
-    val onScrubbing by rememberUpdatedState(actions.onScrubbing)
-    LaunchedEffect(scrub) {
-        var scrubbing = false
-        try {
-            snapshotFlow { scrub.isScrollInProgress }.collect {
-                if (it != scrubbing) {
-                    scrubbing = it
-                    onScrubbing(it)
-                }
-            }
-        } finally {
-            if (scrubbing) onScrubbing(false)
-        }
     }
     val zoom = rememberTransformableState { zoomChange, _, _ -> actions.onZoom(zoomChange) }
     // Highest layer first, as on the board.
