@@ -180,6 +180,21 @@ class CaptionsSetupScreenTest {
         compose.onRoot().captureRoboImage(roborazziOptions = options)
     }
 
+    /**
+     * A Galaxy S9 in Polish (#237): 360 dp at its default display size. The language field shows
+     * "Wykryj" whole, and every model's note fits without "…".
+     */
+    @Test
+    @Config(qualifiers = "pl-w360dp-h740dp-xhdpi")
+    fun setupFitsA360DpPhoneInPolish() {
+        Locale.setDefault(Locale.forLanguageTag("pl-PL"))
+        compose.setContent { ClipraTheme { CaptionsSetupScreen(state, actions()) } }
+        compose.onNodeWithText("Wykryj").assertExists()
+        compose.onNodeWithText("Dokładniejszy, wolniejszy").assertExists()
+        compose.onRoot().captureRoboImage(roborazziOptions = options)
+        compose.assertNoTextCut()
+    }
+
     @Test
     fun polishSuggestsALargerModel() {
         Locale.setDefault(Locale.US)

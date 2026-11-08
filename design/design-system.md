@@ -19,7 +19,7 @@ Values are in `tokens.json`. This page explains how they are used. Units: phone 
 
 ## Layout
 
-- Phone: 16 to 20 dp side padding, 36 dp status bar area, header 52 dp with a 44 dp back or close button on the left and the primary action on the right.
+- Phone: 16 to 20 dp side padding, 36 dp status bar area, header 52 dp with a 44 dp back or close button on the left and the primary action on the right. A subtitle that can't share the header with its actions (Captions, with Import .srt, Search and Done) goes on its own line under it, a 48 dp touch area (#237).
 - Bottom action area: primary button 56 dp, radius 16, 22 to 26 dp bottom padding.
 - Sections stack with 10 to 14 dp gaps. Section label sits 6 dp above its control.
 - Tablet: 28 dp status area, 52 dp header, 72 dp tool rail on the left, a 300 dp library panel, flexible preview, 320 dp inspector on the right, and a 320 dp tall timeline across the bottom.
@@ -28,7 +28,7 @@ Values are in `tokens.json`. This page explains how they are used. Units: phone 
 
 | Component | Spec |
 |---|---|
-| Primary button | 56 high, radius 16, accent fill, 16/700 text, optional leading icon 20 |
+| Primary button | 56 high, radius 16, accent fill, 16/700 text, optional leading icon 20. The icons are left out when the label wouldn't fit on one line beside them, as for any button (#237) |
 | Secondary button | 48 to 52 high, radius 14, `#1F1F23` fill or 1.5 `#3A3A40` outline |
 | Segmented control | Container `#17171A` radius 14 with 4 padding; segments 44 high radius 10; selected segment accent fill (or `#F4F3EF` fill with dark text for tabs) |
 | Choice card | 56 to 74 high, radius 14, 1.5 border; selected border accent and fill `#221F12` |

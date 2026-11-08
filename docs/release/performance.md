@@ -21,11 +21,14 @@ Before each run: charged above 50%, not charging, screen brightness at half, bat
 | Budget | Target | Measured by | Reads |
 |---|---|---|---|
 | Cold start to Home | under 1.5 s | `StartupBenchmark` (`benchmark`) | `timeToInitialDisplayMs`, median, with the baseline profile |
-| Timeline scroll and scrub | 60 fps with 6 layers on proxies | `EditorBenchmark` (`benchmark`) on the Budget project | `frameOverrunMs` P90 at or below 0, `frameDurationCpuMs` P90 under 16 ms |
+| Timeline scroll and scrub | 60 fps with 6 layers on proxies | `EditorBenchmark` (`benchmark`) on the Budget project | `frameOverrunMs` P90 at or below 0, `frameDurationCpuMs` P90 under 16 ms; on Android 10 and 11 the CPU P90 alone (below) |
 | Preview playback | real time at 1080p, 3 video layers, 2 effects | `BudgetTest.previewsThreeLayersWithTwoEffectsInRealTime` (`core:engine`) | logcat tag `Budget`: the lowest of three runs at least 27 fps shown, at least 0.95x real time |
 | Export 1080p30, 42 s, 3 layers | under 120 s | `BudgetTest.exportsThreeLayersIn120Seconds` (`core:engine`) | logcat tag `Budget` |
+| A reversed layer (#229) | real time, under 120 s | `BudgetTest.previewsAReversedPictureInPictureInRealTime` (two layers, the picture in picture reversed), `BudgetTest.exportsThreeLayersWithAReversedOneIn120Seconds` (the three layers, the middle one reversed) (`core:engine`) | logcat tag `Budget`, the lines starting `reversed`: the preview from its copies (the budget), and beside it the same layers forwards, read back to front before the copies are made, and how long they took; the export |
 | Whisper base on 42 s of speech | under 20 s | `TranscriberTest` (`core:engine`; downloads the base model from its official source on the first run) | logcat tag `Transcriber` |
 | DeepFilterNet 3 | faster than real time | `VoiceCleanupTest` (`core:engine`) | logcat tag `VoiceCleanup`: seconds for 10 s of sound |
+
+**Android 10 and 11.** Macrobenchmark's `FrameTimingMetric` reports `frameOverrunMs` only from Android 12 (API 31), since it reads each frame's deadline from SurfaceFlinger's frame timeline, which older versions don't have. On Android 10 and 11 the benchmark JSON has only `frameDurationCpuMs` and `frameCount`, so there the timeline budget is judged by `frameDurationCpuMs` P90 under 16 ms alone, and the report says "no overrun metric before Android 12" next to the number. That pass is weaker than one with both numbers: it shows that the app's own work on the UI thread and RenderThread fits in a frame, while a frame can still be late because of the GPU or the compositor. On every version the report also gives the share of frames that took 16 ms of CPU or more, counted from the per-frame times in the JSON (`frameDurationCpuMs`, `runs`). It doesn't change the verdict, but it shows how many frames were slow, which the P90 alone doesn't.
 
 ## 3. Running them
 
@@ -35,17 +38,26 @@ Before each run: charged above 50%, not charging, screen brightness at half, bat
 python scripts/perf/budgets.py --clip clip.mp4
 ```
 
-`--clip` is a minute of the phone's own 1080p30 video (optional), and `--serial` picks a phone when several are connected. Emulators need `--emulator`, and their numbers don't count. The phone can be set to any language: the engine tests log their numbers with a decimal point, and the script also reads the decimal comma (`67,2 s`) that builds before #198 logged in Polish and other decimal-comma locales. The sections below run the same measurements one by one.
+`--clip` is a minute of the phone's own 1080p30 video (optional), and `--serial` picks a phone when several are connected. Emulators need `--emulator`, and their numbers don't count. `--skip-startup` runs only the editor of the two benchmarks, which keeps the Budget project on Android 13 and older (see below). The phone can be set to any language: the engine tests log their numbers with a decimal point, and the script also reads the decimal comma (`67,2 s`) that builds before #198 logged in Polish and other decimal-comma locales. The sections below run the same measurements one by one. The script's own tests run without a phone: `python -m pytest scripts/perf` (with pytest installed).
 
 **Startup and the editor.** The `benchmark` module measures the app's `benchmark` build: release code, shrunk and optimized by R8 but with readable names, signed with the debug key and showing Google's test ads, so it needs none of Clipra's keys. It is profileable (`app/src/benchmark/AndroidManifest.xml`), which Macrobenchmark requires on Android 10 and 11.
 
 ```
-./gradlew :benchmark:connectedBenchmarkAndroidTest
+./gradlew :benchmark:connectedBenchmarkAndroidTest \
+    -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true
 ```
 
-Results are in `benchmark/build/outputs/connected_android_test_additional_output/` (JSON and Perfetto traces) and in the console. One class at a time: add `-Pandroid.testInstrumentationRunnerArguments.class=tech.idct.clipra.benchmark.StartupBenchmark`. The journeys find the app's buttons by their English or Polish labels, so the phone can be set to either language. On an emulator, add `-Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.suppressErrors=EMULATOR`; those numbers don't count.
+Without `leaveApksInstalledAfterRun`, the task uninstalls the app at the end, and the welcome and the Budget project go with it. Results are in `benchmark/build/outputs/connected_android_test_additional_output/` (JSON and Perfetto traces) and in the console. One class at a time: add `-Pandroid.testInstrumentationRunnerArguments.class=tech.idct.clipra.benchmark.StartupBenchmark`. The journeys find the app's buttons by their English or Polish labels, so the phone can be set to either language. On an emulator, add `-Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.suppressErrors=EMULATOR`; those numbers don't count.
 
-**The Budget project.** `EditorBenchmark` measures the project named "Budget" when Home shows one, and a new text card project otherwise. Make it once per phone: record a minute of 1080p30 video with the phone's camera, put it on six layers of one project, L1 to L6, each over the whole minute, wait for the proxies, and rename the project to Budget (Home, the project's menu, Rename). Keep the welcome passed and the project on the phone between runs.
+**The Budget project.** `EditorBenchmark` measures the project named "Budget" when Home shows one. Make it once per phone: record a minute of 1080p30 video with the phone's camera, put it on six layers of one project, L1 to L6, each over the whole minute, wait for the proxies, and rename the project to Budget (Home, the project's menu, Rename). On phones without the system photo picker, such as those with Android 10, Add media opens the system file picker, whose links last after Clipra closes (#226). Builds before that fix lost the clips' originals once the app closed (the clips showed the missing badge), so make the project with a build that has it.
+
+The project stays on the phone between runs as long as nothing deletes the app's data:
+
+- `EditorBenchmark` leaves the compilation state as the install made it (`CompilationMode.Ignore()`). Resetting it, as the other modes do, uninstalls and installs the app again on Android 13 and older unless the phone is rooted (#241).
+- `budgets.py` passes `leaveApksInstalledAfterRun=true` to the benchmark task. Pass it when running the task by hand too.
+- `StartupBenchmark` does reset the compilation state, since it measures start with and without the baseline profile. On Android 13 and older (not rooted) that reinstalls the app and deletes the project, so `budgets.py` measures the editor first and says so in the report. Runs with `--skip-startup` keep the project; after a full run on those phones, make it again before the editor is measured next. On Android 14 and later the reset keeps the app's data.
+
+Without a Budget project, `EditorBenchmark` measures a new text card project, so the journey works on any device, but that is not what the budget asks for. With `-Pandroid.testInstrumentationRunnerArguments.budgetProject=required` it fails instead; `budgets.py` passes it on phones, not on emulators. The logcat tag `BudgetProject` says which project was measured, and the report names it.
 
 **Export and preview.** These are instrumented tests of `core:engine`. They loop the bundled 1080p test clips. For numbers that count, push a minute of the phone's own 1080p30 video first; the test uses it for all three layers:
 
@@ -64,6 +76,10 @@ The preview test plays the project three times, each with a new player, logs a l
 **The AI models.** Run `TranscriberTest` and `VoiceCleanupTest` the same way (`class=tech.idct.clipra.core.engine.media.TranscriberTest`), on Wi-Fi the first time, and read their tags.
 
 **Memory and heat.** During the export test, note the peak of `adb shell dumpsys meminfo tech.idct.clipra.core.engine.test` (TOTAL PSS) and the thermal status before and after three exports in a row (`adb shell dumpsys thermalservice`, "Thermal Status"). A status of 3 (severe) or more during export is a finding.
+
+**When the timeline budget is missed.** `EditorPartsBenchmark` measures the two parts of the editor journey apart, on the same project: `scrub` (the timeline scrubbed back and forth) and `play` (the project played for a moment, twice). Run it as the editor benchmark, with `-Pandroid.testInstrumentationRunnerArguments.class=tech.idct.clipra.benchmark.EditorPartsBenchmark`. Runs of the same build can differ by several milliseconds at P90, so compare a few runs, not one.
+
+On Android 10 and 11, which report no `frameOverrunMs`, the CPU time overstates what the display misses: it adds up the UI thread's and the RenderThread's time, which work on successive frames side by side, and it includes the RenderThread's wait for a free buffer while the app is a frame ahead of the display. `scripts/perf/display-frames.sql` reads a trace of an iteration for what a 60 Hz display got: the vsyncs between the app's first and last frame, SurfaceFlinger's compositions and the vsyncs that showed an old picture again. It also gives each CPU's mean clock: on some phones the frames' CPU time follows the clock, which drops when the app has less to do. On a Galaxy S9 (#244) the scrub of the Budget project read 20 to 26 ms at P90 in runs of the same build, while the display got a new picture on 94 to 97% of the vsyncs.
 
 ## 4. The baseline profile
 

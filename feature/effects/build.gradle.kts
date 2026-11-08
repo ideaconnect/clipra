@@ -13,4 +13,8 @@ dependencies {
     implementation(project(":core:engine"))
     implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
+
+    // The Cutout board's view model test runs on WorkManager's test setup for the person
+    // search it queues and cancels (#240).
+    testImplementation(libs.androidx.work.testing)
 }

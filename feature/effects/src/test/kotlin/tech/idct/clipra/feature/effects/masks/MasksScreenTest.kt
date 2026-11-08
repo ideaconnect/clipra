@@ -48,23 +48,23 @@ class MasksScreenTest {
         effect = "mosaic",
     )
 
-    private fun clip(mask: Mask) = Clip(
+    private fun clip(mask: Mask, effects: List<Effect>) = Clip(
         id = "sunset",
         type = ClipType.Video,
         startUs = 0,
         durationUs = 9_200_000,
         source = MediaRef("sunset", 0, 9_200_000),
-        effects = listOf(Effect("mosaic", 0.8f)),
+        effects = effects,
         mask = mask,
     )
 
-    private fun project(mask: Mask) = Project(
+    private fun project(mask: Mask, effects: List<Effect>) = Project(
         id = "lisbon",
         name = "Lisbon weekend",
         media = listOf(
             MediaAsset("sunset", "content://1", MediaKind.Video, "sunset.mp4", 0, 1080, 1920),
         ),
-        layers = listOf(Layer("L1", clips = listOf(clip(mask)))),
+        layers = listOf(Layer("L1", clips = listOf(clip(mask, effects)))),
     )
 
     private val shapes = mutableListOf<MaskShape>()
@@ -77,9 +77,11 @@ class MasksScreenTest {
         locale: Locale = Locale.US,
         tracking: Float? = null,
         noFace: Boolean = false,
+        // A Mosaic a mask added is at full strength (#239).
+        effects: List<Effect> = listOf(Effect("mosaic", 1f)),
     ) {
         Locale.setDefault(locale)
-        val project = project(mask)
+        val project = project(mask, effects)
         compose.setContent {
             ClipraTheme {
                 MasksScreen(
@@ -91,6 +93,7 @@ class MasksScreenTest {
                         noFace = noFace,
                     ),
                     mask = mask,
+                    strength = effects.firstOrNull()?.strength ?: 1f,
                     blockSize = 0.08f,
                     actions = MasksActions(
                         onBack = {},
@@ -119,12 +122,30 @@ class MasksScreenTest {
         compose.onNodeWithText("Inside oval · feather 43").assertExists()
         compose.onNodeWithTag("shape:Oval").assertIsSelected()
         compose.onNodeWithTag("mask-block-size").assertExists()
+        compose.onNodeWithTag("mask-strength").assertExists()
+        compose.onNodeWithText("100").assertExists()
         compose.onRoot().captureRoboImage(roborazziOptions = options)
 
         compose.onNodeWithTag("shape:Rectangle").performClick()
         assertEquals(listOf(MaskShape.Rectangle), shapes)
         compose.onNodeWithTag("mask-invert").performClick()
         assertTrue(masks.last().invert)
+    }
+
+    /** The strength of the effect the mask limits, which the Effects board also shows (#239). */
+    @Test
+    fun theStrengthOfTheLimitedEffectShows() {
+        show(oval.copy(effect = "blur"), effects = listOf(Effect("blur", 0.6f)))
+        compose.onNodeWithText("Blur effect · sunset.mp4").assertExists()
+        compose.onNodeWithTag("mask-strength").assertExists()
+        compose.onNodeWithText("60").assertExists()
+        compose.onNodeWithTag("mask-block-size").assertDoesNotExist()
+    }
+
+    @Test
+    fun noStrengthBeforeTheClipHasTheEffect() {
+        show(Mask(MaskShape.None), effects = emptyList())
+        compose.onNodeWithTag("mask-strength").assertDoesNotExist()
     }
 
     /** The design state in Polish, to see that every label fits (#76). */

@@ -19,6 +19,11 @@ import androidx.media3.common.util.UnstableApi
  * use and release it on the GL thread that owns the texture; [callbackHandler] receives the
  * frame-available callbacks on another thread.
  *
+ * A copy of a stretch of media laid out back to front (`ReversedVideos`, #229) is read with
+ * [mirrorUs], the media time the copy's start stands for: the copy's frame at t holds the media's
+ * frame at [mirrorUs] - t. [frameAt] and [frameTimeUs] still speak in the media's time, and the
+ * copy plays forwards while the media plays backwards.
+ *
  * The decoder runs ahead on a thread of its own (#243): it reads the file and keeps up to
  * [LOOKAHEAD] decoded frames ready, so [frameAt] seldom waits for it. [sendNext] then sends the
  * frame after the one shown on to the texture's queue, so it has arrived when the next canvas
@@ -27,7 +32,12 @@ import androidx.media3.common.util.UnstableApi
  * layers, most of a frame.
  */
 @OptIn(UnstableApi::class)
-internal class VideoFrameSource(context: Context, path: String, callbackHandler: Handler) {
+internal class VideoFrameSource(
+    context: Context,
+    path: String,
+    callbackHandler: Handler,
+    private val mirrorUs: Long? = null,
+) {
     val textureId: Int = GlUtil.createExternalTexture()
 
     /** Maps unit quad coordinates to the texture, from [SurfaceTexture.getTransformMatrix]. */
@@ -37,10 +47,18 @@ internal class VideoFrameSource(context: Context, path: String, callbackHandler:
     val height: Int
 
     /** The media time of the frame [textureId] shows. */
-    val frameTimeUs: Long get() = shownTimeUs
+    val frameTimeUs: Long get() = mirrorUs?.let { it - shownTimeUs } ?: shownTimeUs
 
     /** How many frames [textureId] has shown; it changes with each new frame. */
     var shownFrames = 0L
+        private set
+
+    /**
+     * How many frames the decoder has put out, shown or not: what reading the file cost. It
+     * counts the frames decoded ahead too, up to [LOOKAHEAD] more than were asked for.
+     */
+    @Volatile
+    var decodedFrames = 0L
         private set
 
     private val frameAvailable = ConditionVariable()
@@ -58,6 +76,9 @@ internal class VideoFrameSource(context: Context, path: String, callbackHandler:
     private val decoded = ArrayDeque<Decoded>()
     private var endOfStream = false
     private var seekRequestUs = NONE
+
+    /** The time of the key frame the last seek reached, or [NONE] at the end of the file. */
+    private var seekKeyUs = NONE
     private var released = false
     private var failure: Throwable? = null
 
@@ -73,6 +94,12 @@ internal class VideoFrameSource(context: Context, path: String, callbackHandler:
 
     /** The media time of the frame on its way to the texture, not made current yet, or [NONE]. */
     private var sentTimeUs = NONE
+
+    /** Reading a copy back to front: the file time of the frame decoded before the one shown. */
+    private var beforeShownUs = Long.MIN_VALUE
+
+    /** The file time of the last frame taken from the decoder, shown or dropped. */
+    private var lastDecodedUs = Long.MIN_VALUE
 
     private class Decoded(val index: Int, val timeUs: Long)
 
@@ -101,6 +128,14 @@ internal class VideoFrameSource(context: Context, path: String, callbackHandler:
      * jumps more than a second ahead.
      */
     fun frameAt(sourceTimeUs: Long, toleranceUs: Long): Boolean {
+        // In a copy laid out back to front, the media's last frame at or before a time is the
+        // copy's first frame at or after the mirrored time. The copy's frame times are whole
+        // microseconds of its own frame rate and its muxer's time scale, a few off the media's,
+        // which would miss a frame that the media has exactly at the time.
+        if (mirrorUs != null) {
+            val fileTimeUs = mirrorUs - sourceTimeUs - toleranceUs - MIRROR_ROUNDING_US
+            return frameFrom(fileTimeUs, toleranceUs)
+        }
         val target = sourceTimeUs + toleranceUs
         nextTargetUs = target + 2 * toleranceUs
         val backwards = sourceTimeUs < shownTimeUs - toleranceUs
@@ -110,22 +145,18 @@ internal class VideoFrameSource(context: Context, path: String, callbackHandler:
         // as well (the canvas skipped a frame) follows it.
         if (sentTimeUs != NONE) {
             if (sentTimeUs > target) return hasFrame
-            latch(sentTimeUs)
-            sentTimeUs = NONE
+            latchSent()
         }
         while (true) {
             val next = awaitDecoded(0) ?: break
             if (next.timeUs > target) break
             // The next frame is due. Show it unless the one after it is due too.
             val after = awaitDecoded(1)
-            take(next)
             if (after != null && after.timeUs <= target) {
-                codec.releaseOutputBuffer(next.index, false)
+                drop(next)
                 continue
             }
-            frameAvailable.close()
-            codec.releaseOutputBuffer(next.index, true)
-            latch(next.timeUs)
+            show(next)
             break
         }
         return hasFrame
@@ -134,9 +165,10 @@ internal class VideoFrameSource(context: Context, path: String, callbackHandler:
     /**
      * Sends the decoded frame after the one shown on to the texture's queue, so that it has
      * arrived when the next canvas shows it. Call it once the shown frame has been read: the
-     * texture keeps showing that one until the next [frameAt]. Nothing is sent when the frame
-     * after the next one would be due by the next canvas too (a video at a higher frame rate
-     * than the project's), since that canvas skips the next one.
+     * texture keeps showing that one until the next [frameAt]. Nothing is sent when the next
+     * canvas would pass the next frame over: when the frame after it is due by then too (a
+     * video at a higher frame rate than the project's), or, reading a copy back to front, when
+     * the next frame comes before the next canvas's time and another follows it.
      */
     fun sendNext() {
         if (sentTimeUs != NONE || !hasFrame || nextTargetUs == NONE) return
@@ -144,13 +176,50 @@ internal class VideoFrameSource(context: Context, path: String, callbackHandler:
         synchronized(lock) {
             next = decoded.firstOrNull() ?: return
             val after = decoded.getOrNull(1)
-            if (after != null && after.timeUs <= nextTargetUs) return
+            val passedOver = if (mirrorUs != null) {
+                after != null && next.timeUs < nextTargetUs
+            } else {
+                after != null && after.timeUs <= nextTargetUs
+            }
+            if (passedOver) return
             decoded.removeFirst()
             lock.notifyAll()
         }
         frameAvailable.close()
         codec.releaseOutputBuffer(next.index, true)
         sentTimeUs = next.timeUs
+    }
+
+    /**
+     * Moves to the last key frame at or before [timeUs] (the first one when none is), for
+     * reading frame by frame with [nextFrameUs]. Returns that key frame's time.
+     */
+    fun seekToKeyFrame(timeUs: Long): Long {
+        seekTo(timeUs)
+        val keyUs = synchronized(lock) { seekKeyUs }
+        return keyUs.takeIf { it >= 0 } ?: timeUs
+    }
+
+    /**
+     * Decodes the next frame and returns its time without showing it, or null at the end of
+     * the file. [showNext] then shows it and [skipNext] drops it; until one of them is called,
+     * this returns the same frame.
+     */
+    fun nextFrameUs(): Long? {
+        check(sentTimeUs == NONE) { "A frame was sent on: read on with frameAt" }
+        // Read from the start when nothing has moved the decoder yet.
+        if (needsSeek) seekTo(0)
+        return awaitDecoded(0)?.timeUs
+    }
+
+    /** Shows the frame [nextFrameUs] decoded in [textureId]. */
+    fun showNext() {
+        show(checkNotNull(firstDecoded()) { "No frame is decoded" })
+    }
+
+    /** Drops the frame [nextFrameUs] decoded without drawing it. */
+    fun skipNext() {
+        drop(checkNotNull(firstDecoded()) { "No frame is decoded" })
     }
 
     fun release() {
@@ -168,6 +237,60 @@ internal class VideoFrameSource(context: Context, path: String, callbackHandler:
         GlUtil.deleteTexture(textureId)
     }
 
+    /**
+     * Shows the first frame at or after [timeUs] in the file, or its last frame when it ends
+     * before: reading a copy laid out back to front. Seeks when the time goes back to the frame
+     * before the one shown or jumps more than a second ahead.
+     */
+    private fun frameFrom(timeUs: Long, toleranceUs: Long): Boolean {
+        nextTargetUs = timeUs + 2 * toleranceUs
+        // Still the first frame at or after the time.
+        if (hasFrame && !needsSeek && timeUs > beforeShownUs && timeUs <= shownTimeUs) return true
+        val backwards = timeUs <= beforeShownUs
+        val farAhead = timeUs > shownTimeUs + SEEK_AHEAD_US
+        if (needsSeek || (hasFrame && (backwards || farAhead))) seekTo(timeUs)
+        // The frame sent on is the one after the frame shown: the first to look at. It holds
+        // when it comes at or after the time.
+        if (sentTimeUs != NONE) {
+            val sent = sentTimeUs
+            latchSent()
+            if (sent >= timeUs) return true
+        }
+        while (true) {
+            val next = awaitDecoded(0) ?: break
+            // An earlier frame is passed over, unless the file ends after it.
+            if (next.timeUs < timeUs && awaitDecoded(1) != null) {
+                drop(next)
+                continue
+            }
+            show(next)
+            break
+        }
+        return hasFrame
+    }
+
+    /** Shows [frame], the first decoded one, in [textureId]. */
+    private fun show(frame: Decoded) {
+        take(frame)
+        frameAvailable.close()
+        codec.releaseOutputBuffer(frame.index, true)
+        latch(frame.timeUs)
+    }
+
+    /** Drops [frame], the first decoded one, without drawing it. */
+    private fun drop(frame: Decoded) {
+        take(frame)
+        codec.releaseOutputBuffer(frame.index, false)
+        lastDecodedUs = frame.timeUs
+    }
+
+    /** Makes the frame [sendNext] sent current. */
+    private fun latchSent() {
+        val timeUs = sentTimeUs
+        sentTimeUs = NONE
+        latch(timeUs)
+    }
+
     /** Makes the frame sent to the texture, at [timeUs], current once it has arrived. */
     private fun latch(timeUs: Long) {
         check(frameAvailable.block(FRAME_TIMEOUT_MS)) { "No frame from the decoder at $timeUs us" }
@@ -176,14 +299,13 @@ internal class VideoFrameSource(context: Context, path: String, callbackHandler:
         shownTimeUs = timeUs
         hasFrame = true
         shownFrames++
+        beforeShownUs = lastDecodedUs
+        lastDecodedUs = timeUs
     }
 
     private fun seekTo(timeUs: Long) {
         // A frame on its way to the texture would come out after the seek: take it now.
-        if (sentTimeUs != NONE) {
-            latch(sentTimeUs)
-            sentTimeUs = NONE
-        }
+        if (sentTimeUs != NONE) latchSent()
         synchronized(lock) {
             seekRequestUs = timeUs
             lock.notifyAll()
@@ -194,7 +316,11 @@ internal class VideoFrameSource(context: Context, path: String, callbackHandler:
         }
         needsSeek = false
         shownTimeUs = timeUs
+        lastDecodedUs = Long.MIN_VALUE
     }
+
+    /** The first decoded frame, if the decoder has one ready. */
+    private fun firstDecoded(): Decoded? = synchronized(lock) { decoded.firstOrNull() }
 
     /**
      * The decoded frame at [position] in the queue, once the decoder has it; null at the end of
@@ -271,8 +397,10 @@ internal class VideoFrameSource(context: Context, path: String, callbackHandler:
         }
         inputQueued = false
         extractor.seekTo(timeUs, MediaExtractor.SEEK_TO_PREVIOUS_SYNC)
+        val keyUs = extractor.sampleTime.takeIf { it >= 0 } ?: NONE
         inputDone = false
         synchronized(lock) {
+            seekKeyUs = keyUs
             seekRequestUs = NONE
             lock.notifyAll()
         }
@@ -305,6 +433,7 @@ internal class VideoFrameSource(context: Context, path: String, callbackHandler:
                 endOfStream = true
             } else {
                 decoded.addLast(Decoded(index, info.presentationTimeUs))
+                decodedFrames++
             }
             lock.notifyAll()
         }
@@ -318,6 +447,9 @@ internal class VideoFrameSource(context: Context, path: String, callbackHandler:
         const val DECODE_TIMEOUT_MS = 5_000L
         const val FRAME_TIMEOUT_MS = 2_000L
         const val SEEK_AHEAD_US = 1_000_000L
+
+        /** Far more than timestamps round by, far less than a frame lasts at 240 fps. */
+        const val MIRROR_ROUNDING_US = 200L
 
         /**
          * Decoded frames kept ready. The GL thread never waits for more than three of the

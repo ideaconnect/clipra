@@ -30,11 +30,13 @@ internal fun MasksDestination(onDone: () -> Unit, viewModel: MasksViewModel = hi
     DisposableEffect(player) { onDispose { player.release() } }
     var liveMask by remember { mutableStateOf<Mask?>(null) }
     var liveBlock by remember { mutableStateOf<Float?>(null) }
+    var liveStrength by remember { mutableStateOf<Float?>(null) }
     BackHandler(onBack = onDone)
 
     LaunchedEffect(state.project) {
         liveMask = null
         liveBlock = null
+        liveStrength = null
         state.project?.let { player.setProject(it, viewModel.playheadUs) }
     }
     if (state.loaded && state.clip == null) {
@@ -42,33 +44,57 @@ internal fun MasksDestination(onDone: () -> Unit, viewModel: MasksViewModel = hi
         return
     }
     val clip = state.clip ?: return
+    val mask = liveMask ?: state.mask
     val mosaic = clip.effects.firstOrNull { it.type == "mosaic" }
+    // The effect the mask limits (#239), whose strength the board shows.
+    val limited = clip.effects.firstOrNull { it.type == (mask?.effect ?: state.effectType) }
+
+    // The clip's effects with the block size and strength the sliders show while they move.
+    fun liveEffects(size: Float?, strength: Float?) = clip.effects.map {
+        val sized = if (size != null && it == mosaic) {
+            it.copy(params = it.params + (Filters.MOSAIC_SIZE to size))
+        } else {
+            it
+        }
+        if (strength != null && it == limited) sized.copy(strength = strength) else sized
+    }
 
     MasksScreen(
         state = state,
-        mask = liveMask ?: state.mask,
+        mask = mask,
+        strength = liveStrength ?: limited?.strength ?: Filters.MASK_STRENGTH,
         blockSize = liveBlock ?: mosaic?.params?.get(Filters.MOSAIC_SIZE)
             ?: Filters.DEFAULT_MOSAIC_SIZE,
         actions = MasksActions(
             onBack = onDone,
             onShape = viewModel::shape,
-            onMaskLive = { mask ->
-                liveMask = mask
-                player.setLiveMask(clip.id, mask)
+            onMaskLive = { moved ->
+                liveMask = moved
+                player.setLiveMask(clip.id, moved)
             },
             onMask = viewModel::setMask,
             onMaskDone = { liveMask?.let(viewModel::setMask) },
             onBlockSizeLive = { size ->
                 if (mosaic != null) {
                     liveBlock = size
-                    val sized = mosaic.copy(params = mosaic.params + (Filters.MOSAIC_SIZE to size))
-                    val effects = clip.effects.map { if (it == mosaic) sized else it }
-                    player.setLiveEffects(clip.id, effects)
+                    player.setLiveEffects(clip.id, liveEffects(size, liveStrength))
                 }
             },
             onBlockSizeDone = { liveBlock?.let(viewModel::setBlockSize) },
             onKeyframe = viewModel::toggleKeyframe,
             onFollowFace = viewModel::followFace,
+            onStrengthLive = { strength ->
+                if (limited != null) {
+                    liveStrength = strength
+                    player.setLiveEffects(clip.id, liveEffects(liveBlock, strength))
+                }
+            },
+            onStrengthDone = {
+                val strength = liveStrength
+                if (limited != null && strength != null) {
+                    viewModel.setStrength(limited.type, strength)
+                }
+            },
         ),
         preview = {
             VideoSurface(

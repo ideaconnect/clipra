@@ -4,6 +4,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
@@ -18,6 +21,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.RoborazziOptions
 import com.github.takahirom.roborazzi.captureRoboImage
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -125,7 +129,7 @@ class CaptionsEditScreenTest {
 
         compose.onNodeWithTag("style:Karaoke").performClick()
         compose.onNodeWithText("Top").performClick()
-        compose.onNodeWithTag("caption:c3").performClick()
+        compose.onNodeWithTag("caption:c3").performScrollTo().performClick()
         assertEquals(listOf(CaptionStyle.Karaoke), styles)
         assertEquals(listOf(CaptionPosition.Top), positions)
         assertEquals(listOf(12_100_000L), seeks)
@@ -168,6 +172,49 @@ class CaptionsEditScreenTest {
             }
         }
         compose.onRoot().captureRoboImage(roborazziOptions = options)
+    }
+
+    /**
+     * A Galaxy S9 in Polish (#237): 360 dp at its default display size. The model and language
+     * get their own line under the header instead of "Whisper B…", and still make the captions
+     * again.
+     */
+    @Test
+    @Config(qualifiers = "pl-w360dp-h740dp-xhdpi")
+    fun captionsFitA360DpPhoneInPolish() {
+        Locale.setDefault(Locale.forLanguageTag("pl-PL"))
+        var autoCaptions = 0
+        compose.setContent {
+            ClipraTheme {
+                CaptionsEditScreen(
+                    state = CaptionsEditUiState(project, loaded = true, playheadUs = 8_300_000),
+                    scale = null,
+                    actions = CaptionsEditActions(
+                        onDone = {},
+                        onStyle = {},
+                        onPosition = {},
+                        onScale = {},
+                        onScaleDone = {},
+                        onSeek = {},
+                        onEditByText = {},
+                        onAutoCaptions = { autoCaptions++ },
+                    ),
+                    preview = {
+                        Box(
+                            Modifier
+                                .fillMaxSize()
+                                .background(ClipraTheme.colors.surfaceRaised),
+                        )
+                    },
+                )
+            }
+        }
+        compose.onNodeWithText("Whisper Base · Angielski (wykryty)").assertExists()
+        compose.onRoot().captureRoboImage(roborazziOptions = options)
+        compose.assertNoTextCut()
+
+        compose.onNodeWithTag("header-subtitle").performClick()
+        assertEquals(1, autoCaptions)
     }
 
     private class Calls {
@@ -266,6 +313,45 @@ class CaptionsEditScreenTest {
         compose.onNodeWithTag("word-input").assertTextContains("Alfama")
     }
 
+    private fun projectWith(captions: List<Clip>) = project.copy(
+        layers = listOf(Layer("L1"), Layer("L2", clips = captions)),
+        links = listOf(LinkGroup("g", listOf("src") + captions.map { it.id })),
+    )
+
+    /** #235: with Sintra checked, one word is left, and English says so in the singular. */
+    @Test
+    fun oneWordLeftToCheck() {
+        val sintraChecked = captions.map {
+            if (it.id == "c4") {
+                caption("c4", 15.6, 18.2, "and then the train out to Sintra", emptySet())
+            } else {
+                it
+            }
+        }
+        show(project = projectWith(sintraChecked))
+        compose.onNodeWithText("5 captions").assertExists()
+        compose.onNodeWithTag("captions-check").assertTextEquals("1 word to check")
+        compose.onNodeWithText("1 words to check").assertDoesNotExist()
+    }
+
+    /** #235: a single caption is "1 caption", not "1 captions". */
+    @Test
+    fun aSingleCaption() {
+        show(project = projectWith(listOf(captions[2])))
+        compose.onNodeWithText("1 caption").assertExists()
+        compose.onNodeWithText("1 captions").assertDoesNotExist()
+        compose.onNodeWithTag("captions-check").assertTextEquals("1 word to check")
+    }
+
+    /** #235: Polish keeps its label and colon for every number. */
+    @Test
+    @Config(qualifiers = "pl-w390dp-h844dp-xhdpi")
+    fun aSingleCaptionInPolish() {
+        show(project = projectWith(listOf(captions[2])), locale = Locale.forLanguageTag("pl-PL"))
+        compose.onNodeWithText("Napisy: 1").assertExists()
+        compose.onNodeWithTag("captions-check").assertTextEquals("Słowa do sprawdzenia: 1")
+    }
+
     @Test
     fun searchAndReplace() {
         val calls = Calls()
@@ -283,6 +369,29 @@ class CaptionsEditScreenTest {
         compose.onNodeWithTag("search-close").performClick()
         compose.onNodeWithTag("captions-search").assertDoesNotExist()
     }
+
+    /**
+     * #232: with the list scrolled down, as after fixing a word further down, search opens in
+     * view at the top of the list, with the Find field focused for the keyboard. On a phone as
+     * small as the Galaxy S9 of the report (360 dp wide).
+     */
+    @Test
+    @Config(qualifiers = "w360dp-h740dp-xhdpi")
+    fun searchOpensInViewWhenTheListIsScrolled() {
+        show()
+        compose.onNodeWithTag("caption:c5").performScrollTo()
+        assertTrue(listScroll() > 0f)
+
+        compose.onNodeWithTag("captions-search-open").performClick()
+        compose.onNodeWithTag("captions-search").assertIsDisplayed()
+        compose.onNodeWithTag("search-close").assertIsDisplayed()
+        compose.onNodeWithTag("search-find").assertIsFocused()
+        assertEquals(0f, listScroll())
+        compose.onRoot().captureRoboImage(roborazziOptions = options)
+    }
+
+    private fun listScroll(): Float = compose.onNodeWithTag("captions-list").fetchSemanticsNode()
+        .config[SemanticsProperties.VerticalScrollAxisRange].value()
 
     @Test
     fun savingAndImportingSrt() {

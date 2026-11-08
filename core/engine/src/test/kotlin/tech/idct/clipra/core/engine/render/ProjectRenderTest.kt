@@ -20,6 +20,7 @@ import tech.idct.clipra.core.model.MediaKind
 import tech.idct.clipra.core.model.MediaRef
 import tech.idct.clipra.core.model.Project
 import tech.idct.clipra.core.model.Resolution
+import tech.idct.clipra.core.model.Speed
 import tech.idct.clipra.core.model.TextSpec
 import tech.idct.clipra.core.model.Transition
 import tech.idct.clipra.core.model.Word
@@ -238,5 +239,36 @@ class ProjectRenderTest {
         // A Single layout ignores the cell.
         val single = ProjectRender.timeline(mosaic.copy(format = project.format), resolver)
         assertEquals(null, single.layers.first().clips.single().cell)
+    }
+
+    @Test
+    fun aReversedVideoPlaysItsCopyLaidOutBackToFrontOnceThereIsOne() {
+        val asked = ArrayList<Triple<String, Long, Long>>()
+        val copies = object : MediaResolver by resolver {
+            override fun reversedVideo(asset: MediaAsset, fromUs: Long, toUs: Long): String {
+                asked += Triple(asset.id, fromUs, toUs)
+                return "/reversed/${asset.id}-$fromUs-$toUs.mp4"
+            }
+        }
+        val reversed = project.copy(
+            layers = listOf(
+                Layer(
+                    "L1",
+                    clips = listOf(
+                        videoClip("back", 0).copy(speed = Speed(reverse = true)),
+                        videoClip("forth", 2_000_000),
+                    ),
+                ),
+            ),
+        )
+        val clips = ProjectRender.timeline(reversed, copies).layers.single().clips
+        val back = clips.first { it.id == "back" }
+        assertEquals("/reversed/v-500000-2500000.mp4", back.reversedVideoPath)
+        assertEquals(null, clips.first { it.id == "forth" }.reversedVideoPath)
+        // Only the reversed clip asks, for the stretch it plays.
+        assertEquals(listOf(Triple("v", 500_000L, 2_500_000L)), asked)
+        // Until the copy is made the media is read back to front.
+        val waiting = ProjectRender.timeline(reversed, resolver).layers.single().clips
+        assertEquals(null, waiting.first { it.id == "back" }.reversedVideoPath)
     }
 }
