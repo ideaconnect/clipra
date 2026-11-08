@@ -157,19 +157,35 @@ def number(text):
 
 
 def engine_numbers(logs):
-    """Preview (fps, pace), export (seconds, pace), Whisper seconds and the slowest DeepFilterNet
-    seconds from the engine tests' log lines; None for each one not found."""
-    preview = re.search(rf'preview .*?: {NUMBER} fps shown, {NUMBER}x real time', logs)
+    """Preview (fps, pace and every run's fps), export (seconds, pace), Whisper seconds and the
+    slowest DeepFilterNet seconds from the engine tests' log lines; None for each one not found.
+
+    The preview test measures several runs and logs each (#243); the budget counts the lowest
+    fps and the lowest pace among them, so a lucky run can't pass it. Builds before that logged
+    one run."""
+    runs = [(number(fps), number(pace)) for fps, pace in
+            re.findall(rf'preview (?:(?!lowest)[^:\n])*: {NUMBER} fps shown, {NUMBER}x real time',
+                       logs)]
     export = re.search(rf'export .*?: {NUMBER} s, {NUMBER}x real time', logs)
     whisper = re.search(rf'Base: \d+ words in {NUMBER} s', logs)
     cleanup = [number(s) for s in
                re.findall(rf'DeepFilterNet \S+: .*?, {NUMBER} s for 10 s', logs)]
     return {
-        'preview': (number(preview.group(1)), number(preview.group(2))) if preview else None,
+        'preview': (min(f for f, _ in runs), min(p for _, p in runs),
+                    [f for f, _ in runs]) if runs else None,
         'export': (number(export.group(1)), number(export.group(2))) if export else None,
         'whisper': number(whisper.group(1)) if whisper else None,
         'cleanup': max(cleanup) if cleanup else None,
     }
+
+
+def preview_measured(preview):
+    """The preview row's measurement: the lowest run, and every run when there are several."""
+    fps, pace, runs = preview
+    text = f'{fps:.1f} fps, {pace:.2f}x'
+    if len(runs) > 1:
+        text += f' (lowest of {len(runs)} runs: {", ".join(f"{f:.1f}" for f in runs)} fps)'
+    return text
 
 
 def main():
@@ -236,7 +252,7 @@ def main():
          verdict(None if overrun is None or cpu is None else (overrun, cpu),
                  lambda v: v[0] <= 0 and v[1] < 16)),
         ('Preview, 1080p, 3 layers, 2 effects', 'at least 27 fps, 0.95x real time',
-         f'{preview[0]:.1f} fps, {preview[1]:.2f}x' if preview else None,
+         preview_measured(preview) if preview else None,
          verdict(preview, lambda v: v[0] >= 27 and v[1] >= 0.95)),
         ('Export 1080p30, 42 s, 3 layers', 'under 120 s',
          f'{export[0]:.1f} s ({export[1]:.2f}x real time)' if export else None,
