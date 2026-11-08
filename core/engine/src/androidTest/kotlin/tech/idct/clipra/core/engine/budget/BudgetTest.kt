@@ -22,6 +22,7 @@ import tech.idct.clipra.core.engine.media.ProxyGenerator
 import tech.idct.clipra.core.engine.media.ReversedVideos
 import tech.idct.clipra.core.engine.preview.PreviewPlayer
 import tech.idct.clipra.core.engine.render.CanvasClips
+import tech.idct.clipra.core.engine.render.LayerCompositor
 import tech.idct.clipra.core.engine.render.PauseGate
 import tech.idct.clipra.core.model.BlendMode
 import tech.idct.clipra.core.model.Clip
@@ -39,6 +40,7 @@ import tech.idct.clipra.core.model.export.ExportSettings
 import java.io.File
 import java.util.Locale
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.math.roundToInt
 
 /**
  * The export and preview budgets of docs/architecture.md, section 11 (#77): a 42 s project of
@@ -96,15 +98,34 @@ class BudgetTest {
         if (check) assertTrue("export took $seconds s", seconds < EXPORT_LIMIT_S)
     }
 
+    /**
+     * The preview, [PREVIEW_RUNS] times, each with a player of its own; the budget holds when
+     * the lowest run meets it (#243): on a Galaxy S9 one run could show 30 fps and the next 8,
+     * as what else kept the phone busy changed, so a single lucky run could pass.
+     */
     @Test
     fun previewsThreeLayersWithTwoEffectsInRealTime() = runBlocking {
         val project = project()
         makeProxies(project)
-        val (fps, pace, size) = preview(project)
+        val size = PreviewPlayer.previewSize(project.format)
+        val runs = (1..PREVIEW_RUNS).map { run ->
+            preview(project).also {
+                Log.i(
+                    TAG,
+                    "preview ${size.width}x${size.height}, 3 layers, 2 effects, run $run of " +
+                        "$PREVIEW_RUNS: %.1f fps shown, %.2fx real time; "
+                            .format(Locale.ROOT, it.fps, it.pace) +
+                        "%.1f canvases drawn a second, a draw %.1f ms on average, %.1f ms P90"
+                            .format(Locale.ROOT, it.drawn, it.drawMeanMs, it.drawP90Ms),
+                )
+            }
+        }
+        val fps = runs.minOf { it.fps }
+        val pace = runs.minOf { it.pace }
         Log.i(
             TAG,
-            "preview ${size.width}x${size.height}, 3 layers, 2 effects: " +
-                "%.1f fps shown, %.2fx real time".format(Locale.ROOT, fps, pace),
+            "preview ${size.width}x${size.height}, 3 layers, 2 effects, lowest of ${runs.size} " +
+                "runs: %.1f fps shown, %.2fx real time".format(Locale.ROOT, fps, pace),
         )
         if (check) {
             assertTrue("preview at ${pace}x real time", pace >= MIN_PACE)
@@ -168,9 +189,24 @@ class BudgetTest {
         }
     }
 
-    /** What the preview of [project] showed: frames a second, its pace, and its size. */
-    private data class Played(val fps: Double, val pace: Double, val size: Size)
+    /**
+     * What the preview of [project] showed: frames a second, its pace and its size, with the
+     * canvases the compositor drew a second and its draw times (#243). Canvases drawn but not
+     * shown were dropped late after the draw; fewer canvases than the frame rate, before it.
+     */
+    private data class Played(
+        val fps: Double,
+        val pace: Double,
+        val size: Size,
+        val drawn: Double,
+        val drawMeanMs: Double,
+        val drawP90Ms: Double,
+    )
 
+    /**
+     * One preview of [project] from its start, with a player of its own: the pictures that
+     * reach the surface and how fast the clock goes, over [MEASURE_MS] after a warm-up.
+     */
     private fun preview(project: Project): Played {
         val size = PreviewPlayer.previewSize(project.format)
         // The preview plays on its canvas clip once that is made (#227); made here, it starts so.
@@ -182,9 +218,10 @@ class BudgetTest {
             r.acquireLatestImage()?.close()
             shown.incrementAndGet()
         }, Handler(readerThread.looper))
+        val draws = Draws()
         lateinit var player: PreviewPlayer
         instrumentation.runOnMainSync {
-            player = PreviewPlayer(context, cache)
+            player = PreviewPlayer(context, cache, draws)
             player.setProject(project, 0)
             player.attach(reader.surface, size.width, size.height)
             player.play()
@@ -194,20 +231,43 @@ class BudgetTest {
         var startUs = 0L
         instrumentation.runOnMainSync { startUs = player.positionUs }
         val startShown = shown.get()
+        val startDraws = draws.mark()
         val started = SystemClock.elapsedRealtime()
         SystemClock.sleep(MEASURE_MS)
+        val drawTimesMs = draws.since(startDraws)
+        val endShown = shown.get()
+        val elapsedMs = SystemClock.elapsedRealtime() - started
         var endUs = 0L
         instrumentation.runOnMainSync {
             endUs = player.positionUs
             player.release()
         }
-        val elapsedMs = SystemClock.elapsedRealtime() - started
         reader.close()
         readerThread.quitSafely()
 
-        val fps = (shown.get() - startShown) * 1_000.0 / elapsedMs
+        val fps = (endShown - startShown) * 1_000.0 / elapsedMs
         val pace = (endUs - startUs) / 1_000.0 / elapsedMs
-        return Played(fps, pace, size)
+        val drawn = drawTimesMs.size * 1_000.0 / elapsedMs
+        val sorted = drawTimesMs.sorted()
+        val mean = if (sorted.isEmpty()) 0.0 else sorted.average()
+        val p90 = sorted.getOrNull(((sorted.size - 1) * 0.9).roundToInt()) ?: 0.0
+        return Played(fps, pace, size, drawn, mean, p90)
+    }
+
+    /** How long the compositor took for each canvas it drew, in milliseconds. */
+    private class Draws : LayerCompositor.Listener {
+        private val timesMs = ArrayList<Double>()
+
+        override fun onFrameDrawn(presentationTimeUs: Long, drawTimeNs: Long) {
+            synchronized(timesMs) { timesMs += drawTimeNs / 1e6 }
+        }
+
+        /** Where the draws from now on start. */
+        fun mark(): Int = synchronized(timesMs) { timesMs.size }
+
+        /** The draws since [mark]. */
+        fun since(mark: Int): List<Double> =
+            synchronized(timesMs) { timesMs.subList(mark, timesMs.size).toList() }
     }
 
     /**
@@ -307,6 +367,7 @@ class BudgetTest {
         const val EXPORT_LIMIT_S = 120.0
         const val WARM_UP_MS = 3_000L
         const val MEASURE_MS = 10_000L
+        const val PREVIEW_RUNS = 3
 
         /** Real time: the clock keeps pace, and at most one frame in ten is dropped at 30 fps. */
         const val MIN_PACE = 0.95

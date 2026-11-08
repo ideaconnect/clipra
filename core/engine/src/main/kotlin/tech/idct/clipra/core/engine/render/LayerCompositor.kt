@@ -997,6 +997,8 @@ private class LayerCompositorProgram(
             drawSource(externalProgram, frame, 1f, FULL_FRAME, FULL_UNIT)
             copy.frames = video.shownFrames
         }
+        // The copy is made, so the decoder's next frame can be on its way meanwhile (#243).
+        video.sendNext()
         return ClipFrame(
             copy.target.texture,
             identity,

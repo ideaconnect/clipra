@@ -17,6 +17,7 @@ import tech.idct.clipra.core.engine.media.MediaCache
 import tech.idct.clipra.core.engine.media.ProjectMediaResolver
 import tech.idct.clipra.core.engine.render.CanvasClips
 import tech.idct.clipra.core.engine.render.CompositionFactory
+import tech.idct.clipra.core.engine.render.LayerCompositor
 import tech.idct.clipra.core.engine.render.LiveEdits
 import tech.idct.clipra.core.engine.render.MediaResolver
 import tech.idct.clipra.core.engine.render.ProjectRender
@@ -38,10 +39,14 @@ import kotlin.math.roundToInt
 /**
  * The editor's preview (#14): the project's composition, built by the same layer compositor as
  * the export, at preview size from proxies, played by Media3's CompositionPlayer. Use it on the
- * main thread.
+ * main thread. [listener] hears of every canvas the compositor draws, for measurements (#243).
  */
 @OptIn(UnstableApi::class, ExperimentalApi::class)
-class PreviewPlayer(private val context: Context, cache: MediaCache) {
+class PreviewPlayer(
+    private val context: Context,
+    cache: MediaCache,
+    private val listener: LayerCompositor.Listener? = null,
+) {
     // The replayable cache keeps the last frame, so a gesture redraws it through the compositor
     // without a seek.
     private val player = CompositionPlayer.Builder(context)
@@ -86,7 +91,13 @@ class PreviewPlayer(private val context: Context, cache: MediaCache) {
         splits.forEach { (clipId, split) -> live.setSplit(clipId, split) }
         val canvas = canvasClip(timeline.frameRate)
         player.setComposition(
-            CompositionFactory.create(context, timeline, live = live, canvas = canvas),
+            CompositionFactory.create(
+                context,
+                timeline,
+                live = live,
+                canvas = canvas,
+                listener = listener,
+            ),
         )
         hasComposition = true
         player.seekTo(positionUs / 1_000)

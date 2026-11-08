@@ -22,7 +22,7 @@ Before each run: charged above 50%, not charging, screen brightness at half, bat
 |---|---|---|---|
 | Cold start to Home | under 1.5 s | `StartupBenchmark` (`benchmark`) | `timeToInitialDisplayMs`, median, with the baseline profile |
 | Timeline scroll and scrub | 60 fps with 6 layers on proxies | `EditorBenchmark` (`benchmark`) on the Budget project | `frameOverrunMs` P90 at or below 0, `frameDurationCpuMs` P90 under 16 ms; on Android 10 and 11 the CPU P90 alone (below) |
-| Preview playback | real time at 1080p, 3 video layers, 2 effects | `BudgetTest.previewsThreeLayersWithTwoEffectsInRealTime` (`core:engine`) | logcat tag `Budget`: at least 27 fps shown, at least 0.95x real time |
+| Preview playback | real time at 1080p, 3 video layers, 2 effects | `BudgetTest.previewsThreeLayersWithTwoEffectsInRealTime` (`core:engine`) | logcat tag `Budget`: the lowest of three runs at least 27 fps shown, at least 0.95x real time |
 | Export 1080p30, 42 s, 3 layers | under 120 s | `BudgetTest.exportsThreeLayersIn120Seconds` (`core:engine`) | logcat tag `Budget` |
 | A reversed layer (#229) | real time, under 120 s | `BudgetTest.previewsAReversedPictureInPictureInRealTime` (two layers, the picture in picture reversed), `BudgetTest.exportsThreeLayersWithAReversedOneIn120Seconds` (the three layers, the middle one reversed) (`core:engine`) | logcat tag `Budget`, the lines starting `reversed`: the preview from its copies (the budget), and beside it the same layers forwards, read back to front before the copies are made, and how long they took; the export |
 | Whisper base on 42 s of speech | under 20 s | `TranscriberTest` (`core:engine`; downloads the base model from its official source on the first run) | logcat tag `Transcriber` |
@@ -70,6 +70,8 @@ adb logcat -d -s Budget
 ```
 
 With `budgets=check` the test fails when a budget is missed; without it, it only logs.
+
+The preview test plays the project three times, each with a new player, logs a line per run and judges the lowest (#243): on a Galaxy S9 one run could show 30 fps and the next 8, so a single run is luck. Each run's line also says how many canvases the compositor drew a second and how long a draw took (mean and P90). Fewer canvases than the frame rate means frames were dropped before the draw, or the draw is too slow; more canvases than pictures shown means pictures were drawn and then dropped as late.
 
 **The AI models.** Run `TranscriberTest` and `VoiceCleanupTest` the same way (`class=tech.idct.clipra.core.engine.media.TranscriberTest`), on Wi-Fi the first time, and read their tags.
 
