@@ -3,7 +3,9 @@
     python scripts/perf/budgets.py [--clip clip.mp4] [--serial SERIAL]
 
 Runs what docs/release/performance.md describes, one device at a time:
-- StartupBenchmark and EditorBenchmark (the app's benchmark build): cold start, timeline frames;
+- EditorBenchmark, then StartupBenchmark (the app's benchmark build): timeline frames, cold
+  start. On a phone the editor must find the Budget project (budgetProject=required), and the
+  report names the project it measured (#241);
 - BudgetTest, TranscriberTest and VoiceCleanupTest (core:engine): preview, export, Whisper base
   and DeepFilterNet 3, with the peak memory of the test process and the thermal status before
   and after.
@@ -12,6 +14,11 @@ The report goes to build/perf/<model>-<date>.md: the device row, the commit, and
 with its measurement and whether it holds, ready to paste into #77. --clip pushes a minute of
 the phone's own 1080p30 video for the export and preview budgets (else the bundled clips loop).
 On an emulator, add --emulator: the numbers then only show that the measurements run.
+
+The app stays installed after the run, so the welcome and the Budget project stay too. On
+Android 13 and older, StartupBenchmark reinstalls the app (Macrobenchmark resets compilation
+that way there unless the phone is rooted), which deletes the Budget project: --skip-startup
+measures the editor again without it.
 
 Needs adb on the PATH (or ANDROID_HOME set), JAVA_HOME as for the build, and the phone prepared
 as the runbook says (charged, at room temperature, the Budget project made once).
@@ -37,10 +44,16 @@ ENGINE_CLASSES = [
     'tech.idct.clipra.core.engine.media.TranscriberTest',
     'tech.idct.clipra.core.engine.media.VoiceCleanupTest',
 ]
-BENCHMARK_CLASSES = [
-    'tech.idct.clipra.benchmark.StartupBenchmark',
-    'tech.idct.clipra.benchmark.EditorBenchmark',
-]
+BENCHMARK_TASK = ':benchmark:connectedBenchmarkAndroidTest'
+# The editor first: on Android 13 and older StartupBenchmark reinstalls the app, and the Budget
+# project goes with its data (#241).
+EDITOR_CLASS = 'tech.idct.clipra.benchmark.EditorBenchmark'
+STARTUP_CLASS = 'tech.idct.clipra.benchmark.StartupBenchmark'
+# The connected test task uninstalls the app at the end unless told otherwise (#241).
+KEEP_APKS = '-Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true'
+# EditorBenchmark fails without a Budget project instead of measuring a text card (#241).
+REQUIRE_BUDGET = '-Pandroid.testInstrumentationRunnerArguments.budgetProject=required'
+BUDGET_PROJECT_TAG = 'BudgetProject'
 BENCHMARK_OUTPUT = ROOT / 'benchmark/build/outputs/connected_android_test_additional_output'
 
 
@@ -172,12 +185,35 @@ def engine_numbers(logs):
     }
 
 
+def editor_project(log):
+    """Which project EditorBenchmark measured, from its BudgetProject log lines (#241): 'Budget',
+    'text card', 'missing' (none, and it was required) or None when nothing was logged."""
+    if 'required' in log:
+        return 'missing'
+    if 'text card' in log:
+        return 'text card'
+    if 'Measuring the project named Budget' in log:
+        return 'Budget'
+    return None
+
+
+PROJECT_WORDS = {
+    'Budget': 'on the Budget project',
+    'text card': 'on a new text card project, not the Budget project',
+    'missing': 'no Budget project on Home',
+    None: 'project not logged',
+}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument('--serial', help='the device, when more than one is connected')
     parser.add_argument('--clip', help="a minute of the phone's own 1080p30 video")
     parser.add_argument('--emulator', action='store_true', help='allow an emulator')
     parser.add_argument('--skip-benchmark', action='store_true')
+    parser.add_argument('--skip-startup', action='store_true',
+                        help='of the benchmarks only the editor, which keeps the Budget project '
+                             'on Android 13 and older')
     parser.add_argument('--skip-engine', action='store_true')
     options = parser.parse_args()
 
@@ -196,12 +232,27 @@ def main():
     extra = ['-Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.suppressErrors='
              'EMULATOR'] if row['emulator'] else []
 
-    benches, ran_benchmark = {}, False
+    benches, ran_benchmark, project, reinstalled = {}, False, None, False
     if not options.skip_benchmark:
         shutil.rmtree(BENCHMARK_OUTPUT, ignore_errors=True)
-        ran_benchmark = gradle(serial, ':benchmark:connectedBenchmarkAndroidTest',
-                               BENCHMARK_CLASSES, extra)
-        benches = benchmark_numbers()
+        adb(serial, 'logcat', '-c', check=False)
+        # A phone has to have the Budget project; an emulator may measure a text card.
+        required = [] if row['emulator'] else [REQUIRE_BUDGET]
+        ran_benchmark = gradle(serial, BENCHMARK_TASK, [EDITOR_CLASS],
+                               [KEEP_APKS, *required, *extra])
+        benches.update(benchmark_numbers())
+        project = editor_project(adb(serial, 'logcat', '-d', '-s', f'{BUDGET_PROJECT_TAG}:I',
+                                     check=False))
+        print(f'EditorBenchmark: {PROJECT_WORDS[project]}', flush=True)
+        if not options.skip_startup:
+            # Macrobenchmark resets the compilation state by reinstalling the app there (#241).
+            reinstalled = int(prop(serial, 'ro.build.version.sdk') or 0) < 34
+            if reinstalled:
+                print('Android 13 or older: StartupBenchmark reinstalls the app, which deletes '
+                      'the Budget project unless the phone is rooted', flush=True)
+            ran_startup = gradle(serial, BENCHMARK_TASK, [STARTUP_CLASS], [KEEP_APKS, *extra])
+            ran_benchmark = ran_benchmark and ran_startup
+            benches.update(benchmark_numbers())
 
     logs, peak = '', None
     if not options.skip_engine:
@@ -225,16 +276,18 @@ def main():
     engine = engine_numbers(logs)
     preview, export = engine['preview'], engine['export']
     whisper, cleanup_s = engine['whisper'], engine['cleanup']
+    timeline = None if overrun is None or cpu is None else (overrun, cpu)
+    timeline_result = verdict(timeline, lambda v: v[0] <= 0 and v[1] < 16)
+    if timeline is not None and project == 'text card':
+        timeline_result = 'not the Budget project'
 
     rows = [
         ('Cold start to Home', 'under 1.5 s',
          f'{start_ms:.0f} ms median' if start_ms is not None else None,
          verdict(start_ms, lambda v: v < 1500)),
         ('Timeline scroll and scrub, 6 layers', 'P90 overrun at or below 0 ms, CPU under 16 ms',
-         f'overrun P90 {overrun:.1f} ms, CPU P90 {cpu:.1f} ms' if overrun is not None and
-         cpu is not None else None,
-         verdict(None if overrun is None or cpu is None else (overrun, cpu),
-                 lambda v: v[0] <= 0 and v[1] < 16)),
+         f'overrun P90 {overrun:.1f} ms, CPU P90 {cpu:.1f} ms' if timeline else None,
+         timeline_result),
         ('Preview, 1080p, 3 layers, 2 effects', 'at least 27 fps, 0.95x real time',
          f'{preview[0]:.1f} fps, {preview[1]:.2f}x' if preview else None,
          verdict(preview, lambda v: v[0] >= 27 and v[1] >= 0.95)),
@@ -273,6 +326,14 @@ def main():
     ]
     if not options.skip_benchmark and not ran_benchmark:
         lines.append('- The benchmark run failed; see the Gradle output.')
+    if not options.skip_benchmark:
+        lines.append(f'- EditorBenchmark: {PROJECT_WORDS[project]}'
+                     + (' (make it as docs/release/performance.md, section 3, says)'
+                        if project == 'missing' else ''))
+    if reinstalled:
+        lines.append('- StartupBenchmark reinstalled the app (Android 13 and older, unless '
+                     'rooted), so the Budget project is gone: make it again before the editor '
+                     'is measured next (runs with --skip-startup keep it)')
     if logs.strip():
         lines += ['', '<details><summary>Log lines</summary>', '', '```', logs.strip(), '```',
                   '', '</details>']

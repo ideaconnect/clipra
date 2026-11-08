@@ -35,17 +35,26 @@ Before each run: charged above 50%, not charging, screen brightness at half, bat
 python scripts/perf/budgets.py --clip clip.mp4
 ```
 
-`--clip` is a minute of the phone's own 1080p30 video (optional), and `--serial` picks a phone when several are connected. Emulators need `--emulator`, and their numbers don't count. The phone can be set to any language: the engine tests log their numbers with a decimal point, and the script also reads the decimal comma (`67,2 s`) that builds before #198 logged in Polish and other decimal-comma locales. The sections below run the same measurements one by one.
+`--clip` is a minute of the phone's own 1080p30 video (optional), and `--serial` picks a phone when several are connected. Emulators need `--emulator`, and their numbers don't count. `--skip-startup` runs only the editor of the two benchmarks, which keeps the Budget project on Android 13 and older (see below). The phone can be set to any language: the engine tests log their numbers with a decimal point, and the script also reads the decimal comma (`67,2 s`) that builds before #198 logged in Polish and other decimal-comma locales. The sections below run the same measurements one by one.
 
 **Startup and the editor.** The `benchmark` module measures the app's `benchmark` build: release code, shrunk and optimized by R8 but with readable names, signed with the debug key and showing Google's test ads, so it needs none of Clipra's keys. It is profileable (`app/src/benchmark/AndroidManifest.xml`), which Macrobenchmark requires on Android 10 and 11.
 
 ```
-./gradlew :benchmark:connectedBenchmarkAndroidTest
+./gradlew :benchmark:connectedBenchmarkAndroidTest \
+    -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true
 ```
 
-Results are in `benchmark/build/outputs/connected_android_test_additional_output/` (JSON and Perfetto traces) and in the console. One class at a time: add `-Pandroid.testInstrumentationRunnerArguments.class=tech.idct.clipra.benchmark.StartupBenchmark`. The journeys find the app's buttons by their English or Polish labels, so the phone can be set to either language. On an emulator, add `-Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.suppressErrors=EMULATOR`; those numbers don't count.
+Without `leaveApksInstalledAfterRun`, the task uninstalls the app at the end, and the welcome and the Budget project go with it. Results are in `benchmark/build/outputs/connected_android_test_additional_output/` (JSON and Perfetto traces) and in the console. One class at a time: add `-Pandroid.testInstrumentationRunnerArguments.class=tech.idct.clipra.benchmark.StartupBenchmark`. The journeys find the app's buttons by their English or Polish labels, so the phone can be set to either language. On an emulator, add `-Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.suppressErrors=EMULATOR`; those numbers don't count.
 
-**The Budget project.** `EditorBenchmark` measures the project named "Budget" when Home shows one, and a new text card project otherwise. Make it once per phone: record a minute of 1080p30 video with the phone's camera, put it on six layers of one project, L1 to L6, each over the whole minute, wait for the proxies, and rename the project to Budget (Home, the project's menu, Rename). Keep the welcome passed and the project on the phone between runs.
+**The Budget project.** `EditorBenchmark` measures the project named "Budget" when Home shows one. Make it once per phone: record a minute of 1080p30 video with the phone's camera, put it on six layers of one project, L1 to L6, each over the whole minute, wait for the proxies, and rename the project to Budget (Home, the project's menu, Rename). On phones without the system photo picker, such as those with Android 10, Add media opens the system file picker, whose links last after Clipra closes (#226). Builds before that fix lost the clips' originals once the app closed (the clips showed the missing badge), so make the project with a build that has it.
+
+The project stays on the phone between runs as long as nothing deletes the app's data:
+
+- `EditorBenchmark` leaves the compilation state as the install made it (`CompilationMode.Ignore()`). Resetting it, as the other modes do, uninstalls and installs the app again on Android 13 and older unless the phone is rooted (#241).
+- `budgets.py` passes `leaveApksInstalledAfterRun=true` to the benchmark task. Pass it when running the task by hand too.
+- `StartupBenchmark` does reset the compilation state, since it measures start with and without the baseline profile. On Android 13 and older (not rooted) that reinstalls the app and deletes the project, so `budgets.py` measures the editor first and says so in the report. Runs with `--skip-startup` keep the project; after a full run on those phones, make it again before the editor is measured next. On Android 14 and later the reset keeps the app's data.
+
+Without a Budget project, `EditorBenchmark` measures a new text card project, so the journey works on any device, but that is not what the budget asks for. With `-Pandroid.testInstrumentationRunnerArguments.budgetProject=required` it fails instead; `budgets.py` passes it on phones, not on emulators. The logcat tag `BudgetProject` says which project was measured, and the report names it.
 
 **Export and preview.** These are instrumented tests of `core:engine`. They loop the bundled 1080p test clips. For numbers that count, push a minute of the phone's own 1080p30 video first; the test uses it for all three layers:
 
