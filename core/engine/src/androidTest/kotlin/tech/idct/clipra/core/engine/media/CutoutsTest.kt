@@ -8,6 +8,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -71,6 +73,36 @@ class CutoutsTest {
         Log.i(TAG, "frame to frame: steadied $steadyChange, model alone $rawChange")
         assertTrue("steadied $steadyChange", steadyChange < 0.5)
         assertTrue("steadied $steadyChange, raw $rawChange", steadyChange <= rawChange)
+    }
+
+    /**
+     * A search stopped part way, as cancelling its work does when the board switches to Chroma
+     * key (#240), leaves no masks behind and no progress, and a later one makes them all.
+     */
+    @Test
+    fun aStoppedSearchLeavesNoMasks() = runBlocking {
+        val asset = MediaInspector.inspect(context, Uri.fromFile(clip()))
+        val cache = MediaCache(File(root, "stopped").apply { deleteRecursively() })
+        val cutouts = Cutouts(context, cache)
+        val part = File(cache.cutout(asset.id).path + ".part")
+        var checks = 0
+        var started = false
+
+        // Stopped once the first frames are written.
+        val made = cutouts.prepare(asset) {
+            if (checks == 1) started = part.exists()
+            checks++ > 0
+        }
+
+        assertFalse(made)
+        assertEquals(2, checks)
+        assertTrue("the first frames were written", started)
+        assertFalse(part.exists())
+        assertFalse(cache.cutout(asset.id).exists())
+        assertNull(cutouts.masks(asset))
+        assertFalse(asset.id in cutouts.progress.value)
+        assertTrue(cutouts.prepare(asset))
+        assertTrue(cutouts.masks(asset)!!.frames in 40..50)
     }
 
     /** The mean change of a mask value (0 to 255) from one frame to the next. */

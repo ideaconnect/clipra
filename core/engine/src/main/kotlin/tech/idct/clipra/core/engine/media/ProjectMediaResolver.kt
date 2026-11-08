@@ -71,6 +71,12 @@ class ProjectMediaResolver(
     ): String? = cache.reversedSound(ReversedSounds.key(asset, voice), fromUs, toUs)
         .takeIf { it.exists() }?.path
 
+    /** The preview's copy of a reversed clip's picture (#229); the export reads the original. */
+    override fun reversedVideo(asset: MediaAsset, fromUs: Long, toUs: Long): String? {
+        if (forExport) return null
+        return cache.reversedVideo(asset.id, fromUs, toUs).takeIf { it.exists() }?.path
+    }
+
     override fun caption(caption: CaptionSpec, current: Int, width: Int, height: Int): Bitmap =
         CaptionRenderer.render(context, caption, current, width, height)
 
