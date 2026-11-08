@@ -21,11 +21,13 @@ Before each run: charged above 50%, not charging, screen brightness at half, bat
 | Budget | Target | Measured by | Reads |
 |---|---|---|---|
 | Cold start to Home | under 1.5 s | `StartupBenchmark` (`benchmark`) | `timeToInitialDisplayMs`, median, with the baseline profile |
-| Timeline scroll and scrub | 60 fps with 6 layers on proxies | `EditorBenchmark` (`benchmark`) on the Budget project | `frameOverrunMs` P90 at or below 0, `frameDurationCpuMs` P90 under 16 ms |
+| Timeline scroll and scrub | 60 fps with 6 layers on proxies | `EditorBenchmark` (`benchmark`) on the Budget project | `frameOverrunMs` P90 at or below 0, `frameDurationCpuMs` P90 under 16 ms; on Android 10 and 11 the CPU P90 alone (below) |
 | Preview playback | real time at 1080p, 3 video layers, 2 effects | `BudgetTest.previewsThreeLayersWithTwoEffectsInRealTime` (`core:engine`) | logcat tag `Budget`: at least 27 fps shown, at least 0.95x real time |
 | Export 1080p30, 42 s, 3 layers | under 120 s | `BudgetTest.exportsThreeLayersIn120Seconds` (`core:engine`) | logcat tag `Budget` |
 | Whisper base on 42 s of speech | under 20 s | `TranscriberTest` (`core:engine`; downloads the base model from its official source on the first run) | logcat tag `Transcriber` |
 | DeepFilterNet 3 | faster than real time | `VoiceCleanupTest` (`core:engine`) | logcat tag `VoiceCleanup`: seconds for 10 s of sound |
+
+**Android 10 and 11.** Macrobenchmark's `FrameTimingMetric` reports `frameOverrunMs` only from Android 12 (API 31), since it reads each frame's deadline from SurfaceFlinger's frame timeline, which older versions don't have. On Android 10 and 11 the benchmark JSON has only `frameDurationCpuMs` and `frameCount`, so there the timeline budget is judged by `frameDurationCpuMs` P90 under 16 ms alone, and the report says "no overrun metric before Android 12" next to the number. That pass is weaker than one with both numbers: it shows that the app's own work on the UI thread and RenderThread fits in a frame, while a frame can still be late because of the GPU or the compositor. On every version the report also gives the share of frames that took 16 ms of CPU or more, counted from the per-frame times in the JSON (`frameDurationCpuMs`, `runs`). It doesn't change the verdict, but it shows how many frames were slow, which the P90 alone doesn't.
 
 ## 3. Running them
 
@@ -35,7 +37,7 @@ Before each run: charged above 50%, not charging, screen brightness at half, bat
 python scripts/perf/budgets.py --clip clip.mp4
 ```
 
-`--clip` is a minute of the phone's own 1080p30 video (optional), and `--serial` picks a phone when several are connected. Emulators need `--emulator`, and their numbers don't count. The phone can be set to any language: the engine tests log their numbers with a decimal point, and the script also reads the decimal comma (`67,2 s`) that builds before #198 logged in Polish and other decimal-comma locales. The sections below run the same measurements one by one.
+`--clip` is a minute of the phone's own 1080p30 video (optional), and `--serial` picks a phone when several are connected. Emulators need `--emulator`, and their numbers don't count. The phone can be set to any language: the engine tests log their numbers with a decimal point, and the script also reads the decimal comma (`67,2 s`) that builds before #198 logged in Polish and other decimal-comma locales. The sections below run the same measurements one by one. The script's own tests run without a phone: `python -m pytest scripts/perf` (with pytest installed).
 
 **Startup and the editor.** The `benchmark` module measures the app's `benchmark` build: release code, shrunk and optimized by R8 but with readable names, signed with the debug key and showing Google's test ads, so it needs none of Clipra's keys. It is profileable (`app/src/benchmark/AndroidManifest.xml`), which Macrobenchmark requires on Android 10 and 11.
 
