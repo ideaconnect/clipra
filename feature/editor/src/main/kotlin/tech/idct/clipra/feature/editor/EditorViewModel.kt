@@ -36,6 +36,7 @@ import tech.idct.clipra.core.engine.media.ProjectMediaResolver
 import tech.idct.clipra.core.engine.media.Proxies
 import tech.idct.clipra.core.engine.media.Recording
 import tech.idct.clipra.core.engine.media.ReversedSounds
+import tech.idct.clipra.core.engine.media.ReversedVideos
 import tech.idct.clipra.core.engine.media.SoundAnalyzer
 import tech.idct.clipra.core.engine.media.Stabilizer
 import tech.idct.clipra.core.engine.media.Thumbnails
@@ -125,6 +126,11 @@ data class EditorUiState(
     /** Proxies of the project's media are queued or being made (#217), as after a cache clear. */
     val makingProxies: Boolean = false,
     val importing: Boolean = false,
+    /**
+     * Media picked for Home's "Auto captions" (#231) brought sound: Auto captions opens next,
+     * see [EditorViewModel.captionsOpened].
+     */
+    val captionsNext: Boolean = false,
     val message: EditorMessage? = null,
     /** Beat markers (#40): each clip's beats on the timeline, for clips that show them. */
     val beats: Map<String, List<Long>> = emptyMap(),
@@ -209,6 +215,7 @@ class EditorViewModel @Inject constructor(
     private val cutouts: Cutouts,
     private val stabilizer: Stabilizer,
     private val reversedSounds: ReversedSounds,
+    private val reversedVideos: ReversedVideos,
     @param:ApplicationScope private val appScope: CoroutineScope,
     savedState: SavedStateHandle,
 ) : ViewModel() {
@@ -274,10 +281,17 @@ class EditorViewModel @Inject constructor(
                 combine(opened.state.map { it.project }, mediaCache.voiceVersion) { p, _ -> p }
                     .collectLatest { loadBeats(it) }
             }
-            // Reversed clips' sound (#22), made again once a cleaned voice they play is ready.
+            // Reversed clips' sound (#22), made again once a cleaned voice they play is ready,
+            // and their picture laid out back to front for the preview (#229), queued once the
+            // proxy it is made from is ready.
             launch {
                 combine(opened.state.map { it.project }, mediaCache.voiceVersion) { p, _ -> p }
-                    .collectLatest { withContext(Dispatchers.IO) { reversedSounds.requestAll(it) } }
+                    .collectLatest {
+                        withContext(Dispatchers.IO) {
+                            reversedVideos.requestAll(it)
+                            reversedSounds.requestAll(it)
+                        }
+                    }
             }
             opened.state.collect { session ->
                 // Cleaned voices (#39) the cache lost, or that were asked for elsewhere.
@@ -787,9 +801,11 @@ class EditorViewModel @Inject constructor(
 
     /**
      * Imports picked media: videos and photos go to the end of the main layer (L1), sounds to the
-     * first free layer above it at the playhead. Each import is one undo step.
+     * first free layer above it at the playhead. Each import is one undo step. With
+     * [thenCaptions] (Home's "Auto captions", #231), Auto captions opens next once the project
+     * has sound ([EditorUiState.captionsNext]); without it, the editor asks for a clip with sound.
      */
-    fun import(uris: List<Uri>) {
+    fun import(uris: List<Uri>, thenCaptions: Boolean = false) {
         if (uris.isEmpty()) return
         mutableState.update { it.copy(importing = true) }
         viewModelScope.launch {
@@ -802,9 +818,25 @@ class EditorViewModel @Inject constructor(
                 }
                 edit { project -> placeImported(project, asset) }
             }
-            mutableState.update { it.copy(importing = false) }
+            // The session has every edit already; the state's project can follow a moment later.
+            val sound = session?.project?.hasSound == true
+            mutableState.update {
+                when {
+                    !thenCaptions -> it.copy(importing = false)
+
+                    sound -> it.copy(importing = false, captionsNext = true)
+
+                    else -> it.copy(
+                        importing = false,
+                        message = it.message ?: EditorMessage.NeedsSound,
+                    )
+                }
+            }
         }
     }
+
+    /** Auto captions opened after the import that asked for it (#231). */
+    fun captionsOpened() = mutableState.update { it.copy(captionsNext = false) }
 
     /** Replaces the selected clip's media with [uri]. */
     fun replace(uri: Uri) {

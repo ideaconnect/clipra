@@ -92,7 +92,8 @@ class FaceTrackingTest {
         val followed = following.findClip("v")!!.second
         assertEquals(15, followed.maskKeyframes.size)
         assertTrue(followed.mask!!.followFace)
-        assertTrue(followed.effects.any { it.type == "mosaic" })
+        // The Mosaic it adds hides the face completely (#239).
+        assertEquals(listOf(Effect("mosaic", 1f)), followed.effects)
         // Halfway through, the mask is where the face was then.
         assertEquals(0.45f, followed.maskAt(1_500_000)!!.x, 0.01f)
         assertEquals(project, history.undo())

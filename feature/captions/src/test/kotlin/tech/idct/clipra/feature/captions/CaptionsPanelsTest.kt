@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -184,6 +186,19 @@ class CaptionsPanelsTest {
         assertEquals(listOf<Any>(9_400_000L, CaptionStyle.Karaoke, "edit-by-text"), picked)
     }
 
+    /** #235: one caption with one word to check reads in the singular, in English. */
+    @Test
+    fun aSingleCaptionWithOneWordToCheck() {
+        Locale.setDefault(Locale.US)
+        val single = captions.filter { it.id == "c3" }
+        val oneCaption = project.copy(
+            layers = listOf(Layer("L1", clips = listOf(sunset)), Layer("L6", clips = single)),
+            links = listOf(LinkGroup("g", listOf("sunset") + single.map { it.id })),
+        )
+        show(CaptionsEditUiState(oneCaption, loaded = true))
+        compose.onNodeWithText("1 caption · 1 word to check").assertExists()
+    }
+
     /** No captions yet: Auto captions and .srt import, and no look to change. */
     @Test
     fun noCaptionsYet() {
@@ -208,6 +223,16 @@ class CaptionsPanelsTest {
         compose.onNodeWithTag("captions-import-srt").performClick()
         compose.onNodeWithTag("import-srt-confirm").performClick()
         assertEquals(listOf<Any>("import"), picked)
+    }
+
+    /** #232: search opens ready to type, as on the phone. */
+    @Test
+    fun searchOpensWithFindFocused() {
+        Locale.setDefault(Locale.US)
+        show(CaptionsEditUiState(project, loaded = true))
+        compose.onNodeWithTag("captions-search-open").performClick()
+        compose.onNodeWithTag("captions-search").assertIsDisplayed()
+        compose.onNodeWithTag("search-find").assertIsFocused()
     }
 
     /** The Polish board, to see every label fits (#76). */

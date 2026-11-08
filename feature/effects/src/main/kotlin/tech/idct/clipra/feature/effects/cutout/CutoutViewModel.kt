@@ -126,7 +126,9 @@ class CutoutViewModel @Inject constructor(
 
     /**
      * Switches between the person cutout and a chroma key (#51); the key starts from the
-     * strongest colour round the picture's edges, or a studio green.
+     * strongest colour round the picture's edges, or a studio green. The key stops the search
+     * for people when no other clip of the media needs it, and switching back starts it again
+     * (#240).
      */
     fun setChroma(on: Boolean) {
         val clip = state.value.clip ?: return
@@ -139,6 +141,10 @@ class CutoutViewModel @Inject constructor(
                 CutoutMath.guessKey(pixels, picture.width, picture.height)
             }
             set(cutout.copy(key = ChromaKey(color = guess ?: ChromaKey.DEFAULT_COLOR)))
+            // A key needs no masks (#240).
+            val project = state.value.project ?: return
+            val asset = assetOf(project, clip) ?: return
+            if (!cutsOutPeople(project, asset, except = clip)) cutouts.cancel(asset)
         } else {
             set(cutout.copy(key = null))
             state.value.project?.let { project -> assetOf(project, clip) }?.let(cutouts::request)
@@ -212,6 +218,14 @@ class CutoutViewModel @Inject constructor(
 
     private fun assetOf(project: Project, clip: Clip): MediaAsset? =
         clip.source?.let { project.asset(it.mediaId) }
+
+    /** Whether a clip of [project] other than [except] has a person cutout of [asset]. */
+    private fun cutsOutPeople(project: Project, asset: MediaAsset, except: Clip): Boolean =
+        project.layers.flatMap { it.clips }.any { other ->
+            other.id != except.id &&
+                other.source?.mediaId == asset.id &&
+                other.cutout.let { it != null && it.key == null }
+        }
 
     private companion object {
         /** The clip's picture is read no larger than this. */

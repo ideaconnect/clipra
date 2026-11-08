@@ -76,17 +76,22 @@ class MasksActions(
     val onKeyframe: () -> Unit = {},
     /** Follow face (#52) on or off. */
     val onFollowFace: (Boolean) -> Unit = {},
+    /** The strength of the effect the mask limits (#239), while the slider moves and at its end. */
+    val onStrengthLive: (Float) -> Unit = {},
+    val onStrengthDone: () -> Unit = {},
 )
 
 /**
  * The Masks board (#27): the mask on the preview with its handles, the shape, the effect it
- * limits, Invert, Mosaic's block size, the feather and, for rectangles, the corner radius.
- * [mask] and [blockSize] follow a drag or a slider while it moves.
+ * limits, Invert, that effect's strength (#239), Mosaic's block size, the feather and, for
+ * rectangles, the corner radius. [mask], [strength] and [blockSize] follow a drag or a slider
+ * while it moves.
  */
 @Composable
 fun MasksScreen(
     state: MasksUiState,
     mask: Mask?,
+    strength: Float,
     blockSize: Float,
     actions: MasksActions,
     preview: @Composable () -> Unit,
@@ -205,6 +210,21 @@ fun MasksScreen(
                             modifier = Modifier.testTag("mask-invert"),
                         )
                     }
+                }
+                // The strength of the effect inside the mask, so whether a mask hides what it
+                // covers can be seen here (#239).
+                if (clip.effects.any { it.type == effectType }) {
+                    LabelledSlider(
+                        label = stringResource(R.string.effects_strength),
+                        value = strength,
+                        onValueChange = actions.onStrengthLive,
+                        onValueChangeFinished = actions.onStrengthDone,
+                        valueText = (strength * 100).roundToInt().toString(),
+                        labelWidth = 104.dp,
+                        modifier = Modifier
+                            .height(52.dp)
+                            .testTag("mask-strength"),
+                    )
                 }
                 if (effectType == "mosaic" && clip.effects.any { it.type == "mosaic" }) {
                     LabelledSlider(

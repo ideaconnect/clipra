@@ -41,6 +41,12 @@ object Filters {
     /** Strength of a newly picked filter. */
     const val DEFAULT_STRENGTH = 0.8f
 
+    /**
+     * Strength of an effect a mask adds (#239): full, so a Mosaic or Blur mask hides what it
+     * covers instead of letting the picture show through.
+     */
+    const val MASK_STRENGTH = 1f
+
     /** Mosaic's block size, a fraction of the clip's shorter side (adjusted on the Masks screen). */
     const val MOSAIC_SIZE = "size"
     const val DEFAULT_MOSAIC_SIZE = 0.08f

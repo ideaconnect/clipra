@@ -14,6 +14,8 @@ The report goes to build/perf/<model>-<date>.md: the device row, the commit, and
 with its measurement and whether it holds, ready to paste into #77. --clip pushes a minute of
 the phone's own 1080p30 video for the export and preview budgets (else the bundled clips loop).
 On an emulator, add --emulator: the numbers then only show that the measurements run.
+Android 10 and 11 have no frame overrun metric, so there the timeline budget is judged by the
+CPU time per frame alone, and the row says so.
 
 The app stays installed after the run, so the welcome and the Budget project stay too. On
 Android 13 and older, StartupBenchmark reinstalls the app (Macrobenchmark resets compilation
@@ -22,10 +24,12 @@ measures the editor again without it.
 
 Needs adb on the PATH (or ANDROID_HOME set), JAVA_HOME as for the build, and the phone prepared
 as the runbook says (charged, at room temperature, the Budget project made once).
+Its tests: python -m pytest scripts/perf
 """
 
 import argparse
 import datetime
+import functools
 import json
 import os
 import re
@@ -55,8 +59,15 @@ KEEP_APKS = '-Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true'
 REQUIRE_BUDGET = '-Pandroid.testInstrumentationRunnerArguments.budgetProject=required'
 BUDGET_PROJECT_TAG = 'BudgetProject'
 BENCHMARK_OUTPUT = ROOT / 'benchmark/build/outputs/connected_android_test_additional_output'
+# The timeline budget: no frame over its deadline at P90, and under 16 ms of CPU per frame.
+FRAME_CPU_MS = 16
+# Macrobenchmark reports frameOverrunMs only from Android 12, where SurfaceFlinger keeps each
+# frame's deadline; on Android 10 and 11 FrameTimingMetric gives frameDurationCpuMs alone (#242).
+OVERRUN_API = 31
 
 
+# Looked up on first use, so the tests can import this file on a machine without adb.
+@functools.cache
 def adb_path():
     found = shutil.which('adb')
     if found:
@@ -69,11 +80,8 @@ def adb_path():
     sys.exit('adb not found: put platform-tools on the PATH or set ANDROID_HOME')
 
 
-ADB = adb_path()
-
-
 def adb(serial, *args, check=True):
-    result = subprocess.run([ADB, '-s', serial, *args], capture_output=True, text=True,
+    result = subprocess.run([adb_path(), '-s', serial, *args], capture_output=True, text=True,
                             encoding='utf-8', errors='replace')
     if check and result.returncode != 0:
         sys.exit(f'adb {" ".join(args)} failed: {result.stderr.strip()}')
@@ -81,7 +89,8 @@ def adb(serial, *args, check=True):
 
 
 def pick_device(serial):
-    lines = subprocess.run([ADB, 'devices'], capture_output=True, text=True).stdout.splitlines()
+    lines = subprocess.run([adb_path(), 'devices'], capture_output=True,
+                           text=True).stdout.splitlines()
     devices = [line.split()[0] for line in lines[1:] if line.strip().endswith('device')]
     if serial:
         if serial not in devices:
@@ -101,11 +110,13 @@ def device_row(serial):
     meminfo = adb(serial, 'shell', 'cat', '/proc/meminfo')
     total_kb = int(re.search(r'MemTotal:\s+(\d+)', meminfo).group(1))
     soc = ' '.join(p for p in (prop(serial, 'ro.soc.manufacturer'), prop(serial, 'ro.soc.model')) if p)
+    api = prop(serial, 'ro.build.version.sdk')
     return {
         'device': f"{prop(serial, 'ro.product.manufacturer')} {prop(serial, 'ro.product.model')}",
         'soc': soc or prop(serial, 'ro.board.platform') or 'unknown',
         'ram': f'{total_kb / 1024 / 1024:.1f} GB',
-        'android': f"{prop(serial, 'ro.build.version.release')} (API {prop(serial, 'ro.build.version.sdk')})",
+        'android': f"{prop(serial, 'ro.build.version.release')} (API {api})",
+        'api': int(api) if api.isdigit() else None,
         'emulator': prop(serial, 'ro.kernel.qemu') == '1' or prop(serial, 'ro.boot.qemu') == '1',
     }
 
@@ -142,10 +153,10 @@ class PeakMemory(threading.Thread):
                 self.peak_kb = max(self.peak_kb, int(found.group(1)))
 
 
-def benchmark_numbers():
+def benchmark_numbers(root=None):
     """Median start and the editor's frame percentiles from the benchmark JSON files."""
     numbers = {}
-    for path in BENCHMARK_OUTPUT.rglob('*benchmarkData.json'):
+    for path in Path(root or BENCHMARK_OUTPUT).rglob('*benchmarkData.json'):
         data = json.loads(path.read_text(encoding='utf-8'))
         for bench in data.get('benchmarks', []):
             name = f"{bench.get('className', '').rsplit('.', 1)[-1]}.{bench.get('name')}"
@@ -158,6 +169,47 @@ def verdict(value, ok):
     if value is None:
         return 'not measured'
     return 'holds' if ok(value) else 'MISSED'
+
+
+def slow_frames(editor):
+    """(frames with FRAME_CPU_MS or more of CPU, all frames) over every iteration, from the
+    per-frame times Macrobenchmark keeps in frameDurationCpuMs' runs on every Android version;
+    None when the JSON has no such list."""
+    runs = (editor or {}).get('frameDurationCpuMs', {}).get('runs') or []
+    frames = [ms for run in runs for ms in (run if isinstance(run, list) else [run])]
+    if not frames:
+        return None
+    return sum(1 for ms in frames if ms >= FRAME_CPU_MS), len(frames)
+
+
+def timeline_cells(editor, api):
+    """The Measured and Result cells of the timeline budget from EditorBenchmark's metrics.
+
+    Both P90s judge the row when they are there. Without frameOverrunMs (Android 10 and 11,
+    #242) the CPU P90 alone does, and the row says so. Whatever was measured is shown.
+    """
+    editor = editor or {}
+    overrun = editor.get('frameOverrunMs', {}).get('P90')
+    cpu = editor.get('frameDurationCpuMs', {}).get('P90')
+    parts = []
+    if overrun is not None:
+        parts.append(f'overrun P90 {overrun:.1f} ms')
+    if cpu is not None:
+        parts.append(f'CPU P90 {cpu:.1f} ms')
+    measured = ', '.join(parts)
+    if cpu is not None and overrun is None:
+        why = 'before Android 12' if api is not None and api < OVERRUN_API else 'in this run'
+        measured += f' (no overrun metric {why})'
+    slow = slow_frames(editor)
+    if slow:
+        share = (f'{slow[0]} of {slow[1]} frames ({slow[0] / slow[1]:.1%}) '
+                 f'at {FRAME_CPU_MS} ms CPU or more')
+        measured = f'{measured}; {share}' if measured else share
+    if cpu is None:
+        return measured or None, 'not measured'
+    if overrun is None:
+        return measured, verdict(cpu, lambda v: v < FRAME_CPU_MS)
+    return measured, verdict((overrun, cpu), lambda v: v[0] <= 0 and v[1] < FRAME_CPU_MS)
 
 
 # The engine tests log their numbers with a decimal point (Locale.ROOT, #198). Builds before
@@ -271,8 +323,7 @@ def main():
     start = benches.get('StartupBenchmark.coldStartWithProfile')
     start_ms = start['timeToInitialDisplayMs'].get('median') if start else None
     editor = benches.get('EditorBenchmark.scrubAndPlay')
-    overrun = editor.get('frameOverrunMs', {}).get('P90') if editor else None
-    cpu = editor.get('frameDurationCpuMs', {}).get('P90') if editor else None
+    timeline_measured, timeline_result = timeline_cells(editor, row['api'])
     engine = engine_numbers(logs)
     preview, export = engine['preview'], engine['export']
     whisper, cleanup_s = engine['whisper'], engine['cleanup']
