@@ -11,8 +11,8 @@ import tech.idct.clipra.core.model.maskAt
  * Follow face (#52): the clip's mask follows the face along [path] (clip time, smoothed by
  * `FaceTracking.track`) as keyframes, which stay editable. It keeps the mask's shape and
  * settings, from the one at [atUs] (timeline time); without a mask it starts an oval over
- * [addIfMissing], adding that effect if needed. A null [path] stops following, leaving the mask
- * where it is at [atUs]. One undo step.
+ * [addIfMissing], adding that effect at full strength if needed (#239). A null [path] stops
+ * following, leaving the mask where it is at [atUs]. One undo step.
  */
 data class FollowFace(
     val clipId: String,
@@ -34,7 +34,7 @@ data class FollowFace(
         if (path.isEmpty()) throw EditRejected(EditRejected.Reason.OutOfRange)
         val needed = addIfMissing?.takeIf { type -> clip.effects.none { it.type == type } }
         val withEffect = if (needed != null) {
-            clip.withFilter(needed, Filters.DEFAULT_STRENGTH)
+            clip.withFilter(needed, Filters.MASK_STRENGTH)
         } else {
             clip
         }

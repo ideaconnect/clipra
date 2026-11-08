@@ -103,10 +103,20 @@ class EffectCommandsTest {
         val clip = edited.clip("c")
         assertEquals(oval, clip.mask)
         assertEquals("mosaic", clip.filter?.type)
+        // At full strength, so nothing of the picture shows through the blocks (#239).
+        assertEquals(1f, clip.filter!!.strength, 0f)
         // A clip that already has it keeps its filter as it is.
         val again = SetMask("c", oval.copy(invert = true), "mosaic").apply(edited)
         assertEquals(clip.filter, again.clip("c").filter)
         assertNull(SetMask("c", null).apply(again).clip("c").mask)
+    }
+
+    @Test
+    fun aMaskKeepsTheStrengthOfAnEffectTheClipHas() {
+        val blurred = SetFilter("c", "blur", 0.5f).apply(project)
+        val oval = Mask(MaskShape.Oval, feather = 0.05f, effect = "blur")
+        val masked = SetMask("c", oval, addIfMissing = "blur").apply(blurred).clip("c")
+        assertEquals(listOf(Effect("blur", 0.5f)), masked.effects)
     }
 
     @Test
