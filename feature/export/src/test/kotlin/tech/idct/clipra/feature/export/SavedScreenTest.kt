@@ -137,6 +137,26 @@ class SavedScreenTest {
         )
     }
 
+    /**
+     * A Galaxy S9 in Polish (#237): 360 dp at its default display size. Share reads "Udostępnij"
+     * on one line, without its icon, instead of "Udostępni" / "j".
+     */
+    @Test
+    @Config(qualifiers = "pl-w360dp-h740dp-xhdpi")
+    fun savedFitsA360DpPhoneInPolish() {
+        Locale.setDefault(Locale.forLanguageTag("pl-PL"))
+        showSaved(saved)
+
+        compose.onNodeWithText("Udostępnij").assertIsDisplayed()
+        compose.onRoot().captureRoboImage(
+            roborazziOptions = RoborazziOptions(
+                compareOptions = RoborazziOptions.CompareOptions(changeThreshold = 0.001f),
+            ),
+        )
+        // The file name has no words to keep whole; it breaks where it must.
+        compose.assertNoTextCut(saved.fileName)
+    }
+
     @Test
     fun withNothingLeftOutSavedSaysNothingAboutIt() {
         showSaved(saved)

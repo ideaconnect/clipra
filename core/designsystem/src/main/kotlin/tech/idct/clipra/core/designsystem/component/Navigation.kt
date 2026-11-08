@@ -32,8 +32,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import tech.idct.clipra.core.designsystem.ClipraTheme
 import tech.idct.clipra.core.designsystem.R
@@ -48,6 +50,10 @@ enum class HeaderNavigation { Back, Close }
  * [subtitle] (the editor) the title is 15/600 over a Geist Mono line; without one it is the
  * Bricolage screen title. [onSubtitle] makes the title and subtitle a button, with a chevron
  * after the subtitle and [onSubtitleLabel] for TalkBack.
+ *
+ * [subtitleOwnLine] puts the subtitle on its own line under the title and the actions, across the
+ * whole header, for a subtitle that would be cut beside several actions on a 360 dp phone (#237).
+ * There the subtitle line alone is the button.
  */
 @Composable
 fun ScreenHeader(
@@ -58,7 +64,119 @@ fun ScreenHeader(
     subtitle: String? = null,
     onSubtitle: (() -> Unit)? = null,
     onSubtitleLabel: String? = null,
+    subtitleOwnLine: Boolean = false,
     actions: @Composable RowScope.() -> Unit = {},
+) {
+    if (subtitleOwnLine && subtitle != null) {
+        Column(modifier = modifier.fillMaxWidth()) {
+            HeaderRow(
+                title = title,
+                modifier = Modifier,
+                navigation = navigation,
+                onNavigate = onNavigate,
+                titleStyle = ClipraTheme.typography.headerTitle,
+                subtitle = null,
+                onSubtitle = null,
+                onSubtitleLabel = null,
+                actions = actions,
+            )
+            SubtitleLine(
+                subtitle = subtitle,
+                onSubtitle = onSubtitle,
+                onSubtitleLabel = onSubtitleLabel,
+                // The text starts where the title does, 6 + 48 (or 8) + 6 dp in, less the
+                // line's own 6 dp of padding.
+                start = if (navigation != null && onNavigate != null) {
+                    ClipraDimens.TouchTarget + 6.dp
+                } else {
+                    14.dp
+                },
+            )
+        }
+    } else {
+        HeaderRow(
+            title = title,
+            modifier = modifier,
+            navigation = navigation,
+            onNavigate = onNavigate,
+            titleStyle = if (subtitle != null) {
+                ClipraTheme.typography.headerTitle
+            } else {
+                ClipraTheme.typography.screenTitle
+            },
+            subtitle = subtitle,
+            onSubtitle = onSubtitle,
+            onSubtitleLabel = onSubtitleLabel,
+            actions = actions,
+        )
+    }
+}
+
+/**
+ * The subtitle of [ScreenHeader] on its own line. Its button starts [start] from the header's edge
+ * and its text 6 dp further, under the title's; a long one wraps rather than cut words.
+ */
+@Composable
+private fun SubtitleLine(
+    subtitle: String,
+    onSubtitle: (() -> Unit)?,
+    onSubtitleLabel: String?,
+    start: Dp,
+) {
+    val colors = ClipraTheme.colors
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = start, end = 8.dp)
+            .heightIn(min = ClipraDimens.TouchTarget)
+            .then(
+                if (onSubtitle != null) {
+                    Modifier
+                        .clip(ClipraTheme.shapes.button)
+                        .clickable(
+                            onClickLabel = onSubtitleLabel,
+                            role = Role.Button,
+                            onClick = onSubtitle,
+                        )
+                        .testTag("header-subtitle")
+                } else {
+                    Modifier
+                },
+            )
+            .padding(horizontal = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        Text(
+            text = subtitle,
+            style = ClipraTheme.typography.meta,
+            color = colors.textSecondary,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f, fill = false),
+        )
+        if (onSubtitle != null) {
+            ClipraIcon(
+                icon = ClipraIcons.ChevronDown,
+                contentDescription = null,
+                tint = colors.textSecondary,
+                size = 14.dp,
+            )
+        }
+    }
+}
+
+@Composable
+private fun HeaderRow(
+    title: String,
+    modifier: Modifier,
+    navigation: HeaderNavigation?,
+    onNavigate: (() -> Unit)?,
+    titleStyle: TextStyle,
+    subtitle: String?,
+    onSubtitle: (() -> Unit)?,
+    onSubtitleLabel: String?,
+    actions: @Composable RowScope.() -> Unit,
 ) {
     val colors = ClipraTheme.colors
     val type = ClipraTheme.typography
@@ -111,7 +229,7 @@ fun ScreenHeader(
         ) {
             Text(
                 text = title,
-                style = if (subtitle != null) type.headerTitle else type.screenTitle,
+                style = titleStyle,
                 color = colors.textPrimary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,

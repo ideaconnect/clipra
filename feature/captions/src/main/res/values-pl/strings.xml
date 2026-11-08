@@ -10,13 +10,13 @@
     <string name="captions_voiceover">Lektor</string>
     <string name="captions_all_tracks">Wszystkie ścieżki</string>
     <string name="captions_language">Język mowy</string>
-    <string name="captions_auto_detect">Automatycznie</string>
+    <string name="captions_auto_detect">Wykryj</string>
     <string name="captions_translate">Tłumacz\nna angielski</string>
     <string name="captions_model">Model Whisper</string>
     <string name="captions_model_tiny">Najszybszy, słabszy przy szumie</string>
     <string name="captions_model_base">Dobry kompromis</string>
-    <string name="captions_model_small">Dokładniejszy, kilka razy wolniejszy</string>
-    <string name="captions_model_turbo">Najdokładniejszy, flagowe telefony</string>
+    <string name="captions_model_small">Dokładniejszy, wolniejszy</string>
+    <string name="captions_model_turbo">Najdokładniejszy, flagowce</string>
     <string name="captions_recommended">Polecany</string>
     <string name="captions_get">Pobierz</string>
     <string name="captions_installed">Zainstalowany</string>
