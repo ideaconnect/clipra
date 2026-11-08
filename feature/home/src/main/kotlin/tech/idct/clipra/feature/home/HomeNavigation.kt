@@ -18,6 +18,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
+import androidx.navigation.toRoute
 import kotlinx.serialization.Serializable
 import tech.idct.clipra.core.data.project.ProjectSummary
 import tech.idct.clipra.core.designsystem.ClipraTheme
@@ -30,11 +31,15 @@ import tech.idct.clipra.core.model.Layout
 data object MainRoute
 
 /**
- * New project, optionally with a layout preselected ("Mosaic layout" on Home), or starting with a
- * text card ("Text card" on Home).
+ * New project, optionally with a layout preselected ("Mosaic layout" on Home), starting with a
+ * text card ("Text card" on Home), or going on to Auto captions ("Auto captions" on Home, #231).
  */
 @Serializable
-data class NewProjectRoute(val layout: String? = null, val textCard: Boolean = false)
+data class NewProjectRoute(
+    val layout: String? = null,
+    val textCard: Boolean = false,
+    val captions: Boolean = false,
+)
 
 /**
  * The boards this module builds, from design/README.md ("Start and edit").
@@ -59,26 +64,39 @@ class NewProjectActions(
     val onCreated: (projectId: String, textClipId: String?) -> Unit,
     /** The tablet's "Import from Gallery" (#71): the new project opens on the photo picker. */
     val onCreatedToImport: (projectId: String) -> Unit = { onCreated(it, null) },
+    /**
+     * Home's "Auto captions" (#231): the new project opens on the photo picker, and Auto
+     * captions follows once a clip with sound is in.
+     */
+    val onCreatedToCaptions: (projectId: String) -> Unit = { onCreated(it, null) },
 )
 
 /** Registers this module's destinations: Home and New project. */
 fun NavGraphBuilder.homeScreens(actions: HomeActions, newProject: NewProjectActions) {
     composable<MainRoute> { HomeRoute(actions, newProject) }
-    composable<NewProjectRoute> { NewProjectRoute(newProject) }
+    composable<NewProjectRoute> { entry ->
+        NewProjectRoute(newProject, captions = entry.toRoute<NewProjectRoute>().captions)
+    }
 }
 
 @Composable
 private fun NewProjectRoute(
     actions: NewProjectActions,
+    captions: Boolean,
     viewModel: NewProjectViewModel = hiltViewModel(),
 ) {
     val format by viewModel.format.collectAsStateWithLifecycle()
     val name = stringResource(R.string.home_new_default_name)
     val title = stringResource(R.string.home_new_card_title)
+    val onCreated: (String, String?) -> Unit = if (captions) {
+        { id, _ -> actions.onCreatedToCaptions(id) }
+    } else {
+        actions.onCreated
+    }
     NewProjectScreen(
         format = format,
         onFormatChange = viewModel::change,
-        onCreate = { viewModel.create(name, title, actions.onCreated) },
+        onCreate = { viewModel.create(name, title, onCreated) },
         onBack = actions.onBack,
         fourKSupported = viewModel.fourKSupported,
     )

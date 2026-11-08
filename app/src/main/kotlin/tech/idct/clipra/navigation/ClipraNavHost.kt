@@ -122,7 +122,8 @@ fun ClipraNavHost(
             HomeActions(
                 onNewProject = { navController.navigate(NewProjectRoute()) },
                 onOpenProject = { navController.navigate(EditorRoute(it)) },
-                onAutoCaptions = { navController.navigate(CaptionsSetupRoute()) },
+                // A new project, its media, then Auto captions (#231).
+                onAutoCaptions = { navController.navigate(NewProjectRoute(captions = true)) },
                 onTextCard = { navController.navigate(NewProjectRoute(textCard = true)) },
                 onMosaic = {
                     navController.navigate(NewProjectRoute(layout = Layout.Grid2x2.name))
@@ -148,6 +149,11 @@ fun ClipraNavHost(
                 },
                 onCreatedToImport = { id ->
                     navController.navigate(EditorRoute(id, pickMedia = true))
+                },
+                onCreatedToCaptions = { id ->
+                    navController.navigate(EditorRoute(id, pickMedia = true, autoCaptions = true)) {
+                        popUpTo<NewProjectRoute> { inclusive = true }
+                    }
                 },
             ),
         )

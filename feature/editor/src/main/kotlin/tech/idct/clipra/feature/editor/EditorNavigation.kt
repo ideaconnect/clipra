@@ -74,9 +74,17 @@ import tech.idct.clipra.feature.editor.timeline.WaveformLoader
 import tech.idct.clipra.feature.editor.voiceover.VoiceoverActions
 import kotlin.math.abs
 
-/** The editor for [projectId]; null opens the placeholder board (debug screen index). */
+/**
+ * The editor for [projectId]; null opens the placeholder board (debug screen index). With
+ * [pickMedia] it opens on the photo picker, and with [autoCaptions] too, Auto captions follows
+ * once the media picked there brings sound (Home's "Auto captions", #231).
+ */
 @Serializable
-data class EditorRoute(val projectId: String? = null, val pickMedia: Boolean = false)
+data class EditorRoute(
+    val projectId: String? = null,
+    val pickMedia: Boolean = false,
+    val autoCaptions: Boolean = false,
+)
 
 @Serializable
 data object LayersRoute
@@ -122,6 +130,7 @@ fun NavGraphBuilder.editorScreens(screen: @Composable (Board) -> Unit, actions: 
             EditorRoute(
                 actions,
                 pickMedia = route.pickMedia,
+                autoCaptions = route.autoCaptions,
                 findMissing = findMissing,
                 onFindMissingShown = { saved[FIND_MISSING] = false },
             )
@@ -150,6 +159,7 @@ private const val FIND_MISSING_WAIT_MS = 3_000L
 private fun EditorRoute(
     actions: EditorActions,
     pickMedia: Boolean = false,
+    autoCaptions: Boolean = false,
     findMissing: Boolean = false,
     onFindMissingShown: () -> Unit = {},
     viewModel: EditorViewModel = hiltViewModel(),
@@ -173,15 +183,20 @@ private fun EditorRoute(
 
     // Photos and videos come from the system photo picker, or from the system file picker on
     // phones without it: the picker Google Play services offers there gives links that don't
-    // last (#226).
+    // last (#226). Media picked on the picker the editor opens on for Home's "Auto captions"
+    // (#231) leads on to Auto captions.
+    var captionsAfterPick by rememberSaveable { mutableStateOf(false) }
     val pickVisual = rememberLauncherForActivityResult(PickMultipleMedia()) {
-        viewModel.import(it)
+        viewModel.import(it, thenCaptions = captionsAfterPick)
+        captionsAfterPick = false
     }
-    // A project made by the tablet's "Import from Gallery" (#71) opens on the picker, once.
+    // A project made by the tablet's "Import from Gallery" (#71) or by Home's "Auto captions"
+    // (#231) opens on the picker, once.
     var picked by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(pickMedia) {
         if (pickMedia && !picked) {
             picked = true
+            captionsAfterPick = autoCaptions
             pickVisual.launch(
                 PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo),
             )
@@ -305,6 +320,15 @@ private fun EditorRoute(
         return
     }
     val project = state.project ?: return
+    // The picked media brought sound (Home's "Auto captions", #231): on to Auto captions, with
+    // the editor below for Back.
+    if (state.captionsNext) {
+        LaunchedEffect(Unit) {
+            viewModel.captionsOpened()
+            playing = false
+            actions.onTool(EditorTool.Captions, ToolTarget(project.id, null, state.playheadUs))
+        }
+    }
     val selected = state.selectedClipId?.let { project.findClip(it)?.second }
     val newText = stringResource(R.string.editor_new_text)
     val openBoard = { tab: LayerTab, crop: Boolean ->
