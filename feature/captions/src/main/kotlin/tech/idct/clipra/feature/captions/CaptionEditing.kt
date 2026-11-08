@@ -11,7 +11,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -191,6 +193,50 @@ internal fun SearchBar(
             )
         }
     }
+}
+
+/**
+ * Asks before an .srt import replaces the captions there are (#233), with the words Auto
+ * captions uses for the same (#181): how many, their translations, and the edits.
+ */
+@Composable
+internal fun ImportSrtDialog(
+    replaces: Int,
+    translated: Boolean,
+    onImport: () -> Unit,
+    onCancel: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onCancel,
+        title = { Text(stringResource(R.string.captions_import_title)) },
+        text = {
+            Text(
+                text = pluralStringResource(
+                    if (translated) {
+                        R.plurals.captions_import_replaces_translated
+                    } else {
+                        R.plurals.captions_import_replaces
+                    },
+                    replaces,
+                    replaces,
+                ),
+                modifier = Modifier.testTag("import-srt-replaces"),
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = onImport, modifier = Modifier.testTag("import-srt-confirm")) {
+                Text(
+                    text = stringResource(R.string.captions_import_srt),
+                    color = ClipraTheme.colors.accent,
+                )
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onCancel, modifier = Modifier.testTag("import-srt-cancel")) {
+                Text(stringResource(R.string.captions_cancel))
+            }
+        },
+    )
 }
 
 /** A labelled one-line field, as on the Text board. */

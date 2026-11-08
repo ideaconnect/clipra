@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -192,6 +193,21 @@ class CaptionsPanelsTest {
         compose.onNodeWithTag("captions-import-srt").performClick()
         assertEquals(listOf<Any>("auto", "import"), picked)
         compose.onNodeWithTag("style:BoldPop").assertDoesNotExist()
+    }
+
+    /** #233: an import that replaces captions asks first, as on the phone. */
+    @Test
+    fun importAsksBeforeReplacingCaptions() {
+        Locale.setDefault(Locale.US)
+        show(CaptionsEditUiState(project, loaded = true))
+        compose.onNodeWithTag("captions-import-srt").performClick()
+        compose.onNodeWithTag("import-srt-replaces")
+            .assertTextEquals("Replaces the 5 captions, edits included.")
+        compose.onNodeWithTag("import-srt-cancel").performClick()
+        assertEquals(emptyList<Any>(), picked)
+        compose.onNodeWithTag("captions-import-srt").performClick()
+        compose.onNodeWithTag("import-srt-confirm").performClick()
+        assertEquals(listOf<Any>("import"), picked)
     }
 
     /** The Polish board, to see every label fits (#76). */

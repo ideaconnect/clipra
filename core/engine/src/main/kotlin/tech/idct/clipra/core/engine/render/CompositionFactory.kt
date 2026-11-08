@@ -23,34 +23,45 @@ import java.io.File
  * Turns a [RenderTimeline] into a Media3 [Composition] for Transformer (export) and
  * CompositionPlayer (preview).
  *
- * Video: one sequence holding a blank canvas image as long as the timeline, at the timeline's
- * frame rate; the [LayerCompositor] effect draws every layer onto it. Audio: one audio-only
- * sequence per layer that has video clips, with gaps where the layer is silent; Media3 mixes the
- * sequences.
+ * Video: one sequence holding a blank canvas as long as the timeline, at the timeline's frame
+ * rate; the [LayerCompositor] effect draws every layer onto it. The export's canvas is an image.
+ * The preview's is a [CanvasClips] clip, repeated, since CompositionPlayer plays images at 30
+ * frames a second (#227). Audio: one audio-only sequence per layer that has video clips, with
+ * gaps where the layer is silent; Media3 mixes the sequences.
  */
 @OptIn(UnstableApi::class, ExperimentalApi::class)
 object CompositionFactory {
+    /** [canvas]: the preview's canvas clip at the timeline's frame rate; null for the image. */
     fun create(
         context: Context,
         timeline: RenderTimeline,
         includeAudio: Boolean = true,
         gate: PauseGate? = null,
         live: LiveEdits? = null,
+        canvas: CanvasClips.Clip? = null,
         listener: LayerCompositor.Listener? = null,
     ): Composition {
-        val canvas = MediaItem.Builder()
-            .setUri(Uri.fromFile(canvasImage(context)))
-            .setImageDurationMs(timeline.durationUs / 1_000)
-            .build()
-        val video = EditedMediaItem.Builder(canvas)
-            .setFrameRate(timeline.frameRate)
-            .setDurationUs(timeline.durationUs)
-            .setEffects(
-                Effects(emptyList(), listOf(LayerCompositor(timeline, listener, gate, live))),
+        // One compositor for every canvas item: an item with the same effects keeps Media3's
+        // effect pipeline, and so the compositor's decoders, as it is.
+        val effects = Effects(emptyList(), listOf(LayerCompositor(timeline, listener, gate, live)))
+        val video = EditedMediaItemSequence.Builder(setOf(C.TRACK_TYPE_VIDEO))
+        if (canvas == null) {
+            val image = MediaItem.Builder()
+                .setUri(Uri.fromFile(canvasImage(context)))
+                .setImageDurationMs(timeline.durationUs / 1_000)
+                .build()
+            video.addItem(
+                EditedMediaItem.Builder(image)
+                    .setFrameRate(timeline.frameRate)
+                    .setDurationUs(timeline.durationUs)
+                    .setEffects(effects)
+                    .build(),
             )
-            .build()
+        } else {
+            addCanvasClips(video, canvas, timeline.durationUs, effects)
+        }
         val sequences = buildList {
-            add(EditedMediaItemSequence.Builder(setOf(C.TRACK_TYPE_VIDEO)).addItem(video).build())
+            add(video.build())
             if (includeAudio) {
                 timeline.layers.mapNotNullTo(this) {
                     audioSequence(context, it, timeline.durationUs)
@@ -58,6 +69,37 @@ object CompositionFactory {
             }
         }
         return Composition.Builder(sequences).build()
+    }
+
+    /**
+     * [canvas] repeated to [durationUs], the last one clipped. Its frames set the preview's
+     * rate; the item's frame rate stays unset, since Media3 would drop frames that come a
+     * microsecond early by it.
+     */
+    private fun addCanvasClips(
+        sequence: EditedMediaItemSequence.Builder,
+        canvas: CanvasClips.Clip,
+        durationUs: Long,
+        effects: Effects,
+    ) {
+        var atUs = 0L
+        while (atUs < durationUs) {
+            val lengthUs = minOf(canvas.durationUs, durationUs - atUs)
+            val item = MediaItem.Builder().setUri(Uri.fromFile(canvas.file))
+            if (lengthUs < canvas.durationUs) {
+                item.setClippingConfiguration(
+                    MediaItem.ClippingConfiguration.Builder().setEndPositionUs(lengthUs).build(),
+                )
+            }
+            // CompositionPlayer needs every item's duration: the file's, before clipping.
+            sequence.addItem(
+                EditedMediaItem.Builder(item.build())
+                    .setDurationUs(canvas.durationUs)
+                    .setEffects(effects)
+                    .build(),
+            )
+            atUs += lengthUs
+        }
     }
 
     private fun audioSequence(

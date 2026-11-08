@@ -171,10 +171,12 @@ private fun EditorRoute(
     val waveforms = remember { WaveformLoader(context.applicationContext, viewModel.mediaCache) }
     val currentState by rememberUpdatedState(state)
 
-    val pickVisual =
-        rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia()) {
-            viewModel.import(it)
-        }
+    // Photos and videos come from the system photo picker, or from the system file picker on
+    // phones without it: the picker Google Play services offers there gives links that don't
+    // last (#226).
+    val pickVisual = rememberLauncherForActivityResult(PickMultipleMedia()) {
+        viewModel.import(it)
+    }
     // A project made by the tablet's "Import from Gallery" (#71) opens on the picker, once.
     var picked by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(pickMedia) {
@@ -189,10 +191,9 @@ private fun EditorRoute(
         rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) {
             viewModel.import(it)
         }
-    val pickReplacement =
-        rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) {
-            it?.let(viewModel::replace)
-        }
+    val pickReplacement = rememberLauncherForActivityResult(PickMedia()) {
+        it?.let(viewModel::replace)
+    }
     // Missing media (#216): the sheet that lists it, and the media a picker was opened for, kept
     // while the picker is in front (the editor can be recreated meanwhile).
     var missingSheet by rememberSaveable { mutableStateOf(false) }
@@ -202,12 +203,11 @@ private fun EditorRoute(
         relinking = null
         if (uri != null && mediaId != null) viewModel.relink(mediaId, uri)
     }
-    val pickRelinkVisual =
-        rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia(), relinkPicked)
+    val pickRelinkVisual = rememberLauncherForActivityResult(PickMedia(), relinkPicked)
     val pickRelinkSound =
         rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument(), relinkPicked)
-    // The picker that fits the media: photos or videos from the photo picker, sounds from the
-    // system file picker, as Add media does.
+    // The picker that fits the media: photos or videos as Add media picks them, sounds from the
+    // system file picker.
     val findFile = { asset: MediaAsset ->
         relinking = asset.id
         when (asset.kind) {
