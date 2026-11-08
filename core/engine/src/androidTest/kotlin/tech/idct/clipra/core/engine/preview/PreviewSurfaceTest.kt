@@ -18,6 +18,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import tech.idct.clipra.core.engine.media.MediaCache
 import tech.idct.clipra.core.engine.media.MediaInspector
+import tech.idct.clipra.core.engine.render.CanvasClips
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
 import tech.idct.clipra.core.model.Layer
@@ -65,6 +66,8 @@ class PreviewSurfaceTest {
             ),
         )
         size = PreviewPlayer.previewSize(project.format)
+        // The preview plays on its canvas clip once that is made (#227); made here, it starts so.
+        CanvasClips.make(context, project.format.frameRate.fps)
         instrumentation.runOnMainSync {
             player = PreviewPlayer(context, MediaCache(File(root, "cache")))
             player.setProject(project, 2_000_000)
