@@ -38,6 +38,7 @@ import tech.idct.clipra.core.engine.media.MediaImporter
 import tech.idct.clipra.core.engine.media.MediaInspector
 import tech.idct.clipra.core.engine.media.Proxies
 import tech.idct.clipra.core.engine.media.ReversedSounds
+import tech.idct.clipra.core.engine.media.ReversedVideos
 import tech.idct.clipra.core.engine.media.SoundAnalyzer
 import tech.idct.clipra.core.engine.media.Stabilizer
 import tech.idct.clipra.core.engine.media.VoiceCleaner
@@ -468,6 +469,7 @@ class EditorMissingMediaTest {
             cutouts = Cutouts(context, cache),
             stabilizer = Stabilizer(context, cache),
             reversedSounds = ReversedSounds(context, cache),
+            reversedVideos = ReversedVideos(context, cache),
             appScope = background,
             savedState = SavedStateHandle(mapOf("projectId" to project.id)),
         )
