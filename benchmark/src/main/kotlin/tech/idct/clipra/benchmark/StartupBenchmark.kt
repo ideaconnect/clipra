@@ -14,6 +14,10 @@ import org.junit.runner.RunWith
  * Cold start to the projects (#77; budget in docs/architecture.md, section 11), without and with
  * the baseline profile, so the profile's gain shows too. Run on real phones; the emulator only
  * shows that it works.
+ *
+ * Both reset the compilation state. On Android 13 and older without root, Macrobenchmark does
+ * that by uninstalling and installing the app again, which deletes its data, the Budget project
+ * of EditorBenchmark included (#241), so scripts/perf/budgets.py runs this after the editor.
  */
 @RunWith(AndroidJUnit4::class)
 class StartupBenchmark {
