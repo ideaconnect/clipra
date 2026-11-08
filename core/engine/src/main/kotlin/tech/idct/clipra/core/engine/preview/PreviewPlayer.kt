@@ -260,6 +260,8 @@ class PreviewPlayer(
         override fun reversedVideo(asset: MediaAsset, fromUs: Long, toUs: Long) =
             inner.reversedVideo(asset, fromUs, toUs)
 
+        override fun decodedSound(asset: MediaAsset): String? = inner.decodedSound(asset)
+
         override fun caption(caption: CaptionSpec, current: Int, width: Int, height: Int) =
             inner.caption(caption, current, width, height)
 

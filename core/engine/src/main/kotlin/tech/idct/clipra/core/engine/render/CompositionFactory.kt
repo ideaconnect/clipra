@@ -176,11 +176,18 @@ object CompositionFactory {
     private fun RenderClip.soundSource(): Pair<String, Long>? {
         // A reversed clip (#22) plays its own back-to-front file, from its start.
         if (speed.reverse) return reversedSoundPath?.let { it to 0L }
+        // A cleaned voice (#38, #39), else the sound decoded to PCM below Android 12 (#268), else
+        // the media's own sound; all three are lined up with the media from its start.
         return when (val source = source) {
             is RenderSource.Video ->
-                if (source.hasAudio) (voicePath ?: source.path) to source.inPointUs else null
+                if (source.hasAudio) {
+                    (voicePath ?: decodedSoundPath ?: source.path) to source.inPointUs
+                } else {
+                    null
+                }
 
-            is RenderSource.Audio -> (voicePath ?: source.path) to source.inPointUs
+            is RenderSource.Audio ->
+                (voicePath ?: decodedSoundPath ?: source.path) to source.inPointUs
 
             is RenderSource.Image, is RenderSource.Drawn, RenderSource.Adjustment -> null
         }

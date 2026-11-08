@@ -271,4 +271,32 @@ class ProjectRenderTest {
         val waiting = ProjectRender.timeline(reversed, resolver).layers.single().clips
         assertEquals(null, waiting.first { it.id == "back" }.reversedVideoPath)
     }
+
+    @Test
+    fun clipsPlayTheirMediasSoundDecodedToPcmOnceItIsMade() {
+        val decoded = object : MediaResolver by resolver {
+            override fun decodedSound(asset: MediaAsset): String = "/sounds/${asset.id}.wav"
+        }
+        val sounds = project.copy(
+            layers = listOf(
+                Layer(
+                    "L1",
+                    clips = listOf(
+                        videoClip("forth", 0),
+                        videoClip("back", 2_000_000).copy(speed = Speed(reverse = true)),
+                    ),
+                ),
+                project.layers.last(),
+            ),
+        )
+        val layers = ProjectRender.timeline(sounds, decoded).layers
+        val clips = layers.flatMap { it.clips }
+        assertEquals("/sounds/v.wav", clips.first { it.id == "forth" }.decodedSoundPath)
+        assertEquals("/sounds/m.wav", clips.first { it.id == "music" }.decodedSoundPath)
+        // A reversed clip plays its own sound, made back to front (#22).
+        assertEquals(null, clips.first { it.id == "back" }.decodedSoundPath)
+        // Until it is made (and from Android 12 on), the media's own sound plays.
+        val waiting = ProjectRender.timeline(sounds, resolver).layers.flatMap { it.clips }
+        assertTrue(waiting.all { it.decodedSoundPath == null })
+    }
 }

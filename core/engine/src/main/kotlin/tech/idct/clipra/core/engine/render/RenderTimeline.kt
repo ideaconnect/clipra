@@ -105,6 +105,13 @@ data class RenderClip(
      */
     val reversedSoundPath: String? = null,
     /**
+     * The source's sound decoded to 16-bit PCM WAV below Android 12 (#268), lined up with the
+     * source from its start, as the export decodes it. The preview and the export play it in
+     * place of the compressed sound, which Media3 would decode on the preview's playback thread
+     * there; a cleaned voice still comes first.
+     */
+    val decodedSoundPath: String? = null,
+    /**
      * A reversed clip's picture (#229) laid out back to front: the [sourceSpanUs] it plays, at
      * preview size, its first frame the source's at the out point. The preview plays it
      * forwards; until it is made, and in the export, the source is read back to front.

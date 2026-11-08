@@ -48,6 +48,12 @@ interface MediaResolver {
      */
     fun reversedVideo(asset: MediaAsset, fromUs: Long, toUs: Long): String? = null
 
+    /**
+     * [asset]'s sound decoded to 16-bit PCM below Android 12 (#268), once it is made, for the
+     * preview and the export alike; null until then and from Android 12 on.
+     */
+    fun decodedSound(asset: MediaAsset): String? = null
+
     /** A caption (#45) at [width] × [height] with word [current] spoken (-1: none). */
     fun caption(caption: CaptionSpec, current: Int, width: Int, height: Int): Bitmap? = null
 
@@ -371,6 +377,14 @@ object ProjectRender {
         } else {
             null
         }
+        // Below Android 12 the media's sound plays from its PCM decode once it is made (#268), in
+        // the preview and the export, so Media3 decodes no sound on the preview's playback thread
+        // and both mix the same samples.
+        val sound = if (clip.speed.reverse || clip.type == ClipType.Photo) {
+            null
+        } else {
+            media.decodedSound(asset)
+        }
         // A chroma key (#51) at once; people cut out (#50) once the masks are made, the whole
         // picture until then.
         val cutout = clip.cutout?.let { settings ->
@@ -386,6 +400,7 @@ object ProjectRender {
             stabilized = stabilized,
             reversedSoundPath = reversed,
             reversedVideoPath = reversedVideo,
+            decodedSoundPath = sound,
         )
     }
 

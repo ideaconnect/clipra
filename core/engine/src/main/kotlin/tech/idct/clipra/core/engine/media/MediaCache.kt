@@ -73,6 +73,13 @@ class MediaCache(private val root: File) {
     fun reversedVideo(mediaId: String, fromUs: Long, toUs: Long): File =
         File(root, "reversed/$mediaId-$fromUs-$toUs.mp4")
 
+    /**
+     * [mediaId]'s sound decoded to 16-bit PCM WAV below Android 12 (#268), from its start, as the
+     * export decodes it: what the preview and the export play in place of the compressed sound
+     * (`DecodedSounds`).
+     */
+    fun decodedSound(mediaId: String): File = File(root, "sounds/$mediaId.wav")
+
     /** Where [mediaId] speaks (#40), as microsecond ranges, one per line. */
     fun speech(mediaId: String): File = File(root, "analysis/$mediaId.speech")
 
@@ -92,8 +99,8 @@ class MediaCache(private val root: File) {
 
     /**
      * Changes each time a cleaned voice, an analysis, person masks (#50), a camera motion (#54),
-     * a proxy (#217) or a reversed clip's picture (#229) are ready, so the preview can pick them
-     * up.
+     * a proxy (#217), a reversed clip's picture (#229) or a decoded sound (#268) are ready, so
+     * the preview can pick them up.
      */
     val voiceVersion: StateFlow<Int> = voiceChanges.asStateFlow()
 
