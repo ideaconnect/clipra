@@ -37,7 +37,6 @@ import shutil
 import subprocess
 import sys
 import threading
-import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -340,20 +339,12 @@ def main():
     start_ms = start['timeToInitialDisplayMs'].get('median') if start else None
     editor = benches.get('EditorBenchmark.scrubAndPlay')
     timeline_measured, timeline_result = timeline_cells(editor, row['api'])
+    # Only the Budget project counts for the timeline budget (#241).
+    if timeline_result != 'not measured' and project == 'text card':
+        timeline_result = 'not the Budget project'
     engine = engine_numbers(logs)
     preview, export = engine['preview'], engine['export']
     whisper, cleanup_s = engine['whisper'], engine['cleanup']
-    timeline = None if cpu is None else (overrun, cpu)
-    # frameOverrunMs needs Android 12 (API 31): before that the CPU time alone decides.
-    timeline_result = verdict(timeline, lambda v: (v[0] is None or v[0] <= 0) and v[1] < 16)
-    if timeline is not None and project == 'text card':
-        timeline_result = 'not the Budget project'
-    if cpu is None:
-        timeline_measured = None
-    elif overrun is None:
-        timeline_measured = f'CPU P90 {cpu:.1f} ms (no overrun before Android 12)'
-    else:
-        timeline_measured = f'overrun P90 {overrun:.1f} ms, CPU P90 {cpu:.1f} ms'
 
     rows = [
         ('Cold start to Home', 'under 1.5 s',
