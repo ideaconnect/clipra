@@ -2,6 +2,7 @@ package tech.idct.clipra.core.model
 
 import tech.idct.clipra.core.model.edit.captionsIn
 import tech.idct.clipra.core.model.edit.shownCaptionLanguage
+import tech.idct.clipra.core.model.edit.spokenCaptionLanguage
 import java.util.Locale
 
 /** SubRip (.srt) captions (#46): what Save .srt writes and Import .srt reads. */
@@ -17,6 +18,14 @@ object Srt {
         .captionsIn(project.shownCaptionLanguage() ?: "")
         .filter { it.caption != null }
         .map { Cue(it.startUs, it.endUs, it.caption!!.text) }
+
+    /**
+     * The language of [cues] (ISO 639-1): the translation's, or the one the captions as heard
+     * were spoken in; null when nothing says, as for captions imported from an .srt file.
+     */
+    fun language(project: Project): String? = project.shownCaptionLanguage()
+        ?.takeIf { it.isNotEmpty() }
+        ?: project.spokenCaptionLanguage()
 
     fun write(cues: List<Cue>): String = buildString {
         cues.forEachIndexed { i, cue ->
