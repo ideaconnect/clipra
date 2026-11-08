@@ -184,6 +184,19 @@ class CaptionsPanelsTest {
         assertEquals(listOf<Any>(9_400_000L, CaptionStyle.Karaoke, "edit-by-text"), picked)
     }
 
+    /** #235: one caption with one word to check reads in the singular, in English. */
+    @Test
+    fun aSingleCaptionWithOneWordToCheck() {
+        Locale.setDefault(Locale.US)
+        val single = captions.filter { it.id == "c3" }
+        val oneCaption = project.copy(
+            layers = listOf(Layer("L1", clips = listOf(sunset)), Layer("L6", clips = single)),
+            links = listOf(LinkGroup("g", listOf("sunset") + single.map { it.id })),
+        )
+        show(CaptionsEditUiState(oneCaption, loaded = true))
+        compose.onNodeWithText("1 caption · 1 word to check").assertExists()
+    }
+
     /** No captions yet: Auto captions and .srt import, and no look to change. */
     @Test
     fun noCaptionsYet() {

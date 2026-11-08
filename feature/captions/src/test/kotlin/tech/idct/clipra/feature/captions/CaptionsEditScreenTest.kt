@@ -266,6 +266,45 @@ class CaptionsEditScreenTest {
         compose.onNodeWithTag("word-input").assertTextContains("Alfama")
     }
 
+    private fun projectWith(captions: List<Clip>) = project.copy(
+        layers = listOf(Layer("L1"), Layer("L2", clips = captions)),
+        links = listOf(LinkGroup("g", listOf("src") + captions.map { it.id })),
+    )
+
+    /** #235: with Sintra checked, one word is left, and English says so in the singular. */
+    @Test
+    fun oneWordLeftToCheck() {
+        val sintraChecked = captions.map {
+            if (it.id == "c4") {
+                caption("c4", 15.6, 18.2, "and then the train out to Sintra", emptySet())
+            } else {
+                it
+            }
+        }
+        show(project = projectWith(sintraChecked))
+        compose.onNodeWithText("5 captions").assertExists()
+        compose.onNodeWithTag("captions-check").assertTextEquals("1 word to check")
+        compose.onNodeWithText("1 words to check").assertDoesNotExist()
+    }
+
+    /** #235: a single caption is "1 caption", not "1 captions". */
+    @Test
+    fun aSingleCaption() {
+        show(project = projectWith(listOf(captions[2])))
+        compose.onNodeWithText("1 caption").assertExists()
+        compose.onNodeWithText("1 captions").assertDoesNotExist()
+        compose.onNodeWithTag("captions-check").assertTextEquals("1 word to check")
+    }
+
+    /** #235: Polish keeps its label and colon for every number. */
+    @Test
+    @Config(qualifiers = "pl-w390dp-h844dp-xhdpi")
+    fun aSingleCaptionInPolish() {
+        show(project = projectWith(listOf(captions[2])), locale = Locale.forLanguageTag("pl-PL"))
+        compose.onNodeWithText("Napisy: 1").assertExists()
+        compose.onNodeWithTag("captions-check").assertTextEquals("Słowa do sprawdzenia: 1")
+    }
+
     @Test
     fun searchAndReplace() {
         val calls = Calls()

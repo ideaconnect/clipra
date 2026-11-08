@@ -227,7 +227,11 @@ fun CaptionsEditScreen(
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = stringResource(R.string.captions_count, captions.size),
+                        text = pluralStringResource(
+                            R.plurals.captions_count,
+                            captions.size,
+                            captions.size,
+                        ),
                         style = type.sectionLabel,
                         color = colors.textSecondary,
                     )
@@ -240,7 +244,11 @@ fun CaptionsEditScreen(
                     if (state.wordsToCheck > 0) {
                         // Opens the first word to check.
                         Text(
-                            text = stringResource(R.string.captions_to_check, state.wordsToCheck),
+                            text = pluralStringResource(
+                                R.plurals.captions_to_check,
+                                state.wordsToCheck,
+                                state.wordsToCheck,
+                            ),
                             style = type.caption.copy(textDecoration = TextDecoration.Underline),
                             color = colors.textSecondary,
                             modifier = Modifier

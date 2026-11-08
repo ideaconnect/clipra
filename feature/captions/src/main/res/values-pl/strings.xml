@@ -39,8 +39,19 @@
     <string name="captions_done">Gotowe</string>
     <string name="captions_size">Rozmiar</string>
     <string name="captions_points">%1$d pt</string>
-    <string name="captions_count">Napisy: %1$d</string>
-    <string name="captions_to_check">Słowa do sprawdzenia: %1$d</string>
+    <!-- A label and a colon fit every number, so each quantity reads the same (#235). -->
+    <plurals name="captions_count">
+        <item quantity="one">Napisy: %1$d</item>
+        <item quantity="few">Napisy: %1$d</item>
+        <item quantity="many">Napisy: %1$d</item>
+        <item quantity="other">Napisy: %1$d</item>
+    </plurals>
+    <plurals name="captions_to_check">
+        <item quantity="one">Słowa do sprawdzenia: %1$d</item>
+        <item quantity="few">Słowa do sprawdzenia: %1$d</item>
+        <item quantity="many">Słowa do sprawdzenia: %1$d</item>
+        <item quantity="other">Słowa do sprawdzenia: %1$d</item>
+    </plurals>
     <string name="captions_detected">%1$s (wykryty)</string>
     <string name="captions_whisper">Whisper %1$s</string>
     <string name="captions_style_clean">Czysty</string>
