@@ -276,18 +276,24 @@ def main():
     engine = engine_numbers(logs)
     preview, export = engine['preview'], engine['export']
     whisper, cleanup_s = engine['whisper'], engine['cleanup']
-    timeline = None if overrun is None or cpu is None else (overrun, cpu)
-    timeline_result = verdict(timeline, lambda v: v[0] <= 0 and v[1] < 16)
+    timeline = None if cpu is None else (overrun, cpu)
+    # frameOverrunMs needs Android 12 (API 31): before that the CPU time alone decides.
+    timeline_result = verdict(timeline, lambda v: (v[0] is None or v[0] <= 0) and v[1] < 16)
     if timeline is not None and project == 'text card':
         timeline_result = 'not the Budget project'
+    if cpu is None:
+        timeline_measured = None
+    elif overrun is None:
+        timeline_measured = f'CPU P90 {cpu:.1f} ms (no overrun before Android 12)'
+    else:
+        timeline_measured = f'overrun P90 {overrun:.1f} ms, CPU P90 {cpu:.1f} ms'
 
     rows = [
         ('Cold start to Home', 'under 1.5 s',
          f'{start_ms:.0f} ms median' if start_ms is not None else None,
          verdict(start_ms, lambda v: v < 1500)),
         ('Timeline scroll and scrub, 6 layers', 'P90 overrun at or below 0 ms, CPU under 16 ms',
-         f'overrun P90 {overrun:.1f} ms, CPU P90 {cpu:.1f} ms' if timeline else None,
-         timeline_result),
+         timeline_measured, timeline_result),
         ('Preview, 1080p, 3 layers, 2 effects', 'at least 27 fps, 0.95x real time',
          f'{preview[0]:.1f} fps, {preview[1]:.2f}x' if preview else None,
          verdict(preview, lambda v: v[0] >= 27 and v[1] >= 0.95)),
