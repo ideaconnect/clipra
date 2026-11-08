@@ -131,6 +131,8 @@ fun CaptionsEditScreen(
     var find by rememberSaveable { mutableStateOf(initialFind) }
     val query = find.orEmpty()
     val snackbar = remember { SnackbarHostState() }
+    // Kept, so search can scroll the list to its top when it opens (#232).
+    val list = rememberScrollState()
     // Import .srt asks first when it would replace captions (#233).
     var askImport by rememberSaveable { mutableStateOf(false) }
     val importSrt = { if (state.importReplaces > 0) askImport = true else actions.onImportSrt() }
@@ -200,12 +202,14 @@ fun CaptionsEditScreen(
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .verticalScroll(rememberScrollState())
+                    .verticalScroll(list)
                     .padding(horizontal = 16.dp)
-                    .padding(top = 12.dp, bottom = 16.dp),
+                    .padding(top = 12.dp, bottom = 16.dp)
+                    .testTag("captions-list"),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                // While search is open (#46), it takes the place of the look.
+                // While search is open (#46), it takes the place of the look. It opens in view
+                // even when the list is scrolled down (#232).
                 if (find != null) {
                     SearchBar(
                         find = query,
@@ -215,6 +219,7 @@ fun CaptionsEditScreen(
                         },
                         onReplaceAll = { actions.onReplaceAll(query, it) },
                         onClose = { find = null },
+                        reveal = { list.animateScrollTo(0) },
                     )
                 }
                 // The look steps aside while searching or editing a word, for the captions.
