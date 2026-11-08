@@ -29,6 +29,7 @@ import tech.idct.clipra.core.model.Project
 import tech.idct.clipra.core.model.edit.FollowFace
 import tech.idct.clipra.core.model.edit.KeyframeTarget
 import tech.idct.clipra.core.model.edit.SetEffectParam
+import tech.idct.clipra.core.model.edit.SetEffectStrength
 import tech.idct.clipra.core.model.edit.SetMask
 import tech.idct.clipra.core.model.edit.ToggleKeyframe
 import tech.idct.clipra.core.model.filter
@@ -175,6 +176,14 @@ class MasksViewModel @Inject constructor(
         val clip = state.value.clip ?: return
         if (clip.effects.none { it.type == "mosaic" }) return
         session?.edit(SetEffectParam(clip.id, "mosaic", Filters.MOSAIC_SIZE, size))
+    }
+
+    /** Sets the strength of the clip's effect [type], the one the mask limits (#239). */
+    fun setStrength(type: String, strength: Float) {
+        val clip = state.value.clip ?: return
+        val index = clip.effects.indexOfFirst { it.type == type }
+        if (index < 0) return
+        session?.edit(SetEffectStrength(clip.id, index, strength))
     }
 
     override fun onCleared() {
