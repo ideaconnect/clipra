@@ -1,7 +1,8 @@
-"""Tests of budgets.py's timeline verdict (#242) and its reading of the engine tests' log lines:
-python -m pytest scripts/perf"""
+"""Tests of budgets.py's timeline verdict (#242), its reading of the engine tests' log lines and
+whole runs of main() with the device and Gradle faked (#267): python -m pytest scripts/perf"""
 
 import json
+import sys
 
 import pytest
 
@@ -137,3 +138,113 @@ def test_only_the_three_layers_lines_count_for_the_preview_and_export_budgets():
 
     assert numbers['preview'] == (27.9, 0.97, [29.1, 27.9, 28.6])
     assert numbers['export'] == (61.2, 0.69)
+
+
+# A Galaxy S9 on Android 10 and an Android 10 emulator, as device_row() describes them.
+PHONE = {'device': 'samsung SM-G960F', 'soc': 'Samsung Exynos 9810', 'ram': '3.5 GB',
+         'android': '10 (API 29)', 'api': 29, 'emulator': False}
+EMULATOR = {**PHONE, 'device': 'Google Android SDK built for x86_64', 'soc': 'ranchu',
+            'emulator': True}
+
+# What EditorBenchmark logs under the BudgetProject tag (benchmark/.../Journeys.kt).
+PROJECT_LOG = {
+    'Budget': '11-08 20:12:40.118  8812  8830 I BudgetProject: '
+              'Measuring the project named Budget',
+    'text card': '11-08 20:12:40.118  8812  8830 W BudgetProject: '
+                 'No project named Budget on Home: measuring a new text card project',
+}
+
+STARTUP_JSON = {'benchmarks': [{
+    'name': 'coldStartWithProfile',
+    'className': 'tech.idct.clipra.benchmark.StartupBenchmark',
+    'metrics': {'timeToInitialDisplayMs': {'minimum': 790.2, 'maximum': 845.0, 'median': 812.4}},
+}]}
+
+TIMELINE_ROW = ('| Timeline scroll and scrub, 6 layers | '
+                'P90 overrun at or below 0 ms, CPU under 16 ms |')
+
+
+def run_main(monkeypatch, tmp_path, row, project, *flags):
+    """main() with [flags] on the device [row], with Gradle and adb faked: EditorBenchmark
+    measures [project] at 12.5 ms of CPU per frame (P90), StartupBenchmark gives STARTUP_JSON and
+    the engine tests log BUDGET_LOG. Returns the report and the Gradle calls (task, classes,
+    extra arguments)."""
+    output = tmp_path / 'benchmark-output'
+    calls = []
+
+    def gradle(serial, task, classes, extra):
+        calls.append((task, classes, extra))
+        # Every benchmark run leaves its JSON in the same place, as the connected task does.
+        data = {budgets.EDITOR_CLASS: editor_json(sdk=row['api'], cpu=12.5),
+                budgets.STARTUP_CLASS: STARTUP_JSON}.get(classes[0])
+        if data:
+            output.mkdir(parents=True, exist_ok=True)
+            (output / 'tech.idct.clipra.benchmark-benchmarkData.json').write_text(
+                json.dumps(data), encoding='utf-8')
+        return True
+
+    def adb(serial, *args, check=True):
+        if args[:2] == ('logcat', '-d'):
+            if f'{budgets.BUDGET_PROJECT_TAG}:I' in args:
+                return PROJECT_LOG[project]
+            return BUDGET_LOG
+        if args == ('shell', 'getprop', 'ro.build.version.sdk'):
+            return f"{row['api']}\n"
+        return ''
+
+    monkeypatch.setattr(budgets, 'ROOT', tmp_path)
+    monkeypatch.setattr(budgets, 'BENCHMARK_OUTPUT', output)
+    monkeypatch.setattr(budgets, 'pick_device', lambda serial: 'R58M1234ABC')
+    monkeypatch.setattr(budgets, 'device_row', lambda serial: row)
+    monkeypatch.setattr(budgets, 'thermal_status', lambda serial: 1)
+    monkeypatch.setattr(budgets, 'adb', adb)
+    monkeypatch.setattr(budgets, 'gradle', gradle)
+    monkeypatch.setattr(sys, 'argv', ['budgets.py', *flags])
+
+    budgets.main()
+
+    reports = list((tmp_path / 'build/perf').glob('*.md'))
+    assert len(reports) == 1
+    return reports[0].read_text(encoding='utf-8'), calls
+
+
+def test_a_phone_run_writes_the_report_on_the_budget_project(monkeypatch, tmp_path, capsys):
+    report, calls = run_main(monkeypatch, tmp_path, PHONE, 'Budget')
+
+    timeline = f'{TIMELINE_ROW} CPU P90 12.5 ms (no overrun metric before Android 12) | holds |'
+    assert timeline in report
+    assert '| Cold start to Home | under 1.5 s | 812 ms median | holds |' in report
+    assert ('| Preview, 1080p, 3 layers, 2 effects | at least 27 fps, 0.95x real time | '
+            '27.9 fps, 0.97x (lowest of 3 runs: 29.1, 27.9, 28.6 fps) | holds |') in report
+    assert ('| Export 1080p30, 42 s, 3 layers | under 120 s | 61.2 s (0.69x real time) | '
+            'holds |') in report
+    assert '- EditorBenchmark: on the Budget project\n' in report
+    assert '- StartupBenchmark reinstalled the app' in report
+    # The editor first, and on a phone it has to find the Budget project (#241).
+    assert [classes for _, classes, _ in calls] == [
+        [budgets.EDITOR_CLASS], [budgets.STARTUP_CLASS], budgets.ENGINE_CLASSES]
+    assert budgets.REQUIRE_BUDGET in calls[0][2]
+    printed = capsys.readouterr().out
+    assert timeline in printed
+    assert f"Report: {tmp_path / 'build/perf'}" in printed
+
+
+def test_a_measured_text_card_is_not_judged_as_the_budget_project(monkeypatch, tmp_path):
+    report, calls = run_main(monkeypatch, tmp_path, EMULATOR, 'text card',
+                             '--emulator', '--skip-startup', '--skip-engine')
+
+    assert (f'{TIMELINE_ROW} CPU P90 12.5 ms (no overrun metric before Android 12) | '
+            'not the Budget project |') in report
+    assert '- EditorBenchmark: on a new text card project, not the Budget project' in report
+    assert '**Emulator: these numbers do not count.**' in report
+    assert [classes for _, classes, _ in calls] == [[budgets.EDITOR_CLASS]]
+    assert budgets.REQUIRE_BUDGET not in calls[0][2]
+
+
+def test_a_run_without_the_benchmarks_still_writes_the_report(monkeypatch, tmp_path):
+    report, calls = run_main(monkeypatch, tmp_path, PHONE, None,
+                             '--skip-benchmark', '--skip-engine')
+
+    assert f'{TIMELINE_ROW} - | not measured |' in report
+    assert 'EditorBenchmark' not in report
+    assert calls == []
