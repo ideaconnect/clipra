@@ -4,6 +4,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
@@ -18,6 +21,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.RoborazziOptions
 import com.github.takahirom.roborazzi.captureRoboImage
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -322,6 +326,29 @@ class CaptionsEditScreenTest {
         compose.onNodeWithTag("search-close").performClick()
         compose.onNodeWithTag("captions-search").assertDoesNotExist()
     }
+
+    /**
+     * #232: with the list scrolled down, as after fixing a word further down, search opens in
+     * view at the top of the list, with the Find field focused for the keyboard. On a phone as
+     * small as the Galaxy S9 of the report (360 dp wide).
+     */
+    @Test
+    @Config(qualifiers = "w360dp-h740dp-xhdpi")
+    fun searchOpensInViewWhenTheListIsScrolled() {
+        show()
+        compose.onNodeWithTag("caption:c5").performScrollTo()
+        assertTrue(listScroll() > 0f)
+
+        compose.onNodeWithTag("captions-search-open").performClick()
+        compose.onNodeWithTag("captions-search").assertIsDisplayed()
+        compose.onNodeWithTag("search-close").assertIsDisplayed()
+        compose.onNodeWithTag("search-find").assertIsFocused()
+        assertEquals(0f, listScroll())
+        compose.onRoot().captureRoboImage(roborazziOptions = options)
+    }
+
+    private fun listScroll(): Float = compose.onNodeWithTag("captions-list").fetchSemanticsNode()
+        .config[SemanticsProperties.VerticalScrollAxisRange].value()
 
     @Test
     fun savingAndImportingSrt() {
