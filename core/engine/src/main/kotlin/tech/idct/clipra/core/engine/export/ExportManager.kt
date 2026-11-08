@@ -3,6 +3,7 @@ package tech.idct.clipra.core.engine.export
 import android.content.Context
 import android.net.Uri
 import android.os.SystemClock
+import android.util.Log
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -69,7 +70,15 @@ sealed interface ExportState {
         val leftOutClips: Int = 0,
     ) : ExportState
 
-    data class Failed(val projectId: String, val failure: ExportFailure) : ExportState
+    data class Failed(
+        val projectId: String,
+        val failure: ExportFailure,
+        /**
+         * Media3's name for what went wrong ("ERROR_CODE_DECODING_FAILED"), for a "Copy details"
+         * on the failure screen (#236). Null when the export failed outside Transformer.
+         */
+        val errorCodeName: String? = null,
+    ) : ExportState
 }
 
 /** What the ad rules (M9) listen to. */
@@ -170,13 +179,24 @@ class ExportManager @Inject constructor(
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failed: ExportFailedException) {
-                mutableState.value = ExportState.Failed(project.id, failed.failure)
-                mutableEvents.tryEmit(ExportEvent.Failed)
-            } catch (_: Exception) {
-                mutableState.value = ExportState.Failed(project.id, ExportFailure.Other)
-                mutableEvents.tryEmit(ExportEvent.Failed)
+                fail(project.id, failed.failure, failed)
+            } catch (e: Exception) {
+                fail(project.id, ExportFailure.Other, e)
             }
         }
+    }
+
+    /**
+     * Shows [failure] and logs [error] with its causes (#236). The screen only says what kind of
+     * failure it was; without the log, an export that fails on a phone nobody here has can't be
+     * traced. Media3's messages may name a clip's URI, which stays on the phone like the
+     * importer's log lines.
+     */
+    private fun fail(projectId: String, failure: ExportFailure, error: Exception) {
+        val codeName = ExportErrors.codeName(error)
+        Log.w(TAG, ExportErrors.message(failure, codeName), error)
+        mutableState.value = ExportState.Failed(projectId, failure, codeName)
+        mutableEvents.tryEmit(ExportEvent.Failed)
     }
 
     fun pause() {
@@ -219,6 +239,8 @@ class ExportManager @Inject constructor(
     }
 
     companion object {
+        private const val TAG = "ExportManager"
+
         /** "lisbon-weekend.mp4": the project name as a file name; MediaStore adds a number if taken. */
         fun fileName(projectName: String): String {
             // "ł" has no decomposition, so it is mapped by hand.
