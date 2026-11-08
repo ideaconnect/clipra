@@ -21,6 +21,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -168,9 +169,9 @@ internal fun CaptionsTranscript(
         }
         Text(
             text = listOfNotNull(
-                stringResource(R.string.captions_count, captions.size),
+                pluralStringResource(R.plurals.captions_count, captions.size, captions.size),
                 state.wordsToCheck.takeIf { it > 0 }
-                    ?.let { stringResource(R.string.captions_to_check, it) },
+                    ?.let { pluralStringResource(R.plurals.captions_to_check, it, it) },
             ).joinToString(" · "),
             style = type.caption,
             color = colors.textSecondary,

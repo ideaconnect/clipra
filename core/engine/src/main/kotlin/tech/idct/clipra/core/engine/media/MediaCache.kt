@@ -66,6 +66,13 @@ class MediaCache(private val root: File) {
     fun reversedSound(key: String, fromUs: Long, toUs: Long): File =
         File(root, "reversed/$key-$fromUs-$toUs.wav")
 
+    /**
+     * A reversed clip's picture for the preview (#229): [mediaId] from [fromUs] to [toUs] at
+     * proxy size, laid out back to front (`ReversedVideos`).
+     */
+    fun reversedVideo(mediaId: String, fromUs: Long, toUs: Long): File =
+        File(root, "reversed/$mediaId-$fromUs-$toUs.mp4")
+
     /** Where [mediaId] speaks (#40), as microsecond ranges, one per line. */
     fun speech(mediaId: String): File = File(root, "analysis/$mediaId.speech")
 
@@ -84,8 +91,9 @@ class MediaCache(private val root: File) {
     private val voiceChanges = MutableStateFlow(0)
 
     /**
-     * Changes each time a cleaned voice, an analysis, person masks (#50), a camera motion (#54)
-     * or a proxy (#217) are ready, so the preview can pick them up.
+     * Changes each time a cleaned voice, an analysis, person masks (#50), a camera motion (#54),
+     * a proxy (#217) or a reversed clip's picture (#229) are ready, so the preview can pick them
+     * up.
      */
     val voiceVersion: StateFlow<Int> = voiceChanges.asStateFlow()
 

@@ -39,8 +39,14 @@
     <string name="captions_done">Done</string>
     <string name="captions_size">Size</string>
     <string name="captions_points">%1$d pt</string>
-    <string name="captions_count">%1$d captions</string>
-    <string name="captions_to_check">%1$d words to check</string>
+    <plurals name="captions_count">
+        <item quantity="one">%1$d caption</item>
+        <item quantity="other">%1$d captions</item>
+    </plurals>
+    <plurals name="captions_to_check">
+        <item quantity="one">%1$d word to check</item>
+        <item quantity="other">%1$d words to check</item>
+    </plurals>
     <string name="captions_detected">%1$s (detected)</string>
     <string name="captions_whisper">Whisper %1$s</string>
     <string name="captions_style_clean">Clean</string>

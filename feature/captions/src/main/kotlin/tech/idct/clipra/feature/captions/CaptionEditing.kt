@@ -19,6 +19,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -127,7 +128,11 @@ internal fun WordBar(
     }
 }
 
-/** Search and replace in every caption (#46), with how many places it finds. */
+/**
+ * Search and replace in every caption (#46), with how many places it finds. It opens ready to
+ * type (#232): [reveal] brings it into view first (its place in a scrolled list), then the Find
+ * field takes the focus, so the keyboard comes up.
+ */
 @Composable
 internal fun SearchBar(
     find: String,
@@ -135,10 +140,19 @@ internal fun SearchBar(
     matches: Int,
     onReplaceAll: (String) -> Unit,
     onClose: () -> Unit,
+    reveal: suspend () -> Unit = {},
 ) {
     val colors = ClipraTheme.colors
     var findValue by remember { mutableStateOf(TextFieldValue(find, TextRange(find.length))) }
     var replacement by remember { mutableStateOf(TextFieldValue("")) }
+    val focus = remember { FocusRequester() }
+    val currentReveal by rememberUpdatedState(reveal)
+    LaunchedEffect(Unit) {
+        // In view first: a focused field brings only itself into view, which would stop the
+        // scroll with the match count and the close button still out of sight.
+        currentReveal()
+        runCatching { focus.requestFocus() }
+    }
     Column(
         modifier = Modifier
             .clip(ClipraTheme.shapes.card)
@@ -176,7 +190,9 @@ internal fun SearchBar(
                     findValue = it
                     onFind(it.text)
                 },
-                modifier = Modifier.testTag("search-find"),
+                modifier = Modifier
+                    .focusRequester(focus)
+                    .testTag("search-find"),
             )
             Field(
                 label = stringResource(R.string.captions_replace_with),

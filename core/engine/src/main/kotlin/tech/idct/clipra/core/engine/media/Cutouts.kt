@@ -58,6 +58,12 @@ class Cutouts @Inject constructor(
     }
 
     /**
+     * Stops making the masks of [asset] in the background, if that is running (#240). A stopped
+     * run leaves no file, so a later [request] starts again from the first frame.
+     */
+    fun cancel(asset: MediaAsset) = CutoutWorker.cancel(context, asset)
+
+    /**
      * Requests the masks of every clip with a person cutout, such as after the cache was cleared.
      * A chroma key (#51) needs none.
      */
@@ -219,6 +225,9 @@ class CutoutWorker @AssistedInject constructor(
         private const val KEY_HEIGHT = "height"
         private const val KEY_ROTATION = "rotation"
 
+        /** The unique work that makes the masks of media [mediaId]. */
+        fun name(mediaId: String): String = "cutout-$mediaId"
+
         fun enqueue(context: Context, asset: MediaAsset) {
             val request = OneTimeWorkRequestBuilder<CutoutWorker>()
                 .setInputData(
@@ -234,7 +243,12 @@ class CutoutWorker @AssistedInject constructor(
                 )
                 .build()
             WorkManager.getInstance(context)
-                .enqueueUniqueWork("cutout-${asset.id}", ExistingWorkPolicy.KEEP, request)
+                .enqueueUniqueWork(name(asset.id), ExistingWorkPolicy.KEEP, request)
+        }
+
+        /** Cancels making the masks of [asset], if it is queued or running. */
+        fun cancel(context: Context, asset: MediaAsset) {
+            WorkManager.getInstance(context).cancelUniqueWork(name(asset.id))
         }
     }
 }
