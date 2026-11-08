@@ -74,7 +74,8 @@ internal fun Clip.withFilter(type: String?, strength: Float): Clip {
 
 /**
  * Sets a clip's mask (#27). A mask limits an effect, so when the clip has none of type
- * [addIfMissing] yet, that filter is added at the default strength in the same step.
+ * [addIfMissing] yet, that filter is added in the same step, at full strength so it hides what
+ * the mask covers (#239). An effect the clip already has keeps its strength.
  */
 data class SetMask(
     val clipId: String,
@@ -88,7 +89,7 @@ data class SetMask(
         layer.requireUnlocked()
         val needed = addIfMissing?.takeIf { type -> clip.effects.none { it.type == type } }
         val withEffect = if (needed != null) {
-            clip.withFilter(needed, Filters.DEFAULT_STRENGTH)
+            clip.withFilter(needed, Filters.MASK_STRENGTH)
         } else {
             clip
         }
