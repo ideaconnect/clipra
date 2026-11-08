@@ -16,6 +16,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import tech.idct.clipra.core.engine.export.ExportRenderer
+import tech.idct.clipra.core.engine.media.Cutouts
 import tech.idct.clipra.core.engine.media.MediaCache
 import tech.idct.clipra.core.engine.media.MediaInspector
 import tech.idct.clipra.core.engine.media.ProxyGenerator
@@ -24,10 +25,14 @@ import tech.idct.clipra.core.engine.preview.PreviewPlayer
 import tech.idct.clipra.core.engine.render.CanvasClips
 import tech.idct.clipra.core.engine.render.LayerCompositor
 import tech.idct.clipra.core.engine.render.PauseGate
+import tech.idct.clipra.core.model.AspectRatio
+import tech.idct.clipra.core.model.Behind
 import tech.idct.clipra.core.model.BlendMode
 import tech.idct.clipra.core.model.Clip
 import tech.idct.clipra.core.model.ClipType
+import tech.idct.clipra.core.model.Cutout
 import tech.idct.clipra.core.model.Effect
+import tech.idct.clipra.core.model.Format
 import tech.idct.clipra.core.model.Keyframed
 import tech.idct.clipra.core.model.Layer
 import tech.idct.clipra.core.model.MediaAsset
@@ -61,6 +66,9 @@ import kotlin.math.roundToInt
  * picture in picture playing its copy laid out back to front. That preview test logs the same
  * two layers forwards and read back to front beside it, measured one after the other in the
  * same warmth. Its lines are worded so that budgets.py reads only the three layers' own.
+ *
+ * The person cutout (#49) has to preview in real time as well: a 1080p clip cut out over the
+ * layer below, and with the background blurred. Its lines are worded the same way.
  */
 @RunWith(AndroidJUnit4::class)
 class BudgetTest {
@@ -164,6 +172,68 @@ class BudgetTest {
             assertTrue("preview at ${pace}x real time", pace >= MIN_PACE)
             assertTrue("preview at $fps fps", fps >= MIN_FPS)
         }
+    }
+
+    /**
+     * The vision tools' cutout criterion (#49): a 1080p clip with the person cutout previews in
+     * real time, with the layer below (a photo) showing through and with the background blurred,
+     * judged on the lowest of [PREVIEW_RUNS] runs each. The same project uncut is measured first,
+     * in the same warmth, so a miss shows whether the cutout or the rest of the preview caused it.
+     * Below the clip is a photo, not a second video, so the preview plays one clip's sound: the
+     * cost of several sound tracks below Android 12 (#243) stays the three-layer test's to measure.
+     *
+     * The masks are made first, as the editor makes them in the background before the clip shows
+     * cut out (it plays uncut until then), and how long that took is logged against the media's
+     * length. Drawing the cutout costs the same whatever the masks show, so the bundled clip,
+     * which shows nobody, measures it as well as footage of a person.
+     */
+    @Test
+    fun previewsACutOutClipInRealTime() = runBlocking {
+        val project = cutOut()
+        makeProxies(project)
+        val media = project.asset(project.layers.last().clips.first().source!!.mediaId)!!
+        // Masks left by an earlier run would be read, not made.
+        cache.cutout(media.id).delete()
+        val started = SystemClock.elapsedRealtime()
+        assertTrue("masks made", Cutouts(context, cache).prepare(media))
+        val seconds = (SystemClock.elapsedRealtime() - started) / 1_000.0
+        val length = media.durationUs / 1e6
+        Log.i(
+            TAG,
+            "cutout masks of ${media.width}x${media.height} media, " +
+                "%.1f s long: made in %.1f s, %.1fx its length"
+                    .format(Locale.ROOT, length, seconds, seconds / length),
+        )
+        val missed = ArrayList<String>()
+        for (behind in listOf(null, Behind.LayerBelow, Behind.Blur)) {
+            val how = when (behind) {
+                null -> "off"
+                Behind.Blur -> "with the background blurred"
+                else -> "with the layer below"
+            }
+            val runs = (1..PREVIEW_RUNS).map { run ->
+                preview(withBehind(project, behind)).also {
+                    Log.i(
+                        TAG,
+                        "cutout $how, run $run of $PREVIEW_RUNS: " +
+                            "%.1f fps (%.2fx real time); ".format(Locale.ROOT, it.fps, it.pace) +
+                            "%.1f canvases drawn a second, a draw %.1f ms on average, %.1f ms P90"
+                                .format(Locale.ROOT, it.drawn, it.drawMeanMs, it.drawP90Ms),
+                    )
+                }
+            }
+            val fps = runs.minOf { it.fps }
+            val pace = runs.minOf { it.pace }
+            Log.i(
+                TAG,
+                "cutout $how, lowest of ${runs.size} runs: " +
+                    "%.1f fps (%.2fx real time)".format(Locale.ROOT, fps, pace),
+            )
+            if (behind != null && (pace < MIN_PACE || fps < MIN_FPS)) {
+                missed += "cutout $how at %.1f fps, %.2fx real time".format(Locale.ROOT, fps, pace)
+            }
+        }
+        if (check) assertTrue(missed.joinToString("; "), missed.isEmpty())
     }
 
     private fun log(how: String, played: Played) = Log.i(
@@ -291,6 +361,34 @@ class BudgetTest {
             media = listOf(bottom, top).distinctBy { it.id },
             layers = layers,
         )
+    }
+
+    /**
+     * Two layers in 16:9, as #49's 1080p clip fills the frame: a photo, and over it the whole
+     * frame of a 1080p clip, cut out by [withBehind].
+     */
+    private fun cutOut(): Project {
+        val photo = asset("spike/photo.png")
+        val person = footage() ?: asset("spike/red.mp4")
+        val below = Clip("L1-0", ClipType.Photo, 0, DURATION_US, MediaRef(photo.id, 0, 0))
+        return Project(
+            id = "budget-cutout",
+            name = "Budget",
+            format = Format(ratio = AspectRatio.Landscape16x9),
+            media = listOf(photo, person),
+            layers = listOf(
+                Layer("L1", clips = listOf(below)),
+                layer("L2", person, Transform(), Speed()),
+            ),
+        )
+    }
+
+    /** [project] with the top layer's clips cut out, showing [behind]; uncut for null. */
+    private fun withBehind(project: Project, behind: Behind?): Project {
+        val top = project.layers.last()
+        val cutout = behind?.let { Cutout(behind = it) }
+        val cut = top.copy(clips = top.clips.map { it.copy(cutout = cutout) })
+        return project.copy(layers = project.layers.dropLast(1) + cut)
     }
 
     /**

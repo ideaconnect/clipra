@@ -25,6 +25,7 @@ Before each run: charged above 50%, not charging, screen brightness at half, bat
 | Preview playback | real time at 1080p, 3 video layers, 2 effects | `BudgetTest.previewsThreeLayersWithTwoEffectsInRealTime` (`core:engine`) | logcat tag `Budget`: the lowest of three runs at least 27 fps shown, at least 0.95x real time |
 | Export 1080p30, 42 s, 3 layers | under 120 s | `BudgetTest.exportsThreeLayersIn120Seconds` (`core:engine`) | logcat tag `Budget` |
 | A reversed layer (#229) | real time, under 120 s | `BudgetTest.previewsAReversedPictureInPictureInRealTime` (two layers, the picture in picture reversed), `BudgetTest.exportsThreeLayersWithAReversedOneIn120Seconds` (the three layers, the middle one reversed) (`core:engine`) | logcat tag `Budget`, the lines starting `reversed`: the preview from its copies (the budget), and beside it the same layers forwards, read back to front before the copies are made, and how long they took; the export |
+| Person cutout (#49) | real time at 1080p, with the layer below and with the background blurred | `BudgetTest.previewsACutOutClipInRealTime` (`core:engine`; a 1080p clip over a photo, in 16:9) | logcat tag `Budget`, the lines starting `cutout`: with the layer below and with the background blurred, the lowest of three runs at least 27 fps, at least 0.95x real time. Beside them, not judged: the same clip uncut (`cutout off`), measured first, and how long the masks took to make against the clip's length (the clip plays uncut until they are made) |
 | Whisper base on 42 s of speech | under 20 s | `TranscriberTest` (`core:engine`; downloads the base model from its official source on the first run) | logcat tag `Transcriber` |
 | DeepFilterNet 3 | faster than real time | `VoiceCleanupTest` (`core:engine`) | logcat tag `VoiceCleanup`: seconds for 10 s of sound |
 
@@ -59,7 +60,7 @@ The project stays on the phone between runs as long as nothing deletes the app's
 
 Without a Budget project, `EditorBenchmark` measures a new text card project, so the journey works on any device, but that is not what the budget asks for. With `-Pandroid.testInstrumentationRunnerArguments.budgetProject=required` it fails instead; `budgets.py` passes it on phones, not on emulators. The logcat tag `BudgetProject` says which project was measured, and the report names it.
 
-**Export and preview.** These are instrumented tests of `core:engine`. They loop the bundled 1080p test clips. For numbers that count, push a minute of the phone's own 1080p30 video first; the test uses it for all three layers:
+**Export and preview.** These are instrumented tests of `core:engine`. They loop the bundled 1080p test clips. For numbers that count, push a minute of the phone's own 1080p30 video first; the test uses it for all three layers (and for the cut-out clip):
 
 ```
 adb push clip.mp4 /data/local/tmp/clipra-budget.mp4

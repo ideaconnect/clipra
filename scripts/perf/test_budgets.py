@@ -1,4 +1,5 @@
-"""Tests of budgets.py's timeline verdict (#242): python -m pytest scripts/perf"""
+"""Tests of budgets.py's timeline verdict (#242) and its reading of the engine tests' log lines:
+python -m pytest scripts/perf"""
 
 import json
 
@@ -108,3 +109,31 @@ def test_slow_frames_need_the_per_frame_times():
     assert budgets.slow_frames({'frameDurationCpuMs': {'P90': 15.4}}) is None
     assert budgets.slow_frames({'frameDurationCpuMs': {'P90': 15.4, 'runs': []}}) is None
     assert budgets.slow_frames(None) is None
+
+
+# BudgetTest's lines as logcat shows them: the three layers' preview and export, then the
+# reversed picture in picture (#229) and the person cutout (#49), whose numbers are not theirs.
+BUDGET_LOG = '\n'.join(f'11-08 20:31:07.512  9417  9433 I Budget  : {line}' for line in [
+    'export 1080x1920 30 fps, 42 s, 3 layers (gray.mp4): 61.2 s, 0.69x real time',
+    'preview 540x960, 3 layers, 2 effects, run 1 of 3: 29.1 fps shown, 0.99x real time; '
+    '29.4 canvases drawn a second, a draw 4.6 ms on average, 5.8 ms P90',
+    'preview 540x960, 3 layers, 2 effects, run 2 of 3: 27.9 fps shown, 0.97x real time; '
+    '28.0 canvases drawn a second, a draw 4.9 ms on average, 6.1 ms P90',
+    'preview 540x960, 3 layers, 2 effects, run 3 of 3: 28.6 fps shown, 1.00x real time; '
+    '28.8 canvases drawn a second, a draw 4.7 ms on average, 5.9 ms P90',
+    'preview 540x960, 3 layers, 2 effects, lowest of 3 runs: 27.9 fps shown, 0.97x real time',
+    'reversed picture in picture, preview forwards: 12.0 fps (0.40x real time)',
+    'cutout masks of 1920x1080 media, 4.0 s long: made in 9.6 s, 2.4x its length',
+    'cutout off, run 1 of 3: 12.5 fps (0.42x real time); '
+    '12.6 canvases drawn a second, a draw 25.0 ms on average, 33.1 ms P90',
+    'cutout with the layer below, run 1 of 3: 11.0 fps (0.37x real time); '
+    '11.2 canvases drawn a second, a draw 31.0 ms on average, 40.2 ms P90',
+    'cutout with the background blurred, lowest of 3 runs: 10.5 fps (0.35x real time)',
+])
+
+
+def test_only_the_three_layers_lines_count_for_the_preview_and_export_budgets():
+    numbers = budgets.engine_numbers(BUDGET_LOG)
+
+    assert numbers['preview'] == (27.9, 0.97, [29.1, 27.9, 28.6])
+    assert numbers['export'] == (61.2, 0.69)
