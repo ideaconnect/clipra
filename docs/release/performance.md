@@ -75,6 +75,10 @@ With `budgets=check` the test fails when a budget is missed; without it, it only
 
 **Memory and heat.** During the export test, note the peak of `adb shell dumpsys meminfo tech.idct.clipra.core.engine.test` (TOTAL PSS) and the thermal status before and after three exports in a row (`adb shell dumpsys thermalservice`, "Thermal Status"). A status of 3 (severe) or more during export is a finding.
 
+**When the timeline budget is missed.** `EditorPartsBenchmark` measures the two parts of the editor journey apart, on the same project: `scrub` (the timeline scrubbed back and forth) and `play` (the project played for a moment, twice). Run it as the editor benchmark, with `-Pandroid.testInstrumentationRunnerArguments.class=tech.idct.clipra.benchmark.EditorPartsBenchmark`. Runs of the same build can differ by several milliseconds at P90, so compare a few runs, not one.
+
+On Android 10 and 11, which report no `frameOverrunMs`, the CPU time overstates what the display misses: it adds up the UI thread's and the RenderThread's time, which work on successive frames side by side, and it includes the RenderThread's wait for a free buffer while the app is a frame ahead of the display. `scripts/perf/display-frames.sql` reads a trace of an iteration for what a 60 Hz display got: the vsyncs between the app's first and last frame, SurfaceFlinger's compositions and the vsyncs that showed an old picture again. It also gives each CPU's mean clock: on some phones the frames' CPU time follows the clock, which drops when the app has less to do. On a Galaxy S9 (#244) the scrub of the Budget project read 20 to 26 ms at P90 in runs of the same build, while the display got a new picture on 94 to 97% of the vsyncs.
+
 ## 4. The baseline profile
 
 `app/src/main/baseline-prof.txt` lists the code of starting, the projects, a new project in the editor, scrubbing and playing. ProfileInstaller compiles it when the app is installed, so the first starts are as fast as later ones. Generate it again when those screens change much, on a phone or an emulator with Android 13 or later:
