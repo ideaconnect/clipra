@@ -248,3 +248,23 @@ def test_a_run_without_the_benchmarks_still_writes_the_report(monkeypatch, tmp_p
     assert f'{TIMELINE_ROW} - | not measured |' in report
     assert 'EditorBenchmark' not in report
     assert calls == []
+
+
+def test_the_runs_with_the_compressed_sound_before_the_pcm_decodes_do_not_count():
+    # Below Android 12 the three layers' test first plays its runs with the compressed sound,
+    # then decodes the sound to PCM (#268), and only the runs after count.
+    log = '\n'.join(f'11-08 23:58:40.100 20391 20412 I Budget  : {line}' for line in [
+        'three layers with the compressed sound (before #268), run 1 of 3: 14.5 fps '
+        '(1.00x real time); 20.5 canvases drawn a second, a draw 19.8 ms on average',
+        'three layers with the compressed sound (before #268), lowest of 3 runs: 14.5 fps '
+        '(1.00x real time)',
+        'sound of 2 media decoded to PCM (#268) in 1.4 s, 2.3 MB',
+        'preview 540x960, 3 layers, 2 effects, run 1 of 3: 28.4 fps shown, 1.00x real time; '
+        '28.9 canvases drawn a second, a draw 13.6 ms on average, 17.0 ms P90',
+        'preview 540x960, 3 layers, 2 effects, lowest of 3 runs: 28.4 fps shown, 1.00x real time',
+    ])
+
+    numbers = budgets.engine_numbers(log)
+
+    assert numbers['preview'] == (28.4, 1.0, [28.4])
+    assert numbers['export'] is None

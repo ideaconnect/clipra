@@ -30,6 +30,7 @@ import tech.idct.clipra.core.data.project.OpenProjects
 import tech.idct.clipra.core.data.project.ProjectFiles
 import tech.idct.clipra.core.data.project.ProjectRepository
 import tech.idct.clipra.core.engine.media.Cutouts
+import tech.idct.clipra.core.engine.media.DecodedSounds
 import tech.idct.clipra.core.engine.media.MediaCache
 import tech.idct.clipra.core.engine.media.MediaImporter
 import tech.idct.clipra.core.engine.media.Proxies
@@ -204,6 +205,7 @@ class EditorCacheClearedTest {
             stabilizer = Stabilizer(context, cache),
             reversedSounds = ReversedSounds(context, cache),
             reversedVideos = ReversedVideos(context, cache),
+            decodedSounds = DecodedSounds(context, cache),
             appScope = background,
             savedState = SavedStateHandle(mapOf("projectId" to "lisbon")),
         )

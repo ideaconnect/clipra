@@ -17,6 +17,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import tech.idct.clipra.core.engine.export.ExportRenderer
 import tech.idct.clipra.core.engine.media.Cutouts
+import tech.idct.clipra.core.engine.media.DecodedSounds
 import tech.idct.clipra.core.engine.media.MediaCache
 import tech.idct.clipra.core.engine.media.MediaInspector
 import tech.idct.clipra.core.engine.media.ProxyGenerator
@@ -110,12 +111,43 @@ class BudgetTest {
      * The preview, [PREVIEW_RUNS] times, each with a player of its own; the budget holds when
      * the lowest run meets it (#243): on a Galaxy S9 one run could show 30 fps and the next 8,
      * as what else kept the phone busy changed, so a single lucky run could pass.
+     *
+     * Below Android 12 the sound plays from its media's PCM decodes (#268), made first as the
+     * editor makes them in the background, and how long that took and how much they take is
+     * logged. Before them, the same runs with the compressed sound are logged (as before #268,
+     * and as the preview plays until the decodes are made), worded so that budgets.py doesn't
+     * read them as the budget's.
      */
     @Test
     fun previewsThreeLayersWithTwoEffectsInRealTime() = runBlocking {
         val project = project()
         makeProxies(project)
         val size = PreviewPlayer.previewSize(project.format)
+        if (DecodedSounds.NEEDED) {
+            project.media.forEach { cache.decodedSound(it.id).delete() }
+            val compressed = (1..PREVIEW_RUNS).map { run ->
+                preview(project).also {
+                    Log.i(
+                        TAG,
+                        "three layers with the compressed sound (before #268), run $run of " +
+                            "$PREVIEW_RUNS: %.1f fps (%.2fx real time); "
+                                .format(Locale.ROOT, it.fps, it.pace) +
+                            "%.1f canvases drawn a second, a draw %.1f ms on average"
+                                .format(Locale.ROOT, it.drawn, it.drawMeanMs),
+                    )
+                }
+            }
+            Log.i(
+                TAG,
+                "three layers with the compressed sound (before #268), lowest of " +
+                    "${compressed.size} runs: %.1f fps (%.2fx real time)".format(
+                        Locale.ROOT,
+                        compressed.minOf { it.fps },
+                        compressed.minOf { it.pace },
+                    ),
+            )
+            makeSounds(project, log = true)
+        }
         val runs = (1..PREVIEW_RUNS).map { run ->
             preview(project).also {
                 Log.i(
@@ -148,6 +180,8 @@ class BudgetTest {
         val forwards = pictureInPicture(reversed = false)
         val project = pictureInPicture(reversed = true)
         makeProxies(project)
+        // Both projects play the same media.
+        makeSounds(project)
         val reversed = project.layers.flatMap { it.clips }.filter { it.speed.reverse }
         val copies = reversed.mapNotNull { it.source }.distinct().map {
             cache.reversedVideo(it.mediaId, it.inPointUs, it.outPointUs)
@@ -181,6 +215,7 @@ class BudgetTest {
      * in the same warmth, so a miss shows whether the cutout or the rest of the preview caused it.
      * Below the clip is a photo, not a second video, so the preview plays one clip's sound: the
      * cost of several sound tracks below Android 12 (#243) stays the three-layer test's to measure.
+     * That sound plays from its PCM decode there (#268), made first as the editor makes it.
      *
      * The masks are made first, as the editor makes them in the background before the clip shows
      * cut out (it plays uncut until then), and how long that took is logged against the media's
@@ -191,6 +226,7 @@ class BudgetTest {
     fun previewsACutOutClipInRealTime() = runBlocking {
         val project = cutOut()
         makeProxies(project)
+        makeSounds(project)
         val media = project.asset(project.layers.last().clips.first().source!!.mediaId)!!
         // Masks left by an earlier run would be read, not made.
         cache.cutout(media.id).delete()
@@ -257,6 +293,28 @@ class BudgetTest {
             val proxy = cache.proxy(asset.id)
             if (!proxy.exists()) ProxyGenerator.generate(context, Uri.parse(asset.uri), proxy)
         }
+    }
+
+    /**
+     * The media's sound decoded to PCM below Android 12 (#268); none from Android 12 on. With
+     * [log], decodes left by an earlier run are made again, and the time and size are logged.
+     */
+    private fun makeSounds(project: Project, log: Boolean = false) {
+        if (!DecodedSounds.NEEDED) return
+        if (log) project.media.forEach { cache.decodedSound(it.id).delete() }
+        val started = SystemClock.elapsedRealtime()
+        val sounds = DecodedSounds(context, cache)
+        for (asset in project.media) assertTrue("sound decoded", sounds.prepare(asset))
+        if (!log) return
+        val decoded = project.media.map { cache.decodedSound(it.id) }.filter { it.exists() }
+        Log.i(
+            TAG,
+            "sound of ${decoded.size} media decoded to PCM (#268) in %.1f s, %.1f MB".format(
+                Locale.ROOT,
+                (SystemClock.elapsedRealtime() - started) / 1_000.0,
+                decoded.sumOf { it.length() } / 1e6,
+            ),
+        )
     }
 
     /**

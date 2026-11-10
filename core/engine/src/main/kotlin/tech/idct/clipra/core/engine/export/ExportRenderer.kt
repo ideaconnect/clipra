@@ -27,6 +27,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import tech.idct.clipra.core.engine.media.Cutouts
+import tech.idct.clipra.core.engine.media.DecodedSounds
 import tech.idct.clipra.core.engine.media.Loudness
 import tech.idct.clipra.core.engine.media.MediaCache
 import tech.idct.clipra.core.engine.media.ProjectMediaResolver
@@ -69,7 +70,8 @@ class ExportFailedException(val failure: ExportFailure, cause: Throwable? = null
  * is written to a cache file, then published to MediaStore in Movies/Clipra. Cleaned voices
  * (#39) and reversed clips' sound (#22) that are not ready yet are made first, so the export
  * never has the noisy sound or a silent reversed clip, and normalized clips (#37) are measured on
- * the sound they play, so they land on their target.
+ * the sound they play, so they land on their target. Below Android 12 the media's sound decoded
+ * to PCM (#268) is made first too, so the export mixes the samples the preview played.
  */
 @OptIn(UnstableApi::class)
 class ExportRenderer(
@@ -79,6 +81,7 @@ class ExportRenderer(
     private val cutouts: Cutouts? = null,
 ) {
     private val reversedSounds = ReversedSounds(context, cache)
+    private val decodedSounds = DecodedSounds(context, cache)
 
     /**
      * The rendered file, before it is published. [leftOutClips] are the clips it was made
@@ -101,6 +104,8 @@ class ExportRenderer(
         cutouts?.let { prepareCutouts(it, project) }
         // After the voices: a reversed clip plays its cleaned voice back to front.
         withContext(Dispatchers.IO) { reversedSounds.requestAll(project) }
+        // Below Android 12 the clips play their media's sound decoded to PCM, as in the preview.
+        withContext(Dispatchers.IO) { decodedSounds.prepareAll(project) }
         // After the voices too: a normalized clip is measured on the sound it plays.
         val timeline = timeline(withContext(Dispatchers.IO) { measured(project) }, settings)
         // The clips the timeline was built without, for the Saved screen (#212). The user may

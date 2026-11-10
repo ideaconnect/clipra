@@ -29,6 +29,7 @@ import tech.idct.clipra.core.data.di.ApplicationScope
 import tech.idct.clipra.core.data.project.OpenProjects
 import tech.idct.clipra.core.data.project.ProjectSession
 import tech.idct.clipra.core.engine.media.Cutouts
+import tech.idct.clipra.core.engine.media.DecodedSounds
 import tech.idct.clipra.core.engine.media.Loudness
 import tech.idct.clipra.core.engine.media.MediaCache
 import tech.idct.clipra.core.engine.media.MediaImporter
@@ -216,6 +217,7 @@ class EditorViewModel @Inject constructor(
     private val stabilizer: Stabilizer,
     private val reversedSounds: ReversedSounds,
     private val reversedVideos: ReversedVideos,
+    private val decodedSounds: DecodedSounds,
     @param:ApplicationScope private val appScope: CoroutineScope,
     savedState: SavedStateHandle,
 ) : ViewModel() {
@@ -283,12 +285,14 @@ class EditorViewModel @Inject constructor(
             }
             // Reversed clips' sound (#22), made again once a cleaned voice they play is ready,
             // and their picture laid out back to front for the preview (#229), queued once the
-            // proxy it is made from is ready.
+            // proxy it is made from is ready. Below Android 12, the media's sound decoded to PCM
+            // (#268), which the preview and the export play, queued as clips start to play it.
             launch {
                 combine(opened.state.map { it.project }, mediaCache.voiceVersion) { p, _ -> p }
                     .collectLatest {
                         withContext(Dispatchers.IO) {
                             reversedVideos.requestAll(it)
+                            decodedSounds.requestAll(it)
                             reversedSounds.requestAll(it)
                         }
                     }

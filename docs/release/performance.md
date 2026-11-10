@@ -74,6 +74,8 @@ With `budgets=check` the test fails when a budget is missed; without it, it only
 
 The preview test plays the project three times, each with a new player, logs a line per run and judges the lowest (#243): on a Galaxy S9 one run could show 30 fps and the next 8, so a single run is luck. Each run's line also says how many canvases the compositor drew a second and how long a draw took (mean and P90). Fewer canvases than the frame rate means frames were dropped before the draw, or the draw is too slow; more canvases than pictures shown means pictures were drawn and then dropped as late.
 
+Below Android 12 the preview test first plays the same three runs with the compressed sound and logs them as "three layers with the compressed sound (before #268)", which `budgets.py` doesn't read; then it decodes the media's sound to PCM as the editor does in the background (#268), logs how long that took and how much it takes, and measures the budget's runs from the decodes. The other preview tests play from the decodes as well.
+
 **The AI models.** Run `TranscriberTest` and `VoiceCleanupTest` the same way (`class=tech.idct.clipra.core.engine.media.TranscriberTest`), on Wi-Fi the first time, and read their tags.
 
 **Memory and heat.** During the export test, note the peak of `adb shell dumpsys meminfo tech.idct.clipra.core.engine.test` (TOTAL PSS) and the thermal status before and after three exports in a row (`adb shell dumpsys thermalservice`, "Thermal Status"). A status of 3 (severe) or more during export is a finding.

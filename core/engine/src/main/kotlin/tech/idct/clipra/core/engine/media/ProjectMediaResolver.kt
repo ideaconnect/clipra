@@ -77,6 +77,15 @@ class ProjectMediaResolver(
         return cache.reversedVideo(asset.id, fromUs, toUs).takeIf { it.exists() }?.path
     }
 
+    /**
+     * [asset]'s sound decoded to 16-bit PCM below Android 12 (#268), which the preview and the
+     * export play in place of the compressed sound; null until it is made and from Android 12 on.
+     */
+    override fun decodedSound(asset: MediaAsset): String? {
+        if (!DecodedSounds.NEEDED) return null
+        return cache.decodedSound(asset.id).takeIf { it.exists() }?.path
+    }
+
     override fun caption(caption: CaptionSpec, current: Int, width: Int, height: Int): Bitmap =
         CaptionRenderer.render(context, caption, current, width, height)
 
