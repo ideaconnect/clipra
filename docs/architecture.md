@@ -224,10 +224,14 @@ Downloads run in WorkManager with a Wi-Fi-only constraint by default, resume aft
 | Preview playback | real time at 1080p with 3 video layers and 2 effects on a mid-range phone |
 | Export 1080p30, 42 s, 3 layers | under 120 s on a mid-range phone |
 | Whisper base on 42 s of speech | under 20 s on a mid-range phone **(spike)** |
+| A reversed layer (#229) | the preview in real time, a picture in picture reversed over a full-frame layer, and the export of the three layers above with the middle one reversed under 120 s, on a mid-range phone |
+| Person cutout (#49) | real time at 1080p, cut out over the layer below and with the background blurred, on a mid-range phone |
 
 The export budget was 60 s at first. A Galaxy S9 (2018, near the low end today) took 67 s, and the budget is now 120 s so that the export test passes on older test phones as well: an export that holds there holds on newer phones too (#199).
 
 The preview budget counts the lowest of three runs of `BudgetTest` (#243): on a Galaxy S9 a single run gave anything from 8 to 30 fps, depending on what else kept the phone busy. Each run also logs how many canvases the compositor drew and how long a draw took, which tells a draw that is too slow from frames dropped before or after it.
+
+The reversed layer and the person cutout are budgets too (#270), with the targets of the preview and the export: a reversed layer or a cutout must not take either past its budget. Their previews count the lowest of three runs as well; for the reversed one that adds two runs of about 13 s to `BudgetTest`. On a Galaxy S9 a reversed layer makes the export last longer: 90 s, where the same project forwards took 69 s (#229), still under 120 s. Its preview from the copies held there, at 27.2 fps on the lowest of three runs (forwards 28.4). In the report each preview stands beside the same layers forwards or the clip uncut, measured in the same run and not judged, so a miss shows whether the reversed layer or the cutout caused it, or the preview was slow anyway (the sound on Android 10 and 11, section 4).
 
 How each one is measured on the device matrix, and the baseline profile that keeps startup fast: `docs/release/performance.md` (#77).
 

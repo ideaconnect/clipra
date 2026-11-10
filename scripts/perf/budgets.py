@@ -6,9 +6,10 @@ Runs what docs/release/performance.md describes, one device at a time:
 - EditorBenchmark, then StartupBenchmark (the app's benchmark build): timeline frames, cold
   start. On a phone the editor must find the Budget project (budgetProject=required), and the
   report names the project it measured (#241);
-- BudgetTest, TranscriberTest and VoiceCleanupTest (core:engine): preview, export, Whisper base
-  and DeepFilterNet 3, with the peak memory of the test process and the thermal status before
-  and after.
+- BudgetTest, TranscriberTest and VoiceCleanupTest (core:engine): preview, export, the preview
+  and export with a reversed layer (#229), the person cutout's preview (#49), Whisper base and
+  DeepFilterNet 3, with the peak memory of the test process and the thermal status before and
+  after.
 
 The report goes to build/perf/<model>-<date>.md: the device row, the commit, and every budget
 with its measurement and whether it holds, ready to paste into #77. --clip pushes a minute of
@@ -63,6 +64,16 @@ FRAME_CPU_MS = 16
 # Macrobenchmark reports frameOverrunMs only from Android 12, where SurfaceFlinger keeps each
 # frame's deadline; on Android 10 and 11 FrameTimingMetric gives frameDurationCpuMs alone (#242).
 OVERRUN_API = 31
+# The preview and export budgets as BudgetTest checks them (MIN_FPS, MIN_PACE, EXPORT_LIMIT_S):
+# the lowest run at least 27 fps shown and 0.95x real time (#243), the export under 120 s (#199).
+PREVIEW_FPS = 27
+PREVIEW_PACE = 0.95
+EXPORT_S = 120
+PREVIEW_TARGET = f'at least {PREVIEW_FPS} fps, {PREVIEW_PACE}x real time'
+EXPORT_TARGET = f'under {EXPORT_S} s'
+# How BudgetTest's cutout test names its cases (#49): the clip uncut, measured first and not
+# judged, then cut out over the layer below and with the background blurred.
+CUTOUT_CASES = ('off', 'with the layer below', 'with the background blurred')
 
 
 # Looked up on first use, so the tests can import this file on a machine without adb.
@@ -226,7 +237,13 @@ def engine_numbers(logs):
 
     The preview test measures several runs and logs each (#243); the budget counts the lowest
     fps and the lowest pace among them, so a lucky run can't pass it. Builds before that logged
-    one run."""
+    one run.
+
+    The reversed layer (#229) gives its preview from the copies (as the preview: the lowest of
+    its runs; builds before #270 logged one run), the same layers forwards (fps, pace; not
+    judged) and its export (seconds, pace). The person cutout (#49) gives the lowest run of each
+    of CUTOUT_CASES (fps, pace, runs). Their lines start with 'reversed' and 'cutout', so none of
+    them counts for the three layers' preview or export."""
     runs = [(number(fps), number(pace)) for fps, pace in
             re.findall(rf'preview (?:(?!lowest)[^:\n])*: {NUMBER} fps shown, {NUMBER}x real time',
                        logs)]
@@ -234,13 +251,39 @@ def engine_numbers(logs):
     whisper = re.search(rf'Base: \d+ words in {NUMBER} s', logs)
     cleanup = [number(s) for s in
                re.findall(rf'DeepFilterNet \S+: .*?, {NUMBER} s for 10 s', logs)]
+    reversed_runs = [(number(fps), number(pace)) for fps, pace in re.findall(
+        rf'reversed picture in picture, preview from its copies(?:, run \d+ of \d+)?: '
+        rf'{NUMBER} fps \({NUMBER}x real time\)', logs)]
+    forwards = re.search(
+        rf'reversed picture in picture, preview forwards: {NUMBER} fps \({NUMBER}x real time\)',
+        logs)
+    reversed_export = re.search(
+        rf'reversed middle layer, export [^:\n]*: {NUMBER} s \({NUMBER}x real time\)', logs)
+    cutout = {}
+    for case in CUTOUT_CASES:
+        lowest = re.search(rf'cutout {case}, lowest of (\d+) runs: '
+                           rf'{NUMBER} fps \({NUMBER}x real time\)', logs)
+        cutout[case] = ((number(lowest.group(2)), number(lowest.group(3)),
+                         int(lowest.group(1))) if lowest else None)
     return {
         'preview': (min(f for f, _ in runs), min(p for _, p in runs),
                     [f for f, _ in runs]) if runs else None,
         'export': (number(export.group(1)), number(export.group(2))) if export else None,
         'whisper': number(whisper.group(1)) if whisper else None,
         'cleanup': max(cleanup) if cleanup else None,
+        'reversed preview': (min(f for f, _ in reversed_runs), min(p for _, p in reversed_runs),
+                             [f for f, _ in reversed_runs]) if reversed_runs else None,
+        'reversed forwards': (number(forwards.group(1)),
+                              number(forwards.group(2))) if forwards else None,
+        'reversed export': (number(reversed_export.group(1)),
+                            number(reversed_export.group(2))) if reversed_export else None,
+        'cutout': cutout,
     }
+
+
+def preview_holds(value):
+    """BudgetTest's preview check on (lowest fps, lowest pace, ...)."""
+    return value[0] >= PREVIEW_FPS and value[1] >= PREVIEW_PACE
 
 
 def preview_measured(preview):
@@ -250,6 +293,39 @@ def preview_measured(preview):
     if len(runs) > 1:
         text += f' (lowest of {len(runs)} runs: {", ".join(f"{f:.1f}" for f in runs)} fps)'
     return text
+
+
+def reversed_and_cutout_rows(engine):
+    """The rows of the reversed layer (#229) and the person cutout (#49), judged as BudgetTest
+    judges them with budgets=check (#270). Beside each preview, not judged: the same layers
+    forwards, or the clip uncut, measured in the same run, so a miss shows whether the reversed
+    layer or the cutout caused it or the preview was slow anyway (as the sound makes it on
+    Android 10 and 11)."""
+    preview, forwards = engine['reversed preview'], engine['reversed forwards']
+    measured = preview_measured(preview) if preview else None
+    if measured and forwards:
+        measured += f'; forwards {forwards[0]:.1f} fps'
+    export = engine['reversed export']
+    rows = [
+        ('Preview, reversed picture in picture (#229)', PREVIEW_TARGET, measured,
+         verdict(preview, preview_holds)),
+        ('Export 1080p30, 42 s, 3 layers, one reversed (#229)', EXPORT_TARGET,
+         f'{export[0]:.1f} s ({export[1]:.2f}x real time)' if export else None,
+         verdict(export, lambda v: v[0] < EXPORT_S)),
+    ]
+    cutout = engine['cutout']
+    uncut = cutout.get('off')
+    for case, name in (('with the layer below', 'Cutout, 1080p clip over the layer below (#49)'),
+                       ('with the background blurred',
+                        'Cutout, 1080p clip, background blurred (#49)')):
+        lowest = cutout.get(case)
+        measured = None
+        if lowest:
+            measured = f'{lowest[0]:.1f} fps, {lowest[1]:.2f}x (lowest of {lowest[2]} runs)'
+            if uncut:
+                measured += f'; uncut {uncut[0]:.1f} fps'
+        rows.append((name, PREVIEW_TARGET, measured, verdict(lowest, preview_holds)))
+    return rows
 
 
 def editor_project(log):
@@ -352,12 +428,13 @@ def main():
          verdict(start_ms, lambda v: v < 1500)),
         ('Timeline scroll and scrub, 6 layers', 'P90 overrun at or below 0 ms, CPU under 16 ms',
          timeline_measured, timeline_result),
-        ('Preview, 1080p, 3 layers, 2 effects', 'at least 27 fps, 0.95x real time',
+        ('Preview, 1080p, 3 layers, 2 effects', PREVIEW_TARGET,
          preview_measured(preview) if preview else None,
-         verdict(preview, lambda v: v[0] >= 27 and v[1] >= 0.95)),
-        ('Export 1080p30, 42 s, 3 layers', 'under 120 s',
+         verdict(preview, preview_holds)),
+        ('Export 1080p30, 42 s, 3 layers', EXPORT_TARGET,
          f'{export[0]:.1f} s ({export[1]:.2f}x real time)' if export else None,
-         verdict(export, lambda v: v[0] < 120)),
+         verdict(export, lambda v: v[0] < EXPORT_S)),
+        *reversed_and_cutout_rows(engine),
         ('Whisper base, 42 s of speech', 'under 20 s',
          f'{whisper:.1f} s' if whisper is not None else None,
          verdict(whisper, lambda v: v < 20)),

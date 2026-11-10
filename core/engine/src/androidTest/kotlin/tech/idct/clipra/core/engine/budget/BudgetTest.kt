@@ -66,10 +66,11 @@ import kotlin.math.roundToInt
  * middle layer reversed, read back to front from the original, and the preview of a reversed
  * picture in picture playing its copy laid out back to front. That preview test logs the same
  * two layers forwards and read back to front beside it, measured one after the other in the
- * same warmth. Its lines are worded so that budgets.py reads only the three layers' own.
+ * same warmth. Its lines start with `reversed`, so budgets.py tells them from the three layers'
+ * own and gives them rows of their own (#270).
  *
  * The person cutout (#49) has to preview in real time as well: a 1080p clip cut out over the
- * layer below, and with the background blurred. Its lines are worded the same way.
+ * layer below, and with the background blurred. Its lines start with `cutout`, the same way.
  */
 @RunWith(AndroidJUnit4::class)
 class BudgetTest {
@@ -173,6 +174,12 @@ class BudgetTest {
         }
     }
 
+    /**
+     * The reversed layer's preview budget (#229): the picture in picture from its copies, judged
+     * on the lowest of [PREVIEW_RUNS] runs, as the three layers' preview (#243). The same layers
+     * forwards and read back to front before the copies are made are measured once each beside
+     * it, in the same warmth, and not judged.
+     */
     @Test
     fun previewsAReversedPictureInPictureInRealTime() = runBlocking {
         // The same two layers forwards first, then with the picture in picture reversed: read
@@ -201,7 +208,16 @@ class BudgetTest {
                 copies.sumOf { it.length() } / 1e6,
             ),
         )
-        val (fps, pace) = preview(project).also { log("from its copies", it) }
+        val runs = (1..PREVIEW_RUNS).map { run ->
+            preview(project).also { log("from its copies, run $run of $PREVIEW_RUNS", it) }
+        }
+        val fps = runs.minOf { it.fps }
+        val pace = runs.minOf { it.pace }
+        Log.i(
+            TAG,
+            "reversed picture in picture, preview from its copies, lowest of ${runs.size} " +
+                "runs: %.1f fps (%.2fx real time)".format(Locale.ROOT, fps, pace),
+        )
         if (check) {
             assertTrue("preview at ${pace}x real time", pace >= MIN_PACE)
             assertTrue("preview at $fps fps", fps >= MIN_FPS)
