@@ -57,13 +57,14 @@ A tag `v1.2.3` on `main` gives versionName 1.2.3 and versionCode 10203 (major ×
 
 The texts live in `app/src/main/play/listings/<language>/`: `title.txt` (at most 30 characters), `short-description.txt` (80) and `full-description.txt` (4000), in English (`en-US`, the default) and Polish (`pl-PL`). Copy them into Play Console (Grow > Store presence > Main store listing, and Translations for Polish). The listing names only features that are in the app; add new ones as they ship.
 
-The graphics are in `app/src/main/play/listings/en-US/graphics/` and are made by `python scripts/store/graphics.py`:
+The graphics are in `app/src/main/play/listings/<language>/graphics/`:
 
-- the 512 × 512 icon: the Clipra mark (`design/logo/clipra-mark.svg`) on the accent colour, full bleed, since Play rounds the corners;
-- the 1024 × 500 feature graphic;
-- seven phone screenshots (1080 × 1920) and three 10-inch tablet screenshots (2560 × 1440).
+- the 512 × 512 icon (`en-US` only; Polish shows it too): the Clipra mark (`design/logo/clipra-mark.svg`) on the accent colour, full bleed, since Play rounds the corners. Made by `python scripts/store/graphics.py`;
+- the 1024 × 500 feature graphic, one per language: "Privacy first", the three-line promise (no account, no cloud, no watermark) and three app screens captured on a phone;
+- English: seven phone screenshots (1080 × 1920) and three 10-inch tablet screenshots (2560 × 1440), made by `scripts/store/graphics.py` from the design's boards with a caption, leaving out boards with prototype placeholders and features still to come;
+- Polish: eight phone screenshots (1080 × 1920), captured on a Galaxy S9 in Polish and padded with the app's background colour, and six 10-inch tablet screenshots (2560 × 1440), captured on the Pixel Tablet emulator in Polish. They show stock footage (Mixkit) and a generated voiceover, no personal footage.
 
-The screenshots show the design's boards with a caption, leaving out boards with prototype placeholders and features still to come. The Polish listing uses the same graphics. Replace them with captures of the release on a phone when the store look is settled.
+Replace the English boards with captures of the release when the store look is settled.
 
 Also in the listing:
 

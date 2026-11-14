@@ -5,13 +5,13 @@
 writes into app/src/main/play/listings/en-US/graphics/:
 - icon/icon.png, 512 x 512: the Clipra mark (design/logo/clipra-mark.svg) on the accent colour, full
   bleed, since Play rounds the corners itself;
-- feature-graphic/feature-graphic.png, 1024 x 500: the logo (design/logo/clipra-icon.svg) and the
-  first-run promise;
 - phone-screenshots/NN.png, 1080 x 1920, and large-tablet-screenshots/NN.png, 2560 x 1440: design
   boards (design/screens/) under a caption.
 
-Other languages show these unless they have their own. Needs Pillow. Colours come from
-design/tokens.json and the fonts from core/fonts, so the graphics match the app.
+Other languages show these unless they have their own. Not made here: the feature graphics of both
+languages and the Polish screenshots (pl-PL/graphics/), which are captures of the app on a phone and a
+tablet (docs/release/publishing.md). Needs Pillow. Colours come from design/tokens.json and the fonts
+from core/fonts, so the graphics match the app.
 """
 
 import json
@@ -27,7 +27,6 @@ DISPLAY = ROOT / 'core/fonts/src/main/res/font/bricolage_grotesque.ttf'
 SCALE = 4  # Drawn larger, then scaled down, for smooth edges.
 LOGO = ROOT / 'design/logo/clipra-mark.svg'
 LOGO_BOX = 1254  # the logo's viewBox
-LOGO_RADIUS = 295  # the tile's corner radius in it (design/logo/clipra-icon.svg)
 
 # Boards without prototype placeholders (no price, no ad, no model sizes) and without features
 # still to come (offline translation, #47), in store order. A board with a height shows only its
@@ -110,13 +109,6 @@ def draw_mark(image, left, top, size, colour):
     image.paste(colour, (0, 0), mask.convert('L'))
 
 
-def logo_tile(image, left, top, size):
-    """The Clipra logo (design/logo/clipra-icon.svg): the accent tile with the mark."""
-    ImageDraw.Draw(image).rounded_rectangle([left, top, left + size, top + size],
-                                            radius=LOGO_RADIUS * size / LOGO_BOX,
-                                            fill=rgb('accent'))
-    draw_mark(image, left, top, size, rgb('onAccent'))
-
 
 def icon():
     # A full-bleed square: Play rounds the corners itself. The mark keeps the logo's proportions.
@@ -125,23 +117,6 @@ def icon():
     draw_mark(image, 0, 0, size, rgb('onAccent'))
     return image.resize((512, 512), Image.LANCZOS)
 
-
-def feature_graphic():
-    width, height = 1024 * SCALE, 500 * SCALE
-    image = Image.new('RGB', (width, height), rgb('background'))
-    draw = ImageDraw.Draw(image)
-    margin = 72 * SCALE
-    tile = 76 * SCALE
-    logo_tile(image, margin, 84 * SCALE, tile)
-    draw.text((margin + tile + 24 * SCALE, 84 * SCALE + tile / 2), 'Clipra',
-              font=font(64 * SCALE), fill=rgb('textPrimary'), anchor='lm')
-    lines = [('No account.', 'textPrimary'), ('No upload.', 'textPrimary'),
-             ('No watermark.', 'accent')]
-    y = 214 * SCALE
-    for text, colour in lines:
-        draw.text((margin, y), text, font=font(62 * SCALE), fill=rgb(colour))
-        y += 70 * SCALE
-    return image.resize((1024, 500), Image.LANCZOS)
 
 
 def wrap(draw, text, face, width):
@@ -193,7 +168,6 @@ def save(image, path):
 
 def main():
     save(icon(), OUT / 'icon/icon.png')
-    save(feature_graphic(), OUT / 'feature-graphic/feature-graphic.png')
     for number, (board, caption, *crop) in enumerate(PHONE, start=1):
         image = screenshot(board, caption, 1080, 1920, caption_size=64, board_height=1540,
                            crop=crop[0] if crop else None)

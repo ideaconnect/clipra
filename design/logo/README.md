@@ -15,7 +15,7 @@ Both SVGs use a 1254 x 1254 box (the artwork's pixels), so the mark sits on the 
 
 - **Launcher icon:** `app/src/main/res/mipmap-anydpi/ic_launcher.xml`, an adaptive icon. The background is `@color/launcher_accent`; the foreground and the monochrome (themed icon) layer are `app/src/main/res/drawable/ic_launcher_foreground.xml`, the mark scaled so its farthest point is 32 dp from the centre, inside the 33 dp safe zone of every launcher mask.
 - **In-app logo:** `core/designsystem/src/main/res/drawable/designsystem_ic_logo.xml` (`ClipraIcons.Logo`), shown on Home, the first run and the tablet editor.
-- **Play store:** `scripts/store/graphics.py` draws the 512 x 512 icon (the mark on a full-bleed accent square; Play rounds the corners) and the logo in the feature graphic from `clipra-mark.svg`.
+- **Play store:** `scripts/store/graphics.py` draws the 512 x 512 icon from `clipra-mark.svg` (the mark on a full-bleed accent square; Play rounds the corners). The feature graphics show the mark next to the name.
 
 ## How the vectors were made
 

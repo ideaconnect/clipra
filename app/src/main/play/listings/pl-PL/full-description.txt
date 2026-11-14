@@ -1,4 +1,4 @@
-Clipra to edytor wideo na telefon i tablet, który zostawia Twoje filmy u Ciebie. Bez konta, bez wysyłania, bez znaku wodnego. Każda funkcja AI działa na Twoim urządzeniu.
+Clipra to edytor wideo na telefon i tablet, który zostawia Twoje filmy u Ciebie. Bez konta, bez chmury, bez znaku wodnego. Każda funkcja AI działa na Twoim urządzeniu.
 
 WARSTWY ZAMIAST ŚCIEŻEK
 Na każdej warstwie umieścisz wszystko: wideo, zdjęcia, tekst, napisy, dźwięk. Wyższe warstwy przykrywają niższe, a każda warstwa gra dźwięk. Obraz w obrazie to po prostu mniejszy klip na wyższej warstwie. 16 trybów mieszania, krycie, kadrowanie, klatki kluczowe położenia, skali, obrotu i masek.
@@ -7,7 +7,7 @@ EDYCJA TEKSTEM
 Clipra spisuje to, co zostało powiedziane, i pozwala montować film jak dokument. Wytnij wtrącenia jednym dotknięciem, usuń długie pauzy albo dotknij dowolnego słowa, żeby je wyciąć. Wszystko dalej pozostaje zsynchronizowane na każdej warstwie.
 
 AUTOMATYCZNE NAPISY
-Napisy tworzone na telefonie przez Whisper, w języku nagrania. Pięć stylów, w tym karaoke z podświetlaniem każdego słowa. Poprawiaj słowa, dziel i łącz napisy, eksportuj i importuj pliki .srt.
+Napisy tworzone na telefonie przez Whisper, w języku nagrania. Pięć stylów, w tym karaoke z podświetlaniem każdego słowa. Poprawiaj słowa, dziel i łącz napisy, tłumacz je offline, eksportuj i importuj pliki .srt.
 
 AI NA TWOIM URZĄDZENIU
 - Czyszczenie głosu usuwa wiatr, ruch uliczny i pogłos pomieszczenia
@@ -31,5 +31,5 @@ Do 4K i do 60 kl./s, w H.264, HEVC lub AV1, jeśli telefon ma koder. Clipra poka
 ZA DARMO, REKLAMY TYLKO PRZY EKSPORCIE
 Wszystkie funkcje są darmowe. Clipra pokazuje dwie pełnoekranowe reklamy na eksport, jedną na początku i jedną na końcu, i nigdy podczas montażu. Clipra Pro to jednorazowy zakup, który je usuwa. Nic więcej nie jest zablokowane za Pro.
 
-PRYWATNOŚĆ OD POCZĄTKU
+PRYWATNOŚĆ PRZEDE WSZYSTKIM
 Twoje filmy, transkrypcje i zmiany nigdy nie opuszczają telefonu. Clipra łączy się z siecią tylko po to, żeby pobrać modele AI (domyślnie przez Wi-Fi), wyświetlić reklamy użytkownikom darmowej wersji i obsłużyć zakupy w Google Play.
