@@ -17,6 +17,7 @@ The source of truth is the Clipra design canvas on claude.ai (private to the own
 | `canvas/canvas.json` | Board positions and titles on the canvas | Grouping of screens into flows |
 | `tokens.json` | Colours, type, radii, spacing, timeline metrics | Building the Compose theme |
 | `design-system.md` | Components and rules, in words | Building shared components |
+| `logo/` | The Clipra logo and mark as SVG, and where each is used | App icon, in-app logo, store graphics |
 
 ## Reading a `.dc.html` source
 

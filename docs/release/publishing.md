@@ -59,7 +59,7 @@ The texts live in `app/src/main/play/listings/<language>/`: `title.txt` (at most
 
 The graphics are in `app/src/main/play/listings/en-US/graphics/` and are made by `python scripts/store/graphics.py`:
 
-- the 512 × 512 icon, drawn from the launcher icon (still the placeholder until the design has an app icon);
+- the 512 × 512 icon: the Clipra mark (`design/logo/clipra-mark.svg`) on the accent colour, full bleed, since Play rounds the corners;
 - the 1024 × 500 feature graphic;
 - seven phone screenshots (1080 × 1920) and three 10-inch tablet screenshots (2560 × 1440).
 
