@@ -4,17 +4,22 @@ How to check the budgets of `docs/architecture.md`, section 11, on real devices 
 
 ## 1. Devices
 
-At least one low-end, two mid-range and one flagship phone, and one tablet. The budgets have to hold on the mid-range phones. Fill in a row per device before measuring:
+Clipra is tested on two phones, a low-end one and a flagship (#77). The budgets are judged on the low-end one, the Galaxy S9: a budget that holds on the low end holds on mid-range phones too, as the export budget already assumes (`docs/architecture.md`, section 11, #199). There is no mid-range phone and no tablet to test on. Tablet layouts are checked on the Pixel Tablet emulator, and nothing measures a tablet's speed.
 
-| Tier | Device | SoC | RAM | Android | Results |
-|---|---|---|---|---|---|
-| Low-end | | | | | |
-| Mid-range | | | | | |
-| Mid-range | | | | | |
-| Flagship | | | | | |
-| Tablet | | | | | |
+| Tier | Device | SoC | RAM | Android | Role | Results |
+|---|---|---|---|---|---|---|
+| Low-end | Samsung Galaxy S9 (SM-G960F, 2018) | Exynos 9810 (`universal9810`), Mali-G72 | 4 GB (3.5 GB reported) | 10 (API 29) | judges the budgets | section 5 |
+| Flagship | Xiaomi 15 Ultra (2025) | Snapdragon 8 Elite | from its first report | from its first report | checks what newer Android versions do | not measured yet |
 
-Before each run: charged above 50%, not charging, screen brightness at half, battery saver off, the phone at room temperature (wait 10 minutes after a previous run), no other apps open. Turn on USB debugging and check `adb devices`.
+A pass on the flagship says little about other phones, so it doesn't judge the budgets. It runs the same measurements because the S9's Android 10 leaves some code unmeasured:
+
+- From Android 12 Media3 decodes the sound off the playback thread, so the preview plays the media's compressed sound and makes no PCM decodes (#268). On the S9 the preview budget is measured from the decodes.
+- `frameOverrunMs` exists from Android 12 (#242), so only the flagship gives both numbers of the timeline budget.
+- From Android 14 `StartupBenchmark` keeps the app's data, so one run measures everything without making the Budget project again. The baseline profile can be generated there too (section 4).
+
+What neither phone shows for mid-range phones is their hardware video decoders: how many run at once differs by chip (`docs/spikes/engine.md`), and the Budget project plays six layers.
+
+Before each run: charged above 50%, not charging, screen brightness at half, battery saver off, the phone at room temperature (wait 10 minutes after a previous run), no other apps open. Turn on USB debugging and check `adb devices`. A display that runs faster than 60 Hz (the Xiaomi 15 Ultra's goes up to 120 Hz) is set to 60 Hz in its display settings, since the timeline budget is 60 fps. On Xiaomi phones also turn on "Install via USB" and "USB debugging (Security settings)" in Developer options: without them the test APKs don't install and the journeys can't tap.
 
 ## 2. What measures what
 
@@ -97,4 +102,24 @@ and copy the `BaselineProfileGenerator_generate-startup-prof.txt` it writes unde
 
 ## 5. Results
 
-Record each run in #77: the device row, the commit, and the numbers next to their budget. A missed budget gets its own issue with the trace or the log attached.
+Record each run in the issue or pull request it was made for: the device row, the commit, and the numbers next to their budget. A missed budget gets its own issue with the trace or the log attached. The low-end phone's run for the first release is kept below.
+
+### Galaxy S9, 18 November 2026
+
+`main` at `912981c`. The footage is a minute of handheld 1080p30 video encoded as the S9's camera records it (H.264 High at 17 Mbit/s, no B-frames, a key frame every second, BT.709, AAC at 256 kbit/s), cut from two public-domain CBP video blogs on Wikimedia Commons. It made the Budget project (section 3) and went to `budgets.py --clip`. Battery full on USB (not charging), brightness at half, battery saver off, the phone in Polish.
+
+| Budget | Target | Galaxy S9 | Result |
+|---|---|---|---|
+| Cold start to Home | under 1.5 s | 262 ms median, with the baseline profile | holds |
+| Timeline scroll and scrub, 6 layers | CPU P90 under 16 ms (no overrun metric on Android 10) | 16.4 ms in the full run, 11.5% of frames at 16 ms or more; then 15.4, 14.7 and 15.5 ms (5 to 9%) in three runs of the editor alone | missed by 0.4 ms in the full run, held in the three after it |
+| Preview, 1080p, 3 layers, 2 effects | at least 27 fps, 0.95x real time | 30.0 fps, 1.00x in each of 3 runs from the PCM decodes; 16.1 to 16.4 fps with the compressed sound (before #268, not judged) | holds |
+| Export 1080p30, 42 s, 3 layers | under 120 s | 61.1 s; then 60.1, 52.4 and 58.2 s in a row | holds |
+| Preview, reversed picture in picture (#229) | at least 27 fps, 0.95x real time | 30.0 fps, 1.00x in each of 3 runs (forwards 29.9) | holds |
+| Export, the middle layer reversed (#229) | under 120 s | 79.9 s | holds |
+| Cutout over the layer below, and with the background blurred (#49) | at least 27 fps, 0.95x real time | 30.0 fps, 1.00x in each of 3 runs, both (uncut 30.0) | holds |
+| Whisper base, 42 s of speech | under 20 s | 11.9 s | holds |
+| DeepFilterNet 3, 10 s of sound | under 10 s | 1.0 s | holds |
+
+- **Memory:** the engine tests peaked at 466 MB TOTAL PSS, and three exports in a row at 350 MB (254 MB on 7 November, at `85a6060`).
+- **Heat:** thermal status 0 before, during and after, sampled every 5 s through the three exports; the CPU reached 42.8 °C and the battery 31.5 °C.
+- **What the display got** in the 15 iterations of the three editor runs (`display-frames.sql`): 11 to 18 of about 630 vsyncs per iteration showed an old picture again (#264 read 13 to 32 on `e8930cc`).

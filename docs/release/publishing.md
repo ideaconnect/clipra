@@ -77,5 +77,5 @@ Also in the listing:
 
 - Play Console setup done (`play-console.md`, #66): Clipra Pro, the ads declaration, data safety, content rating, target audience.
 - The privacy policy is live on idct.tech (done 31 October 2026); `app-ads.txt` is live too, with the AdMob publisher id.
-- The budgets are met on the mid-range phones (`performance.md`, #77).
+- The budgets are met on the low-end test phone, the Galaxy S9 (`performance.md`, #77).
 - The closed test is complete, if the account needs one.

@@ -219,13 +219,15 @@ Downloads run in WorkManager with a Wi-Fi-only constraint by default, resume aft
 
 | Metric | Target |
 |---|---|
-| Cold start to Home | under 1.5 s on a mid-range phone |
+| Cold start to Home | under 1.5 s |
 | Timeline scroll and scrub | 60 fps with 6 layers on proxies |
-| Preview playback | real time at 1080p with 3 video layers and 2 effects on a mid-range phone |
-| Export 1080p30, 42 s, 3 layers | under 120 s on a mid-range phone |
-| Whisper base on 42 s of speech | under 20 s on a mid-range phone **(spike)** |
-| A reversed layer (#229) | the preview in real time, a picture in picture reversed over a full-frame layer, and the export of the three layers above with the middle one reversed under 120 s, on a mid-range phone |
-| Person cutout (#49) | real time at 1080p, cut out over the layer below and with the background blurred, on a mid-range phone |
+| Preview playback | real time at 1080p with 3 video layers and 2 effects |
+| Export 1080p30, 42 s, 3 layers | under 120 s |
+| Whisper base on 42 s of speech | under 20 s **(spike)** |
+| A reversed layer (#229) | the preview in real time, a picture in picture reversed over a full-frame layer, and the export of the three layers above with the middle one reversed under 120 s |
+| Person cutout (#49) | real time at 1080p, cut out over the layer below and with the background blurred |
+
+The budgets have to hold on the low-end test phone, a Galaxy S9 (2018, Android 10). Clipra is tested on that phone and on a flagship, a Xiaomi 15 Ultra; there is no mid-range phone to test on (#77). A budget that holds on the low end holds on mid-range phones too, as the export budget below assumes. The S9 runs Android 10, so what only newer versions do (the sound, section 4; the frame overrun metric) is checked on the flagship, which doesn't judge the budgets.
 
 The export budget was 60 s at first. A Galaxy S9 (2018, near the low end today) took 67 s, and the budget is now 120 s so that the export test passes on older test phones as well: an export that holds there holds on newer phones too (#199).
 
