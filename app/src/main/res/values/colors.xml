@@ -2,6 +2,8 @@
 <resources>
     <!-- "background" in design/tokens.json; the window shows it before Compose draws. -->
     <color name="window_background">#0D0D0F</color>
-    <!-- "accent" in design/tokens.json, for the launcher icon. -->
+    <!-- "accent" in design/tokens.json: the launcher icon's background. -->
     <color name="launcher_accent">#FFD23F</color>
+    <!-- "onAccent" in design/tokens.json: the mark on the launcher icon. -->
+    <color name="launcher_ink">#141210</color>
 </resources>
