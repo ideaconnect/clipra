@@ -51,7 +51,7 @@ A tag `v1.2.3` on `main` gives versionName 1.2.3 and versionCode 10203 (major ×
   - restoring Pro after reinstalling;
   - an AI model download.
 - **Closed testing**. A personal developer account created after 13 November 2023 must run a closed test with at least 12 testers, opted in for 14 days in a row, before it can apply for production. Check the current rule in Play Console (Dashboard). Organization accounts can skip this.
-- **Production**, as a staged rollout: 10%, then 50%, then 100%. Between steps, watch Android vitals for at least a day: crash-free users at or above 99.5% (the v1 goal), and ANRs below Play's bad-behaviour threshold. Halt the rollout if either slips.
+- **Production**, as a staged rollout: 10%, then 50%, then 100%. Between steps, watch Android vitals for at least a day: the user-perceived crash rate and ANR rate stay below Play's bad-behaviour thresholds. Halt the rollout if either slips.
 
 ## 6. Store listing
 
