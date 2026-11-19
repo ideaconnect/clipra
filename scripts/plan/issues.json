@@ -3214,8 +3214,7 @@
     "Release pipeline"
    ],
    "acceptance": [
-    "Public release on Google Play with ads, Pro and all v1 features",
-    "Crash-free sessions above 99.5% in closed testing"
+    "Public release on Google Play with ads, Pro and all v1 features"
    ],
    "notes": [
     "Device fragmentation in codecs and GPU drivers"
