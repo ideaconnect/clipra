@@ -42,8 +42,10 @@ What to enter in Google Play Console and AdMob before monetized builds can ship 
   - Category: All other app types.
   - Violence, sexuality, language, controlled substances, gambling: none.
   - User-generated content shared with other users: no. Videos stay on the device; sharing goes through the system share sheet.
+  - Online content (content that isn't in the downloaded app, such as films, songs, articles or AI-generated content): no. Model files are parts of features, not content to watch or read, and the AI features only work on the user's own media, on the phone. Ads have their own question.
   - Digital purchases: yes (Clipra Pro).
   - Ads: yes.
+  - Result, submitted on 21 November 2026: PEGI 3, ESRB Everyone, USK 0, IARC 3+ and ClassInd 14 (Brazil). The privacy policy's Children section explains that the ratings describe the app's content while Clipra stays directed at people aged 16 and over. Submit a new questionnaire when a change affects these answers.
 - **Data safety:** see section 5.
 - **Advertising ID:** "Yes, my app uses advertising ID", for advertising or marketing (the ads SDK adds `AD_ID`).
 - **Government apps, financial features, health:** no.

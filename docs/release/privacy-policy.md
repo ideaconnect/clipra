@@ -1,12 +1,12 @@
 # Clipra privacy policy
 
-Published on 31 October 2026 at https://idct.tech/clipra/privacy, with the Polish version (`privacy-policy.pl.md`) at https://idct.tech/clipra/prywatnosc. Give the English address in Play Console (App content > Privacy policy). When the policy changes, change this file and the page together, with a new date.
+Published on 31 October 2026 and updated on 21 November 2026 at https://idct.tech/clipra/privacy, with the Polish version (`privacy-policy.pl.md`) at https://idct.tech/clipra/prywatnosc. Give the English address in Play Console (App content > Privacy policy). When the policy changes, change this file and the page together, with a new date.
 
 ---
 
 ## Clipra privacy policy
 
-Last updated: 31 October 2026
+Last updated: 21 November 2026
 
 Clipra is a video editor for Android by IDCT Bartosz Pachołek ("we"). Its promise is simple: no account, no upload, no watermark. This policy explains what that means for your data.
 
@@ -26,7 +26,7 @@ Clipra keeps no analytics and no crash reports of its own, and it doesn't back u
 
 ### Children
 
-Clipra isn't directed at children under 16.
+Clipra's age ratings, such as PEGI 3 and ESRB Everyone, describe what the app itself contains: no violence, bad language or other mature content. Clipra still isn't directed at children under 16, because its free version shows ads from Google AdMob. Clipra itself collects no data about anyone, children included.
 
 ### Your rights
 
