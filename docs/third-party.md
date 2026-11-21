@@ -57,7 +57,8 @@ Used to build and test the app; none of them ship in it.
 | FFmpeg (command line, on the developer's machine) | Generated the synthetic test clips in `core/engine/src/androidTest/assets/spike/` and encoded the voice test set | LGPL/GPL tool; not part of the build, and the generated clips carry no license |
 | LibriVox "Faraon", volume 2, chapter 1 (archive.org `faraon2_1605_librivox`) | 42 s of Polish speech for the whisper spike (`ml/whisper/src/androidTest/assets/`) | Public domain |
 | LibriVox "Grim: The Story of a Pike", chapter 1 (archive.org `storyofapike_1304_librivox`) | 10 s of speech in the voice cleanup test set (`core/engine/src/androidTest/assets/golden/voice/`), with synthetic wind and traffic noise added, and 42 s of English for the whisper spike | Public domain (CC0) |
-| Pillow (Python, on the developer's machine) | Draws the Play store graphics (`scripts/store/graphics.py`, #78) | MIT-CMU (HPND); not part of the build |
+| Pillow (Python, on the developer's machine) | Draws the Play store icon and composes the store screenshots (`scripts/store/graphics.py`, #78; `scripts/store/screenshots.py`, #282) | MIT-CMU (HPND); not part of the build |
+| Mixkit stock video (clips 42323, 2213, 51689, 51502, 34388, 34487) and the track "Just Keep Walking" | The footage and music in the demo projects of the Play store screenshots (`app/src/main/play/listings/*/graphics/`, #282); the voiceover over clip 42323 is generated (ElevenLabs text to speech) | Mixkit License; only in the store graphics, not in the app |
 | GitHub Actions: `actions/checkout`, `actions/setup-java`, `actions/upload-artifact`, `gradle/actions/wrapper-validation` | CI and the release bundle (`.github/workflows/ci.yml`, `release.yml`) | MIT |
 
 CI doesn't use `gradle/actions/setup-gradle`: since v6 its caching is a proprietary component under Gradle's terms of use. `actions/setup-java` caches Gradle instead.

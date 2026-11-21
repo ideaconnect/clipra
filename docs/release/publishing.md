@@ -61,10 +61,16 @@ The graphics are in `app/src/main/play/listings/<language>/graphics/`:
 
 - the 512 × 512 icon (`en-US` only; Polish shows it too): the Clipra mark (`design/logo/clipra-mark.svg`) on the accent colour, full bleed, since Play rounds the corners. Made by `python scripts/store/graphics.py`;
 - the 1024 × 500 feature graphic, one per language: "Privacy first", the three-line promise (no account, no cloud, no watermark) and three app screens captured on a phone;
-- English: seven phone screenshots (1080 × 1920) and three 10-inch tablet screenshots (2560 × 1440), made by `scripts/store/graphics.py` from the design's boards with a caption, leaving out boards with prototype placeholders and features still to come;
-- Polish: eight phone screenshots (1080 × 1920), captured on a Galaxy S9 in Polish and padded with the app's background colour, and six 10-inch tablet screenshots (2560 × 1440), captured on the Pixel Tablet emulator in Polish. They show stock footage (Mixkit) and a generated voiceover, no personal footage.
+- per language, eight screenshots for each device type (#282), in the language of the listing: phone (`phone-screenshots`, 1080 × 1920), 7-inch tablet (`tablet-screenshots`, 1440 × 2560) and 10-inch tablet (`large-tablet-screenshots`, 2560 × 1440). Each is a capture of the app under a headline and, apart from the export screen whose headline says it, a "No watermark" badge; together they show the timeline with layers, a clip over a clip, the layers sheet, a person cut out over another clip, text, auto captions, edit by text, effects, audio and the export. `StoreGraphicsTest` checks the count, the sizes and Play's limits.
 
-Replace the English boards with captures of the release when the store look is settled.
+How the screenshots are made:
+
+1. Build `./gradlew :app:assembleBenchmark` (release code, debug-signed, with x86_64) and install it on emulators: `Pixel_8_API_37` (phone), a Nexus 7 (2013) AVD on API 37 (7-inch, portrait, the phone layout) and `Pixel_Tablet_API_37` (10-inch, landscape, the tablet layout).
+2. Copy the stock media into the app's files and add the demo projects ("Weekend in the Tatras", "Tatras vlog", "Over the mountains"; Polish: "Weekend w Tatrach", "Vlog z Tatr", "Nad górami") with their captions, made by a real Auto captions run. Switch the system language per set and use SystemUI demo mode (09:30, full battery and signal, no notifications).
+3. Capture each screen with `adb exec-out screencap -p` as `<lang>-<device>-<name>.png` (device `p`, `s` or `t`; the names are in `scripts/store/screenshots.py`).
+4. `python scripts/store/screenshots.py CAPTURES` cuts the system bars, frames the screen and writes all six sets (`en-p pl-t ...` limits it to some). The copy is in the script; colours and fonts come from the design tokens and `core/fonts`.
+
+The footage is free stock media, no personal footage: Mixkit clips 42323 (the vlogger), 2213 (waterfall), 51689 (mountain peak), 51502 (rocky coast), 34388 (skatepark) and 34487 (city walk), and the Mixkit track "Just Keep Walking", all under the Mixkit License. The vlogger's English and Polish voiceover is generated (ElevenLabs text to speech), not a recording of a person.
 
 Also in the listing:
 
