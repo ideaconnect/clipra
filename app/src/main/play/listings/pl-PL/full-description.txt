@@ -1,4 +1,7 @@
-Clipra to edytor wideo na telefon i tablet, który zostawia Twoje filmy u Ciebie. Bez konta, bez chmury, bez znaku wodnego. Każda funkcja AI działa na Twoim urządzeniu.
+Clipra to darmowy edytor wideo na telefon i tablet, w którym wszystkie funkcje są odblokowane. Zostawia też Twoje filmy u Ciebie: bez konta, bez chmury, bez znaku wodnego, a każda funkcja AI działa na Twoim urządzeniu.
+
+WSZYSTKIE FUNKCJE ZA DARMO
+Bez okresu próbnego, bez subskrypcji i bez funkcji za opłatą: warstwy, edycja tekstem, automatyczne napisy, wszystkie narzędzia AI i eksport w 4K są darmowe. Clipra pokazuje dwie pełnoekranowe reklamy na eksport, jedną na początku i jedną na końcu, i nigdy podczas montażu. Clipra Pro to jednorazowy zakup, który usuwa reklamy, i nic poza tym nie zmienia.
 
 WARSTWY ZAMIAST ŚCIEŻEK
 Na każdej warstwie umieścisz wszystko: wideo, zdjęcia, tekst, napisy, dźwięk. Wyższe warstwy przykrywają niższe, a każda warstwa gra dźwięk. Obraz w obrazie to po prostu mniejszy klip na wyższej warstwie. 16 trybów mieszania, krycie, kadrowanie, klatki kluczowe położenia, skali, obrotu i masek.
@@ -27,9 +30,6 @@ WSZYSTKO, CZEGO POTRZEBUJESZ
 
 EKSPORT
 Do 4K i do 60 kl./s, w H.264, HEVC lub AV1, jeśli telefon ma koder. Clipra pokazuje rozdzielczość i szacowany rozmiar pliku przed eksportem. Możesz też zapisać okładkę, dźwięk, napisy i plik OpenTimelineIO projektu.
-
-ZA DARMO, REKLAMY TYLKO PRZY EKSPORCIE
-Wszystkie funkcje są darmowe. Clipra pokazuje dwie pełnoekranowe reklamy na eksport, jedną na początku i jedną na końcu, i nigdy podczas montażu. Clipra Pro to jednorazowy zakup, który je usuwa. Nic więcej nie jest zablokowane za Pro.
 
 PRYWATNOŚĆ PRZEDE WSZYSTKIM
 Twoje filmy, transkrypcje i zmiany nigdy nie opuszczają telefonu. Clipra łączy się z siecią tylko po to, żeby pobrać modele AI (domyślnie przez Wi-Fi), wyświetlić reklamy użytkownikom darmowej wersji i obsłużyć zakupy w Google Play.
