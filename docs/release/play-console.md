@@ -58,7 +58,7 @@ Clipra itself collects nothing. Media, transcripts, captions and edits stay on t
 
 | Data type | Collected | Shared | Optional | Purpose | From |
 |---|---|---|---|---|---|
-| Device or other IDs (advertising id, app set id) | Yes | Yes | Yes (ad personalization follows the UMP consent; Pro users have no ads) | Advertising or marketing, Analytics, Fraud prevention | Google Mobile Ads SDK |
+| Device or other IDs (advertising id, app set id) | Yes | Yes | No (users can reset or delete the ad ID, but the SDK always sends the app set ID) | Advertising or marketing, Analytics, Fraud prevention | Google Mobile Ads SDK |
 | Approximate location (from the IP address) | Yes | Yes | No | Advertising or marketing, Analytics, Fraud prevention | Google Mobile Ads SDK |
 | App interactions (ad views and taps) | Yes | Yes | No | Advertising or marketing, Analytics, Fraud prevention | Google Mobile Ads SDK |
 | Diagnostics (app launch time, hang rate, energy use; not crash logs) | Yes | Yes | No | Advertising or marketing, Analytics, Fraud prevention | Google Mobile Ads SDK; Play Billing Library (its own diagnostics, for every user) |
@@ -69,7 +69,7 @@ Clipra itself collects nothing. Media, transcripts, captions and edits stay on t
 - **Can users request that data be deleted?** The app keeps no data off the device. Ad data follows Google's policies; link to https://policies.google.com/technologies/partner-sites in the policy.
 - **Not declared, because none of it leaves the device:** photos and videos, audio, files and docs, messages, contacts, location (precise), personal info.
 
-The ads rows follow Google's [Google Mobile Ads SDK data disclosure](https://developers.google.com/admob/android/privacy/play-data-disclosure), checked on 21 November 2026: IP address, user product interactions, diagnostic information and device identifiers, each collected and shared for advertising, analytics and fraud prevention, with only the ad ID optional. That page covers the legacy SDK (25.5.0); the Next-Gen SDK that Clipra uses has no page of its own, so the same answers apply. The Play Billing Library has no data safety page either (checked the same day). The billing library (9.1) logs its diagnostics to Google through Google's data transport (`com.google.android.datatransport`, the Clearcut backend), for every user, since Clipra connects to billing on each start to restore Clipra Pro; declare what that guidance lists for it.
+The ads rows follow Google's [Google Mobile Ads SDK data disclosure](https://developers.google.com/admob/android/privacy/play-data-disclosure), checked on 21 November 2026: IP address, user product interactions, diagnostic information and device identifiers, each collected and shared for advertising, analytics and fraud prevention. Only the ad ID is optional, so the device IDs row, which also holds the app set ID, is required. That page covers the legacy SDK (25.5.0); the Next-Gen SDK that Clipra uses has no page of its own, so the same answers apply. The Play Billing Library has no data safety page either (checked the same day). The billing library (9.1) logs its diagnostics to Google through Google's data transport (`com.google.android.datatransport`, the Clearcut backend), for every user, since Clipra connects to billing on each start to restore Clipra Pro; declare what that guidance lists for it.
 
 What the SDKs add to the release manifest (audited 2026-10-31, `processBenchmarkManifest`):
 
