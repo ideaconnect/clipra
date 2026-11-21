@@ -26,7 +26,7 @@ Clipra nie prowadzi własnej analityki ani raportów o awariach i nie robi kopii
 
 ### Dzieci
 
-Oceny wiekowe Clipry, na przykład PEGI 3 i ESRB Everyone, opisują to, co zawiera sama aplikacja: nie ma w niej przemocy, wulgaryzmów ani innych treści dla dorosłych. Mimo to Clipra nie jest przeznaczona dla dzieci poniżej 16 lat, bo jej darmowa wersja wyświetla reklamy Google AdMob. Sama Clipra nie zbiera danych o nikim, także o dzieciach.
+Clipra jest przeznaczona dla osób w wieku od 13 lat (w Brazylii od 14 lat) i nie jest skierowana do dzieci poniżej 13 lat. Jej oceny wiekowe, na przykład PEGI 3 i ESRB Everyone, opisują to, co zawiera sama aplikacja: nie ma w niej przemocy, wulgaryzmów ani innych treści dla dorosłych. Jeśli masz mniej niż 16 lat, zapytaj rodzica lub opiekuna, zanim zgodzisz się na spersonalizowane reklamy w formularzu zgody; jeśli się nie zgodzisz, wszystkie funkcje Clipry działają tak samo. Sama Clipra nie zbiera danych o nikim, także o dzieciach.
 
 ### Twoje prawa
 

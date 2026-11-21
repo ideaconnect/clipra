@@ -37,7 +37,7 @@ What to enter in Google Play Console and AdMob before monetized builds can ship 
 - **Privacy policy:** https://idct.tech/clipra/privacy, published 31 October 2026 from `docs/release/privacy-policy.md` (Polish: https://idct.tech/clipra/prywatnosc). The app links it under Settings > Privacy policy.
 - **Ads:** "Yes, my app contains ads".
 - **App access:** "All functionality is available without special access". There are no accounts or logins.
-- **Target audience:** 18 and over (or 16 and over). Not designed for children: Clipra isn't in the Families program, and its ads SDK isn't Families-certified.
+- **Target audience:** 13 and over (13 to 15, 16 to 17, 18 and over), and 14 and over in Brazil, set on 21 November 2026. Not designed for children under 13: Clipra isn't in the Families program, and its ads SDK isn't Families-certified.
 - **Content rating** (IARC questionnaire):
   - Category: All other app types.
   - Violence, sexuality, language, controlled substances, gambling: none.
@@ -45,7 +45,7 @@ What to enter in Google Play Console and AdMob before monetized builds can ship 
   - Online content (content that isn't in the downloaded app, such as films, songs, articles or AI-generated content): no. Model files are parts of features, not content to watch or read, and the AI features only work on the user's own media, on the phone. Ads have their own question.
   - Digital purchases: yes (Clipra Pro).
   - Ads: yes.
-  - Result, submitted on 21 November 2026: PEGI 3, ESRB Everyone, USK 0, IARC 3+ and ClassInd 14 (Brazil). The privacy policy's Children section explains that the ratings describe the app's content while Clipra stays directed at people aged 16 and over. Submit a new questionnaire when a change affects these answers.
+  - Result, submitted on 21 November 2026: PEGI 3, ESRB Everyone, USK 0, IARC 3+ and ClassInd 14 (Brazil). The privacy policy's Children section explains that the ratings describe the app's content and that Clipra is for people aged 13 and over. Submit a new questionnaire when a change affects these answers.
 - **Data safety:** see section 5.
 - **Advertising ID:** "Yes, my app uses advertising ID", for advertising or marketing (the ads SDK adds `AD_ID`).
 - **Government apps, financial features, health:** no.

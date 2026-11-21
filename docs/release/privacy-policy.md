@@ -26,7 +26,7 @@ Clipra keeps no analytics and no crash reports of its own, and it doesn't back u
 
 ### Children
 
-Clipra's age ratings, such as PEGI 3 and ESRB Everyone, describe what the app itself contains: no violence, bad language or other mature content. Clipra still isn't directed at children under 16, because its free version shows ads from Google AdMob. Clipra itself collects no data about anyone, children included.
+Clipra is meant for people aged 13 and over (14 and over in Brazil), and it isn't directed at children under 13. Its age ratings, such as PEGI 3 and ESRB Everyone, describe what the app itself contains: no violence, bad language or other mature content. If you're under 16, ask a parent or guardian before you agree to personalised ads in the consent form; every feature of Clipra works the same if you don't agree. Clipra itself collects no data about anyone, children included.
 
 ### Your rights
 
