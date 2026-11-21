@@ -49,6 +49,11 @@ What to enter in Google Play Console and AdMob before monetized builds can ship 
 - **Data safety:** see section 5.
 - **Advertising ID:** "Yes, my app uses advertising ID", for advertising or marketing (the ads SDK adds `AD_ID`).
 - **Government apps, financial features, health:** no.
+- **Foreground services** (asked when a release is reviewed). Media processing exists from Android 15, so on Android 10 to 14 export and transcription run as data sync instead (`ExportService`, `TranscriptionWorker`); model downloads are data sync on every version (`ModelDownloadWorker`).
+  - `FOREGROUND_SERVICE_DATA_SYNC`: Network processing > Other (AI model downloads); Local data processing > Media transcoding (export on Android 10 to 14) and Other (caption transcription on Android 10 to 14).
+  - `FOREGROUND_SERVICE_MEDIA_PROCESSING`: Media transcoding (export) and Other (caption transcription).
+  - Each "Other" needs a description. Model downloads: "Downloads the on-device AI models the user chooses in Settings > AI models (Whisper speech recognition, DeepFilterNet voice cleanup, offline translation models) from their official sources. The user starts the download; its progress shows in a notification, and it continues if the user leaves the app." Transcription: "Transcribes the speech in the user's video on the device with Whisper, for Auto captions and Edit by text. The user starts it, progress shows in a notification, and the audio never leaves the device." For data sync, start it with "On Android 14 and earlier, which have no media processing type:".
+  - Play may ask for a video of each use: an export, a model download and a transcription, each going on with its notification after the user leaves the app.
 
 ## 5. Data safety answers
 
@@ -66,7 +71,9 @@ Clipra itself collects nothing. Media, transcripts, captions and edits stay on t
 
 - **Ephemeral processing:** no, for every row.
 - **Is all user data encrypted in transit?** Yes (HTTPS for model downloads, ads and billing).
-- **Can users request that data be deleted?** The app keeps no data off the device. Ad data follows Google's policies; link to https://policies.google.com/technologies/partner-sites in the policy.
+- **Account creation:** "My app does not allow users to create an account".
+- **Can users request that data be deleted?** No. The app keeps no data off the device, so there is nothing for us to delete; Google handles the data its ads collect, and the privacy policy links https://policies.google.com/technologies/partner-sites.
+- **Additional badges** (independent security review, UPI): none.
 - **Not declared, because none of it leaves the device:** photos and videos, audio, files and docs, messages, contacts, location (precise), personal info.
 
 The ads rows follow Google's [Google Mobile Ads SDK data disclosure](https://developers.google.com/admob/android/privacy/play-data-disclosure), checked on 21 November 2026: IP address, user product interactions, diagnostic information and device identifiers, each collected and shared for advertising, analytics and fraud prevention. Only the ad ID is optional, so the device IDs row, which also holds the app set ID, is required. That page covers the legacy SDK (25.5.0); the Next-Gen SDK that Clipra uses has no page of its own, so the same answers apply. The Play Billing Library has no data safety page either (checked the same day). The billing library (9.1) logs its diagnostics to Google through Google's data transport (`com.google.android.datatransport`, the Clearcut backend), for every user, since Clipra connects to billing on each start to restore Clipra Pro; declare what that guidance lists for it.
