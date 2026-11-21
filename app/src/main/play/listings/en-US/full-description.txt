@@ -1,4 +1,7 @@
-Clipra is a video editor for your phone and tablet that keeps your videos to yourself. No account, no cloud, no watermark. Every AI feature runs on your device.
+Clipra is a free video editor for your phone and tablet, with every feature unlocked. It also keeps your videos to yourself: no account, no cloud, no watermark, and every AI feature runs on your device.
+
+EVERY FEATURE FREE
+No trial, no subscription and no feature behind a paywall: layers, edit by text, auto captions, every AI tool and 4K export are all free. Clipra shows two fullscreen ads per export, one when it starts and one when it is done, and never while you edit. Clipra Pro is a one-time purchase that removes the ads, and that is all it changes.
 
 LAYERS, NOT TRACKS
 Put anything on any layer: video, photos, text, captions, sound. Higher layers cover lower ones, and every layer plays sound. Picture in picture is just a smaller clip on a higher layer. 16 blend modes, opacity, crop, keyframes for position, scale, rotation and masks.
@@ -27,9 +30,6 @@ EVERYTHING ELSE YOU NEED
 
 EXPORT
 Up to 4K at up to 60 fps, in H.264, HEVC or AV1 where your phone has the encoder. Clipra shows the output size and the estimated file size before you export. You can also save the cover, the sound, the captions and an OpenTimelineIO file of the project.
-
-FREE, WITH ADS ONLY AT EXPORT
-Every feature is free. Clipra shows two fullscreen ads per export, one when it starts and one when it is done, and never while you edit. Clipra Pro is a one-time purchase that removes them. Nothing else is behind Pro.
 
 PRIVACY FIRST
 Your videos, transcripts and edits never leave your phone. Clipra uses the network only to download AI models (on Wi-Fi by default), to show ads to free users and for Google Play purchases.
