@@ -58,11 +58,14 @@ class SettingsActions(
     val onLicenses: () -> Unit,
     /** Opens Clipra's privacy policy on idct.tech, as Google Play asks the app to link it. */
     val onPrivacyPolicy: () -> Unit = {},
+    /** Opens About Clipra (#284): who makes it, support and feedback. */
+    val onAbout: () -> Unit = {},
 )
 
 /**
  * Settings (#74; no board in the design, built from the design system): Clipra Pro and Restore,
- * export defaults, storage (proxies and caches, AI models), privacy and about.
+ * export defaults, storage (proxies and caches, AI models), privacy and about (About Clipra,
+ * #284, and the licenses).
  */
 @Composable
 fun SettingsScreen(
@@ -178,6 +181,11 @@ fun SettingsScreen(
             ) { Chevron() }
 
             SectionLabel(R.string.settings_about)
+            SettingsRow(
+                title = stringResource(R.string.settings_about_clipra),
+                tag = "settings-about-clipra",
+                onClick = actions.onAbout,
+            ) { Chevron() }
             SettingsRow(
                 title = stringResource(R.string.settings_licenses),
                 tag = "settings-licenses",
@@ -326,7 +334,7 @@ private fun Chevron() {
 }
 
 @Composable
-private fun SectionLabel(text: Int) {
+internal fun SectionLabel(text: Int) {
     Text(
         text = stringResource(text),
         style = ClipraTheme.typography.sectionLabel,

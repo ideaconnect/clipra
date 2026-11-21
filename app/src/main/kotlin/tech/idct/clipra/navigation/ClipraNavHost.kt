@@ -65,6 +65,7 @@ import tech.idct.clipra.feature.models.ModelsNavigationActions
 import tech.idct.clipra.feature.models.ModelsRoute
 import tech.idct.clipra.feature.models.OnboardingRoute
 import tech.idct.clipra.feature.models.modelsScreens
+import tech.idct.clipra.feature.settings.AboutRoute
 import tech.idct.clipra.feature.settings.LicenseRoute
 import tech.idct.clipra.feature.settings.LicensesRoute
 import tech.idct.clipra.feature.settings.SettingsNavigationActions
@@ -266,6 +267,7 @@ fun ClipraNavHost(
                 onLicense = { component ->
                     component.file?.let { navController.navigate(LicenseRoute(component.name, it)) }
                 },
+                onAbout = { navController.navigate(AboutRoute) },
             ),
         )
         composable<BoardIndexRoute> {

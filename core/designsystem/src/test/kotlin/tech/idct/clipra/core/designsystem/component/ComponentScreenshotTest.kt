@@ -57,7 +57,9 @@ class ComponentScreenshotTest {
     @Test
     fun colors() = capture { ColorsSample() }
 
+    // Taller than a phone: the whole icon set (84 icons, 17 rows) fits in the image.
     @Test
+    @Config(qualifiers = "w390dp-h1000dp-xhdpi")
     fun icons() = capture { IconsSample() }
 
     @Test

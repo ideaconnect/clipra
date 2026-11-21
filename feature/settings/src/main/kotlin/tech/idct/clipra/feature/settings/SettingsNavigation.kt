@@ -5,11 +5,12 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
-import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraphBuilder
@@ -28,6 +29,10 @@ data object LicensesRoute
 @Serializable
 data class LicenseRoute(val title: String, val file: String)
 
+/** About Clipra (#284): who makes it, support and feedback. */
+@Serializable
+data object AboutRoute
+
 /** Where the settings screens lead; the app connects them. */
 class SettingsNavigationActions(
     val onBack: () -> Unit,
@@ -35,11 +40,13 @@ class SettingsNavigationActions(
     val onModels: () -> Unit,
     val onLicenses: () -> Unit,
     val onLicense: (OpenSourceComponent) -> Unit,
+    val onAbout: () -> Unit,
 )
 
-/** Registers Settings and the open-source licenses. */
+/** Registers Settings, About Clipra and the open-source licenses. */
 fun NavGraphBuilder.settingsScreens(actions: SettingsNavigationActions) {
     composable<SettingsRoute> { SettingsDestination(actions) }
+    composable<AboutRoute> { AboutDestination(onBack = actions.onBack) }
     composable<LicensesRoute> {
         ReadableWidth {
             LicensesScreen(onBack = actions.onBack, onLicense = actions.onLicense)
@@ -72,19 +79,50 @@ private fun SettingsDestination(
                 onAdPrivacy = { context.findActivity()?.let(viewModel::adPrivacy) },
                 onLicenses = actions.onLicenses,
                 onPrivacyPolicy = { context.openPage(policy) },
+                onAbout = actions.onAbout,
+            ),
+        )
+    }
+}
+
+/** About Clipra, its links opened in the browser and the report in the email app. */
+@Composable
+internal fun AboutDestination(onBack: () -> Unit) {
+    val context = LocalContext.current
+    val website = stringResource(R.string.about_website_url)
+    val coffee = stringResource(R.string.about_coffee_url)
+    val sponsor = stringResource(R.string.about_sponsor_url)
+    val address = stringResource(R.string.about_report_address)
+    // The version in the subject says which build a report is about.
+    val version = remember(context) { context.versionName() }
+    val subject = stringResource(R.string.about_report_subject, version)
+    ReadableWidth {
+        AboutScreen(
+            actions = AboutActions(
+                onBack = onBack,
+                onWebsite = { context.openPage(website) },
+                onCoffee = { context.openPage(coffee) },
+                onSponsor = { context.openPage(sponsor) },
+                onReport = { context.startIfAny(emailIntent(address, subject)) },
             ),
         )
     }
 }
 
 /** Opens [url] in the browser; nothing happens on a phone without one. */
-private fun Context.openPage(url: String) {
+private fun Context.openPage(url: String) = startIfAny(Intent(Intent.ACTION_VIEW, url.toUri()))
+
+/** Starts [intent]; nothing happens on a phone without an app for it. */
+private fun Context.startIfAny(intent: Intent) {
     try {
-        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        startActivity(intent)
     } catch (_: ActivityNotFoundException) {
-        // No browser on this phone.
+        // No app for it on this phone.
     }
 }
+
+private fun Context.versionName(): String =
+    packageManager.getPackageInfo(packageName, 0).versionName.orEmpty()
 
 private tailrec fun Context.findActivity(): Activity? = when (this) {
     is Activity -> this

@@ -95,6 +95,15 @@ class ContrastTest {
         assertContrast("textPrimary on ad background", c.textPrimary, c.ad.background)
     }
 
+    @Test
+    fun supportButtons() {
+        assertContrast("onCoffee on coffee", c.support.onCoffee, c.support.coffee)
+        assertContrast("onSponsor on sponsor", c.support.onSponsor, c.support.sponsor)
+        // The heart is an icon: 3:1 is enough for it (WCAG 1.4.11).
+        val heart = contrast(c.support.sponsorHeart, c.support.sponsor)
+        assertTrue("sponsorHeart on sponsor is %.2f:1, below 3:1".format(heart), heart >= 3.0)
+    }
+
     private fun assertContrast(pair: String, text: Color, background: Color) {
         val ratio = contrast(text, background)
         assertTrue("$pair is %.2f:1, below 4.5:1".format(ratio), ratio >= 4.5)
