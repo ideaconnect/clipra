@@ -1,10 +1,16 @@
-Clipra is a free video editor for your phone and tablet, with every feature unlocked. It also keeps your videos to yourself: no account, no cloud, no watermark, and every AI feature runs on your device.
+Clipra is a free video editor for your phone and tablet, with every feature unlocked and no watermark on your videos. It also keeps your videos to yourself: no account, no cloud, and every AI feature runs on your device.
+
+NO WATERMARK, EVER
+Every video you export is clean, with no watermark and no logo. That holds for free users too, at every resolution.
 
 EVERY FEATURE FREE
 No trial, no subscription and no feature behind a paywall: layers, edit by text, auto captions, every AI tool and 4K export are all free. Clipra shows two fullscreen ads per export, one when it starts and one when it is done, and never while you edit. Clipra Pro is a one-time purchase that removes the ads, and that is all it changes.
 
-LAYERS, NOT TRACKS
-Put anything on any layer: video, photos, text, captions, sound. Higher layers cover lower ones, and every layer plays sound. Picture in picture is just a smaller clip on a higher layer. 16 blend modes, opacity, crop, keyframes for position, scale, rotation and masks.
+A REAL TIMELINE WITH LAYERS
+Put anything on any layer: video, photos, text, captions, sound. Higher layers cover lower ones, so anything can go over anything: picture in picture is a smaller clip on a higher layer, a title is text over your video, and a person cut out of their background stands over any scene on the layer below. Every layer plays sound and can be hidden, muted or locked. Move, scale and turn a clip right in the preview, with 16 blend modes, opacity, crop and keyframes for position, scale, rotation and masks. Split, trim, snap and ripple on the timeline, with undo and redo for every step.
+
+TEXT AND TITLES
+Titles, text cards and lower thirds over your video, with text effects, colours, cards, animations in and out, and templates you save yourself.
 
 EDIT BY TEXT
 Clipra writes down what is said and lets you edit the video like a document. Cut filler words in one tap, remove long pauses, or tap any word to cut it. Everything after stays in sync on every layer.
@@ -14,7 +20,7 @@ Captions made on your phone with Whisper, in the language spoken. Five styles, i
 
 AI ON YOUR DEVICE
 - Voice cleanup removes wind, traffic and room noise
-- Cutout removes the background behind people, or use a chroma key
+- Cutout removes the background behind people, so you can put them over any video, or use a chroma key
 - Follow face keeps a mask on a face, for blurring or highlighting
 - Auto-reframe makes a vertical, square or 4:5 copy that follows the subject
 - Stabilize smooths handheld shake
@@ -23,9 +29,9 @@ AI models are downloaded once, straight from their official sources, and then wo
 EVERYTHING ELSE YOU NEED
 - 24 filters and 24 transitions
 - Color adjustments, HSL and LUT files
-- Text cards, titles and lower thirds with effects, animations and your own templates
 - Speed from 0.25x to 4x, speed ramps, freeze frame and reverse
 - Loudness normalization, fades, ducking under speech, beat markers and voiceover
+- 9:16, 16:9, 1:1, 4:5, 4:3 and 21:9 projects, and mosaic split-screen layouts
 - Tablets get a full three-pane layout
 
 EXPORT

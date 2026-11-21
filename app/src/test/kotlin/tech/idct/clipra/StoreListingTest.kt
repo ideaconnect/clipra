@@ -33,7 +33,7 @@ class StoreListingTest {
         }
     }
 
-    /** The graphics are only in en-US: other languages show them unless they have their own. */
+    /** Every language has the same text files; the graphics are checked by StoreGraphicsTest. */
     @Test
     fun theLanguagesHaveTheSameTexts() {
         val en = filesOf("en-US")
