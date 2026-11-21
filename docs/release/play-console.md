@@ -37,13 +37,15 @@ What to enter in Google Play Console and AdMob before monetized builds can ship 
 - **Privacy policy:** https://idct.tech/clipra/privacy, published 31 October 2026 from `docs/release/privacy-policy.md` (Polish: https://idct.tech/clipra/prywatnosc). The app links it under Settings > Privacy policy.
 - **Ads:** "Yes, my app contains ads".
 - **App access:** "All functionality is available without special access". There are no accounts or logins.
-- **Target audience:** 18 and over (or 16 and over). Not designed for children: Clipra isn't in the Families program, and its ads SDK isn't Families-certified.
+- **Target audience:** 13 and over (13 to 15, 16 to 17, 18 and over), and 14 and over in Brazil, set on 21 November 2026. Not designed for children under 13: Clipra isn't in the Families program, and its ads SDK isn't Families-certified.
 - **Content rating** (IARC questionnaire):
   - Category: All other app types.
   - Violence, sexuality, language, controlled substances, gambling: none.
   - User-generated content shared with other users: no. Videos stay on the device; sharing goes through the system share sheet.
+  - Online content (content that isn't in the downloaded app, such as films, songs, articles or AI-generated content): no. Model files are parts of features, not content to watch or read, and the AI features only work on the user's own media, on the phone. Ads have their own question.
   - Digital purchases: yes (Clipra Pro).
   - Ads: yes.
+  - Result, submitted on 21 November 2026: PEGI 3, ESRB Everyone, USK 0, IARC 3+ and ClassInd 14 (Brazil). The privacy policy's Children section explains that the ratings describe the app's content and that Clipra is for people aged 13 and over. Submit a new questionnaire when a change affects these answers.
 - **Data safety:** see section 5.
 - **Advertising ID:** "Yes, my app uses advertising ID", for advertising or marketing (the ads SDK adds `AD_ID`).
 - **Government apps, financial features, health:** no.
@@ -56,17 +58,18 @@ Clipra itself collects nothing. Media, transcripts, captions and edits stay on t
 
 | Data type | Collected | Shared | Optional | Purpose | From |
 |---|---|---|---|---|---|
-| Device or other IDs (advertising id, app set id) | Yes | Yes | Yes (ad personalization follows the UMP consent; Pro users have no ads) | Advertising or marketing, Analytics, Fraud prevention | Google Mobile Ads SDK |
-| Approximate location (from the IP address) | Yes | Yes | No | Advertising or marketing, Fraud prevention | Google Mobile Ads SDK |
-| App interactions (ad views and taps) | Yes | Yes | No | Advertising or marketing, Analytics | Google Mobile Ads SDK |
-| Diagnostics (crash logs and performance of the ads SDK) | Yes | Yes | No | Analytics | Google Mobile Ads SDK |
+| Device or other IDs (advertising id, app set id) | Yes | Yes | No (users can reset or delete the ad ID, but the SDK always sends the app set ID) | Advertising or marketing, Analytics, Fraud prevention | Google Mobile Ads SDK |
+| Approximate location (from the IP address) | Yes | Yes | No | Advertising or marketing, Analytics, Fraud prevention | Google Mobile Ads SDK |
+| App interactions (ad views and taps) | Yes | Yes | No | Advertising or marketing, Analytics, Fraud prevention | Google Mobile Ads SDK |
+| Diagnostics (app launch time, hang rate, energy use; not crash logs) | Yes | Yes | No | Advertising or marketing, Analytics, Fraud prevention | Google Mobile Ads SDK; Play Billing Library (its own diagnostics, for every user) |
 | Purchase history | Yes | No | No | App functionality (restoring Clipra Pro) | Google Play Billing |
 
+- **Ephemeral processing:** no, for every row.
 - **Is all user data encrypted in transit?** Yes (HTTPS for model downloads, ads and billing).
 - **Can users request that data be deleted?** The app keeps no data off the device. Ad data follows Google's policies; link to https://policies.google.com/technologies/partner-sites in the policy.
 - **Not declared, because none of it leaves the device:** photos and videos, audio, files and docs, messages, contacts, location (precise), personal info.
 
-Check these answers against Google's current SDK guidance when filling in the form: [Google Mobile Ads SDK data disclosure](https://developers.google.com/admob/android/privacy/play-data-disclosure) and the Play Billing Library's own data safety guidance. The billing library (9.1) logs its diagnostics to Google through Google's data transport (`com.google.android.datatransport`, the Clearcut backend), for every user, since Clipra connects to billing on each start to restore Clipra Pro; declare what that guidance lists for it.
+The ads rows follow Google's [Google Mobile Ads SDK data disclosure](https://developers.google.com/admob/android/privacy/play-data-disclosure), checked on 21 November 2026: IP address, user product interactions, diagnostic information and device identifiers, each collected and shared for advertising, analytics and fraud prevention. Only the ad ID is optional, so the device IDs row, which also holds the app set ID, is required. That page covers the legacy SDK (25.5.0); the Next-Gen SDK that Clipra uses has no page of its own, so the same answers apply. The Play Billing Library has no data safety page either (checked the same day). The billing library (9.1) logs its diagnostics to Google through Google's data transport (`com.google.android.datatransport`, the Clearcut backend), for every user, since Clipra connects to billing on each start to restore Clipra Pro; declare what that guidance lists for it.
 
 What the SDKs add to the release manifest (audited 2026-10-31, `processBenchmarkManifest`):
 

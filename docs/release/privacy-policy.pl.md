@@ -1,12 +1,12 @@
 # Polityka prywatności Clipra
 
-Opublikowana 31 października 2026 na https://idct.tech/clipra/prywatnosc, polska wersja `privacy-policy.md`. Przy zmianie polityki zmień ten plik i stronę razem, z nową datą.
+Opublikowana 31 października 2026 i zaktualizowana 21 listopada 2026 na https://idct.tech/clipra/prywatnosc, polska wersja `privacy-policy.md`. Przy zmianie polityki zmień ten plik i stronę razem, z nową datą.
 
 ---
 
 ## Polityka prywatności Clipra
 
-Ostatnia aktualizacja: 31 października 2026
+Ostatnia aktualizacja: 21 listopada 2026
 
 Clipra to edytor wideo na Androida od IDCT Bartosz Pachołek („my”). Jej obietnica jest prosta: bez konta, bez wysyłania, bez znaku wodnego. Ta polityka wyjaśnia, co to znaczy dla Twoich danych.
 
@@ -26,7 +26,7 @@ Clipra nie prowadzi własnej analityki ani raportów o awariach i nie robi kopii
 
 ### Dzieci
 
-Clipra nie jest przeznaczona dla dzieci poniżej 16 lat.
+Clipra jest przeznaczona dla osób w wieku od 13 lat (w Brazylii od 14 lat) i nie jest skierowana do dzieci poniżej 13 lat. Jej oceny wiekowe, na przykład PEGI 3 i ESRB Everyone, opisują to, co zawiera sama aplikacja: nie ma w niej przemocy, wulgaryzmów ani innych treści dla dorosłych. Jeśli masz mniej niż 16 lat, zapytaj rodzica lub opiekuna, zanim zgodzisz się na spersonalizowane reklamy w formularzu zgody; jeśli się nie zgodzisz, wszystkie funkcje Clipry działają tak samo. Sama Clipra nie zbiera danych o nikim, także o dzieciach.
 
 ### Twoje prawa
 
