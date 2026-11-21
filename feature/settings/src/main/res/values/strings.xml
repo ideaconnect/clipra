@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="settings_title">Settings</string>
     <string name="settings_pro">Clipra Pro</string>
     <string name="settings_pro_detail">No ads when you export · one payment</string>
@@ -33,6 +33,28 @@
     <string name="settings_on_device">On this phone</string>
     <string name="settings_on_device_detail">Your media, transcripts and edits never leave this phone.</string>
     <string name="settings_about">About</string>
+    <string name="settings_about_clipra">About Clipra</string>
     <string name="settings_licenses">Open-source licenses</string>
     <string name="settings_version">Version</string>
+
+    <!-- About Clipra (#284): who makes it, support and feedback. -->
+    <string name="about_logo">IDCT logo</string>
+    <string name="about_made_by">Made by IDCT</string>
+    <string name="about_company_name" translatable="false">IDCT Bartosz Pachołek</string>
+    <string name="about_company_description">AI-first software studio from Szczecin, Poland</string>
+    <!-- A Polish postal code takes a hyphen. -->
+    <string name="about_company_address" tools:ignore="TypographyDashes">ul. Kaszubska 12/8C, 70-403 Szczecin, Poland</string>
+    <string name="about_website">Visit idct.tech</string>
+    <string name="about_website_url" translatable="false">https://idct.tech/</string>
+    <string name="about_support">Support Clipra</string>
+    <string name="about_support_text">Clipra is free and open-source software, made in spare time and kept going by goodwill and coffee. If it saves you time, please support its development.</string>
+    <string name="about_coffee">Buy me a coffee</string>
+    <string name="about_coffee_url" translatable="false">https://buymeacoffee.com/idct</string>
+    <string name="about_sponsor">Sponsor on GitHub</string>
+    <string name="about_sponsor_url" translatable="false">https://github.com/sponsors/ideaconnect?frequency=one-time</string>
+    <string name="about_feedback">Ideas and bugs</string>
+    <string name="about_feedback_text">Missing a feature, or something doesn’t work? Write to us.</string>
+    <string name="about_report">Report a feature/bug</string>
+    <string name="about_report_address" translatable="false">clipra@idct.tech</string>
+    <string name="about_report_subject">Clipra %1$s: feature or bug</string>
 </resources>

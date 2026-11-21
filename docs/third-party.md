@@ -35,7 +35,9 @@ The fonts are the variable TTFs from the google/fonts repository, bundled in `co
 
 Settings > Open-source licenses lists these components and shows their license texts, kept in `feature/settings/src/main/assets/licenses` (Apache-2.0 from apache.org; the MIT and BSD texts from whisper.cpp v1.9.5, ONNX Runtime v1.31.0, DeepFilterNet at the pinned model commit and the vendored RNNoise) and, for the fonts, `core/designsystem/src/main/assets/licenses`.
 
-The icons are drawn from the design's own SVGs (`design/static/`), so they carry no third-party license.
+The icons are drawn from the design's own SVGs (`design/static/`), so they carry no third-party license. The About screen's coffee cup, globe, heart and envelope (#284) have no board; they are drawn for Clipra in the same style, so they carry none either.
+
+The IDCT logo on the About screen (`feature/settings/src/main/res/drawable/settings_idct_logo.xml`, made from IDCT's own SVG) is IDCT's mark. It is not covered by the Apache License, which grants no rights to trademarks (section 6); IDCT Bartosz Pachołek keeps all rights to it. The support buttons beside it link to Buy Me a Coffee and GitHub Sponsors and use their colours; no code or graphics of theirs ship in the app.
 
 Models come from their official sources only, pinned to a revision and checked with SHA-256; the sources are listed in `docs/architecture.md`, section 6.
 

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="settings_title">Ustawienia</string>
     <string name="settings_pro">Clipra Pro</string>
     <string name="settings_pro_detail">Bez reklam przy eksporcie · jedna płatność</string>
@@ -33,6 +33,21 @@
     <string name="settings_on_device">Na tym telefonie</string>
     <string name="settings_on_device_detail">Twoje nagrania, transkrypcje i zmiany nigdy nie opuszczają tego telefonu.</string>
     <string name="settings_about">O aplikacji</string>
+    <string name="settings_about_clipra">O aplikacji Clipra</string>
     <string name="settings_licenses">Licencje open source</string>
     <string name="settings_version">Wersja</string>
+
+    <string name="about_logo">Logo IDCT</string>
+    <string name="about_made_by">Stworzone przez IDCT</string>
+    <string name="about_company_description">Studio oprogramowania stawiające na AI, ze Szczecina</string>
+    <string name="about_company_address" tools:ignore="TypographyDashes">ul. Kaszubska 12/8C, 70-403 Szczecin</string>
+    <string name="about_website">Odwiedź idct.tech</string>
+    <string name="about_support">Wesprzyj Cliprę</string>
+    <string name="about_support_text">Clipra to darmowe i otwarte oprogramowanie, tworzone po godzinach i napędzane dobrą wolą i kawą. Jeśli oszczędza Ci czas, wesprzyj jego rozwój.</string>
+    <string name="about_coffee">Postaw mi kawę</string>
+    <string name="about_sponsor">Wesprzyj na GitHubie</string>
+    <string name="about_feedback">Pomysły i błędy</string>
+    <string name="about_feedback_text">Brakuje Ci funkcji albo coś nie działa? Napisz do nas.</string>
+    <string name="about_report">Zgłoś pomysł/błąd</string>
+    <string name="about_report_subject">Clipra %1$s: pomysł lub błąd</string>
 </resources>

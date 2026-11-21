@@ -5,7 +5,9 @@ import tech.idct.clipra.core.designsystem.R
 
 /**
  * The icon set: stroke icons on a 24 grid, drawn from the design snapshots in design/static/.
- * Tint them with [ClipraIcon]. [Logo] keeps its own colours and [Crown] is only for Clipra Pro.
+ * [Coffee], [Globe], [Heart] and [Mail] have no board (the About screen, #284) and are drawn in
+ * the same style. Tint them with [ClipraIcon]. [Logo] keeps its own colours and [Crown] is only
+ * for Clipra Pro.
  */
 object ClipraIcons {
     @DrawableRes val Add = R.drawable.designsystem_ic_add
@@ -33,6 +35,9 @@ object ClipraIcons {
     @DrawableRes val ChevronRight = R.drawable.designsystem_ic_chevron_right
 
     @DrawableRes val Close = R.drawable.designsystem_ic_close
+
+    /** Buy Me a Coffee on the About screen (#284). */
+    @DrawableRes val Coffee = R.drawable.designsystem_ic_coffee
 
     @DrawableRes val Color = R.drawable.designsystem_ic_color
 
@@ -75,7 +80,13 @@ object ClipraIcons {
 
     @DrawableRes val Freeze = R.drawable.designsystem_ic_freeze
 
+    /** A website, such as idct.tech on the About screen (#284). */
+    @DrawableRes val Globe = R.drawable.designsystem_ic_globe
+
     @DrawableRes val Grip = R.drawable.designsystem_ic_grip
+
+    /** GitHub Sponsors on the About screen (#284), in its pink. */
+    @DrawableRes val Heart = R.drawable.designsystem_ic_heart
 
     @DrawableRes val Hidden = R.drawable.designsystem_ic_hidden
 
@@ -90,6 +101,9 @@ object ClipraIcons {
     @DrawableRes val Lock = R.drawable.designsystem_ic_lock
 
     @DrawableRes val Logo = R.drawable.designsystem_ic_logo
+
+    /** Writing an email, such as a feature or bug report on the About screen (#284). */
+    @DrawableRes val Mail = R.drawable.designsystem_ic_mail
 
     @DrawableRes val Mask = R.drawable.designsystem_ic_mask
 
@@ -186,6 +200,7 @@ object ClipraIcons {
         "chevron_left" to ChevronLeft,
         "chevron_right" to ChevronRight,
         "close" to Close,
+        "coffee" to Coffee,
         "color" to Color,
         "compare_arrows" to CompareArrows,
         "copy" to Copy,
@@ -206,7 +221,9 @@ object ClipraIcons {
         "flip" to Flip,
         "forward" to Forward,
         "freeze" to Freeze,
+        "globe" to Globe,
         "grip" to Grip,
+        "heart" to Heart,
         "hidden" to Hidden,
         "image" to Image,
         "keyframe" to Keyframe,
@@ -214,6 +231,7 @@ object ClipraIcons {
         "link" to Link,
         "lock" to Lock,
         "logo" to Logo,
+        "mail" to Mail,
         "mask" to Mask,
         "mask_none" to MaskNone,
         "mask_oval" to MaskOval,

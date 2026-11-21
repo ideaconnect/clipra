@@ -38,6 +38,7 @@ Values are in `tokens.json`. This page explains how they are used. Units: phone 
 | Card | `#17171A`, radius 16, 12 to 14 padding |
 | On-device card | `#131A13` fill, `#22331F` border, green icon tile |
 | Pro card | `#1B1910` fill, `#4A3F14` border, crown on an accent circle |
+| Support buttons (About, #284) | 48 high, radius 14, 15/700 text, icon 20, in each service's own colours (`support` tokens), as in ReelsMagician: Buy me a coffee `#FFDD00` with `#0D0C22` text and a cup; Sponsor on GitHub `#21262D` with a 1 `#3D444D` border, `#F0F6FC` text and a `#DB61A2` heart |
 | Bottom nav (phone home) | 3 items, 56 high, active item has a `#2B2716` pill behind the icon |
 | Tool rail (tablet) | 72 wide, icon over label, active item `#2B2716` tile |
 | Toolbar (phone editor) | Horizontally scrolling 60×60 icon over label tools; a selected clip swaps the toolbar for clip tools with a close button on the left |

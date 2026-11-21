@@ -43,6 +43,7 @@ data class ClipraColors(
     val feature: FeatureColors,
     val ad: AdColors,
     val record: RecordColors,
+    val support: SupportColors,
     /** The custom colour swatch (Text board): a colour wheel. */
     val colorWheel: List<Color> = listOf(
         Color(0xFFFF5A36),
@@ -84,6 +85,20 @@ data class AdColors(val background: Color, val badgeBackground: Color, val badge
 /** Recording a voiceover (TabletAudio board): the red Record button and its dot. */
 @Immutable
 data class RecordColors(val background: Color, val border: Color, val text: Color, val dot: Color)
+
+/**
+ * The support buttons on the About screen (#284), in their services' own colours, as in
+ * ReelsMagician: Buy Me a Coffee's yellow, and GitHub's dark button with the Sponsors pink heart.
+ */
+@Immutable
+data class SupportColors(
+    val coffee: Color,
+    val onCoffee: Color,
+    val sponsor: Color,
+    val sponsorBorder: Color,
+    val onSponsor: Color,
+    val sponsorHeart: Color,
+)
 
 val ClipraDarkColors = ClipraColors(
     background = Color(0xFF0D0D0F),
@@ -152,5 +167,13 @@ val ClipraDarkColors = ClipraColors(
         border = Color(0xFF6B2424),
         text = Color(0xFFFFB4A8),
         dot = Color(0xFFFF5A4A),
+    ),
+    support = SupportColors(
+        coffee = Color(0xFFFFDD00),
+        onCoffee = Color(0xFF0D0C22),
+        sponsor = Color(0xFF21262D),
+        sponsorBorder = Color(0xFF3D444D),
+        onSponsor = Color(0xFFF0F6FC),
+        sponsorHeart = Color(0xFFDB61A2),
     ),
 )

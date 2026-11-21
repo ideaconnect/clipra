@@ -1,5 +1,6 @@
 package tech.idct.clipra.feature.settings
 
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -45,6 +46,7 @@ class SettingsScreenTest {
         onAdPrivacy = { calls += "privacy" },
         onLicenses = { calls += "licenses" },
         onPrivacyPolicy = { calls += "policy" },
+        onAbout = { calls += "about" },
     )
 
     // A free user in Poland on a phone without an AV1 encoder.
@@ -78,8 +80,12 @@ class SettingsScreenTest {
         compose.onNodeWithTag("settings-models").performScrollTo().performClick()
         compose.onNodeWithTag("settings-ad-privacy").performScrollTo().performClick()
         compose.onNodeWithTag("settings-privacy-policy").performScrollTo().performClick()
+        compose.onNodeWithTag("settings-about-clipra").performScrollTo().performClick()
         compose.onNodeWithTag("settings-licenses").performScrollTo().performClick()
-        assertEquals(listOf("pro", "restore", "models", "privacy", "policy", "licenses"), calls)
+        assertEquals(
+            listOf("pro", "restore", "models", "privacy", "policy", "about", "licenses"),
+            calls,
+        )
         assertEquals(listOf(ExportSettings(codec = VideoCodec.HEVC)), defaults)
     }
 
@@ -88,6 +94,15 @@ class SettingsScreenTest {
     @Config(qualifiers = "pl-w390dp-h844dp-xhdpi")
     fun settingsForAFreeUserInPolish() {
         show(free, locale = Locale.forLanguageTag("pl-PL"))
+        compose.onRoot().captureRoboImage(roborazziOptions = options)
+    }
+
+    /** The About section at the end: About Clipra, then the licenses and the version (#284). */
+    @Test
+    fun theAboutSectionAtTheEnd() {
+        show(free)
+        compose.onNodeWithTag("settings-version").performScrollTo()
+        compose.onNodeWithText("About Clipra").assertIsDisplayed()
         compose.onRoot().captureRoboImage(roborazziOptions = options)
     }
 
